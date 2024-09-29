@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/cubits/app_user/app_user_cubit.dart';
 import 'package:oshmobile/core/theme/theme.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:oshmobile/features/auth/presentation/pages/sign_page.dart';
 import 'package:oshmobile/features/auth/presentation/pages/signin_page.dart';
 import 'package:oshmobile/features/blog/presentation/bloc/blog_bloc.dart';
 import 'package:oshmobile/features/blog/presentation/pages/blog_page.dart';
@@ -50,7 +49,7 @@ class _MyAppState extends State<MyApp> {
       home: BlocSelector<AppUserCubit, AppUserState, bool>(
         selector: (state) => state is AppUserSignedIn,
         builder: (context, state) =>
-            state ? const BlogPage() : const SignPage(),
+            state ? const BlogPage() : const SignInPage(),
       ),
     );
   }

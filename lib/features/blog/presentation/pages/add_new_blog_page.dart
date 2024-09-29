@@ -119,7 +119,7 @@ class _AddNewBlogPageState extends State<AddNewBlogPage> {
                                   height: 15,
                                 ),
                                 Text(
-                                  "Select yoour image",
+                                  "Select your image",
                                   style: TextStyle(fontSize: 15),
                                 )
                               ],
