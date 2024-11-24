@@ -41,8 +41,8 @@ Future<void> initDependencies() async {
 
   //core
   locator.registerLazySingleton(() => AppUserCubit());
-  locator.registerFactory<ConnectionChecker>(
-      () => ConnectionCheckerImpl(internetConnection: locator()));
+  locator.registerFactory<InternetConnectionChecker>(
+      () => InternetConnectionCheckerImpl(internetConnection: locator()));
 }
 
 void _initBlog() {

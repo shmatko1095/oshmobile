@@ -5,10 +5,12 @@ class AppTheme {
   static _border([Color color = AppPalette.borderColor]) => OutlineInputBorder(
         borderSide: BorderSide(
           color: color,
-          width: 3,
+          width: 1.1,
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(15),
       );
+
+  static get darkTheme => darkThemeMode;
 
   static final darkThemeMode = ThemeData.dark().copyWith(
     scaffoldBackgroundColor: AppPalette.backgroundColor,
@@ -22,7 +24,7 @@ class AppTheme {
     inputDecorationTheme: InputDecorationTheme(
       contentPadding: const EdgeInsets.all(27),
       enabledBorder: _border(),
-      focusedBorder: _border(AppPalette.gradient2),
+      focusedBorder: _border(AppPalette.blue),
       errorBorder: _border(AppPalette.errorColor),
       border: _border(),
     ),

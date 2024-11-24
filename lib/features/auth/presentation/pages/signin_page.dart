@@ -8,7 +8,7 @@ import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:oshmobile/features/auth/presentation/pages/signup_page.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/auth_field.dart';
-import 'package:oshmobile/features/auth/presentation/widgets/auth_gradient_button.dart';
+import 'package:oshmobile/features/auth/presentation/widgets/gradient_elevated_button.dart';
 import 'package:oshmobile/features/blog/presentation/pages/blog_page.dart';
 
 class SignInPage extends StatefulWidget {
@@ -64,93 +64,135 @@ class _SignInPageState extends State<SignInPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(15),
-          child: BlocConsumer<AuthBloc, AuthState>(
-              listener: (context, state) => _onAuthStateChanged(context, state),
-              builder: (context, state) {
-                if (state is AuthLoading) {
-                  return const Loader();
-                } else {
-                  return Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          "Sign In",
-                          style: TextStyle(
-                            fontSize: 50,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 30),
-                        AuthField(
-                          hintText: "Email",
-                          labelText: "Email",
-                          controller: _emailController,
-                          validator: (value) => FormValidator.email(
-                            value: value,
-                            errorMessage: "Error Email",
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        AuthField(
-                          hintText: "Password",
-                          labelText: "Password",
-                          controller: _passwordController,
-                          isObscureText: true,
-                          validator: (value) => FormValidator.length(
-                            value: value,
-                            length: 8,
-                            errorMessage: "Error Password",
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        AuthGradientButton(
-                          buttonText: "Sign In",
-                          onPressed: () => _signIn(),
-                        ),
-                        const SizedBox(height: 20),
-                        GestureDetector(
-                          onTap: () =>
-                              Navigator.push(context, SignUpPage.route()),
-                          child: RichText(
-                            text: TextSpan(
-                              text: "Don't have an account? ",
-                              style: Theme.of(context).textTheme.titleMedium,
-                              children: [
-                                TextSpan(
-                                  text: "Sign Up",
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        color: AppPalette.gradient2,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                              ],
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: BlocConsumer<AuthBloc, AuthState>(
+          listener: (context, state) => _onAuthStateChanged(context, state),
+          builder: (context, state) {
+            if (state is AuthLoading) {
+              return const Loader();
+            } else {
+              return Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            const Text(
+                              "Sign In",
+                              style: TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                          ),
+                            const SizedBox(height: 60),
+                            AuthField(
+                              hintText: "Email",
+                              labelText: "Email",
+                              controller: _emailController,
+                              validator: (value) => FormValidator.email(
+                                value: value,
+                                errorMessage: "Error Email",
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            AuthField(
+                              hintText: "Password",
+                              labelText: "Password",
+                              controller: _passwordController,
+                              isObscureText: true,
+                              validator: (value) => FormValidator.length(
+                                value: value,
+                                length: 8,
+                                errorMessage: "Error Password",
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            GradientElevatedButton(
+                              buttonText: "Sign In",
+                              onPressed: () => _signIn(),
+                            ),
+                            const SizedBox(height: 20),
+                            _buildSocialButton(
+                              icon: Image.asset("assets/images/google-icon.png",
+                                  height: 25),
+                              text: 'Continue with Google',
+                              onTap: () {},
+                            ),
+                            const SizedBox(height: 25),
+                            GestureDetector(
+                              onTap: () {},
+                              child: Text(
+                                "Forgot your password",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      decoration: TextDecoration.underline,
+                                    ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 20),
-                        GestureDetector(
-                          onTap: () {},
-                          child: Text(
-                            "Try Demo",
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  );
-                }
-              }),
+                  ),
+                  const Divider(color: Colors.white24, thickness: 1),
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: () => Navigator.push(context, SignUpPage.route()),
+                    child: RichText(
+                      text: TextSpan(
+                        text: "Don't have an account?",
+                        style: Theme.of(context).textTheme.titleSmall,
+                        children: [
+                          TextSpan(text: "  "),
+                          TextSpan(
+                            text: "Sign Up for OSH",
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(color: AppPalette.blue),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Text(
+                      "Try Demo",
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ),
+                ],
+              );
+            }
+          },
         ),
       ),
+    );
+  }
 
+  Widget _buildSocialButton(
+      {required Widget icon,
+      required String text,
+      required VoidCallback onTap}) {
+    return ElevatedButton.icon(
+      onPressed: onTap,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white24,
+        fixedSize: Size(double.maxFinite, 50),
+      ),
+      icon: icon,
+      label: Text(
+        text,
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
     );
   }
 }

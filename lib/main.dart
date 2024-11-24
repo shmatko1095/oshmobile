@@ -45,7 +45,8 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'OSH Mobile',
-      theme: AppTheme.darkThemeMode,
+      theme: AppTheme.darkTheme,
+      debugShowCheckedModeBanner: false,
       home: BlocSelector<AppUserCubit, AppUserState, bool>(
         selector: (state) => state is AppUserSignedIn,
         builder: (context, state) =>

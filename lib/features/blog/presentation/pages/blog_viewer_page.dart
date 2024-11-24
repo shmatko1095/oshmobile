@@ -56,7 +56,7 @@ class BlogViewerPage extends StatelessWidget {
                     border: Border.all(color: AppPalette.borderColor, width: 2),
                     borderRadius: const BorderRadius.all(Radius.circular(10)),
                   ),
-                  width: double.infinity,
+                  width: double.maxFinite,
                   child: Image.network(blog.imageUrl),
                 ),
                 const SizedBox(height: 15),

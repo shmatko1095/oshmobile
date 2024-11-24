@@ -9,7 +9,7 @@ import 'package:oshmobile/features/auth/domain/repository/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource authRemoteDataSource;
-  final ConnectionChecker connectionChecker;
+  final InternetConnectionChecker connectionChecker;
 
   AuthRepositoryImpl({
     required this.authRemoteDataSource,
@@ -31,13 +31,13 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, User>> signUp({
-    required String name,
+    String? name,
     required String email,
     required String password,
   }) async {
     return _getUser(
       () async => await authRemoteDataSource.signUp(
-        name: name,
+        name: name ?? "NoName",
         email: email,
         password: password,
       ),

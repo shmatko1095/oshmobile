@@ -103,7 +103,7 @@ class _AddNewBlogPageState extends State<AddNewBlogPage> {
                       borderRadius: const BorderRadius.all(Radius.circular(10)),
                     ),
                     height: 200,
-                    width: double.infinity,
+                    width: double.maxFinite,
                     child: GestureDetector(
                       onTap: () => _pickImage(),
                       child: image != null

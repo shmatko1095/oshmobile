@@ -14,7 +14,7 @@ import 'package:uuid/uuid.dart';
 class BlogRepositoryImpl implements BlogRepository {
   final BlogRemoteDatasource blogRemoteDatasource;
   final BlogLocalDataSource blogLocalDataSource;
-  final ConnectionChecker connectionChecker;
+  final InternetConnectionChecker connectionChecker;
 
   BlogRepositoryImpl({
     required this.blogRemoteDatasource,

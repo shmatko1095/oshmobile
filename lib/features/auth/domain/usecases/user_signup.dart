@@ -7,12 +7,12 @@ import 'package:oshmobile/features/auth/domain/repository/auth_repository.dart';
 class UserSignUpParams {
   final String email;
   final String password;
-  final String name;
+  final String? name;
 
   UserSignUpParams({
     required this.email,
     required this.password,
-    required this.name,
+    this.name,
   });
 }
 
