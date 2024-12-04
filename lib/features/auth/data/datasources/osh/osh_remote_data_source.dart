@@ -1,6 +1,4 @@
 // import 'package:oshmobile/core/common/entities/session.dart' as osh;
-import 'dart:convert';
-
 import 'package:chopper/chopper.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:oshmobile/core/error/exceptions.dart';
@@ -37,7 +35,7 @@ class OshRemoteDataSourceImpl implements IAuthRemoteDataSource {
       }
     } on ServerException catch (_) {
       rethrow;
-    }catch (e) {
+    } catch (e) {
       throw ServerException(e.toString());
     }
   }

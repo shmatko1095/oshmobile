@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:chopper/chopper.dart';
 import 'package:oshmobile/core/secrets/app_secrets.dart';
-import 'package:oshmobile/core/web/auth/requests/client_token_request.dart';
-import 'package:oshmobile/core/web/auth/requests/refresh_token_request.dart';
 
 part 'auth_service.chopper.dart';
 
