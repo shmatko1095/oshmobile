@@ -8,7 +8,7 @@ import 'package:oshmobile/features/auth/data/models/user_model.dart';
 import 'package:oshmobile/features/auth/domain/repository/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthRemoteDataSource authRemoteDataSource;
+  final IAuthRemoteDataSource authRemoteDataSource;
   final InternetConnectionChecker connectionChecker;
 
   AuthRepositoryImpl({
@@ -31,13 +31,15 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, User>> signUp({
-    String? name,
+    String? firstName,
+    String? lastName,
     required String email,
     required String password,
   }) async {
     return _getUser(
       () async => await authRemoteDataSource.signUp(
-        name: name ?? "NoName",
+        firstName: firstName,
+        lastName: lastName,
         email: email,
         password: password,
       ),
@@ -46,11 +48,12 @@ class AuthRepositoryImpl implements AuthRepository {
 
   Future<Either<Failure, User>> _getUser(Future<User> Function() fn) async {
     try {
-      if (!await connectionChecker.isConnected) {
+      if (await connectionChecker.isConnected) {
+        final user = await fn();
+        return right(user);
+      } else {
         return left(Failure("No internet connection"));
       }
-      final user = await fn();
-      return right(user);
     } on ServerException catch (e) {
       return left(Failure(e.message));
     } on Exception catch (e) {
@@ -61,20 +64,20 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, User>> currentUser() async {
     try {
-      if (!await connectionChecker.isConnected) {
-        final session = authRemoteDataSource.currentUserSession;
-        if (session == null) {
+      if (await connectionChecker.isConnected) {
+        final userData = await authRemoteDataSource.getCurrentUserData();
+        if (userData == null) {
           return left(Failure("User not logged in!"));
         }
         return right(UserModel(
-            id: session.user.id, email: session.user.email ?? "", name: ""));
+          id: userData.id,
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+        ));
+      } else {
+        return left(Failure("No internet connection!"));
       }
-
-      final user = await authRemoteDataSource.getCurrentUserData();
-      if (user == null) {
-        return left(Failure("User not logged in!"));
-      }
-      return right(user);
     } on ServerException catch (e) {
       return left(Failure(e.message));
     }

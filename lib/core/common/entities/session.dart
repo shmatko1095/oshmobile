@@ -1,10 +1,10 @@
-class User {
+class Session {
   final String id;
   final String email;
-  final String? firstName;
-  final String? lastName;
+  final String firstName;
+  final String lastName;
 
-  User({
+  Session({
     required this.id,
     required this.email,
     required this.firstName,

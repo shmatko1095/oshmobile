@@ -4,7 +4,8 @@ import 'package:oshmobile/core/error/failures.dart';
 
 abstract interface class AuthRepository {
   Future<Either<Failure, User>> signUp({
-    String? name,
+    String? firstName,
+    String? lastName,
     required String email,
     required String password,
   });

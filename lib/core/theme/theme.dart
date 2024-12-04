@@ -10,6 +10,9 @@ class AppTheme {
         borderRadius: BorderRadius.circular(15),
       );
 
+  static get lightTheme => ThemeData.light().copyWith(
+      colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent));
+
   static get darkTheme => darkThemeMode;
 
   static final darkThemeMode = ThemeData.dark().copyWith(

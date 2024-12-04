@@ -7,12 +7,14 @@ import 'package:oshmobile/features/auth/domain/repository/auth_repository.dart';
 class UserSignUpParams {
   final String email;
   final String password;
-  final String? name;
+  final String? firstName;
+  final String? lastName;
 
   UserSignUpParams({
     required this.email,
     required this.password,
-    this.name,
+    this.firstName,
+    this.lastName,
   });
 }
 
@@ -24,7 +26,8 @@ class UserSignUp implements UseCase<User, UserSignUpParams> {
   @override
   Future<Either<Failure, User>> call(UserSignUpParams params) async {
     return await authRepository.signUp(
-      name: params.name,
+      firstName: params.firstName,
+      lastName: params.lastName,
       email: params.email,
       password: params.password,
     );
