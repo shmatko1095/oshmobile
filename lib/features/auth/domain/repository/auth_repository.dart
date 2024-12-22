@@ -1,19 +1,17 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:oshmobile/core/common/entities/user.dart';
+import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/core/error/failures.dart';
 
 abstract interface class AuthRepository {
-  Future<Either<Failure, User>> signUp({
-    String? firstName,
-    String? lastName,
+  Future<Either<Failure, void>> signUp({
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
   });
 
-  Future<Either<Failure, User>> signIn({
+  Future<Either<Failure, Session>> signIn({
     required String email,
     required String password,
   });
-
-  Future<Either<Failure, User>> currentUser();
 }

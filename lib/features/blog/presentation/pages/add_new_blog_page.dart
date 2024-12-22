@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/common/cubits/app_user/app_user_cubit.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/constants/constants.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
@@ -43,11 +42,11 @@ class _AddNewBlogPageState extends State<AddNewBlogPage> {
     if (_formKey.currentState!.validate() &&
         _selectedTopics.isNotEmpty &&
         image != null) {
-      final posterId =
-          (context.read<AppUserCubit>().state as AppUserSignedIn).user.id;
+      // final posterId =
+      //     (context.read<AppUserCubit>().state as AppUserSignedIn).user.id;
       context.read<BlogBloc>().add(
             BlogUpload(
-              posterId: posterId,
+              posterId: "posterId",
               title: _titleController.text.trim(),
               content: _contentController.text.trim(),
               image: image!,
@@ -77,7 +76,7 @@ class _AddNewBlogPageState extends State<AddNewBlogPage> {
       ),
       body: BlocConsumer<BlogBloc, BlogState>(listener: (context, state) {
         if (state is BlogFailure) {
-          showSnackBar(context, state.error);
+          showSnackBar(context: context, content: state.error);
         } else if (state is BlogUploadSuccess) {
           Navigator.pushAndRemoveUntil(
             context,

@@ -6,14 +6,14 @@ sealed class AuthEvent {}
 final class AuthSignUp extends AuthEvent {
   final String email;
   final String password;
-  final String? firstName;
-  final String? lastName;
+  final String firstName;
+  final String lastName;
 
   AuthSignUp({
     required this.email,
     required this.password,
-    this.firstName,
-    this.lastName
+    required this.firstName,
+    required this.lastName,
   });
 }
 
@@ -26,5 +26,3 @@ final class AuthSignIn extends AuthEvent {
     required this.password,
   });
 }
-
-final class AuthIsUserSignedIn extends AuthEvent {}

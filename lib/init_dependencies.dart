@@ -6,83 +6,89 @@ import 'package:get_it/get_it.dart';
 import 'package:hive/hive.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:intl/intl.dart';
-import 'package:oshmobile/core/common/cubits/app_user/app_user_cubit.dart';
-import 'package:oshmobile/core/network/connection_checker.dart';
-import 'package:oshmobile/core/web/auth/auth_service.dart';
-import 'package:oshmobile/core/web/chopper_example/core/session_storage.dart';
-import 'package:oshmobile/core/web/core/api_authenticator.dart';
-import 'package:oshmobile/core/web/core/auth_interceptor.dart';
+import 'package:oshmobile/core/common/cubits/global_auth/global_auth_cubit.dart';
+import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
+import 'package:oshmobile/core/network/chopper_client/core/api_authenticator.dart';
+import 'package:oshmobile/core/network/chopper_client/core/auth_interceptor.dart';
+import 'package:oshmobile/core/network/chopper_client/core/session_storage.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api_user/osh_api_user_service.dart';
+import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
 import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:oshmobile/features/auth/data/datasources/osh/osh_remote_data_source.dart';
 import 'package:oshmobile/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:oshmobile/features/auth/domain/repository/auth_repository.dart';
-import 'package:oshmobile/features/auth/domain/usecases/current_user.dart';
 import 'package:oshmobile/features/auth/domain/usecases/user_signin.dart';
 import 'package:oshmobile/features/auth/domain/usecases/user_signup.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:oshmobile/features/blog/data/datasources/blog_local_datasource.dart';
-import 'package:oshmobile/features/blog/data/datasources/blog_remote_datasource.dart';
-import 'package:oshmobile/features/blog/data/repositories/blog_repository_impl.dart';
-import 'package:oshmobile/features/blog/domain/repositories/blog_repository.dart';
-import 'package:oshmobile/features/blog/domain/usecases/get_all_blogs.dart';
-import 'package:oshmobile/features/blog/domain/usecases/upload_blog.dart';
-import 'package:oshmobile/features/blog/presentation/bloc/blog_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 
 final locator = GetIt.instance;
 
 Future<void> initDependencies() async {
-  _initChopperClient();
-  _initAuth();
-  _initBlog();
+  await _initCore();
+  await _initWebClient();
+  _initAuthFeature();
+  // _initBlog();
+}
 
+Future<void> _initCore() async {
+  // Box
   Hive.init((await getApplicationDocumentsDirectory()).path);
   Box hiveBox = await Hive.openBox("blogs");
   locator.registerLazySingleton<Box>(() => hiveBox);
 
-  locator.registerFactory(() => InternetConnection.createInstance(
-      checkInterval: const Duration(seconds: 1)));
+  // SessionStorage
+  final sessionStorage = SessionStorage(storage: FlutterSecureStorage());
+  await sessionStorage.initialize();
+  locator.registerSingleton<SessionStorage>(sessionStorage);
 
-  //core
-  locator.registerLazySingleton(() => AppUserCubit());
+  // InternetConnectionChecker
+  locator.registerFactory(
+    () => InternetConnection.createInstance(
+        checkInterval: const Duration(seconds: 1)),
+  );
   locator.registerFactory<InternetConnectionChecker>(
-      () => InternetConnectionCheckerImpl(internetConnection: locator()));
+    () => InternetConnectionCheckerImpl(internetConnection: locator()),
+  );
 }
 
-void _initBlog() {
-  locator
-    ..registerFactory<BlogRemoteDatasource>(
-      () => BlogRemoteDatasourceImpl(supabaseClient: locator()),
-    )
-    ..registerFactory<BlogLocalDataSource>(
-      () => BlogLocalDataSourceImpl(box: locator()),
-    )
-    ..registerFactory<BlogRepository>(
-      () => BlogRepositoryImpl(
-        blogRemoteDatasource: locator(),
-        blogLocalDataSource: locator(),
-        connectionChecker: locator(),
-      ),
-    )
-    ..registerFactory<UploadBlog>(
-      () => UploadBlog(blogRepository: locator()),
-    )
-    ..registerFactory<GetAllBlogs>(
-      () => GetAllBlogs(blogRepository: locator()),
-    )
-    ..registerLazySingleton<BlogBloc>(
-      () => BlogBloc(
-        uploadBlog: locator(),
-        getAllBlogs: locator(),
-      ),
-    );
-}
+// void _initBlog() {
+//   locator
+//     ..registerFactory<BlogRemoteDatasource>(
+//       () => BlogRemoteDatasourceImpl(supabaseClient: locator()),
+//     )
+//     ..registerFactory<BlogLocalDataSource>(
+//       () => BlogLocalDataSourceImpl(box: locator()),
+//     )
+//     ..registerFactory<BlogRepository>(
+//       () => BlogRepositoryImpl(
+//         blogRemoteDatasource: locator(),
+//         blogLocalDataSource: locator(),
+//         connectionChecker: locator(),
+//       ),
+//     )
+//     ..registerFactory<UploadBlog>(
+//       () => UploadBlog(blogRepository: locator()),
+//     )
+//     ..registerFactory<GetAllBlogs>(
+//       () => GetAllBlogs(blogRepository: locator()),
+//     )
+//     ..registerLazySingleton<BlogBloc>(
+//       () => BlogBloc(
+//         uploadBlog: locator(),
+//         getAllBlogs: locator(),
+//       ),
+//     );
+// }
 
-void _initAuth() {
+void _initAuthFeature() {
   locator
     //Datasource
     ..registerFactory<IAuthRemoteDataSource>(
-      () => OshRemoteDataSourceImpl(webClient: locator<ChopperClient>()),
+      () => OshRemoteDataSourceImpl(
+        authClient: locator<AuthService>(),
+        oshApiUserService: locator<OshApiUserService>(),
+      ),
     )
     //Repository
     ..registerFactory<AuthRepository>(
@@ -98,21 +104,17 @@ void _initAuth() {
     ..registerFactory<UserSignIn>(
       () => UserSignIn(authRepository: locator()),
     )
-    ..registerFactory<CurrentUser>(
-      () => CurrentUser(authRepository: locator()),
-    )
     //Bloc
     ..registerLazySingleton<AuthBloc>(
       () => AuthBloc(
         userSignUp: locator(),
         userSignIn: locator(),
-        currentUser: locator(),
-        appUserCubit: locator(),
+        globalAuthCubit: locator<GlobalAuthCubit>(),
       ),
     );
 }
 
-void _initChopperClient() {
+Future<void> _initWebClient() async {
   chopperLogger.onRecord.listen((record) {
     log(
       '[${DateFormat('hh:mm:ss:S a').format(record.time)}]: ${record.message}',
@@ -126,40 +128,44 @@ void _initChopperClient() {
     );
   });
 
-  ;
-
   locator
-    ..registerLazySingleton<SessionStorage>(() {
-      final sessionStorage = SessionStorage(storage: FlutterSecureStorage());
-      sessionStorage.initialize();
-      return sessionStorage;
-    })
-    ..registerLazySingleton<AuthService>(() => AuthService.create())
-    ..registerLazySingleton<ApiAuthenticator>(
-      () => ApiAuthenticator(
-        sessionRepository: locator<SessionStorage>(),
-        appUserCubit: locator<AppUserCubit>(),
+    ..registerLazySingleton<AuthService>(
+      () => AuthService.create(),
+    )
+    ..registerLazySingleton<OshApiUserService>(
+      () => OshApiUserService.create(),
+    )
+    ..registerLazySingleton<GlobalAuthCubit>(
+      () => GlobalAuthCubit(
+        sessionStorage: locator<SessionStorage>(),
         authService: locator<AuthService>(),
       ),
     )
-    ..registerLazySingleton<ChopperClient>(
-      () {
-        final chopperClient = ChopperClient(
-          converter: const JsonConverter(),
-          authenticator: locator<ApiAuthenticator>(),
-          services: [locator<AuthService>()],
-          interceptors: [
-            AuthInterceptor(sessionRepository: locator<SessionStorage>()),
-            const HeadersInterceptor({
-              'Accept': 'application/json',
-              'Connection': 'keep-alive',
-            }),
-            HttpLoggingInterceptor(),
-            CurlInterceptor(),
-          ],
-        );
-        locator<AuthService>().updateClient(chopperClient);
-        return chopperClient;
-      },
+    ..registerLazySingleton<ApiAuthenticator>(
+      () => ApiAuthenticator(
+        globalAuthCubit: locator<GlobalAuthCubit>(),
+      ),
     );
+
+  final chopperClient = ChopperClient(
+    converter: const JsonConverter(),
+    authenticator: locator<ApiAuthenticator>(),
+    services: [
+      locator<AuthService>(),
+      locator<OshApiUserService>(),
+    ],
+    interceptors: [
+      AuthInterceptor(globalAuthCubit: locator<GlobalAuthCubit>()),
+      const HeadersInterceptor({
+        'Accept': 'application/json',
+        'Connection': 'keep-alive',
+      }),
+      HttpLoggingInterceptor(),
+      CurlInterceptor(),
+    ],
+  );
+  locator<AuthService>().updateClient(chopperClient);
+  locator<OshApiUserService>().updateClient(chopperClient);
+
+  locator.registerSingleton<ChopperClient>(chopperClient);
 }

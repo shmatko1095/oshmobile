@@ -1,10 +1,9 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:oshmobile/core/common/entities/user.dart';
+import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/core/error/exceptions.dart';
 import 'package:oshmobile/core/error/failures.dart';
-import 'package:oshmobile/core/network/connection_checker.dart';
+import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
 import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source.dart';
-import 'package:oshmobile/features/auth/data/models/user_model.dart';
 import 'package:oshmobile/features/auth/domain/repository/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
@@ -17,40 +16,17 @@ class AuthRepositoryImpl implements AuthRepository {
   });
 
   @override
-  Future<Either<Failure, User>> signIn({
+  Future<Either<Failure, Session>> signIn({
     required String email,
     required String password,
   }) async {
-    return _getUser(
-      () async => await authRemoteDataSource.signIn(
-        email: email,
-        password: password,
-      ),
-    );
-  }
-
-  @override
-  Future<Either<Failure, User>> signUp({
-    String? firstName,
-    String? lastName,
-    required String email,
-    required String password,
-  }) async {
-    return _getUser(
-      () async => await authRemoteDataSource.signUp(
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        password: password,
-      ),
-    );
-  }
-
-  Future<Either<Failure, User>> _getUser(Future<User> Function() fn) async {
     try {
       if (await connectionChecker.isConnected) {
-        final user = await fn();
-        return right(user);
+        Session session = await authRemoteDataSource.signIn(
+          email: email,
+          password: password,
+        );
+        return right(session);
       } else {
         return left(Failure("No internet connection"));
       }
@@ -62,24 +38,28 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, User>> currentUser() async {
+  Future<Either<Failure, void>> signUp({
+    required String firstName,
+    required String lastName,
+    required String email,
+    required String password,
+  }) async {
     try {
       if (await connectionChecker.isConnected) {
-        final userData = await authRemoteDataSource.getCurrentUserData();
-        if (userData == null) {
-          return left(Failure("User not logged in!"));
-        }
-        return right(UserModel(
-          id: userData.id,
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-        ));
+        await authRemoteDataSource.signUp(
+          firstName: firstName,
+          lastName: lastName,
+          email: email,
+          password: password,
+        );
+        return right(null);
       } else {
-        return left(Failure("No internet connection!"));
+        return left(Failure("No internet connection"));
       }
     } on ServerException catch (e) {
       return left(Failure(e.message));
+    } on Exception catch (e) {
+      return left(Failure(e.toString()));
     }
   }
 }

@@ -1,5 +1,5 @@
 import 'package:fpdart/fpdart.dart';
-import 'package:oshmobile/core/common/entities/user.dart';
+import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/core/error/failures.dart';
 import 'package:oshmobile/core/usecase/usecase.dart';
 import 'package:oshmobile/features/auth/domain/repository/auth_repository.dart';
@@ -14,13 +14,13 @@ class UserSignInParams {
   });
 }
 
-class UserSignIn implements UseCase<User, UserSignInParams> {
+class UserSignIn implements UseCase<Session, UserSignInParams> {
   final AuthRepository authRepository;
 
   UserSignIn({required this.authRepository});
 
   @override
-  Future<Either<Failure, User>> call(UserSignInParams params) async {
+  Future<Either<Failure, Session>> call(UserSignInParams params) async {
     return await authRepository.signIn(
       email: params.email,
       password: params.password,

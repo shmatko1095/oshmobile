@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/common/cubits/app_user/app_user_cubit.dart';
+import 'package:oshmobile/core/common/cubits/global_auth/global_auth_cubit.dart'
+    as global;
+import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/theme/theme.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:oshmobile/features/auth/presentation/pages/signin_page.dart';
 import 'package:oshmobile/features/blog/presentation/bloc/blog_bloc.dart';
-import 'package:oshmobile/features/blog/presentation/pages/blog_page.dart';
 import 'package:oshmobile/init_dependencies.dart';
 
 void main() async {
@@ -14,7 +15,7 @@ void main() async {
   runApp(MultiBlocProvider(
     providers: [
       BlocProvider(
-        create: (_) => locator<AppUserCubit>(),
+        create: (_) => locator<global.GlobalAuthCubit>(),
       ),
       BlocProvider(
         create: (_) => locator<AuthBloc>(),
@@ -38,7 +39,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    context.read<AuthBloc>().add(AuthIsUserSignedIn());
+    context.read<global.GlobalAuthCubit>().checkAuthStatus();
   }
 
   @override
@@ -48,10 +49,11 @@ class _MyAppState extends State<MyApp> {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       debugShowCheckedModeBanner: false,
-      home: BlocSelector<AppUserCubit, AppUserState, bool>(
-        selector: (state) => state is AppUserSignedIn,
+      home: BlocSelector<global.GlobalAuthCubit, global.GlobalAuthState, bool>(
+        selector: (state) => state is global.AuthAuthenticated,
         builder: (context, state) =>
-            state ? const BlogPage() : const SignInPage(),
+            state ? const Loader() : const SignInPage(),
+         // state ? const Home() : const SignInPage(),
       ),
     );
   }

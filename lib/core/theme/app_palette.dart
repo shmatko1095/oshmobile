@@ -15,4 +15,7 @@ class AppPalette {
   static const Color nonObscureIconColor = Colors.blue;
 
   static const Color blue = Colors.blue;
+
+  static const Color errorSnackBarColor = errorColor;
+  static const Color successSnackBarColor = Colors.blueGrey;
 }

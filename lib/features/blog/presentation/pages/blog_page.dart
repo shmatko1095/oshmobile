@@ -40,7 +40,7 @@ class _BlogPageState extends State<BlogPage> {
       ),
       body: BlocConsumer<BlogBloc, BlogState>(listener: (context, state) {
         if (state is BlogFailure) {
-          showSnackBar(context, state.error);
+          showSnackBar(context: context, content: state.error);
         }
       }, builder: (context, state) {
         if (state is BlogLoading) {

@@ -1,19 +1,25 @@
-// import 'package:oshmobile/core/common/entities/session.dart' as osh;
-import 'package:chopper/chopper.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
+import 'dart:convert';
+
+import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/core/error/exceptions.dart';
-import 'package:oshmobile/core/web/auth/auth_service.dart';
+import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api_user/osh_api_user_service.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api_user/requests/register_user_request.dart';
+import 'package:oshmobile/core/secrets/app_secrets.dart';
 import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source.dart';
-import 'package:oshmobile/features/auth/data/models/user_model.dart';
 
 class OshRemoteDataSourceImpl implements IAuthRemoteDataSource {
   final AuthService _authClient;
+  final OshApiUserService _oshApiUserService;
 
-  OshRemoteDataSourceImpl({required ChopperClient webClient})
-      : _authClient = webClient.getService<AuthService>();
+  OshRemoteDataSourceImpl({
+    required AuthService authClient,
+    required OshApiUserService oshApiUserService,
+  })  : _authClient = authClient,
+        _oshApiUserService = oshApiUserService;
 
   @override
-  Future<UserModel> signIn({
+  Future<Session> signIn({
     required String email,
     required String password,
   }) async {
@@ -21,17 +27,15 @@ class OshRemoteDataSourceImpl implements IAuthRemoteDataSource {
       final response = await _authClient.signInWithUserCred(
         username: email,
         password: password,
+        clientId: AppSecrets.oshClientId,
+        clientSecret: AppSecrets.oshClientSecret,
       );
-      if (response.isSuccessful) {
-        final jwtData = JwtDecoder.decode(response.body["access_token"]);
-        return UserModel(
-          firstName: jwtData["given_name"],
-          lastName: jwtData["family_name"],
-          email: jwtData["email"],
-          id: jwtData["sub"],
-        );
+
+      if (response.isSuccessful && response.body != null) {
+        return Session.fromJson(response.body);
       } else {
-        throw ServerException(response.error as String);
+        final error = jsonDecode(response.error as String);
+        throw ServerException(error["error_description"] as String);
       }
     } on ServerException catch (_) {
       rethrow;
@@ -41,47 +45,40 @@ class OshRemoteDataSourceImpl implements IAuthRemoteDataSource {
   }
 
   @override
-  Future<UserModel> signUp({
-    String? firstName,
-    String? lastName,
+  Future<void> signUp({
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
   }) async {
-    // try {
-    //   final response = await supabaseClient.auth.signUp(
-    //     email: email,
-    //     password: password,
-    //     data: {
-    //       "firstName": firstName,
-    //       "lastName": lastName,
-    //     },
-    //   );
-    //   if (response.user == null) {
-    throw ServerException("User is null");
-    //   }
-    //   return UserModel.fromJson(response.user!.toJson());
-    // } on AuthException catch (e) {
-    //   throw ServerException(e.message);
-    // } catch (e) {
-    //   throw ServerException(e.toString());
-    // }
-  }
+    try {
+      final response = await _authClient.signInWithClientCred(
+        clientId: AppSecrets.oshClientId,
+        clientSecret: AppSecrets.oshClientSecret,
+      );
 
-  @override
-  Future<UserModel?> getCurrentUserData() async {
-    // try {
-    // Session? currentUserSession = supabaseClient.auth.currentSession;
-    // if (currentUserSession != null) {
-    //   final userData = await supabaseClient
-    //       .from(Constants.profilesTable)
-    //       .select()
-    //       .eq("id", currentUserSession.user.id);
-    //   return UserModel.fromJson(userData.first)
-    //       .copyWith(email: currentUserSession.user.email);
-    // }
-    // return null;
-    // } catch (e) {
-    //   throw ServerException(e.toString());
-    // }
+      if (response.isSuccessful && response.body != null) {
+        String accessToken = Session.fromJson(response.body).typedAccessToken;
+
+        final registeredResponse = await _oshApiUserService.registerUser(
+            accessToken: accessToken,
+            request: RegisterUserRequest(
+                firstName: firstName,
+                lastName: lastName,
+                email: email,
+                password: password));
+
+        if (!(registeredResponse.isSuccessful &&
+            registeredResponse.body != null)) {
+          throw ServerException(registeredResponse.error as String);
+        }
+      } else {
+        throw ServerException(response.error as String);
+      }
+    } on ServerException catch (_) {
+      rethrow;
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
   }
 }

@@ -1,17 +1,15 @@
-import 'package:oshmobile/features/auth/data/models/user_model.dart';
+import 'package:oshmobile/core/common/entities/session.dart';
 
 abstract interface class IAuthRemoteDataSource {
-  Future<UserModel> signUp({
-    String? firstName,
-    String? lastName,
+  Future<void> signUp({
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
   });
 
-  Future<UserModel> signIn({
+  Future<Session> signIn({
     required String email,
     required String password,
   });
-
-  Future<UserModel?> getCurrentUserData();
 }

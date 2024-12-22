@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:fpdart/src/either.dart';
 import 'package:oshmobile/core/error/exceptions.dart';
 import 'package:oshmobile/core/error/failures.dart';
-import 'package:oshmobile/core/network/connection_checker.dart';
+import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
 import 'package:oshmobile/features/blog/data/datasources/blog_local_datasource.dart';
 import 'package:oshmobile/features/blog/data/datasources/blog_remote_datasource.dart';
 import 'package:oshmobile/features/blog/data/models/blog_model.dart';

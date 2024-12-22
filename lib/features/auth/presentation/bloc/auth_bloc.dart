@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/common/cubits/app_user/app_user_cubit.dart';
-import 'package:oshmobile/core/common/entities/user.dart';
-import 'package:oshmobile/core/usecase/usecase.dart';
-import 'package:oshmobile/features/auth/domain/usecases/current_user.dart';
+import 'package:oshmobile/core/common/cubits/global_auth/global_auth_cubit.dart';
+import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/features/auth/domain/usecases/user_signin.dart';
 import 'package:oshmobile/features/auth/domain/usecases/user_signup.dart';
 
@@ -13,23 +11,19 @@ part 'auth_state.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final UserSignUp _userSignUp;
   final UserSignIn _userSignIn;
-  final CurrentUser _currentUser;
-  final AppUserCubit _appUserCubit;
+  final GlobalAuthCubit _authCubit;
 
   AuthBloc({
     required UserSignUp userSignUp,
     required UserSignIn userSignIn,
-    required CurrentUser currentUser,
-    required AppUserCubit appUserCubit,
+    required GlobalAuthCubit globalAuthCubit,
   })  : _userSignUp = userSignUp,
         _userSignIn = userSignIn,
-        _currentUser = currentUser,
-        _appUserCubit = appUserCubit,
+        _authCubit = globalAuthCubit,
         super(const AuthInitial()) {
     on<AuthEvent>(_onAuthLoading);
     on<AuthSignUp>(_onAuthSignUp);
     on<AuthSignIn>(_onAuthSignIn);
-    on<AuthIsUserSignedIn>(_onAuthIsUserSignedIn);
   }
 
   void _onAuthSignUp(AuthSignUp event, Emitter<AuthState> emit) async {
@@ -42,8 +36,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       ),
     );
     response.fold(
-      (l) => emit(AuthFailure(l.message)),
-      (r) => _emitAuthSuccess(r, emit),
+      (l) => emit(AuthFailed(l.message)),
+      (r) => emit(AuthSuccess("Success")),
     );
   }
 
@@ -55,23 +49,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       ),
     );
     response.fold(
-      (l) => emit(AuthFailure(l.message)),
-      (r) => _emitAuthSuccess(r, emit),
+      (l) => emit(AuthFailed(l.message)),
+      (r) => _emitAuthSuccess(emit, r),
     );
   }
 
-  void _onAuthIsUserSignedIn(
-      AuthIsUserSignedIn event, Emitter<AuthState> emit) async {
-    final response = await _currentUser(NoParams());
-    response.fold(
-      (l) => emit(AuthFailure(l.message)),
-      (r) => _emitAuthSuccess(r, emit),
-    );
-  }
-
-  void _emitAuthSuccess(User user, Emitter<AuthState> emit) {
-    emit(AuthSuccess(user));
-    _appUserCubit.updateUser(user);
+  void _emitAuthSuccess(Emitter<AuthState> emit, Session session) {
+    _authCubit.signedIn(session);
+    emit(AuthSuccess("Success"));
   }
 
   void _onAuthLoading(AuthEvent event, Emitter<AuthState> emit) =>

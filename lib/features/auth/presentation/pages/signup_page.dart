@@ -2,9 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/utils/form_validators.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:oshmobile/features/auth/presentation/pages/signin_page.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/auth_field.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/gradient_elevated_button.dart';
 import 'package:oshmobile/features/blog/presentation/pages/blog_page.dart';
@@ -40,6 +42,8 @@ class _SignUpPageState extends State<SignUpPage> {
         email.isNotEmpty &&
         password.isNotEmpty) {
       context.read<AuthBloc>().add(AuthSignUp(
+            lastName: "",
+            firstName: "",
             email: email,
             password: password,
           ));
@@ -53,12 +57,13 @@ class _SignUpPageState extends State<SignUpPage> {
   // animations
 
   void _onAuthStateChanged(BuildContext context, AuthState state) {
-    if (state is AuthFailure) {
-      showSnackBar(context, state.message);
+    if (state is AuthFailed) {
+      showSnackBar(context: context, content: state.error, color: AppPalette.errorSnackBarColor);
     } else if (state is AuthSuccess) {
+      showSnackBar(context: context, content: state.message, color: AppPalette.successSnackBarColor);
       Navigator.pushAndRemoveUntil(
         context,
-        BlogPage.route(),
+        SignInPage.route(),
         (route) => false,
       );
     }
