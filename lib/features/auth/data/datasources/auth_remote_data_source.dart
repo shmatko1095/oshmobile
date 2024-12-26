@@ -12,4 +12,12 @@ abstract interface class IAuthRemoteDataSource {
     required String email,
     required String password,
   });
+
+  Future<void> verifyEmail({
+    required String email,
+  });
+
+  Future<void> resetPassword({
+    required String email,
+  });
 }

@@ -32,7 +32,7 @@ class BlogRepositoryImpl implements BlogRepository {
   }) async {
     try {
       if (!await (connectionChecker.isConnected)) {
-        return left(Failure("No internet connection"));
+        return left(Failure.unexpected("No internet connection"));
       }
 
       BlogModel model = BlogModel(
@@ -52,9 +52,9 @@ class BlogRepositoryImpl implements BlogRepository {
       final uploaded = await blogRemoteDatasource.uploadBlog(blog: model);
       return right(uploaded);
     } on ServerException catch (e) {
-      return left(Failure(e.message));
+      return left(Failure.unexpected(e.message));
     } catch (e) {
-      return left(Failure(e.toString()));
+      return left(Failure.unexpected(e.toString()));
     }
   }
 
@@ -70,9 +70,9 @@ class BlogRepositoryImpl implements BlogRepository {
         return right(blogs);
       }
     } on ServerException catch (e) {
-      return left(Failure(e.message));
+      return left(Failure.unexpected(e.message));
     } catch (e) {
-      return left(Failure(e.toString()));
+      return left(Failure.unexpected(e.toString()));
     }
   }
 }

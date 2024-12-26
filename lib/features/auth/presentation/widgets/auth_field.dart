@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 
 class AuthField extends StatefulWidget {
-  final String hintText;
+  final String? hintText;
   final String? labelText;
   final String? errorText;
   final IconData obscureIcon;
@@ -12,7 +12,7 @@ class AuthField extends StatefulWidget {
 
   const AuthField({
     super.key,
-    required this.hintText,
+    this.hintText,
     this.labelText,
     this.errorText,
     this.validator,
@@ -40,6 +40,7 @@ class _AuthFieldState extends State<AuthField> {
       controller: widget.controller,
       validator: widget.validator,
       decoration: InputDecoration(
+        focusColor: AppPalette.greyColor,
         hintText: widget.hintText,
         labelText: widget.labelText,
         errorText: widget.errorText,

@@ -36,7 +36,7 @@ class BlogBloc extends Bloc<BlogEvent, BlogState> {
       ),
     );
     result.fold(
-      (l) => emit(BlogFailure(error: l.message)),
+      (l) => emit(BlogFailure(error: l.message ?? "")),
       (r) => emit(BlogUploadSuccess()),
     );
   }
@@ -45,7 +45,7 @@ class BlogBloc extends Bloc<BlogEvent, BlogState> {
       BlogFetchAllBlogs event, Emitter<BlogState> emit) async {
     final result = await _getAllBlogs(NoParams());
     result.fold(
-      (l) => emit(BlogFailure(error: l.message)),
+      (l) => emit(BlogFailure(error: l.message ?? "")),
       (r) => emit(BlogFetchSuccess(blogs: r)),
     );
   }

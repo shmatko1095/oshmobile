@@ -36,4 +36,44 @@ final class _$OshApiUserService extends OshApiUserService {
     );
     return client.send<dynamic, dynamic>($request);
   }
+
+  @override
+  Future<Response<dynamic>> sendVerificationEmail({
+    required String accessToken,
+    required SendVerificationEmailRequest request,
+  }) {
+    final Uri $url = Uri.parse('https://oshhome.com/v1/user/verify-email');
+    final Map<String, String> $headers = {
+      'authorization': accessToken,
+    };
+    final $body = request;
+    final Request $request = Request(
+      'POST',
+      $url,
+      client.baseUrl,
+      body: $body,
+      headers: $headers,
+    );
+    return client.send<dynamic, dynamic>($request);
+  }
+
+  @override
+  Future<Response<dynamic>> sendResetPasswordEmail({
+    required String accessToken,
+    required SendResetPasswordEmailRequest request,
+  }) {
+    final Uri $url = Uri.parse('https://oshhome.com/v1/user/reset-password');
+    final Map<String, String> $headers = {
+      'authorization': accessToken,
+    };
+    final $body = request;
+    final Request $request = Request(
+      'POST',
+      $url,
+      client.baseUrl,
+      body: $body,
+      headers: $headers,
+    );
+    return client.send<dynamic, dynamic>($request);
+  }
 }

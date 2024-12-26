@@ -26,3 +26,19 @@ final class AuthSignIn extends AuthEvent {
     required this.password,
   });
 }
+
+final class AuthSendVerifyEmail extends AuthEvent {
+  final String email;
+
+  AuthSendVerifyEmail({
+    required this.email,
+  });
+}
+
+final class AuthSendResetPasswordEmail extends AuthEvent {
+  final String email;
+
+  AuthSendResetPasswordEmail({
+    required this.email,
+  });
+}

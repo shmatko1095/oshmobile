@@ -15,10 +15,33 @@ final class AuthLoading extends AuthState {
 
 final class AuthSuccess extends AuthState {
   final String message;
+
   const AuthSuccess(this.message);
 }
 
-final class AuthFailed extends AuthState {
-  final String error;
-  const AuthFailed(this.error);
+/// Base class for failure states
+abstract class AuthFailed extends AuthState {
+  final String? message;
+
+  const AuthFailed([this.message]);
+}
+
+final class AuthConflict extends AuthFailed {
+  const AuthConflict() : super();
+}
+
+final class AuthFailedNoInternetConnection extends AuthFailed {
+  const AuthFailedNoInternetConnection() : super();
+}
+
+final class AuthFailedInvalidUserCredentials extends AuthFailed {
+  const AuthFailedInvalidUserCredentials() : super();
+}
+
+final class AuthFailedEmailNotVerified extends AuthFailed {
+  const AuthFailedEmailNotVerified() : super();
+}
+
+final class AuthFailedUnexpected extends AuthFailed {
+  const AuthFailedUnexpected(super.error);
 }

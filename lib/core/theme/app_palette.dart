@@ -1,7 +1,13 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class AppPalette {
-  static const Color backgroundColor = Color.fromRGBO(0, 0, 0, 1);
+  static const Color backgroundColorLight = Color(0xffF1F1F1);
+  static const Color backgroundColorDark = Color(0xff0E0E0E); //Color.fromRGBO(0, 0, 0, 1);
+  static const Color activeTextFieldColorLight = Color(0xffF1F1F1);
+  static const Color activeTextFieldColorDark = Color(0xff1a1a1a);
+
+
   static const Color gradient1 = Color.fromRGBO(187, 63, 221, 1);
   static const Color gradient2 = Color.fromRGBO(251, 109, 169, 1);
   static const Color gradient3 = Color.fromRGBO(255, 159, 124, 1);
@@ -14,8 +20,8 @@ class AppPalette {
   static const Color obscureIconColor = Colors.grey;
   static const Color nonObscureIconColor = Colors.blue;
 
-  static const Color blue = Colors.blue;
+  static const Color blue = Color(0xff3b8ff0);
 
   static const Color errorSnackBarColor = errorColor;
-  static const Color successSnackBarColor = Colors.blueGrey;
+  static const Color successSnackBarColor = CupertinoColors.systemGreen;
 }

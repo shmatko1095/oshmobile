@@ -17,8 +17,10 @@ import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source
 import 'package:oshmobile/features/auth/data/datasources/osh/osh_remote_data_source.dart';
 import 'package:oshmobile/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:oshmobile/features/auth/domain/repository/auth_repository.dart';
+import 'package:oshmobile/features/auth/domain/usecases/reset_password.dart';
 import 'package:oshmobile/features/auth/domain/usecases/user_signin.dart';
 import 'package:oshmobile/features/auth/domain/usecases/user_signup.dart';
+import 'package:oshmobile/features/auth/domain/usecases/verify_email.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -104,11 +106,19 @@ void _initAuthFeature() {
     ..registerFactory<UserSignIn>(
       () => UserSignIn(authRepository: locator()),
     )
+    ..registerFactory<VerifyEmail>(
+      () => VerifyEmail(authRepository: locator()),
+    )
+    ..registerFactory<ResetPassword>(
+      () => ResetPassword(authRepository: locator()),
+    )
     //Bloc
     ..registerLazySingleton<AuthBloc>(
       () => AuthBloc(
         userSignUp: locator(),
         userSignIn: locator(),
+        verifyEmail: locator(),
+        resetPassword: locator(),
         globalAuthCubit: locator<GlobalAuthCubit>(),
       ),
     );

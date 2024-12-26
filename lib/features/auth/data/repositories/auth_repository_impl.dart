@@ -21,19 +21,23 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
-      if (await connectionChecker.isConnected) {
-        Session session = await authRemoteDataSource.signIn(
-          email: email,
-          password: password,
-        );
-        return right(session);
-      } else {
-        return left(Failure("No internet connection"));
-      }
+      // if (await connectionChecker.isConnected) {
+      Session session = await authRemoteDataSource.signIn(
+        email: email,
+        password: password,
+      );
+      return right(session);
+      // } else {
+      //   return left(Failure.noInternetConnection());
+      // }
     } on ServerException catch (e) {
-      return left(Failure(e.message));
+      return left(Failure.unexpected(e.message));
+    } on InvalidUserCredentialsException catch (e) {
+      return left(Failure.invalidUserCredentials());
+    } on EmailNotVerifiedException catch (e) {
+      return left(Failure.emailNotVerified());
     } on Exception catch (e) {
-      return left(Failure(e.toString()));
+      return left(Failure.unexpected(e.toString()));
     }
   }
 
@@ -45,21 +49,59 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
-      if (await connectionChecker.isConnected) {
-        await authRemoteDataSource.signUp(
-          firstName: firstName,
-          lastName: lastName,
-          email: email,
-          password: password,
-        );
-        return right(null);
-      } else {
-        return left(Failure("No internet connection"));
-      }
+      // if (await connectionChecker.isConnected) {
+      await authRemoteDataSource.signUp(
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        password: password,
+      );
+      return right(null);
+      // } else {
+      //   return left(Failure.noInternetConnection());
+      // }
+    } on ConflictException catch (e) {
+      return left(Failure.conflict());
     } on ServerException catch (e) {
-      return left(Failure(e.message));
+      return left(Failure.unexpected(e.message));
     } on Exception catch (e) {
-      return left(Failure(e.toString()));
+      return left(Failure.unexpected(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> verifyEmail({
+    required String email,
+  }) async {
+    try {
+      // if (await connectionChecker.isConnected) {
+      await authRemoteDataSource.verifyEmail(
+        email: email,
+      );
+      return right(null);
+      // } else {
+      //   return left(Failure.noInternetConnection());
+      // }
+    } on ServerException catch (e) {
+      return left(Failure.unexpected(e.message));
+    } on Exception catch (e) {
+      return left(Failure.unexpected(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resetPassword({
+    required String email,
+  }) async {
+    try {
+      await authRemoteDataSource.resetPassword(
+        email: email,
+      );
+      return right(null);
+    } on ServerException catch (e) {
+      return left(Failure.unexpected(e.message));
+    } on Exception catch (e) {
+      return left(Failure.unexpected(e.toString()));
     }
   }
 }
