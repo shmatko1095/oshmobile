@@ -1,14 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_icon_snackbar/flutter_icon_snackbar.dart';
 
-void showSnackBar({
-  required BuildContext context,
-  required String content,
-  Color? color,
-}) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(
-      content: Text(content),
-      backgroundColor: color,
-    ));
+class SnackBarUtils {
+  static void showSuccess({
+    required BuildContext context,
+    required String content,
+  }) {
+    IconSnackBar.show(
+      context,
+      snackBarType: SnackBarType.success,
+      label: content,
+    );
+  }
+
+  static void showAlert({
+    required BuildContext context,
+    required String content,
+  }) {
+    IconSnackBar.show(
+      context,
+      snackBarType: SnackBarType.alert,
+      label: content,
+    );
+  }
+
+  static void showFail({
+    required BuildContext context,
+    required String content,
+  }) {
+    IconSnackBar.show(
+      context,
+      snackBarType: SnackBarType.fail,
+      label: content,
+    );
+  }
 }

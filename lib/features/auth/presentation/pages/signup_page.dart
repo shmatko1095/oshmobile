@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/theme/text_styles.dart';
 import 'package:oshmobile/core/utils/form_validators.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
@@ -56,28 +55,27 @@ class _SignUpPageState extends State<SignUpPage> {
   //FL CHART
   // awesome snackbars
   // chashed network images
-  // animations
 
   void _onAuthStateChanged(BuildContext context, AuthState state) {
     if (state is AuthConflict) {
-      showSnackBar(
-          context: context,
-          content: S.of(context).UserAlreadyExist,
-          color: AppPalette.errorSnackBarColor);
-    } else if (state is AuthFailed) {
-      showSnackBar(
-          context: context,
-          content: state.message ?? S.of(context).UnknownError,
-          color: AppPalette.errorSnackBarColor);
+      SnackBarUtils.showFail(
+        context: context,
+        content: S.of(context).UserAlreadyExist,
+      );
     } else if (state is AuthSuccess) {
-      showSnackBar(
-          context: context,
-          content: state.message,
-          color: AppPalette.successSnackBarColor);
+      SnackBarUtils.showSuccess(
+        context: context,
+        content: state.message,
+      );
       Navigator.pushAndRemoveUntil(
         context,
         SignInPage.route(),
         (route) => false,
+      );
+    } else if (state is AuthFailed) {
+      SnackBarUtils.showAlert(
+        context: context,
+        content: state.message ?? S.of(context).UnknownError,
       );
     }
   }
@@ -105,7 +103,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     const SizedBox(height: 60),
                     AuthField(
                       hintText: S.of(context).Email,
-                      labelText: S.of(context).Email,
                       controller: _emailController,
                       validator: (value) => FormValidator.email(
                         value: value,
@@ -115,7 +112,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     const SizedBox(height: 30),
                     AuthField(
                       hintText: S.of(context).Password,
-                      labelText: S.of(context).Password,
                       controller: _passwordController,
                       isObscureText: true,
                       validator: (value) => FormValidator.length(
@@ -128,7 +124,6 @@ class _SignUpPageState extends State<SignUpPage> {
                     const SizedBox(height: 30),
                     AuthField(
                       hintText: S.of(context).PasswordConfirmation,
-                      labelText: S.of(context).PasswordConfirmation,
                       controller: _passwordConfirmationController,
                       isObscureText: true,
                       validator: (value) => FormValidator.same(

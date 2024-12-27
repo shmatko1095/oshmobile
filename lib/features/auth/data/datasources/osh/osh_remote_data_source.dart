@@ -72,7 +72,7 @@ class OshRemoteDataSourceImpl implements IAuthRemoteDataSource {
 
       if (!response.isSuccessful) {
         String error = response.error as String;
-        if (error.endsWith("Conflict null")) {
+        if (error.endsWith("Conflict")) {
           throw const ConflictException();
         } else {
           throw ServerException(response.error as String);

@@ -58,15 +58,15 @@ class _SignInPageState extends State<SignInPage> {
     if (state is AuthFailedEmailNotVerified) {
       _showVerifyDialog(context, _emailController.text.trim());
     } else if (state is AuthFailedInvalidUserCredentials) {
-      showSnackBar(
-          context: context,
-          content: S.of(context).InvalidUserCredentials,
-          color: AppPalette.errorSnackBarColor);
+      SnackBarUtils.showFail(
+        context: context,
+        content: S.of(context).InvalidUserCredentials,
+      );
     } else if (state is AuthFailed) {
-      showSnackBar(
-          context: context,
-          content: state.message ?? S.of(context).UnknownError,
-          color: AppPalette.errorSnackBarColor);
+      SnackBarUtils.showAlert(
+        context: context,
+        content: state.message ?? S.of(context).UnknownError,
+      );
     }
   }
 

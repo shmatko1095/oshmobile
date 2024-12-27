@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
-import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/blog/presentation/bloc/blog_bloc.dart';
 import 'package:oshmobile/features/blog/presentation/pages/add_new_blog_page.dart';
 import 'package:oshmobile/features/blog/presentation/widgets/blog_card.dart';
@@ -40,7 +39,7 @@ class _BlogPageState extends State<BlogPage> {
       ),
       body: BlocConsumer<BlogBloc, BlogState>(listener: (context, state) {
         if (state is BlogFailure) {
-          showSnackBar(context: context, content: state.error);
+          // showSnackBar(context: context, content: state.error);
         }
       }, builder: (context, state) {
         if (state is BlogLoading) {

@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/theme/text_styles.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
@@ -51,20 +50,20 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 
   void _onAuthStateChanged(BuildContext context, AuthState state) {
-    if (state is AuthFailed) {
-      showSnackBar(
-          context: context,
-          content: state.message ?? S.of(context).UnknownError,
-          color: AppPalette.errorSnackBarColor);
-    } else if (state is AuthSuccess) {
-      showSnackBar(
-          context: context,
-          content: state.message,
-          color: AppPalette.successSnackBarColor);
+    if (state is AuthSuccess) {
+      SnackBarUtils.showSuccess(
+        context: context,
+        content: state.message,
+      );
       Navigator.pushAndRemoveUntil(
         context,
         SignInPage.route(),
         (route) => false,
+      );
+    } else if (state is AuthFailed) {
+      SnackBarUtils.showFail(
+        context: context,
+        content: state.message ?? S.of(context).UnknownError,
       );
     }
   }
