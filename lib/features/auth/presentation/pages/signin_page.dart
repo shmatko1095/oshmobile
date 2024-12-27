@@ -11,6 +11,7 @@ import 'package:oshmobile/features/auth/presentation/pages/forgot_password_page.
 import 'package:oshmobile/features/auth/presentation/pages/signup_page.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/auth_field.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
+import 'package:oshmobile/generated/l10n.dart';
 
 part 'verify_email_alert.dart';
 
@@ -28,6 +29,8 @@ class _SignInPageState extends State<SignInPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
+  static const _minPasswordLen = 8;
 
   @override
   void dispose() {
@@ -57,15 +60,19 @@ class _SignInPageState extends State<SignInPage> {
     } else if (state is AuthFailedInvalidUserCredentials) {
       showSnackBar(
           context: context,
-          content: "Invalid user credentials",
+          content: S.of(context).InvalidUserCredentials,
           color: AppPalette.errorSnackBarColor);
     } else if (state is AuthFailed) {
       showSnackBar(
           context: context,
-          content: state.message ?? "Unknown error",
+          content: state.message ?? S.of(context).UnknownError,
           color: AppPalette.errorSnackBarColor);
     }
   }
+
+  _getColor(context) => isDarkUi(context)
+      ? AppPalette.activeTextFieldColorDark
+      : AppPalette.activeTextFieldColorLight;
 
   @override
   Widget build(BuildContext context) {
@@ -84,46 +91,46 @@ class _SignInPageState extends State<SignInPage> {
                         key: _formKey,
                         child: Column(
                           children: [
-                            const Text(
-                              "Sign In",
+                            Text(
+                              S.of(context).SignIn,
                               style: TextStyles.titleStyle,
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 60),
                             AuthField(
-                              labelText: "Email",
+                              labelText: S.of(context).Email,
                               controller: _emailController,
                               validator: (value) => FormValidator.email(
                                 value: value,
-                                errorMessage: "Error Email",
+                                errorMessage: S.of(context).InvalidEmailAddress,
                               ),
                             ),
                             const SizedBox(height: 30),
                             AuthField(
-                              labelText: "Password",
+                              labelText: S.of(context).Password,
                               controller: _passwordController,
                               isObscureText: true,
                               validator: (value) => FormValidator.length(
                                 value: value,
-                                length: 8,
-                                errorMessage: "Error Password",
+                                length: _minPasswordLen,
+                                errorMessage: S
+                                    .of(context)
+                                    .InvalidPassword(_minPasswordLen),
                               ),
                             ),
                             const SizedBox(height: 50),
                             (state is AuthLoading)
                                 ? CupertinoActivityIndicator()
                                 : CustomElevatedButton(
-                                    buttonText: "Sign In",
+                                    buttonText: S.of(context).SignIn,
                                     onPressed: () => _signIn(),
                                   ),
                             const SizedBox(height: 30),
                             CustomElevatedButton(
                               icon: Image.asset("assets/images/google-icon.png",
                                   height: 25),
-                              buttonText: "Continue with Google",
-                              backgroundColor: isDarkUi(context)
-                                  ? AppPalette.activeTextFieldColorDark
-                                  : AppPalette.activeTextFieldColorLight,
+                              buttonText: S.of(context).ContinueWithGoogle,
+                              backgroundColor: _getColor(context),
                               onPressed: () => {},
                             ),
                             const SizedBox(height: 30),
@@ -133,7 +140,7 @@ class _SignInPageState extends State<SignInPage> {
                                   ForgotPasswordPage.route(
                                       _emailController.text.trim())),
                               child: Text(
-                                "Forgot your password",
+                                S.of(context).ForgotYourPassword,
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleMedium
@@ -147,18 +154,18 @@ class _SignInPageState extends State<SignInPage> {
                       ),
                     ),
                   ),
-                  const Divider(color: Colors.white24, thickness: 1),
+                  Divider(color: _getColor(context), thickness: 1),
                   const SizedBox(height: 16),
                   GestureDetector(
                     onTap: () => Navigator.push(context, SignUpPage.route()),
                     child: RichText(
                       text: TextSpan(
-                        text: "Don't have an account?",
+                        text: S.of(context).DontHaveAnAccount,
                         style: Theme.of(context).textTheme.titleSmall,
                         children: [
                           TextSpan(text: "  "),
                           TextSpan(
-                            text: "Sign Up",
+                            text: S.of(context).SignUp,
                             style: Theme.of(context)
                                 .textTheme
                                 .titleSmall
@@ -172,7 +179,7 @@ class _SignInPageState extends State<SignInPage> {
                   GestureDetector(
                     onTap: () {},
                     child: Text(
-                      "Try Demo",
+                      S.of(context).TryDemo,
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                   ),

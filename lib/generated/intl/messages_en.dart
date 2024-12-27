@@ -1,0 +1,70 @@
+// DO NOT EDIT. This is code generated via package:intl/generate_localized.dart
+// This is a library that provides messages for a en locale. All the
+// messages from the main program should be duplicated here with the same
+// function name.
+
+// Ignore issues from commonly used lints in this file.
+// ignore_for_file:unnecessary_brace_in_string_interps, unnecessary_new
+// ignore_for_file:prefer_single_quotes,comment_references, directives_ordering
+// ignore_for_file:annotate_overrides,prefer_generic_function_type_aliases
+// ignore_for_file:unused_import, file_names, avoid_escaping_inner_quotes
+// ignore_for_file:unnecessary_string_interpolations, unnecessary_string_escapes
+
+import 'package:intl/intl.dart';
+import 'package:intl/message_lookup_by_library.dart';
+
+final messages = new MessageLookup();
+
+typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
+
+class MessageLookup extends MessageLookupByLibrary {
+  String get localeName => 'en';
+
+  static String m0(length) =>
+      "Password must be at least ${length} characters long";
+
+  final messages = _notInlinedMessages(_notInlinedMessages);
+  static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+        "Cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
+        "CheckYourEmail":
+            MessageLookupByLibrary.simpleMessage("Check your email"),
+        "ContinueWithGoogle":
+            MessageLookupByLibrary.simpleMessage("Continue with Google"),
+        "DontHaveAnAccount":
+            MessageLookupByLibrary.simpleMessage("Don\'t have an account?"),
+        "Email": MessageLookupByLibrary.simpleMessage("Email"),
+        "ForgotPassword":
+            MessageLookupByLibrary.simpleMessage("Forgot password?"),
+        "ForgotPasswordContent": MessageLookupByLibrary.simpleMessage(
+            "Enter your email address, and we’ll send you a link to reset your password. It’s quick and secure."),
+        "ForgotYourPassword":
+            MessageLookupByLibrary.simpleMessage("Forgot your password"),
+        "InvalidEmailAddress":
+            MessageLookupByLibrary.simpleMessage("Invalid email address"),
+        "InvalidPassword": m0,
+        "InvalidUserCredentials":
+            MessageLookupByLibrary.simpleMessage("Invalid user credentials"),
+        "OK": MessageLookupByLibrary.simpleMessage("OK"),
+        "Password": MessageLookupByLibrary.simpleMessage("Password"),
+        "PasswordConfirmation":
+            MessageLookupByLibrary.simpleMessage("Password confirmation"),
+        "PasswordsDoNotMatch":
+            MessageLookupByLibrary.simpleMessage("Passwords do not match"),
+        "PleaseCheckYourInbox": MessageLookupByLibrary.simpleMessage(
+            ". Please check your inbox and follow the instructions to complete your registration."),
+        "ResetPassword": MessageLookupByLibrary.simpleMessage("Reset password"),
+        "SendEmail": MessageLookupByLibrary.simpleMessage("Send email"),
+        "SignIn": MessageLookupByLibrary.simpleMessage("Sign In"),
+        "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
+        "TryDemo": MessageLookupByLibrary.simpleMessage("Try Demo"),
+        "UnknownError": MessageLookupByLibrary.simpleMessage("Unknown error"),
+        "UserAlreadyExist":
+            MessageLookupByLibrary.simpleMessage("User already exist"),
+        "VerifyYourEmail":
+            MessageLookupByLibrary.simpleMessage("Verify your email"),
+        "WeHaveSentVerificationEmailTo": MessageLookupByLibrary.simpleMessage(
+            "We have sent a verification email to "),
+        "YourEmailIsNotVerifiedYet": MessageLookupByLibrary.simpleMessage(
+            "Your email is not verified yet. Click the button below to resend the verification email.")
+      };
+}

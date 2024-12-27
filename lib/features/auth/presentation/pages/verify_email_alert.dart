@@ -80,7 +80,9 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog>
           ),
           SizedBox(height: 10),
           Text(
-            isEmailSent ? 'Check your email' : 'Verify your email',
+            isEmailSent
+                ? S.of(context).CheckYourEmail
+                : S.of(context).VerifyYourEmail,
             style: _titleStyle,
           ),
         ],
@@ -91,8 +93,8 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog>
           Text.rich(
             TextSpan(
               text: isEmailSent
-                  ? 'We have sent a verification email to '
-                  : 'Your email is not verified yet. Click the button below to resend the verification email.',
+                  ? S.of(context).WeHaveSentVerificationEmailTo
+                  : S.of(context).YourEmailIsNotVerifiedYet,
               style: _contentStyle,
               children: isEmailSent
                   ? [
@@ -101,8 +103,7 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog>
                         style: _emailStyle,
                       ),
                       TextSpan(
-                        text:
-                            '. Please check your inbox and follow the instructions to complete your registration.',
+                        text: S.of(context).PleaseCheckYourInbox,
                       ),
                     ]
                   : [],
@@ -116,14 +117,14 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog>
           CupertinoDialogAction(
             onPressed: () => _sendEmail(widget.email),
             child: Text(
-              'Send email',
+              S.of(context).SendEmail,
               style: TextStyle(color: CupertinoColors.activeBlue),
             ),
           ),
         CupertinoDialogAction(
           onPressed: () => Navigator.pop(context),
           child: Text(
-            isEmailSent ? 'OK' : 'Cancel',
+            isEmailSent ? S.of(context).OK : S.of(context).Cancel,
             style: isEmailSent
                 ? TextStyle(color: CupertinoColors.activeBlue)
                 : TextStyle(color: CupertinoColors.systemRed),

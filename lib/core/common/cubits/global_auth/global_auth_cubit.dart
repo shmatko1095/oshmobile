@@ -20,12 +20,12 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
         super(AuthInitial());
 
   void checkAuthStatus() {
-    final session = _sessionStorage.getSession();
-    if (session != null && session.isRefreshTokenValid) {
-      emit(const AuthAuthenticated());
-    } else {
+    // final session = _sessionStorage.getSession();
+    // if (session != null && session.isRefreshTokenValid) {
+    //   emit(const AuthAuthenticated());
+    // } else {
       emit(const AuthInitial());
-    }
+    // }
   }
 
   Future<void> signedIn(Session session) async {

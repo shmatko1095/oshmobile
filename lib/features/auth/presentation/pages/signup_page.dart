@@ -9,7 +9,7 @@ import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:oshmobile/features/auth/presentation/pages/signin_page.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/auth_field.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
-import 'package:oshmobile/features/auth/presentation/widgets/gradient_elevated_button.dart';
+import 'package:oshmobile/generated/l10n.dart';
 
 class SignUpPage extends StatefulWidget {
   static route() =>
@@ -26,6 +26,8 @@ class _SignUpPageState extends State<SignUpPage> {
   final _passwordController = TextEditingController();
   final _passwordConfirmationController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
+  static const _minPasswordLen = 8;
 
   @override
   void dispose() {
@@ -60,12 +62,12 @@ class _SignUpPageState extends State<SignUpPage> {
     if (state is AuthConflict) {
       showSnackBar(
           context: context,
-          content: "User already exist",
+          content: S.of(context).UserAlreadyExist,
           color: AppPalette.errorSnackBarColor);
     } else if (state is AuthFailed) {
       showSnackBar(
           context: context,
-          content: state.message ?? "Unknown error",
+          content: state.message ?? S.of(context).UnknownError,
           color: AppPalette.errorSnackBarColor);
     } else if (state is AuthSuccess) {
       showSnackBar(
@@ -96,49 +98,50 @@ class _SignUpPageState extends State<SignUpPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      "Sign Up",
+                      S.of(context).SignUp,
                       style: TextStyles.titleStyle,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 60),
                     AuthField(
-                      hintText: "Email",
-                      labelText: "Email",
+                      hintText: S.of(context).Email,
+                      labelText: S.of(context).Email,
                       controller: _emailController,
                       validator: (value) => FormValidator.email(
                         value: value,
-                        errorMessage: "Error Email",
+                        errorMessage: S.of(context).InvalidEmailAddress,
                       ),
                     ),
                     const SizedBox(height: 30),
                     AuthField(
-                      hintText: "Password",
-                      labelText: "Password",
+                      hintText: S.of(context).Password,
+                      labelText: S.of(context).Password,
                       controller: _passwordController,
                       isObscureText: true,
                       validator: (value) => FormValidator.length(
                         value: value,
-                        length: 8,
-                        errorMessage: "Error Password",
+                        length: _minPasswordLen,
+                        errorMessage:
+                            S.of(context).InvalidPassword(_minPasswordLen),
                       ),
                     ),
                     const SizedBox(height: 30),
                     AuthField(
-                      hintText: "Password confirmation",
-                      labelText: "Password confirmation",
+                      hintText: S.of(context).PasswordConfirmation,
+                      labelText: S.of(context).PasswordConfirmation,
                       controller: _passwordConfirmationController,
                       isObscureText: true,
                       validator: (value) => FormValidator.same(
                         value: value,
                         same: _passwordController.text.trim(),
-                        errorMessage: "Error Password",
+                        errorMessage: S.of(context).PasswordsDoNotMatch,
                       ),
                     ),
                     const SizedBox(height: 50),
                     (state is AuthLoading)
                         ? CupertinoActivityIndicator()
                         : CustomElevatedButton(
-                            buttonText: "Sign Up",
+                            buttonText: S.of(context).SignUp,
                             onPressed: () => _signUp(),
                           ),
                   ],

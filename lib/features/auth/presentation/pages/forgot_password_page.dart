@@ -8,6 +8,7 @@ import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:oshmobile/features/auth/presentation/pages/signin_page.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/auth_field.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
+import 'package:oshmobile/generated/l10n.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   final String email;
@@ -53,7 +54,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     if (state is AuthFailed) {
       showSnackBar(
           context: context,
-          content: state.message ?? "Unknown error",
+          content: state.message ?? S.of(context).UnknownError,
           color: AppPalette.errorSnackBarColor);
     } else if (state is AuthSuccess) {
       showSnackBar(
@@ -83,26 +84,26 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
-                      "Forgot Password?",
+                    Text(
+                      S.of(context).ForgotPassword,
                       style: TextStyles.titleStyle,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 30),
-                    const Text(
-                      "Enter your email address, and we’ll send you a link to reset your password. It’s quick and secure.",
+                    Text(
+                      S.of(context).ForgotPasswordContent,
                       style: _contentStyle,
                     ),
                     const SizedBox(height: 30),
                     AuthField(
-                      labelText: "Email",
+                      labelText: S.of(context).Email,
                       controller: _emailController,
                     ),
                     const SizedBox(height: 50),
                     (state is AuthLoading)
                         ? const CupertinoActivityIndicator()
                         : CustomElevatedButton(
-                            buttonText: "Reset password",
+                            buttonText: S.of(context).ResetPassword,
                             onPressed: () => _resetPassword(),
                           ),
                   ],
