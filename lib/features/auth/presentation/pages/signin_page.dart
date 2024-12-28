@@ -63,7 +63,7 @@ class _SignInPageState extends State<SignInPage> {
         content: S.of(context).InvalidUserCredentials,
       );
     } else if (state is AuthFailed) {
-      SnackBarUtils.showAlert(
+      SnackBarUtils.showFail(
         context: context,
         content: state.message ?? S.of(context).UnknownError,
       );
@@ -81,6 +81,8 @@ class _SignInPageState extends State<SignInPage> {
       body: Padding(
           padding: const EdgeInsets.all(24),
           child: BlocConsumer<AuthBloc, AuthState>(
+            listenWhen: (previous, current) =>
+                ModalRoute.of(context)?.isCurrent ?? true,
             listener: (context, state) => _onAuthStateChanged(context, state),
             builder: (context, state) {
               return Column(

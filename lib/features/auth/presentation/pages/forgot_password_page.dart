@@ -25,11 +25,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  static const TextStyle _contentStyle = TextStyle(
-    fontSize: 16,
-    color: CupertinoColors.systemGrey,
-  );
-
   @override
   void initState() {
     _emailController.text = widget.email;
@@ -91,7 +86,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     const SizedBox(height: 30),
                     Text(
                       S.of(context).ForgotPasswordContent,
-                      style: _contentStyle,
+                      style: TextStyles.contentStyle,
                     ),
                     const SizedBox(height: 30),
                     AuthField(

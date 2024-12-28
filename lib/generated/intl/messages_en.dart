@@ -39,6 +39,7 @@ class MessageLookup extends MessageLookupByLibrary {
             "Enter your email address, and we’ll send you a link to reset your password. It’s quick and secure."),
         "ForgotYourPassword":
             MessageLookupByLibrary.simpleMessage("Forgot your password"),
+        "GoToLogin": MessageLookupByLibrary.simpleMessage("Go to Login"),
         "InvalidEmailAddress":
             MessageLookupByLibrary.simpleMessage("Invalid email address"),
         "InvalidPassword": m0,
@@ -52,10 +53,15 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Passwords do not match"),
         "PleaseCheckYourInbox": MessageLookupByLibrary.simpleMessage(
             ". Please check your inbox and follow the instructions to complete your registration."),
+        "RegistrationSuccessful":
+            MessageLookupByLibrary.simpleMessage("Almost There!"),
+        "RegistrationSuccessfulContent": MessageLookupByLibrary.simpleMessage(
+            "The last step is to verify your email address. Please check your inbox and follow the instructions to complete your registration."),
         "ResetPassword": MessageLookupByLibrary.simpleMessage("Reset password"),
         "SendEmail": MessageLookupByLibrary.simpleMessage("Send email"),
         "SignIn": MessageLookupByLibrary.simpleMessage("Sign In"),
         "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
+        "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
         "TryDemo": MessageLookupByLibrary.simpleMessage("Try Demo"),
         "UnknownError": MessageLookupByLibrary.simpleMessage("Unknown error"),
         "UserAlreadyExist":

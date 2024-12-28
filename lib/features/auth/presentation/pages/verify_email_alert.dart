@@ -78,7 +78,7 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog>
               size: 60.0,
             ),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Text(
             isEmailSent
                 ? S.of(context).CheckYourEmail
@@ -89,7 +89,7 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog>
       ),
       content: Column(
         children: [
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Text.rich(
             TextSpan(
               text: isEmailSent

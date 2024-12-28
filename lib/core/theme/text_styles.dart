@@ -6,4 +6,9 @@ class TextStyles {
     fontSize: 37,
     fontWeight: FontWeight.w700,
   );
+
+  static const TextStyle contentStyle = TextStyle(
+    fontSize: 16,
+    color: CupertinoColors.systemGrey,
+  );
 }

@@ -24,5 +24,9 @@
   "PleaseCheckYourInbox": ". Please check your inbox and follow the instructions to complete your registration.",
   "SendEmail": "Send email",
   "OK": "OK",
-  "Cancel": "Cancel"
+  "Cancel": "Cancel",
+  "Successful": "Successful",
+  "RegistrationSuccessful": "Almost There!",
+  "RegistrationSuccessfulContent": "The last step is to verify your email address. Please check your inbox and follow the instructions to complete your registration.",
+  "GoToLogin": "Go to Login"
 }

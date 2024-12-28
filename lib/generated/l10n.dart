@@ -309,6 +309,46 @@ class S {
       args: [],
     );
   }
+
+  /// `Successful`
+  String get Successful {
+    return Intl.message(
+      'Successful',
+      name: 'Successful',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Almost There!`
+  String get RegistrationSuccessful {
+    return Intl.message(
+      'Almost There!',
+      name: 'RegistrationSuccessful',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The last step is to verify your email address. Please check your inbox and follow the instructions to complete your registration.`
+  String get RegistrationSuccessfulContent {
+    return Intl.message(
+      'The last step is to verify your email address. Please check your inbox and follow the instructions to complete your registration.',
+      name: 'RegistrationSuccessfulContent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Go to Login`
+  String get GoToLogin {
+    return Intl.message(
+      'Go to Login',
+      name: 'GoToLogin',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

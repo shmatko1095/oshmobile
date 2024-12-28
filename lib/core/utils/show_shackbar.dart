@@ -10,6 +10,7 @@ class SnackBarUtils {
       context,
       snackBarType: SnackBarType.success,
       label: content,
+      maxLines: 2,
     );
   }
 
@@ -21,6 +22,7 @@ class SnackBarUtils {
       context,
       snackBarType: SnackBarType.alert,
       label: content,
+      maxLines: 2,
     );
   }
 
@@ -32,6 +34,7 @@ class SnackBarUtils {
       context,
       snackBarType: SnackBarType.fail,
       label: content,
+      maxLines: 2,
     );
   }
 }
