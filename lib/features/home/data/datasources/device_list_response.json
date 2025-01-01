@@ -1,0 +1,35 @@
+{
+  "uuid": "0dd48b1e-b515-4f49-95b7-1f153e6b1453",
+  "devices": [
+    {
+      "uuid": "190932f4-5421-49fb-86f4-19b20cf896b0",
+      "sn": "sndemo06",
+      "model": {
+        "uuid": "a5915129-adbd-4455-8004-50e02a70d106",
+        "name": "OSH Model",
+        "manufacturer": {
+          "uuid": "432512d3-cbff-4713-98f5-1f0326be295a",
+          "name": "OSH Home"
+        },
+        "configuration": {
+          "uuid": "71c91f02-b5c2-45d3-a62c-006e49a934dd",
+          "name": "OSH Home1",
+          "description": "OSH Configuration",
+          "osh": {
+            "type": "action.devices.types.HEATER"
+          }
+        }
+      },
+      "customersData": {
+        "uuid": "190932f4-5421-49fb-86f4-19b20cf896b0",
+        "roomHint": "roomHint",
+        "name": "Cuatomer device name"
+      },
+      "info": {
+        "swVersion": "SW.0.1",
+        "hwVersion": "HW.0.0",
+        "productionDate": "2024-11-12T10:30"
+      }
+    }
+  ]
+}

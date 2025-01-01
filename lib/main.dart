@@ -8,6 +8,8 @@ import 'package:oshmobile/core/theme/theme.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:oshmobile/features/auth/presentation/pages/signin_page.dart';
 import 'package:oshmobile/features/blog/presentation/bloc/blog_bloc.dart';
+import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
+import 'package:oshmobile/features/home/presentation/pages/home_page.dart';
 import 'package:oshmobile/generated/l10n.dart';
 import 'package:oshmobile/init_dependencies.dart';
 
@@ -23,7 +25,7 @@ void main() async {
         create: (_) => locator<AuthBloc>(),
       ),
       BlocProvider(
-        create: (_) => locator<BlogBloc>(),
+        create: (_) => locator<HomeCubit>(),
       ),
     ],
     child: const MyApp(),
@@ -60,7 +62,7 @@ class _MyAppState extends State<MyApp> {
       supportedLocales: S.delegate.supportedLocales,
       home: BlocSelector<global.GlobalAuthCubit, global.GlobalAuthState, bool>(
         selector: (state) => state is global.AuthAuthenticated,
-        builder: (_, state) => state ? const Loader() : const SignInPage(),
+        builder: (_, state) => state ? const HomePage() : const SignInPage(),
       ),
     );
   }

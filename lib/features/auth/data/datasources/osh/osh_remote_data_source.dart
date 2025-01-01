@@ -25,32 +25,26 @@ class OshRemoteDataSourceImpl implements IAuthRemoteDataSource {
     required String email,
     required String password,
   }) async {
-    // try {
-      final response = await _authClient.signInWithUserCred(
-        username: email,
-        password: password,
-        clientId: AppSecrets.oshClientId,
-        clientSecret: AppSecrets.oshClientSecret,
-      );
+    final response = await _authClient.signInWithUserCred(
+      username: email,
+      password: password,
+      clientId: AppSecrets.oshClientId,
+      clientSecret: AppSecrets.oshClientSecret,
+    );
 
-      if (response.isSuccessful && response.body != null) {
-        return Session.fromJson(response.body);
+    if (response.isSuccessful && response.body != null) {
+      return Session.fromJson(response.body);
+    } else {
+      final error = jsonDecode(response.error as String);
+      final errorDescription = error["error_description"] as String;
+      if (errorDescription.endsWith("Account is not fully set up")) {
+        throw const EmailNotVerifiedException();
+      } else if (errorDescription.endsWith("Invalid user credentials")) {
+        throw const InvalidUserCredentialsException();
       } else {
-        final error = jsonDecode(response.error as String);
-        final errorDescription = error["error_description"] as String;
-        if (errorDescription.endsWith("Account is not fully set up")) {
-          throw const EmailNotVerifiedException();
-        } else if (errorDescription.endsWith("Invalid user credentials")) {
-          throw const InvalidUserCredentialsException();
-        } else {
-          throw ServerException(errorDescription);
-        }
+        throw ServerException(errorDescription);
       }
-    // } on ServerException catch (_) {
-    //   rethrow;
-    // } catch (e) {
-    //   throw ServerException(e.toString());
-    // }
+    }
   }
 
   @override
@@ -60,48 +54,43 @@ class OshRemoteDataSourceImpl implements IAuthRemoteDataSource {
     required String email,
     required String password,
   }) async {
-    // try {
-      String clientToken = await _getClientToken();
-      final response = await _oshApiUserService.registerUser(
-          accessToken: clientToken,
-          request: RegisterUserRequest(
-              firstName: firstName,
-              lastName: lastName,
-              email: email,
-              password: password));
+    String clientToken = await _getClientToken();
+    final response = await _oshApiUserService.registerUser(
+        accessToken: clientToken,
+        request: RegisterUserRequest(
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            password: password));
 
-      if (!response.isSuccessful) {
-        String error = response.error as String;
-        if (error.endsWith("Conflict")) {
-          throw const ConflictException();
-        } else {
-          throw ServerException(response.error as String);
-        }
+    if (!response.isSuccessful) {
+      String error = response.error as String;
+      if (error.endsWith("Conflict")) {
+        throw const ConflictException();
+      } else {
+        throw ServerException(response.error as String);
       }
-    // } on ServerException catch (_) {
-    //   rethrow;
-    // }
+    }
   }
 
   @override
   Future<void> resetPassword({
     required String email,
   }) async {
-      String clientToken = await _getClientToken();
-      final response = await _oshApiUserService.sendResetPasswordEmail(
-          accessToken: clientToken,
-          request: SendResetPasswordEmailRequest(email: email));
+    String clientToken = await _getClientToken();
+    final response = await _oshApiUserService.sendResetPasswordEmail(
+        accessToken: clientToken,
+        request: SendResetPasswordEmailRequest(email: email));
 
-      if (!response.isSuccessful) {
-        throw ServerException(response.error as String);
-      }
+    if (!response.isSuccessful) {
+      throw ServerException(response.error as String);
+    }
   }
 
   @override
   Future<void> verifyEmail({
     required String email,
   }) async {
-    // try {
     String clientToken = await _getClientToken();
     final response = await _oshApiUserService.sendVerificationEmail(
         accessToken: clientToken,
@@ -110,9 +99,6 @@ class OshRemoteDataSourceImpl implements IAuthRemoteDataSource {
     if (!response.isSuccessful) {
       throw ServerException(response.error as String);
     }
-    // } on ServerException catch (_) {
-    //   rethrow;
-    // }
   }
 
   Future<String> _getClientToken() async {

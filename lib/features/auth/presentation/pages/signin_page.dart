@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/common/widgets/colored_divider.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/theme/text_styles.dart';
 import 'package:oshmobile/core/utils/form_validators.dart';
@@ -70,10 +71,6 @@ class _SignInPageState extends State<SignInPage> {
     }
   }
 
-  _getColor(context) => isDarkUi(context)
-      ? AppPalette.activeTextFieldColorDark
-      : AppPalette.activeTextFieldColorLight;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -132,8 +129,8 @@ class _SignInPageState extends State<SignInPage> {
                               icon: Image.asset("assets/images/google-icon.png",
                                   height: 25),
                               buttonText: S.of(context).ContinueWithGoogle,
-                              backgroundColor: _getColor(context),
-                              onPressed: () => {},
+                              backgroundColor: getColorFromUiMode(context),
+                              onPressed: null,
                             ),
                             const SizedBox(height: 30),
                             GestureDetector(
@@ -156,7 +153,7 @@ class _SignInPageState extends State<SignInPage> {
                       ),
                     ),
                   ),
-                  Divider(color: _getColor(context), thickness: 1),
+                  const ColoredDivider(thickness: 1.5),
                   const SizedBox(height: 16),
                   GestureDetector(
                     onTap: () => Navigator.push(context, SignUpPage.route()),

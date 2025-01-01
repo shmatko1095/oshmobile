@@ -8,9 +8,10 @@ class AppPalette {
   static const Color activeTextFieldColorDark = Color(0xff1a1a1a);
 
 
-  static const Color gradient1 = Color.fromRGBO(187, 63, 221, 1);
-  static const Color gradient2 = Color.fromRGBO(251, 109, 169, 1);
-  static const Color gradient3 = Color.fromRGBO(255, 159, 124, 1);
+  static const Color gradient1 = Color(0xFF00C6FF);
+  static const Color gradient2= Color(0xFF2196F3);
+  static const Color gradient3 = Color(0xFF007AFF);
+  static const Color gradient4 = Color(0xFF0D47A1);
   static const Color borderColor = Colors.grey;
   static const Color whiteColor = Colors.white;
   static const Color greyColor = Colors.grey;

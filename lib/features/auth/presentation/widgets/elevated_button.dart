@@ -12,7 +12,7 @@ class CustomElevatedButton extends StatelessWidget {
 
   const CustomElevatedButton({
     super.key,
-    this.backgroundColor = AppPalette.blue,
+    this.backgroundColor = AppPalette.gradient3,
     required this.onPressed,
     required this.buttonText,
     this.borderRadius,

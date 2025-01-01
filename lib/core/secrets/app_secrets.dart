@@ -5,5 +5,6 @@ class AppSecrets {
   static const oshClientSecret = "riM77mAUpRbwNJHbCji0cG05EWQR0lve";
 
   static const oshApiUserEndpoint = "https://oshhome.com/v1/user";
+  static const oshApiUserDeviceEndpoint = "https://oshhome.com/v1/user/{uuid}/device";
   // static const oshApiUserEndpoint = "http://localhost:18080/v1/user";
 }

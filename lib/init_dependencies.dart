@@ -22,6 +22,7 @@ import 'package:oshmobile/features/auth/domain/usecases/user_signin.dart';
 import 'package:oshmobile/features/auth/domain/usecases/user_signup.dart';
 import 'package:oshmobile/features/auth/domain/usecases/verify_email.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:path_provider/path_provider.dart';
 
 final locator = GetIt.instance;
@@ -30,7 +31,7 @@ Future<void> initDependencies() async {
   await _initCore();
   await _initWebClient();
   _initAuthFeature();
-  // _initBlog();
+  _initHomeFeature();
 }
 
 Future<void> _initCore() async {
@@ -52,6 +53,11 @@ Future<void> _initCore() async {
   locator.registerFactory<InternetConnectionChecker>(
     () => InternetConnectionCheckerImpl(internetConnection: locator()),
   );
+}
+
+void _initHomeFeature() {
+  locator
+      .registerLazySingleton<HomeCubit>(() => HomeCubit(authCubit: locator()));
 }
 
 // void _initBlog() {

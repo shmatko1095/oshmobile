@@ -2,6 +2,8 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:oshmobile/core/common/entities/jwt_user_data.dart';
 import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/core/session_storage.dart';
@@ -20,12 +22,12 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
         super(AuthInitial());
 
   void checkAuthStatus() {
-    // final session = _sessionStorage.getSession();
-    // if (session != null && session.isRefreshTokenValid) {
-    //   emit(const AuthAuthenticated());
-    // } else {
+    final session = _sessionStorage.getSession();
+    if (session != null && session.isRefreshTokenValid) {
+      emit(const AuthAuthenticated());
+    } else {
       emit(const AuthInitial());
-    // }
+    }
   }
 
   Future<void> signedIn(Session session) async {
@@ -68,5 +70,10 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
 
   String? getAccessToken() {
     return _sessionStorage.getSession()?.accessToken;
+  }
+
+  JwtUserData? getJwtUserData() {
+    final jwt = getAccessToken();
+    return jwt != null ? JwtUserData.fromJwtJson(JwtDecoder.decode(jwt)) : null;
   }
 }

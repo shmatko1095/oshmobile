@@ -70,6 +70,16 @@ class S {
     );
   }
 
+  /// `Sign Out`
+  String get SignOut {
+    return Intl.message(
+      'Sign Out',
+      name: 'SignOut',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Invalid user credentials`
   String get InvalidUserCredentials {
     return Intl.message(
@@ -345,6 +355,16 @@ class S {
     return Intl.message(
       'Go to Login',
       name: 'GoToLogin',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add device`
+  String get AddDevice {
+    return Intl.message(
+      'Add device',
+      name: 'AddDevice',
       desc: '',
       args: [],
     );
