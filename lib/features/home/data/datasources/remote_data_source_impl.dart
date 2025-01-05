@@ -11,7 +11,7 @@ import 'package:oshmobile/features/home/data/models/device_list_response.dart';
 class OshDeviceRemoteDataSourceImpl implements OshRemoteDataSource {
   final OshApiUserDeviceService oshApiUserDeviceService;
 
-  OshDeviceRemoteDataSourceImpl({required this.oshApiUserDeviceService});
+  const OshDeviceRemoteDataSourceImpl({required this.oshApiUserDeviceService});
 
   @override
   Future<List<Device>> assignDevice({
