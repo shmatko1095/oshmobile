@@ -31,5 +31,10 @@
   "RegistrationSuccessfulContent": "The last step is to verify your email address. Please check your inbox and follow the instructions to complete your registration.",
   "GoToLogin": "Go to Login",
   "AddDevice": "Add device",
-  "NoDevicesYet": "No devices yet"
+  "NoDevicesYet": "No devices yet",
+  "UnlinkDevice": "Unlink Device",
+  "Yes": "Yes",
+  "No": "No",
+  "DeviceUnlinkAlertContent1": "The device ",
+  "DeviceUnlinkAlertContent2": " will be removed from your list. You can re-add it anytime by scanning the QR code again."
 }

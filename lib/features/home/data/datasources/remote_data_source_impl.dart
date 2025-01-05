@@ -27,7 +27,7 @@ class OshDeviceRemoteDataSourceImpl implements OshRemoteDataSource {
       return DeviceListResponse.fromJson(response.body).devices;
     } else {
       final error = jsonDecode(response.error as String);
-      final errorDescription = error["error_description"] as String;
+      final errorDescription = error["error"] as String;
       throw ServerException(errorDescription);
     }
   }
@@ -45,7 +45,7 @@ class OshDeviceRemoteDataSourceImpl implements OshRemoteDataSource {
       return DeviceListResponse.fromJson(response.body).devices;
     } else {
       final error = jsonDecode(response.error as String);
-      final errorDescription = error["error_description"] as String;
+      final errorDescription = error["error"] as String;
       throw ServerException(errorDescription);
     }
   }
@@ -59,7 +59,7 @@ class OshDeviceRemoteDataSourceImpl implements OshRemoteDataSource {
       return DeviceListResponse.fromJson(response.body).devices;
     } else {
       final error = jsonDecode(response.error as String);
-      final errorDescription = error["error_description"] as String;
+      final errorDescription = error["error"] as String;
       throw ServerException(errorDescription);
     }
   }

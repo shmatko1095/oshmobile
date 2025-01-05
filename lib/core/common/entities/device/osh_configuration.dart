@@ -1,4 +1,6 @@
 class OshConfiguration {
+  static const String heaterType = "osh.types.HEATER";
+
   final String type;
 
   const OshConfiguration({

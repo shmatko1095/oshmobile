@@ -14,6 +14,8 @@ class HomeCubit extends Cubit<HomeState> {
   final UnassignDevice _unassignDevice;
   final AssignDevice _assignDevice;
 
+  List<Device> userDevices = [];
+
   HomeCubit({
     required this.globalAuthCubit,
     required GetDeviceList getDeviceList,
@@ -24,12 +26,17 @@ class HomeCubit extends Cubit<HomeState> {
         _assignDevice = assignDevice,
         super(HomeInitial());
 
+
+
   Future<void> updateDeviceList() async {
     emit(const HomeLoading());
     final result = await _getDeviceList(_userUuid);
     result.fold(
       (l) => emit(HomeFailed(l.message ?? "")),
-      (r) => emit(HomeReady(userDevices: r)),
+      (r) {
+        _updateDeviceList(r);
+        emit(const HomeReady());
+      },
     );
   }
 
@@ -41,7 +48,10 @@ class HomeCubit extends Cubit<HomeState> {
     ));
     result.fold(
       (l) => emit(HomeFailed(l.message ?? "")),
-      (r) => emit(HomeReady(userDevices: r)),
+      (r) {
+        _updateDeviceList(r);
+        emit(const HomeReady());
+      },
     );
   }
 
@@ -54,8 +64,19 @@ class HomeCubit extends Cubit<HomeState> {
     ));
     result.fold(
       (l) => emit(HomeFailed(l.message ?? "")),
-      (r) => emit(HomeReady(userDevices: r)),
+      (r) {
+        _updateDeviceList(r);
+        emit(const HomeReady());
+      },
     );
+  }
+
+  List<Device> getUserDevices() {
+    return List.from(userDevices);
+  }
+
+  void _updateDeviceList(List<Device> list) {
+    userDevices = list;
   }
 
   get _userUuid => globalAuthCubit.getJwtUserData()!.uuid;

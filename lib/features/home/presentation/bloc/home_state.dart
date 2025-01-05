@@ -8,9 +8,7 @@ sealed class HomeState {
 final class HomeInitial extends HomeState {}
 
 final class HomeReady extends HomeState {
-  final List<Device> userDevices;
-
-  const HomeReady({required this.userDevices});
+  const HomeReady();
 }
 
 final class HomeLoading extends HomeState {

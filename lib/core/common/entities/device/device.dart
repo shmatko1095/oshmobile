@@ -24,7 +24,7 @@ class Device {
     json = json ?? {};
     return Device(
       uuid: json['uuid'] ?? "",
-      sn: json['name'] ?? "",
+      sn: json['sn'] ?? "",
       model: Model.fromJson(json["model"]),
       customersData: CustomerData.fromJson(json["customersData"]),
       info: Info.fromJson(json["info"]),

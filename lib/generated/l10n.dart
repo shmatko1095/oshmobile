@@ -379,6 +379,56 @@ class S {
       args: [],
     );
   }
+
+  /// `Unlink Device`
+  String get UnlinkDevice {
+    return Intl.message(
+      'Unlink Device',
+      name: 'UnlinkDevice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Yes`
+  String get Yes {
+    return Intl.message(
+      'Yes',
+      name: 'Yes',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No`
+  String get No {
+    return Intl.message(
+      'No',
+      name: 'No',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The device `
+  String get DeviceUnlinkAlertContent1 {
+    return Intl.message(
+      'The device ',
+      name: 'DeviceUnlinkAlertContent1',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// ` will be removed from your list. You can re-add it anytime by scanning the QR code again.`
+  String get DeviceUnlinkAlertContent2 {
+    return Intl.message(
+      ' will be removed from your list. You can re-add it anytime by scanning the QR code again.',
+      name: 'DeviceUnlinkAlertContent2',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

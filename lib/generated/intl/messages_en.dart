@@ -31,6 +31,10 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Check your email"),
         "ContinueWithGoogle":
             MessageLookupByLibrary.simpleMessage("Continue with Google"),
+        "DeviceUnlinkAlertContent1":
+            MessageLookupByLibrary.simpleMessage("The device "),
+        "DeviceUnlinkAlertContent2": MessageLookupByLibrary.simpleMessage(
+            " will be removed from your list. You can re-add it anytime by scanning the QR code again."),
         "DontHaveAnAccount":
             MessageLookupByLibrary.simpleMessage("Don\'t have an account?"),
         "Email": MessageLookupByLibrary.simpleMessage("Email"),
@@ -46,6 +50,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "InvalidPassword": m0,
         "InvalidUserCredentials":
             MessageLookupByLibrary.simpleMessage("Invalid user credentials"),
+        "No": MessageLookupByLibrary.simpleMessage("No"),
         "NoDevicesYet": MessageLookupByLibrary.simpleMessage("No devices yet"),
         "OK": MessageLookupByLibrary.simpleMessage("OK"),
         "Password": MessageLookupByLibrary.simpleMessage("Password"),
@@ -67,12 +72,14 @@ class MessageLookup extends MessageLookupByLibrary {
         "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
         "TryDemo": MessageLookupByLibrary.simpleMessage("Try Demo"),
         "UnknownError": MessageLookupByLibrary.simpleMessage("Unknown error"),
+        "UnlinkDevice": MessageLookupByLibrary.simpleMessage("Unlink Device"),
         "UserAlreadyExist":
             MessageLookupByLibrary.simpleMessage("User already exist"),
         "VerifyYourEmail":
             MessageLookupByLibrary.simpleMessage("Verify your email"),
         "WeHaveSentVerificationEmailTo": MessageLookupByLibrary.simpleMessage(
             "We have sent a verification email to "),
+        "Yes": MessageLookupByLibrary.simpleMessage("Yes"),
         "YourEmailIsNotVerifiedYet": MessageLookupByLibrary.simpleMessage(
             "Your email is not verified yet. Click the button below to resend the verification email.")
       };

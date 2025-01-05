@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 
 class AppPalette {
   static const Color backgroundColorLight = Color(0xffF1F1F1);
-  static const Color backgroundColorDark = Color(0xff0E0E0E); //Color.fromRGBO(0, 0, 0, 1);
+  static const Color backgroundColorDark =
+      Color(0xff0E0E0E); //Color.fromRGBO(0, 0, 0, 1);
   static const Color activeTextFieldColorLight = Color(0xffe7e7e7);
   static const Color activeTextFieldColorDark = Color(0xff1a1a1a);
 
-
   static const Color gradient1 = Color(0xFF00C6FF);
-  static const Color gradient2= Color(0xFF2196F3);
+  static const Color gradient2 = Color(0xFF2196F3);
   static const Color gradient3 = Color(0xFF007AFF);
   static const Color gradient4 = Color(0xFF0D47A1);
   static const Color borderColor = Colors.grey;
@@ -22,6 +22,10 @@ class AppPalette {
   static const Color nonObscureIconColor = Colors.blue;
 
   static const Color blue = Color(0xff3b8ff0);
+  static const Color onlineIndicatorColor = Color(0xFF34C759);
+
+  static const Color cardColorDarkMode = Color(0xff3b8ff0);
+  static const Color cardColorLightMode = Color(0xff3b8ff0);
 
   static const Color errorSnackBarColor = errorColor;
   static const Color successSnackBarColor = CupertinoColors.systemGreen;

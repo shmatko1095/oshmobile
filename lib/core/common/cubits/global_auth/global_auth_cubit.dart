@@ -69,7 +69,7 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
   }
 
   String? getAccessToken() {
-    return _sessionStorage.getSession()?.accessToken;
+    return _sessionStorage.getSession()?.typedAccessToken;
   }
 
   JwtUserData? getJwtUserData() {

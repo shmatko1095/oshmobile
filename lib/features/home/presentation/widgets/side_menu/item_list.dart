@@ -7,10 +7,23 @@ import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/thing_item.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
-class ItemList extends StatelessWidget {
+class ItemList extends StatefulWidget {
   final bool isDemo;
 
   const ItemList({super.key, required this.isDemo});
+
+  @override
+  State<ItemList> createState() => _ItemListState();
+}
+
+class _ItemListState extends State<ItemList> {
+  @override
+  void initState() {
+    context.read<HomeCubit>().updateDeviceList();
+    super.initState();
+  }
+
+  get devices => context.read<HomeCubit>().getUserDevices();
 
   void _onStateChanged(BuildContext context, HomeState state) {
     if (state is HomeFailed) {
@@ -28,35 +41,31 @@ class ItemList extends StatelessWidget {
         onRefresh: () => context.read<HomeCubit>().updateDeviceList(),
         child: BlocConsumer<HomeCubit, HomeState>(
           listener: (context, state) => _onStateChanged(context, state),
-          buildWhen: (previous, current) => current is HomeReady,
           builder: (context, state) {
-            if (state is HomeReady) {
-              if (state.userDevices.isEmpty) {
-                return Center(
-                  child: Text(
-                    S.of(context).NoDevicesYet,
-                    style: TextStyles.contentStyle,
-                  ),
-                );
-              } else {
-                return ListView.builder(
-                  itemCount: state.userDevices.length,
-                  itemBuilder: (context, index) {
-                    Device device = state.userDevices[index];
-                    return ThingItem(
-                      sn: device.sn,
-                      name: device.customersData.name.isEmpty
-                          ? device.sn
-                          : device.customersData.name,
-                      room: device.customersData.roomHint,
-                      online: device.status.online,
-                      unassignDeviceAllowed: false,
-                    );
-                  },
-                );
-              }
+            if (devices.isEmpty) {
+              return Center(
+                child: Text(
+                  S.of(context).NoDevicesYet,
+                  style: TextStyles.contentStyle,
+                ),
+              );
             } else {
-              return SizedBox.shrink();
+              return ListView.builder(
+                itemCount: devices.length,
+                itemBuilder: (context, index) {
+                  Device device = devices[index];
+                  return ThingItem(
+                    sn: device.sn,
+                    name: device.customersData.name.isEmpty
+                        ? device.sn
+                        : device.customersData.name,
+                    room: device.customersData.roomHint,
+                    online: device.status.online,
+                    type: device.model.configuration.osh.type,
+                    unassignDeviceAllowed: !widget.isDemo,
+                  );
+                },
+              );
             }
           },
         ),
