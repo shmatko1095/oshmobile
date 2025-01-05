@@ -86,7 +86,7 @@ final class _$AuthService extends AuthService {
       'content-type': 'application/x-www-form-urlencoded',
     };
     final $body = <String, String>{
-      'refreshToken': refreshToken.toString(),
+      'refresh_token': refreshToken.toString(),
       'grant_type': grantType.toString(),
       'client_id': clientId.toString(),
       'client_secret': clientSecret.toString(),

@@ -11,7 +11,8 @@ import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/core/api_authenticator.dart';
 import 'package:oshmobile/core/network/chopper_client/core/auth_interceptor.dart';
 import 'package:oshmobile/core/network/chopper_client/core/session_storage.dart';
-import 'package:oshmobile/core/network/chopper_client/osh_api_user/osh_api_user_service.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api_device/osh_api_user_device_service.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api_user/osh_api_user_auth_service.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
 import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:oshmobile/features/auth/data/datasources/osh/osh_remote_data_source.dart';
@@ -22,6 +23,13 @@ import 'package:oshmobile/features/auth/domain/usecases/user_signin.dart';
 import 'package:oshmobile/features/auth/domain/usecases/user_signup.dart';
 import 'package:oshmobile/features/auth/domain/usecases/verify_email.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:oshmobile/features/home/data/datasources/remote_data_source.dart';
+import 'package:oshmobile/features/home/data/datasources/remote_data_source_impl.dart';
+import 'package:oshmobile/features/home/data/repositories/osh_repository_impl.dart';
+import 'package:oshmobile/features/home/domain/repositories/osh_repository.dart';
+import 'package:oshmobile/features/home/domain/usecases/assign_device.dart';
+import 'package:oshmobile/features/home/domain/usecases/get_device_list.dart';
+import 'package:oshmobile/features/home/domain/usecases/unassign_device.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -57,7 +65,33 @@ Future<void> _initCore() async {
 
 void _initHomeFeature() {
   locator
-      .registerLazySingleton<HomeCubit>(() => HomeCubit(authCubit: locator()));
+    ..registerFactory<OshRemoteDataSource>(() => OshDeviceRemoteDataSourceImpl(
+        oshApiUserDeviceService: locator<OshApiUserDeviceService>()))
+    ..registerFactory<OshRepository>(
+      () => OshRepositoryImpl(
+          oshRemoteDataSource: locator<OshRemoteDataSource>()),
+    )
+    ..registerFactory<GetDeviceList>(
+      () => GetDeviceList(
+        oshRepository: locator<OshRepository>(),
+      ),
+    )
+    ..registerFactory<UnassignDevice>(
+      () => UnassignDevice(
+        oshRepository: locator<OshRepository>(),
+      ),
+    )
+    ..registerFactory<AssignDevice>(
+      () => AssignDevice(
+        oshRepository: locator<OshRepository>(),
+      ),
+    )
+    ..registerLazySingleton<HomeCubit>(() => HomeCubit(
+          globalAuthCubit: locator<GlobalAuthCubit>(),
+          getDeviceList: locator<GetDeviceList>(),
+          unassignDevice: locator<UnassignDevice>(),
+          assignDevice: locator<AssignDevice>(),
+        ));
 }
 
 // void _initBlog() {
@@ -93,9 +127,9 @@ void _initAuthFeature() {
   locator
     //Datasource
     ..registerFactory<IAuthRemoteDataSource>(
-      () => OshRemoteDataSourceImpl(
+      () => OshAuthRemoteDataSourceImpl(
         authClient: locator<AuthService>(),
-        oshApiUserService: locator<OshApiUserService>(),
+        oshApiUserService: locator<OshApiUserAuthService>(),
       ),
     )
     //Repository
@@ -148,8 +182,8 @@ Future<void> _initWebClient() async {
     ..registerLazySingleton<AuthService>(
       () => AuthService.create(),
     )
-    ..registerLazySingleton<OshApiUserService>(
-      () => OshApiUserService.create(),
+    ..registerLazySingleton<OshApiUserAuthService>(
+      () => OshApiUserAuthService.create(),
     )
     ..registerLazySingleton<GlobalAuthCubit>(
       () => GlobalAuthCubit(
@@ -161,6 +195,9 @@ Future<void> _initWebClient() async {
       () => ApiAuthenticator(
         globalAuthCubit: locator<GlobalAuthCubit>(),
       ),
+    )
+    ..registerLazySingleton<OshApiUserDeviceService>(
+      () => OshApiUserDeviceService.create(),
     );
 
   final chopperClient = ChopperClient(
@@ -168,7 +205,8 @@ Future<void> _initWebClient() async {
     authenticator: locator<ApiAuthenticator>(),
     services: [
       locator<AuthService>(),
-      locator<OshApiUserService>(),
+      locator<OshApiUserAuthService>(),
+      locator<OshApiUserDeviceService>()
     ],
     interceptors: [
       AuthInterceptor(globalAuthCubit: locator<GlobalAuthCubit>()),
@@ -181,7 +219,8 @@ Future<void> _initWebClient() async {
     ],
   );
   locator<AuthService>().updateClient(chopperClient);
-  locator<OshApiUserService>().updateClient(chopperClient);
+  locator<OshApiUserAuthService>().updateClient(chopperClient);
+  locator<OshApiUserDeviceService>().updateClient(chopperClient);
 
   locator.registerSingleton<ChopperClient>(chopperClient);
 }

@@ -22,7 +22,7 @@ final class _$OshApiUserDeviceService extends OshApiUserDeviceService {
     required String uuid,
     required AssignDeviceRequest request,
   }) {
-    final Uri $url = Uri.parse('https://oshhome.com/v1/user/%7Buuid%7D/device');
+    final Uri $url = Uri.parse('https://oshhome.com/v1/user/${uuid}/device');
     final $body = request;
     final Request $request = Request(
       'PUT',
@@ -38,7 +38,7 @@ final class _$OshApiUserDeviceService extends OshApiUserDeviceService {
     required String uuid,
     required UnassignDeviceRequest request,
   }) {
-    final Uri $url = Uri.parse('https://oshhome.com/v1/user/%7Buuid%7D/device');
+    final Uri $url = Uri.parse('https://oshhome.com/v1/user/${uuid}/device');
     final $body = request;
     final Request $request = Request(
       'DELETE',
@@ -51,7 +51,7 @@ final class _$OshApiUserDeviceService extends OshApiUserDeviceService {
 
   @override
   Future<Response<dynamic>> getDeviceList({required String uuid}) {
-    final Uri $url = Uri.parse('https://oshhome.com/v1/user/%7Buuid%7D/device');
+    final Uri $url = Uri.parse('https://oshhome.com/v1/user/${uuid}/device');
     final Request $request = Request(
       'GET',
       $url,

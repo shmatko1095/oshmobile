@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
+import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/side_menu.dart';
 
 class HomePage extends StatefulWidget {
@@ -16,7 +18,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // context.read<HomeCubit>().loadUserData();
+    context.read<HomeCubit>().updateDeviceList();
   }
 
   @override
@@ -33,7 +35,7 @@ class _HomePageState extends State<HomePage> {
           )
         ],
       ),
-      drawer: const SideMenu(),
+      drawer: const SideMenu(demo: false),
       body: const Loader(),
       // body: BlocConsumer<BlogBloc, BlogState>(listener: (context, state) {
       //   if (state is BlogFailure) {

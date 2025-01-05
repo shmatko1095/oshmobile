@@ -369,6 +369,16 @@ class S {
       args: [],
     );
   }
+
+  /// `No devices yet`
+  String get NoDevicesYet {
+    return Intl.message(
+      'No devices yet',
+      name: 'NoDevicesYet',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

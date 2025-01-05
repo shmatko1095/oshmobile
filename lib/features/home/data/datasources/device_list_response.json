@@ -15,6 +15,33 @@
           "uuid": "71c91f02-b5c2-45d3-a62c-006e49a934dd",
           "name": "OSH Home1",
           "description": "OSH Configuration",
+          "deviceModels": [],
+          "google": {
+            "type": "action.devices.types.HEATER",
+            "willReportState": false,
+            "traits": [
+              "action.devices.traits.TemperatureSetting",
+              "action.devices.traits.OnOff"
+            ],
+            "attributes": {
+              "availableThermostatModes": [
+                "off",
+                "heat",
+                "eco",
+                "on"
+              ],
+              "thermostatTemperatureRange": {
+                "minThresholdCelsius": 5,
+                "maxThresholdCelsius": 40
+              },
+              "thermostatTemperatureUnit": "C",
+              "commandOnlyTemperatureSetting": false,
+              "queryOnlyTemperatureSetting": false,
+              "queryOnlyOnOff": true,
+              "commandOnlyOnOff": false,
+              "maxTimerLimitSec": 43200
+            }
+          },
           "osh": {
             "type": "action.devices.types.HEATER"
           }
@@ -29,6 +56,185 @@
         "swVersion": "SW.0.1",
         "hwVersion": "HW.0.0",
         "productionDate": "2024-11-12T10:30"
+      }
+    },
+    {
+      "uuid": "80652317-0102-4869-bc37-07dc5d76287a",
+      "sn": "sndemo16",
+      "model": {
+        "uuid": "a5915129-adbd-4455-8004-50e02a70d106",
+        "name": "OSH Model",
+        "manufacturer": {
+          "uuid": "432512d3-cbff-4713-98f5-1f0326be295a",
+          "name": "OSH Home"
+        },
+        "configuration": {
+          "uuid": "71c91f02-b5c2-45d3-a62c-006e49a934dd",
+          "name": "OSH Home1",
+          "description": "OSH Configuration",
+          "deviceModels": [],
+          "google": {
+            "type": "action.devices.types.HEATER",
+            "willReportState": false,
+            "traits": [
+              "action.devices.traits.TemperatureSetting",
+              "action.devices.traits.OnOff"
+            ],
+            "attributes": {
+              "availableThermostatModes": [
+                "off",
+                "heat",
+                "eco",
+                "on"
+              ],
+              "thermostatTemperatureRange": {
+                "minThresholdCelsius": 5,
+                "maxThresholdCelsius": 40
+              },
+              "thermostatTemperatureUnit": "C",
+              "commandOnlyTemperatureSetting": false,
+              "queryOnlyTemperatureSetting": false,
+              "queryOnlyOnOff": true,
+              "commandOnlyOnOff": false,
+              "maxTimerLimitSec": 43200
+            }
+          },
+          "osh": {
+            "type": "action.devices.types.HEATER"
+          }
+        }
+      },
+      "customersData": {
+        "uuid": "80652317-0102-4869-bc37-07dc5d76287a",
+        "roomHint": "roomHint",
+        "name": "Cuatomer device name"
+      },
+      "info": {
+        "swVersion": "SW.0.1",
+        "hwVersion": "HW.0.0",
+        "productionDate": "2024-11-12T10:30"
+      }
+    },
+    {
+      "uuid": "d3a65548-3677-4f0d-a145-d00f0997b858",
+      "sn": "sndemo01",
+      "model": {
+        "uuid": "a5915129-adbd-4455-8004-50e02a70d106",
+        "name": "OSH Model",
+        "manufacturer": {
+          "uuid": "432512d3-cbff-4713-98f5-1f0326be295a",
+          "name": "OSH Home"
+        },
+        "configuration": {
+          "uuid": "71c91f02-b5c2-45d3-a62c-006e49a934dd",
+          "name": "OSH Home1",
+          "description": "OSH Configuration",
+          "deviceModels": [],
+          "google": {
+            "type": "action.devices.types.HEATER",
+            "willReportState": false,
+            "traits": [
+              "action.devices.traits.TemperatureSetting",
+              "action.devices.traits.OnOff"
+            ],
+            "attributes": {
+              "availableThermostatModes": [
+                "off",
+                "heat",
+                "eco",
+                "on"
+              ],
+              "thermostatTemperatureRange": {
+                "minThresholdCelsius": 5,
+                "maxThresholdCelsius": 40
+              },
+              "thermostatTemperatureUnit": "C",
+              "commandOnlyTemperatureSetting": false,
+              "queryOnlyTemperatureSetting": false,
+              "queryOnlyOnOff": true,
+              "commandOnlyOnOff": false,
+              "maxTimerLimitSec": 43200
+            }
+          },
+          "osh": {
+            "type": "action.devices.types.HEATER"
+          }
+        }
+      },
+      "customersData": {
+        "uuid": "d3a65548-3677-4f0d-a145-d00f0997b858",
+        "roomHint": "roomHint",
+        "name": "Cuatomer device name"
+      },
+      "info": {
+        "swVersion": "SW.0.1",
+        "hwVersion": "HW.0.0",
+        "productionDate": "2024-11-12T10:30"
+      },
+      "status": {
+        "online": true,
+        "timestamp": "2024-12-28T22:26:49.699Z"
+      }
+    },
+    {
+      "uuid": "8163366b-2b03-4ca8-b385-e92897e1c764",
+      "sn": "sndemo02",
+      "model": {
+        "uuid": "a5915129-adbd-4455-8004-50e02a70d106",
+        "name": "OSH Model",
+        "manufacturer": {
+          "uuid": "432512d3-cbff-4713-98f5-1f0326be295a",
+          "name": "OSH Home"
+        },
+        "configuration": {
+          "uuid": "71c91f02-b5c2-45d3-a62c-006e49a934dd",
+          "name": "OSH Home1",
+          "description": "OSH Configuration",
+          "deviceModels": [],
+          "google": {
+            "type": "action.devices.types.HEATER",
+            "willReportState": false,
+            "traits": [
+              "action.devices.traits.TemperatureSetting",
+              "action.devices.traits.OnOff"
+            ],
+            "attributes": {
+              "availableThermostatModes": [
+                "off",
+                "heat",
+                "eco",
+                "on"
+              ],
+              "thermostatTemperatureRange": {
+                "minThresholdCelsius": 5,
+                "maxThresholdCelsius": 40
+              },
+              "thermostatTemperatureUnit": "C",
+              "commandOnlyTemperatureSetting": false,
+              "queryOnlyTemperatureSetting": false,
+              "queryOnlyOnOff": true,
+              "commandOnlyOnOff": false,
+              "maxTimerLimitSec": 43200
+            }
+          },
+          "osh": {
+            "type": "action.devices.types.HEATER"
+          }
+        }
+      },
+      "customersData": {
+        "uuid": "8163366b-2b03-4ca8-b385-e92897e1c764",
+        "roomHint": "roomHint",
+        "name": "Cuatomer device name"
+      },
+      "info": {
+        "swVersion": "SW.0.1",
+        "hwVersion": "HW.0.0",
+        "productionDate": "2024-11-12T10:30"
+      },
+      "status": {
+        "online": true,
+        "timestamp": "2024-12-28T22:26:49.816Z"
       }
     }
   ]

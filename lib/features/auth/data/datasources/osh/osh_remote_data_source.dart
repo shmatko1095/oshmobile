@@ -3,20 +3,20 @@ import 'dart:convert';
 import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/core/error/exceptions.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
-import 'package:oshmobile/core/network/chopper_client/osh_api_user/osh_api_user_service.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api_user/osh_api_user_auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api_user/requests/register_user_request.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api_user/requests/send_reset_password_email_request.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api_user/requests/send_verification_email_request.dart';
 import 'package:oshmobile/core/secrets/app_secrets.dart';
 import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source.dart';
 
-class OshRemoteDataSourceImpl implements IAuthRemoteDataSource {
+class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
   final AuthService _authClient;
-  final OshApiUserService _oshApiUserService;
+  final OshApiUserAuthService _oshApiUserService;
 
-  OshRemoteDataSourceImpl({
+  OshAuthRemoteDataSourceImpl({
     required AuthService authClient,
-    required OshApiUserService oshApiUserService,
+    required OshApiUserAuthService oshApiUserService,
   })  : _authClient = authClient,
         _oshApiUserService = oshApiUserService;
 

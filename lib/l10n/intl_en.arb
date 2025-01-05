@@ -30,5 +30,6 @@
   "RegistrationSuccessful": "Almost There!",
   "RegistrationSuccessfulContent": "The last step is to verify your email address. Please check your inbox and follow the instructions to complete your registration.",
   "GoToLogin": "Go to Login",
-  "AddDevice": "Add device"
+  "AddDevice": "Add device",
+  "NoDevicesYet": "No devices yet"
 }

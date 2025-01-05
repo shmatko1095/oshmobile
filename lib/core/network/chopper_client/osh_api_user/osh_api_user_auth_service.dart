@@ -7,12 +7,12 @@ import 'package:oshmobile/core/network/chopper_client/osh_api_user/requests/send
 import 'package:oshmobile/core/network/chopper_client/osh_api_user/requests/send_verification_email_request.dart';
 import 'package:oshmobile/core/secrets/app_secrets.dart';
 
-part 'osh_api_user_service.chopper.dart';
+part 'osh_api_user_auth_service.chopper.dart';
 
-@ChopperApi(baseUrl: AppSecrets.oshApiUserEndpoint)
-abstract class OshApiUserService extends ChopperService {
-  static OshApiUserService create([ChopperClient? client]) =>
-      _$OshApiUserService(client);
+@ChopperApi(baseUrl: AppSecrets.oshApiEndpoint)
+abstract class OshApiUserAuthService extends ChopperService {
+  static OshApiUserAuthService create([ChopperClient? client]) =>
+      _$OshApiUserAuthService(client);
 
   void updateClient(ChopperClient client) {
     this.client = client;

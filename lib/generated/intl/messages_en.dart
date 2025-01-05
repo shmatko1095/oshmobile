@@ -46,6 +46,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "InvalidPassword": m0,
         "InvalidUserCredentials":
             MessageLookupByLibrary.simpleMessage("Invalid user credentials"),
+        "NoDevicesYet": MessageLookupByLibrary.simpleMessage("No devices yet"),
         "OK": MessageLookupByLibrary.simpleMessage("OK"),
         "Password": MessageLookupByLibrary.simpleMessage("Password"),
         "PasswordConfirmation":

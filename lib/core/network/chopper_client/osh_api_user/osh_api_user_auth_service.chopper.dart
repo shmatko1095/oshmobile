@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'osh_api_user_service.dart';
+part of 'osh_api_user_auth_service.dart';
 
 // **************************************************************************
 // ChopperGenerator
@@ -8,14 +8,14 @@ part of 'osh_api_user_service.dart';
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
-final class _$OshApiUserService extends OshApiUserService {
-  _$OshApiUserService([ChopperClient? client]) {
+final class _$OshApiUserAuthService extends OshApiUserAuthService {
+  _$OshApiUserAuthService([ChopperClient? client]) {
     if (client == null) return;
     this.client = client;
   }
 
   @override
-  final Type definitionType = OshApiUserService;
+  final Type definitionType = OshApiUserAuthService;
 
   @override
   Future<Response<dynamic>> registerUser({
