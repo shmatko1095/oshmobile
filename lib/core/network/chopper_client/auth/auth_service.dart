@@ -13,7 +13,7 @@ abstract class AuthService extends ChopperService {
     this.client = client;
   }
 
-  @Post()
+  @POST()
   @formUrlEncoded
   Future<Response> signInWithUserCred({
     @Field() required String username,
@@ -23,7 +23,7 @@ abstract class AuthService extends ChopperService {
     @Field("client_secret") String clientSecret = AppSecrets.oshClientSecret,
   });
 
-  @Post()
+  @POST()
   @formUrlEncoded
   Future<Response> signInWithClientCred({
     @Field("grant_type") String grantType = "client_credentials",
@@ -31,7 +31,7 @@ abstract class AuthService extends ChopperService {
     @Field("client_secret") String clientSecret = AppSecrets.oshClientSecret,
   });
 
-  @Post()
+  @POST()
   @formUrlEncoded
   Future<Response> refreshToken({
     @Field("refresh_token") required String refreshToken,

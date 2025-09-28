@@ -18,19 +18,19 @@ abstract class OshApiUserAuthService extends ChopperService {
     this.client = client;
   }
 
-  @Post()
+  @POST()
   Future<Response> registerUser({
     @Header(HttpHeaders.authorizationHeader) required String accessToken,
     @Body() required RegisterUserRequest request,
   });
 
-  @Post(path: "/verify-email")
+  @POST(path: "/verify-email")
   Future<Response> sendVerificationEmail({
     @Header(HttpHeaders.authorizationHeader) required String accessToken,
     @Body() required SendVerificationEmailRequest request,
   });
 
-  @Post(path: "/reset-password")
+  @POST(path: "/reset-password")
   Future<Response> sendResetPasswordEmail({
     @Header(HttpHeaders.authorizationHeader) required String accessToken,
     @Body() required SendResetPasswordEmailRequest request,

@@ -23,7 +23,7 @@ class _ItemListState extends State<ItemList> {
     super.initState();
   }
 
-  get devices => context.read<HomeCubit>().getUserDevices();
+  List<Device> get devices => context.read<HomeCubit>().getUserDevices();
 
   void _onStateChanged(BuildContext context, HomeState state) {
     if (state is HomeFailed) {

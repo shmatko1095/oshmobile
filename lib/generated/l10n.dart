@@ -1,7 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import 'intl/messages_all.dart';
 
 // **************************************************************************
@@ -426,6 +425,26 @@ class S {
     return Intl.message(
       ' will be removed from your list. You can re-add it anytime by scanning the QR code again.',
       name: 'DeviceUnlinkAlertContent2',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unknown device type`
+  String get UnknownDeviceType {
+    return Intl.message(
+      'Unknown device type',
+      name: 'UnknownDeviceType',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No device selected`
+  String get NoDeviceSelected {
+    return Intl.message(
+      'No device selected',
+      name: 'NoDeviceSelected',
       desc: '',
       args: [],
     );

@@ -16,7 +16,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final UserSignIn _userSignIn;
   final VerifyEmail _verifyEmail;
   final ResetPassword _resetPassword;
-  final GlobalAuthCubit _authCubit;
+  final GlobalAuthCubit _globalAuthCubit;
 
   AuthBloc({
     required UserSignUp userSignUp,
@@ -28,7 +28,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         _userSignIn = userSignIn,
         _verifyEmail = verifyEmail,
         _resetPassword = resetPassword,
-        _authCubit = globalAuthCubit,
+        _globalAuthCubit = globalAuthCubit,
         super(const AuthInitial()) {
     on<AuthSignUp>(_onAuthSignUp);
     on<AuthSignIn>(_onAuthSignIn);
@@ -84,7 +84,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _emitAuthSuccess(Emitter<AuthState> emit, Session session) {
-    _authCubit.signedIn(session);
+    _globalAuthCubit.signedIn(session);
     emit(AuthSuccess("Success"));
   }
 

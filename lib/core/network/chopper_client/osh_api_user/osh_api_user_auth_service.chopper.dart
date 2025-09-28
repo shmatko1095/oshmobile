@@ -1,4 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format width=80
 
 part of 'osh_api_user_auth_service.dart';
 
@@ -22,7 +23,7 @@ final class _$OshApiUserAuthService extends OshApiUserAuthService {
     required String accessToken,
     required RegisterUserRequest request,
   }) {
-    final Uri $url = Uri.parse('https://oshhome.com/v1/user');
+    final Uri $url = Uri.parse('https://api.oshhome.com/v1/users');
     final Map<String, String> $headers = {
       'authorization': accessToken,
     };
@@ -42,7 +43,7 @@ final class _$OshApiUserAuthService extends OshApiUserAuthService {
     required String accessToken,
     required SendVerificationEmailRequest request,
   }) {
-    final Uri $url = Uri.parse('https://oshhome.com/v1/user/verify-email');
+    final Uri $url = Uri.parse('https://api.oshhome.com/v1/users/verify-email');
     final Map<String, String> $headers = {
       'authorization': accessToken,
     };
@@ -62,7 +63,8 @@ final class _$OshApiUserAuthService extends OshApiUserAuthService {
     required String accessToken,
     required SendResetPasswordEmailRequest request,
   }) {
-    final Uri $url = Uri.parse('https://oshhome.com/v1/user/reset-password');
+    final Uri $url =
+        Uri.parse('https://api.oshhome.com/v1/users/reset-password');
     final Map<String, String> $headers = {
       'authorization': accessToken,
     };

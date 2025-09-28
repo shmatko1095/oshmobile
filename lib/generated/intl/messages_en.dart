@@ -51,6 +51,8 @@ class MessageLookup extends MessageLookupByLibrary {
         "InvalidUserCredentials":
             MessageLookupByLibrary.simpleMessage("Invalid user credentials"),
         "No": MessageLookupByLibrary.simpleMessage("No"),
+        "NoDeviceSelected":
+            MessageLookupByLibrary.simpleMessage("No device selected"),
         "NoDevicesYet": MessageLookupByLibrary.simpleMessage("No devices yet"),
         "OK": MessageLookupByLibrary.simpleMessage("OK"),
         "Password": MessageLookupByLibrary.simpleMessage("Password"),
@@ -71,6 +73,8 @@ class MessageLookup extends MessageLookupByLibrary {
         "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
         "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
         "TryDemo": MessageLookupByLibrary.simpleMessage("Try Demo"),
+        "UnknownDeviceType":
+            MessageLookupByLibrary.simpleMessage("Unknown device type"),
         "UnknownError": MessageLookupByLibrary.simpleMessage("Unknown error"),
         "UnlinkDevice": MessageLookupByLibrary.simpleMessage("Unlink Device"),
         "UserAlreadyExist":

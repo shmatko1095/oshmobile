@@ -36,5 +36,7 @@
   "Yes": "Yes",
   "No": "No",
   "DeviceUnlinkAlertContent1": "The device ",
-  "DeviceUnlinkAlertContent2": " will be removed from your list. You can re-add it anytime by scanning the QR code again."
+  "DeviceUnlinkAlertContent2": " will be removed from your list. You can re-add it anytime by scanning the QR code again.",
+  "UnknownDeviceType": "Unknown device type",
+  "NoDeviceSelected": "No device selected"
 }

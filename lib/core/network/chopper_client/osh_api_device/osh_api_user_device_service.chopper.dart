@@ -1,4 +1,5 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format width=80
 
 part of 'osh_api_user_device_service.dart';
 
@@ -22,7 +23,8 @@ final class _$OshApiUserDeviceService extends OshApiUserDeviceService {
     required String uuid,
     required AssignDeviceRequest request,
   }) {
-    final Uri $url = Uri.parse('https://oshhome.com/v1/user/${uuid}/device');
+    final Uri $url =
+        Uri.parse('https://api.oshhome.com/v1/users/${uuid}/device');
     final $body = request;
     final Request $request = Request(
       'PUT',
@@ -38,7 +40,8 @@ final class _$OshApiUserDeviceService extends OshApiUserDeviceService {
     required String uuid,
     required UnassignDeviceRequest request,
   }) {
-    final Uri $url = Uri.parse('https://oshhome.com/v1/user/${uuid}/device');
+    final Uri $url =
+        Uri.parse('https://api.oshhome.com/v1/users/${uuid}/device');
     final $body = request;
     final Request $request = Request(
       'DELETE',
@@ -51,7 +54,8 @@ final class _$OshApiUserDeviceService extends OshApiUserDeviceService {
 
   @override
   Future<Response<dynamic>> getDeviceList({required String uuid}) {
-    final Uri $url = Uri.parse('https://oshhome.com/v1/user/${uuid}/device');
+    final Uri $url =
+        Uri.parse('https://api.oshhome.com/v1/users/${uuid}/device');
     final Request $request = Request(
       'GET',
       $url,

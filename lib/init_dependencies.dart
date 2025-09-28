@@ -5,7 +5,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive/hive.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
-import 'package:intl/intl.dart';
 import 'package:oshmobile/core/common/cubits/global_auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/core/api_authenticator.dart';
@@ -166,8 +165,14 @@ void _initAuthFeature() {
 
 Future<void> _initWebClient() async {
   chopperLogger.onRecord.listen((record) {
+    final t = record.time;
+    final ts = '${t.hour.toString().padLeft(2, '0')}:'
+        '${t.minute.toString().padLeft(2, '0')}:'
+        '${t.second.toString().padLeft(2, '0')}.'
+        '${t.millisecond.toString().padLeft(3, '0')}';
+
     log(
-      '[${DateFormat('hh:mm:ss:S a').format(record.time)}]: ${record.message}',
+      '[$ts] ${record.loggerName} ${record.level.name}: ${record.message}',
       zone: record.zone,
       time: record.time,
       error: record.error,

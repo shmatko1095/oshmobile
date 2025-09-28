@@ -1,12 +1,12 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
+import 'package:oshmobile/features/home/presentation/utils/device_page_factory.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/side_menu.dart';
 
 class HomePage extends StatefulWidget {
-  static route() => MaterialPageRoute(builder: (context) => const HomePage());
+  static MaterialPageRoute route() =>
+      MaterialPageRoute(builder: (context) => const HomePage());
 
   const HomePage({super.key});
 
@@ -31,32 +31,12 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             onPressed: () => {},
-            icon: const Icon(CupertinoIcons.add_circled),
+            icon: const Icon(Icons.settings),
           )
         ],
       ),
       drawer: const SideMenu(demo: false),
-      body: const Loader(),
-      // body: BlocConsumer<BlogBloc, BlogState>(listener: (context, state) {
-      //   if (state is BlogFailure) {
-      //     showSnackBar(context: context, content: state.error);
-      // }
-      // }, builder: (context, state) {
-      //   if (state is BlogLoading) {
-      //     return const Loader();
-      //   } else if (state is BlogFetchSuccess) {
-      //     return ListView.builder(
-      //       itemCount: state.blogs.length,
-      //       itemBuilder: (context, index) => BlogCard(
-      //         blog: state.blogs[index],
-      //         color:
-      //             index % 2 == 0 ? AppPalette.gradient1 : AppPalette.gradient2,
-      //       ),
-      //     );
-      //   } else {
-      //     return const SizedBox();
-      //   }
-      // }),
+      body: DevicePageFactory.getPage(""),
     );
   }
 }
