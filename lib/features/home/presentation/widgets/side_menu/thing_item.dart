@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/common/entities/device/osh_configuration.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/theme/text_styles.dart';
 import 'package:oshmobile/core/utils/ui_utils.dart';
@@ -13,7 +12,8 @@ class ThingItem extends StatelessWidget {
   final bool online;
   final String room;
   final String name;
-  final String type;
+
+  // final String type;
   final String sn;
 
   const ThingItem({
@@ -22,7 +22,7 @@ class ThingItem extends StatelessWidget {
     required this.online,
     required this.room,
     required this.name,
-    required this.type,
+    // required this.type,
     required this.sn,
   });
 
@@ -32,12 +32,12 @@ class ThingItem extends StatelessWidget {
 
   Widget _getIcon() {
     Color color = online ? AppPalette.onlineIndicatorColor : Colors.grey;
-    switch (type) {
-      case OshConfiguration.heaterType:
-        return Icon(Icons.thermostat, color: color);
-      default:
-        return Icon(Icons.circle_rounded, color: color);
-    }
+    // switch (type) {
+    //   case OshConfiguration.heaterType:
+    //     return Icon(Icons.thermostat, color: color);
+    //   default:
+    return Icon(Icons.circle_rounded, color: color);
+    // }
   }
 
   Future<bool?> _confirmUnassign(BuildContext context) async {
@@ -60,7 +60,8 @@ class ThingItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dismissible(
       confirmDismiss: (_) async => _confirmUnassign(context),
-      key: GlobalKey(),//Key("thing_item_$sn")
+      key: GlobalKey(),
+      //Key("thing_item_$sn")
       onDismissed: (dir) => context.read<HomeCubit>().unassignDevice(sn),
       direction: DismissDirection.endToStart,
       background: _buildDismissBackground(),

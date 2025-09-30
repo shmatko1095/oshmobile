@@ -1,18 +1,15 @@
 // import 'package:oshmobile/core/common/entities/device/device.dart';
 //
-// class DeviceListResponse {
-//   final String userUuid;
+// class GetUserResponse {
 //   final List<Device> devices;
 //
-//   const DeviceListResponse({
-//     required this.userUuid,
+//   const GetUserResponse({
 //     required this.devices,
 //   });
 //
-//   factory DeviceListResponse.fromJson(Map<String, dynamic>? json) {
+//   factory GetUserResponse.fromJson(Map<String, dynamic>? json) {
 //     json = json ?? {};
-//     return DeviceListResponse(
-//       userUuid: json['uuid'] ?? "",
+//     return GetUserResponse(
 //       devices: (json['devices'] as List<dynamic>?)?.map((deviceJson) {
 //             return Device.fromJson(deviceJson as Map<String, dynamic>);
 //           }).toList() ??

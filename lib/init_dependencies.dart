@@ -10,11 +10,11 @@ import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/core/api_authenticator.dart';
 import 'package:oshmobile/core/network/chopper_client/core/auth_interceptor.dart';
 import 'package:oshmobile/core/network/chopper_client/core/session_storage.dart';
-import 'package:oshmobile/core/network/chopper_client/osh_api_device/osh_api_user_device_service.dart';
-import 'package:oshmobile/core/network/chopper_client/osh_api_user/osh_api_user_auth_service.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api_device/osh_api_device_service.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api_user/osh_api_user_service.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
 import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source.dart';
-import 'package:oshmobile/features/auth/data/datasources/osh/osh_remote_data_source.dart';
+import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source_impl.dart';
 import 'package:oshmobile/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:oshmobile/features/auth/domain/repository/auth_repository.dart';
 import 'package:oshmobile/features/auth/domain/usecases/reset_password.dart';
@@ -22,12 +22,16 @@ import 'package:oshmobile/features/auth/domain/usecases/user_signin.dart';
 import 'package:oshmobile/features/auth/domain/usecases/user_signup.dart';
 import 'package:oshmobile/features/auth/domain/usecases/verify_email.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:oshmobile/features/home/data/datasources/remote_data_source.dart';
-import 'package:oshmobile/features/home/data/datasources/remote_data_source_impl.dart';
-import 'package:oshmobile/features/home/data/repositories/osh_repository_impl.dart';
-import 'package:oshmobile/features/home/domain/repositories/osh_repository.dart';
+import 'package:oshmobile/features/home/data/datasources/device_remote_data_source.dart';
+import 'package:oshmobile/features/home/data/datasources/device_remote_data_source_impl.dart';
+import 'package:oshmobile/features/home/data/datasources/user_remote_data_source.dart';
+import 'package:oshmobile/features/home/data/datasources/user_remote_data_source_impl.dart';
+import 'package:oshmobile/features/home/data/repositories/device_repository_impl.dart';
+import 'package:oshmobile/features/home/data/repositories/user_repository_impl.dart';
+import 'package:oshmobile/features/home/domain/repositories/device_repository.dart';
+import 'package:oshmobile/features/home/domain/repositories/user_repository.dart';
 import 'package:oshmobile/features/home/domain/usecases/assign_device.dart';
-import 'package:oshmobile/features/home/domain/usecases/get_device_list.dart';
+import 'package:oshmobile/features/home/domain/usecases/get_user_devices.dart';
 import 'package:oshmobile/features/home/domain/usecases/unassign_device.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:path_provider/path_provider.dart';
@@ -64,63 +68,39 @@ Future<void> _initCore() async {
 
 void _initHomeFeature() {
   locator
-    ..registerFactory<OshRemoteDataSource>(() => OshDeviceRemoteDataSourceImpl(
-        oshApiUserDeviceService: locator<OshApiUserDeviceService>()))
-    ..registerFactory<OshRepository>(
-      () => OshRepositoryImpl(
-          oshRemoteDataSource: locator<OshRemoteDataSource>()),
+    ..registerFactory<UserRemoteDataSource>(() =>
+        UserRemoteDataSourceImpl(apiUserService: locator<ApiUserService>()))
+    ..registerFactory<UserRepository>(
+      () => UserRepositoryImpl(dataSource: locator<UserRemoteDataSource>()),
     )
-    ..registerFactory<GetDeviceList>(
-      () => GetDeviceList(
-        oshRepository: locator<OshRepository>(),
+    ..registerFactory<DeviceRemoteDataSource>(() => DeviceRemoteDataSourceImpl(
+        apiDeviceService: locator<ApiDeviceService>()))
+    ..registerFactory<DeviceRepository>(
+      () => DeviceRepositoryImpl(dataSource: locator<DeviceRemoteDataSource>()),
+    )
+    ..registerFactory<GetUserDevices>(
+      () => GetUserDevices(
+        userRepository: locator<UserRepository>(),
+        deviceRepository: locator<DeviceRepository>(),
       ),
     )
     ..registerFactory<UnassignDevice>(
       () => UnassignDevice(
-        oshRepository: locator<OshRepository>(),
+        userRepository: locator<UserRepository>(),
       ),
     )
     ..registerFactory<AssignDevice>(
       () => AssignDevice(
-        oshRepository: locator<OshRepository>(),
+        userRepository: locator<UserRepository>(),
       ),
     )
     ..registerLazySingleton<HomeCubit>(() => HomeCubit(
           globalAuthCubit: locator<GlobalAuthCubit>(),
-          getDeviceList: locator<GetDeviceList>(),
+          getUserDevices: locator<GetUserDevices>(),
           unassignDevice: locator<UnassignDevice>(),
           assignDevice: locator<AssignDevice>(),
         ));
 }
-
-// void _initBlog() {
-//   locator
-//     ..registerFactory<BlogRemoteDatasource>(
-//       () => BlogRemoteDatasourceImpl(supabaseClient: locator()),
-//     )
-//     ..registerFactory<BlogLocalDataSource>(
-//       () => BlogLocalDataSourceImpl(box: locator()),
-//     )
-//     ..registerFactory<BlogRepository>(
-//       () => BlogRepositoryImpl(
-//         blogRemoteDatasource: locator(),
-//         blogLocalDataSource: locator(),
-//         connectionChecker: locator(),
-//       ),
-//     )
-//     ..registerFactory<UploadBlog>(
-//       () => UploadBlog(blogRepository: locator()),
-//     )
-//     ..registerFactory<GetAllBlogs>(
-//       () => GetAllBlogs(blogRepository: locator()),
-//     )
-//     ..registerLazySingleton<BlogBloc>(
-//       () => BlogBloc(
-//         uploadBlog: locator(),
-//         getAllBlogs: locator(),
-//       ),
-//     );
-// }
 
 void _initAuthFeature() {
   locator
@@ -128,7 +108,7 @@ void _initAuthFeature() {
     ..registerFactory<IAuthRemoteDataSource>(
       () => OshAuthRemoteDataSourceImpl(
         authClient: locator<AuthService>(),
-        oshApiUserService: locator<OshApiUserAuthService>(),
+        oshApiUserService: locator<ApiUserService>(),
       ),
     )
     //Repository
@@ -187,8 +167,11 @@ Future<void> _initWebClient() async {
     ..registerLazySingleton<AuthService>(
       () => AuthService.create(),
     )
-    ..registerLazySingleton<OshApiUserAuthService>(
-      () => OshApiUserAuthService.create(),
+    ..registerLazySingleton<ApiUserService>(
+      () => ApiUserService.create(),
+    )
+    ..registerLazySingleton<ApiDeviceService>(
+      () => ApiDeviceService.create(),
     )
     ..registerLazySingleton<GlobalAuthCubit>(
       () => GlobalAuthCubit(
@@ -200,9 +183,6 @@ Future<void> _initWebClient() async {
       () => ApiAuthenticator(
         globalAuthCubit: locator<GlobalAuthCubit>(),
       ),
-    )
-    ..registerLazySingleton<OshApiUserDeviceService>(
-      () => OshApiUserDeviceService.create(),
     );
 
   final chopperClient = ChopperClient(
@@ -210,8 +190,8 @@ Future<void> _initWebClient() async {
     authenticator: locator<ApiAuthenticator>(),
     services: [
       locator<AuthService>(),
-      locator<OshApiUserAuthService>(),
-      locator<OshApiUserDeviceService>()
+      locator<ApiUserService>(),
+      locator<ApiDeviceService>()
     ],
     interceptors: [
       AuthInterceptor(globalAuthCubit: locator<GlobalAuthCubit>()),
@@ -224,8 +204,8 @@ Future<void> _initWebClient() async {
     ],
   );
   locator<AuthService>().updateClient(chopperClient);
-  locator<OshApiUserAuthService>().updateClient(chopperClient);
-  locator<OshApiUserDeviceService>().updateClient(chopperClient);
+  locator<ApiUserService>().updateClient(chopperClient);
+  locator<ApiDeviceService>().updateClient(chopperClient);
 
   locator.registerSingleton<ChopperClient>(chopperClient);
 }
