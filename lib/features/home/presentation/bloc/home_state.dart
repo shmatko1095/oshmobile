@@ -20,3 +20,11 @@ final class HomeFailed extends HomeState {
 
   const HomeFailed([this.message]);
 }
+
+final class HomeAssignFailed extends HomeState {
+  const HomeAssignFailed();
+}
+
+final class HomeAssignDone extends HomeState {
+  const HomeAssignDone();
+}

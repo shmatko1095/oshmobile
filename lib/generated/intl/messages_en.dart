@@ -35,9 +35,11 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("The device "),
         "DeviceUnlinkAlertContent2": MessageLookupByLibrary.simpleMessage(
             " will be removed from your list. You can re-add it anytime by scanning the QR code again."),
+        "Done": MessageLookupByLibrary.simpleMessage("Done"),
         "DontHaveAnAccount":
             MessageLookupByLibrary.simpleMessage("Don\'t have an account?"),
         "Email": MessageLookupByLibrary.simpleMessage("Email"),
+        "Failed": MessageLookupByLibrary.simpleMessage("Failed"),
         "ForgotPassword":
             MessageLookupByLibrary.simpleMessage("Forgot password?"),
         "ForgotPasswordContent": MessageLookupByLibrary.simpleMessage(
@@ -50,6 +52,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "InvalidPassword": m0,
         "InvalidUserCredentials":
             MessageLookupByLibrary.simpleMessage("Invalid user credentials"),
+        "InvalidValue": MessageLookupByLibrary.simpleMessage("Invalid value"),
         "No": MessageLookupByLibrary.simpleMessage("No"),
         "NoDeviceSelected":
             MessageLookupByLibrary.simpleMessage("No device selected"),
@@ -62,12 +65,16 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Passwords do not match"),
         "PleaseCheckYourInbox": MessageLookupByLibrary.simpleMessage(
             ". Please check your inbox and follow the instructions to complete your registration."),
+        "PointCameraToQR": MessageLookupByLibrary.simpleMessage(
+            "Point the camera at the QR code"),
         "RegistrationSuccessful":
             MessageLookupByLibrary.simpleMessage("Almost There!"),
         "RegistrationSuccessfulContent": MessageLookupByLibrary.simpleMessage(
             "The last step is to verify your email address. Please check your inbox and follow the instructions to complete your registration."),
         "ResetPassword": MessageLookupByLibrary.simpleMessage("Reset password"),
+        "SecureCode": MessageLookupByLibrary.simpleMessage("Secure code"),
         "SendEmail": MessageLookupByLibrary.simpleMessage("Send email"),
+        "SerialNumber": MessageLookupByLibrary.simpleMessage("Serial number"),
         "SignIn": MessageLookupByLibrary.simpleMessage("Sign In"),
         "SignOut": MessageLookupByLibrary.simpleMessage("Sign Out"),
         "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),

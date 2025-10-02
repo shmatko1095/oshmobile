@@ -55,7 +55,7 @@ class _ItemListState extends State<ItemList> {
                 itemBuilder: (context, index) {
                   Device device = devices[index];
                   return ThingItem(
-                    sn: device.sn,
+                    id: device.id,
                     name: device.userData.alias.isEmpty
                         ? device.sn
                         : device.userData.alias,

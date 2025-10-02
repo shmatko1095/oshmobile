@@ -5,7 +5,7 @@ import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/theme/text_styles.dart';
 import 'package:oshmobile/core/utils/ui_utils.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
-import 'package:oshmobile/features/home/presentation/widgets/side_menu/unassign_device_alert.dart';
+import 'package:oshmobile/features/home/presentation/pages/unassign_device_dialog.dart';
 
 class ThingItem extends StatelessWidget {
   final bool unassignDeviceAllowed;
@@ -14,7 +14,7 @@ class ThingItem extends StatelessWidget {
   final String name;
 
   // final String type;
-  final String sn;
+  final String id;
 
   const ThingItem({
     super.key,
@@ -23,7 +23,7 @@ class ThingItem extends StatelessWidget {
     required this.room,
     required this.name,
     // required this.type,
-    required this.sn,
+    required this.id,
   });
 
   void _onDeviceRename(BuildContext context) {}
@@ -48,10 +48,7 @@ class ThingItem extends StatelessWidget {
     return await showCupertinoDialog<bool>(
       context: context,
       builder: (BuildContext context) {
-        return UnassignDeviceDialog(
-          deviceName: name,
-          deviceSn: sn,
-        );
+        return UnassignDeviceDialog(deviceName: name);
       },
     );
   }
@@ -62,7 +59,7 @@ class ThingItem extends StatelessWidget {
       confirmDismiss: (_) async => _confirmUnassign(context),
       key: GlobalKey(),
       //Key("thing_item_$sn")
-      onDismissed: (dir) => context.read<HomeCubit>().unassignDevice(sn),
+      onDismissed: (dir) => context.read<HomeCubit>().unassignDevice(id),
       direction: DismissDirection.endToStart,
       background: _buildDismissBackground(),
       child: _buildDeviceButton(context),

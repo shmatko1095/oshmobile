@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:oshmobile/features/home/presentation/pages/add_device_page.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class AddDeviceButton extends StatelessWidget {
@@ -9,13 +10,7 @@ class AddDeviceButton extends StatelessWidget {
     return ListTile(
       leading: const Icon(Icons.add, color: Colors.blue),
       title: Text(S.of(context).AddDevice),
-      onTap: null,
-      // onTap: () => Navigator.of(context).push(
-      //   NewDeviceForm.route(
-      //       homeCubit: context.read<HomeCubit>(),
-      //       title: S.of(context).addDevice,
-      //       handler: context.read<HomeCubit>().assignDevice),
-      // )
+      onTap: () => Navigator.push(context, AddDevicePage.route()),
     );
   }
 }

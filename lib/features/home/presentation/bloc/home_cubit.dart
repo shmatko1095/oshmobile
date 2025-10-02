@@ -58,8 +58,11 @@ class HomeCubit extends Cubit<HomeState> {
       sc: sc,
     ));
     result.fold(
-      (l) => emit(HomeFailed(l.message ?? "")),
-      (r) => updateDeviceList(),
+      (l) => emit(const HomeAssignFailed()),
+      (r) {
+        emit(const HomeAssignDone());
+        updateDeviceList();
+      },
     );
   }
 

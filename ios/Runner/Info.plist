@@ -51,5 +51,8 @@
     <key>NSCameraUsageDescription</key>
     <string>Photos from camera required</string>
 
+    <key>NSCameraUsageDescription</key>
+    <string>Camera is used to scan QR codes</string>
+
 </dict>
 </plist>

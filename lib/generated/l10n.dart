@@ -449,6 +449,66 @@ class S {
       args: [],
     );
   }
+
+  /// `Serial number`
+  String get SerialNumber {
+    return Intl.message(
+      'Serial number',
+      name: 'SerialNumber',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Secure code`
+  String get SecureCode {
+    return Intl.message(
+      'Secure code',
+      name: 'SecureCode',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invalid value`
+  String get InvalidValue {
+    return Intl.message(
+      'Invalid value',
+      name: 'InvalidValue',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Point the camera at the QR code`
+  String get PointCameraToQR {
+    return Intl.message(
+      'Point the camera at the QR code',
+      name: 'PointCameraToQR',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Done`
+  String get Done {
+    return Intl.message(
+      'Done',
+      name: 'Done',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failed`
+  String get Failed {
+    return Intl.message(
+      'Failed',
+      name: 'Failed',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

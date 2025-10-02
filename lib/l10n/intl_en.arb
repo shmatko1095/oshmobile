@@ -38,5 +38,11 @@
   "DeviceUnlinkAlertContent1": "The device ",
   "DeviceUnlinkAlertContent2": " will be removed from your list. You can re-add it anytime by scanning the QR code again.",
   "UnknownDeviceType": "Unknown device type",
-  "NoDeviceSelected": "No device selected"
+  "NoDeviceSelected": "No device selected",
+  "SerialNumber": "Serial number",
+  "SecureCode": "Secure code",
+  "InvalidValue": "Invalid value",
+  "PointCameraToQR": "Point the camera at the QR code",
+  "Done": "Done",
+  "Failed": "Failed"
 }
