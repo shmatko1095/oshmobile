@@ -17,8 +17,8 @@ class UnassignDeviceDialog extends StatelessWidget {
     fontSize: 16,
     color: CupertinoColors.systemGrey,
   );
-  static const TextStyle _deviceNameStyle = TextStyle(
-    color: CupertinoColors.activeBlue,
+  static final TextStyle _deviceNameStyle = TextStyle(
+    color: CupertinoColors.activeBlue.withOpacity(0.8),
     fontWeight: FontWeight.w600,
   );
 
@@ -27,9 +27,10 @@ class UnassignDeviceDialog extends StatelessWidget {
     return CupertinoAlertDialog(
       title: Column(
         children: [
-          const Icon(
+          Icon(
             CupertinoIcons.delete,
-            color: CupertinoColors.systemRed,
+            color:
+                CupertinoColors.extraLightBackgroundGray.withValues(alpha: 0.8),
             size: 60.0,
           ),
           const SizedBox(height: 10),

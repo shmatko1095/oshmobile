@@ -5,10 +5,10 @@ import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/theme/text_styles.dart';
 import 'package:oshmobile/core/utils/ui_utils.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
+import 'package:oshmobile/features/home/presentation/pages/rename_device_page.dart';
 import 'package:oshmobile/features/home/presentation/pages/unassign_device_dialog.dart';
 
 class ThingItem extends StatelessWidget {
-  final bool unassignDeviceAllowed;
   final bool online;
   final String room;
   final String name;
@@ -18,7 +18,6 @@ class ThingItem extends StatelessWidget {
 
   const ThingItem({
     super.key,
-    required this.unassignDeviceAllowed,
     required this.online,
     required this.room,
     required this.name,
@@ -26,7 +25,15 @@ class ThingItem extends StatelessWidget {
     required this.id,
   });
 
-  void _onDeviceRename(BuildContext context) {}
+  void _onDeviceRename(BuildContext context) {
+    Navigator.push(
+        context,
+        RenameDevicePage.route(
+          deviceId: id,
+          name: name,
+          room: room,
+        ));
+  }
 
   void _onDeviceSelected(BuildContext context) {}
 
@@ -41,7 +48,7 @@ class ThingItem extends StatelessWidget {
   }
 
   Future<bool?> _confirmUnassign(BuildContext context) async {
-    return unassignDeviceAllowed ? _showUnassignDialog(context) : false;
+    return _showUnassignDialog(context);
   }
 
   Future<bool?> _showUnassignDialog(BuildContext context) async {

@@ -509,6 +509,36 @@ class S {
       args: [],
     );
   }
+
+  /// `Device information`
+  String get DeviceEditTitle {
+    return Intl.message(
+      'Device information',
+      name: 'DeviceEditTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Name`
+  String get Name {
+    return Intl.message(
+      'Name',
+      name: 'Name',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Room`
+  String get Room {
+    return Intl.message(
+      'Room',
+      name: 'Room',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

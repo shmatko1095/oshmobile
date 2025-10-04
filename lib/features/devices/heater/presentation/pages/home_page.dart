@@ -34,7 +34,7 @@ class _HomePageState extends State<HomePage> {
           )
         ],
       ),
-      drawer: const SideMenu(demo: false),
+      drawer: const SideMenu(),
       body: DevicePageFactory.getPage(""),
     );
   }

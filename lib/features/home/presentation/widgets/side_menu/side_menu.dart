@@ -5,9 +5,7 @@ import 'package:oshmobile/features/home/presentation/widgets/side_menu/item_list
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/logout_button.dart';
 
 class SideMenu extends StatelessWidget {
-  final bool demo;
-
-  const SideMenu({super.key, required this.demo});
+  const SideMenu({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +13,7 @@ class SideMenu extends StatelessWidget {
       child: Column(
         children: [
           const AccountDrawerHeader(),
-          ItemList(isDemo: demo),
+          const ItemList(),
           const AddDeviceButton(),
           const Divider(thickness: 1.5),
           const LogoutButton(),

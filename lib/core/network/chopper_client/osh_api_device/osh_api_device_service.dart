@@ -32,8 +32,8 @@ abstract class ApiDeviceService extends ChopperService {
     @Path('id') required String id,
   });
 
-  @PUT(path: "/{id}")
-  Future<Response> assignDevice({
+  @PUT(path: "/{id}/userdata")
+  Future<Response> updateDeviceUserData({
     @Path('id') required String id,
     @Body() required UpdateDeviceUserData request,
   });

@@ -17,7 +17,7 @@ import 'package:oshmobile/generated/l10n.dart';
 part 'verify_email_alert.dart';
 
 class SignInPage extends StatefulWidget {
-  static route() =>
+  static CupertinoPageRoute route() =>
       CupertinoPageRoute(builder: (context) => const SignInPage());
 
   const SignInPage({super.key});
@@ -117,14 +117,14 @@ class _SignInPageState extends State<SignInPage> {
                                     .InvalidPassword(_minPasswordLen),
                               ),
                             ),
-                            const SizedBox(height: 50),
+                            const SizedBox(height: 40),
                             (state is AuthLoading)
                                 ? CupertinoActivityIndicator()
                                 : CustomElevatedButton(
                                     buttonText: S.of(context).SignIn,
                                     onPressed: () => _signIn(),
                                   ),
-                            const SizedBox(height: 30),
+                            const SizedBox(height: 20),
                             CustomElevatedButton(
                               icon: Image.asset("assets/images/google-icon.png",
                                   height: 25),
@@ -174,14 +174,7 @@ class _SignInPageState extends State<SignInPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 30),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Text(
-                      S.of(context).TryDemo,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                  ),
+                  const SizedBox(height: 10),
                 ],
               );
               // }

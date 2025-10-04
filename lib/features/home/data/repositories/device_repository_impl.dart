@@ -52,4 +52,22 @@ class DeviceRepositoryImpl implements DeviceRepository {
       return left(Failure.unexpected(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> updateDeviceUserData({
+    required String deviceId,
+    required String alias,
+    required String description,
+  }) async {
+    try {
+      final result = await dataSource.updateDeviceUserData(
+        deviceId: deviceId,
+        alias: alias,
+        description: description,
+      );
+      return right(result);
+    } on Exception catch (e) {
+      return left(Failure.unexpected(e.toString()));
+    }
+  }
 }

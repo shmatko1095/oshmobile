@@ -31,6 +31,8 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Check your email"),
         "ContinueWithGoogle":
             MessageLookupByLibrary.simpleMessage("Continue with Google"),
+        "DeviceEditTitle":
+            MessageLookupByLibrary.simpleMessage("Device information"),
         "DeviceUnlinkAlertContent1":
             MessageLookupByLibrary.simpleMessage("The device "),
         "DeviceUnlinkAlertContent2": MessageLookupByLibrary.simpleMessage(
@@ -53,6 +55,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "InvalidUserCredentials":
             MessageLookupByLibrary.simpleMessage("Invalid user credentials"),
         "InvalidValue": MessageLookupByLibrary.simpleMessage("Invalid value"),
+        "Name": MessageLookupByLibrary.simpleMessage("Name"),
         "No": MessageLookupByLibrary.simpleMessage("No"),
         "NoDeviceSelected":
             MessageLookupByLibrary.simpleMessage("No device selected"),
@@ -72,6 +75,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "RegistrationSuccessfulContent": MessageLookupByLibrary.simpleMessage(
             "The last step is to verify your email address. Please check your inbox and follow the instructions to complete your registration."),
         "ResetPassword": MessageLookupByLibrary.simpleMessage("Reset password"),
+        "Room": MessageLookupByLibrary.simpleMessage("Room"),
         "SecureCode": MessageLookupByLibrary.simpleMessage("Secure code"),
         "SendEmail": MessageLookupByLibrary.simpleMessage("Send email"),
         "SerialNumber": MessageLookupByLibrary.simpleMessage("Serial number"),

@@ -5,6 +5,7 @@ import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/features/home/domain/usecases/assign_device.dart';
 import 'package:oshmobile/features/home/domain/usecases/get_user_devices.dart';
 import 'package:oshmobile/features/home/domain/usecases/unassign_device.dart';
+import 'package:oshmobile/features/home/domain/usecases/update_device_user_data.dart';
 
 part 'home_state.dart';
 
@@ -13,6 +14,7 @@ class HomeCubit extends Cubit<HomeState> {
   final GetUserDevices _getUserDevices;
   final UnassignDevice _unassignDevice;
   final AssignDevice _assignDevice;
+  final UpdateDeviceUserData _updateDeviceUserData;
 
   List<Device> userDevices = [];
 
@@ -21,16 +23,20 @@ class HomeCubit extends Cubit<HomeState> {
     required GetUserDevices getUserDevices,
     required UnassignDevice unassignDevice,
     required AssignDevice assignDevice,
+    required UpdateDeviceUserData updateDeviceUserData,
   })  : _getUserDevices = getUserDevices,
         _unassignDevice = unassignDevice,
         _assignDevice = assignDevice,
+        _updateDeviceUserData = updateDeviceUserData,
         super(HomeInitial());
 
   Future<void> updateDeviceList() async {
     emit(const HomeLoading());
     final result = await _getUserDevices(_userUuid);
     result.fold(
-      (l) => emit(HomeFailed(l.message ?? "")),
+      (l) {
+        _updateDeviceList([]);
+      },
       (r) {
         _updateDeviceList(r);
         emit(const HomeReady());
@@ -61,6 +67,26 @@ class HomeCubit extends Cubit<HomeState> {
       (l) => emit(const HomeAssignFailed()),
       (r) {
         emit(const HomeAssignDone());
+        updateDeviceList();
+      },
+    );
+  }
+
+  Future<void> updateDeviceUserData(
+    String deviceId,
+    String alias,
+    String description,
+  ) async {
+    emit(const HomeLoading());
+    final result = await _updateDeviceUserData(UpdateDeviceUserDataParams(
+      deviceId: deviceId,
+      alias: alias,
+      description: description,
+    ));
+    result.fold(
+      (l) => emit(const HomeUpdateDeviceUserDataFailed()),
+      (r) {
+        emit(const HomeUpdateDeviceUserDataDone());
         updateDeviceList();
       },
     );

@@ -33,6 +33,7 @@ import 'package:oshmobile/features/home/domain/repositories/user_repository.dart
 import 'package:oshmobile/features/home/domain/usecases/assign_device.dart';
 import 'package:oshmobile/features/home/domain/usecases/get_user_devices.dart';
 import 'package:oshmobile/features/home/domain/usecases/unassign_device.dart';
+import 'package:oshmobile/features/home/domain/usecases/update_device_user_data.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -94,11 +95,17 @@ void _initHomeFeature() {
         userRepository: locator<UserRepository>(),
       ),
     )
+    ..registerFactory<UpdateDeviceUserData>(
+      () => UpdateDeviceUserData(
+        deviceRepository: locator<DeviceRepository>(),
+      ),
+    )
     ..registerLazySingleton<HomeCubit>(() => HomeCubit(
           globalAuthCubit: locator<GlobalAuthCubit>(),
           getUserDevices: locator<GetUserDevices>(),
           unassignDevice: locator<UnassignDevice>(),
           assignDevice: locator<AssignDevice>(),
+          updateDeviceUserData: locator<UpdateDeviceUserData>(),
         ));
 }
 

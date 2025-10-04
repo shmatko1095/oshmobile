@@ -15,4 +15,10 @@ abstract interface class DeviceRemoteDataSource {
   Future<Device> get({
     required String deviceId,
   });
+
+  Future<void> updateDeviceUserData({
+    required String deviceId,
+    required String alias,
+    required String description,
+  });
 }

@@ -28,3 +28,11 @@ final class HomeAssignFailed extends HomeState {
 final class HomeAssignDone extends HomeState {
   const HomeAssignDone();
 }
+
+final class HomeUpdateDeviceUserDataFailed extends HomeState {
+  const HomeUpdateDeviceUserDataFailed();
+}
+
+final class HomeUpdateDeviceUserDataDone extends HomeState {
+  const HomeUpdateDeviceUserDataDone();
+}

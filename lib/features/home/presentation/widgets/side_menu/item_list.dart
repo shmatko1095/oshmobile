@@ -8,9 +8,7 @@ import 'package:oshmobile/features/home/presentation/widgets/side_menu/thing_ite
 import 'package:oshmobile/generated/l10n.dart';
 
 class ItemList extends StatefulWidget {
-  final bool isDemo;
-
-  const ItemList({super.key, required this.isDemo});
+  const ItemList({super.key});
 
   @override
   State<ItemList> createState() => _ItemListState();
@@ -62,7 +60,6 @@ class _ItemListState extends State<ItemList> {
                     room: device.userData.description,
                     online: device.connectionInfo.online,
                     // type: device.model.configuration.osh.type,
-                    unassignDeviceAllowed: !widget.isDemo,
                   );
                 },
               );

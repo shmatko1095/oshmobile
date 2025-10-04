@@ -17,4 +17,10 @@ abstract interface class DeviceRepository {
   Future<Either<Failure, Device>> get({
     required String deviceId,
   });
+
+  Future<Either<Failure, void>> updateDeviceUserData({
+    required String deviceId,
+    required String alias,
+    required String description,
+  });
 }

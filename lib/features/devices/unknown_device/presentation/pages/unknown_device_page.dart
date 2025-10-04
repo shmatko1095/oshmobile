@@ -15,7 +15,7 @@ class UnknownDevicePage extends StatelessWidget {
             Icon(
               Icons.warning_rounded,
               size: 150.0,
-              color: Colors.red.withOpacity(0.1),
+              color: Colors.red.withValues(alpha: 0.1),
             ),
             const SizedBox(height: 20),
             Text(

@@ -106,7 +106,9 @@ class _AddDevicePageState extends State<AddDevicePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: Text(S.of(context).AddDevice),
+      ),
       body: Padding(
           padding: const EdgeInsets.all(24),
           child: BlocConsumer<HomeCubit, HomeState>(

@@ -44,5 +44,8 @@
   "InvalidValue": "Invalid value",
   "PointCameraToQR": "Point the camera at the QR code",
   "Done": "Done",
-  "Failed": "Failed"
+  "Failed": "Failed",
+  "DeviceEditTitle": "Device information",
+  "Name": "Name",
+  "Room": "Room"
 }

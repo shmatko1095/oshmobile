@@ -66,11 +66,12 @@ final class _$ApiDeviceService extends ApiDeviceService {
   }
 
   @override
-  Future<Response<dynamic>> assignDevice({
+  Future<Response<dynamic>> updateDeviceUserData({
     required String id,
     required UpdateDeviceUserData request,
   }) {
-    final Uri $url = Uri.parse('https://api.oshhome.com/v1/devices/${id}');
+    final Uri $url =
+        Uri.parse('https://api.oshhome.com/v1/devices/${id}/userdata');
     final $body = request;
     final Request $request = Request(
       'PUT',
