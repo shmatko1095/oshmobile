@@ -11,16 +11,18 @@ class RenameDevicePage extends StatefulWidget {
   final String name;
   final String room;
 
-  static CupertinoPageRoute route(
-          {required String deviceId,
-          required String name,
-          required String room}) =>
+  static CupertinoPageRoute route({
+    required String deviceId,
+    required String name,
+    required String room,
+  }) =>
       CupertinoPageRoute(
-          builder: (context) => RenameDevicePage(
-                deviceId: deviceId,
-                name: name,
-                room: room,
-              ));
+        builder: (context) => RenameDevicePage(
+          deviceId: deviceId,
+          name: name,
+          room: room,
+        ),
+      );
 
   const RenameDevicePage({
     super.key,
@@ -38,11 +40,24 @@ class _RenameDevicePageState extends State<RenameDevicePage> {
   final _descriptionCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  late final String _initialAlias;
+  late final String _initialDesc;
+
+  String _norm(String? s) => (s ?? '').trim().replaceAll(RegExp(r'\s+'), ' ');
+
+  bool get _canSave => _norm(_aliasCtrl.text) != _initialAlias || _norm(_descriptionCtrl.text) != _initialDesc;
+
   @override
   void initState() {
+    super.initState();
+    _initialAlias = _norm(widget.name);
+    _initialDesc = _norm(widget.room);
+
     _aliasCtrl.text = widget.name;
     _descriptionCtrl.text = widget.room;
-    super.initState();
+
+    _aliasCtrl.addListener(() => setState(() {}));
+    _descriptionCtrl.addListener(() => setState(() {}));
   }
 
   @override
@@ -53,14 +68,12 @@ class _RenameDevicePageState extends State<RenameDevicePage> {
   }
 
   void _submit() {
-    final alias = _aliasCtrl.text.trim();
-    final desc = _descriptionCtrl.text.trim();
-
+    if (!_canSave) return; // защита от лишних вызовов
     if (_formKey.currentState!.validate()) {
       context.read<HomeCubit>().updateDeviceUserData(
             widget.deviceId,
-            alias,
-            desc,
+            _norm(_aliasCtrl.text),
+            _norm(_descriptionCtrl.text),
           );
     }
   }
@@ -83,50 +96,53 @@ class _RenameDevicePageState extends State<RenameDevicePage> {
         title: Text(S.of(context).DeviceEditTitle),
       ),
       body: Padding(
-          padding: const EdgeInsets.all(24),
-          child: BlocConsumer<HomeCubit, HomeState>(
-            listenWhen: (previous, current) =>
-                ModalRoute.of(context)?.isCurrent ?? true,
-            listener: (context, state) => _onStateChanged(context, state),
-            builder: (context, state) {
-              return Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            const SizedBox(height: 20),
-                            TextFormField(
-                              controller: _aliasCtrl,
-                              decoration: InputDecoration(
-                                labelText: S.of(context).Name,
-                              ),
+        padding: const EdgeInsets.all(24),
+        child: BlocConsumer<HomeCubit, HomeState>(
+          listenWhen: (previous, current) => ModalRoute.of(context)?.isCurrent ?? true,
+          listener: (context, state) => _onStateChanged(context, state),
+          builder: (context, state) {
+            final isLoading = state is HomeLoading;
+
+            return Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            controller: _aliasCtrl,
+                            decoration: InputDecoration(
+                              labelText: S.of(context).Name,
                             ),
-                            const SizedBox(height: 20),
-                            TextFormField(
-                              controller: _descriptionCtrl,
-                              decoration: InputDecoration(
-                                labelText: S.of(context).Room,
-                              ),
+                          ),
+                          const SizedBox(height: 20),
+                          TextFormField(
+                            controller: _descriptionCtrl,
+                            decoration: InputDecoration(
+                              labelText: S.of(context).Room,
                             ),
-                            const SizedBox(height: 30),
-                            (state is HomeLoading)
-                                ? CupertinoActivityIndicator()
-                                : CustomElevatedButton(
-                                    buttonText: S.of(context).OK,
-                                    onPressed: () => _submit(),
-                                  ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 30),
+                          if (isLoading)
+                            const CupertinoActivityIndicator()
+                          else
+                            CustomElevatedButton(
+                              buttonText: S.of(context).OK,
+                              onPressed: _canSave ? _submit : null,
+                            ),
+                        ],
                       ),
                     ),
                   ),
-                ],
-              );
-            },
-          )),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }

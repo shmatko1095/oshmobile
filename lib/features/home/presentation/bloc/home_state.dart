@@ -1,38 +1,45 @@
 part of 'home_cubit.dart';
 
 @immutable
-sealed class HomeState {
-  const HomeState();
+class HomeState {
+  final String? selectedDeviceId;
+
+  const HomeState({this.selectedDeviceId});
+
+  HomeState copyWith({String? selectedDeviceId}) =>
+      HomeState(selectedDeviceId: selectedDeviceId ?? this.selectedDeviceId);
 }
 
-final class HomeInitial extends HomeState {}
+final class HomeInitial extends HomeState {
+  const HomeInitial({super.selectedDeviceId});
+}
 
 final class HomeReady extends HomeState {
-  const HomeReady();
+  const HomeReady({required super.selectedDeviceId});
 }
 
 final class HomeLoading extends HomeState {
-  const HomeLoading();
+  const HomeLoading({required super.selectedDeviceId});
 }
 
 final class HomeFailed extends HomeState {
   final String? message;
 
-  const HomeFailed([this.message]);
+  const HomeFailed(this.message, {required super.selectedDeviceId});
 }
 
 final class HomeAssignFailed extends HomeState {
-  const HomeAssignFailed();
+  const HomeAssignFailed({required super.selectedDeviceId});
 }
 
 final class HomeAssignDone extends HomeState {
-  const HomeAssignDone();
+  const HomeAssignDone({required super.selectedDeviceId});
 }
 
 final class HomeUpdateDeviceUserDataFailed extends HomeState {
-  const HomeUpdateDeviceUserDataFailed();
+  const HomeUpdateDeviceUserDataFailed({required super.selectedDeviceId});
 }
 
 final class HomeUpdateDeviceUserDataDone extends HomeState {
-  const HomeUpdateDeviceUserDataDone();
+  const HomeUpdateDeviceUserDataDone({required super.selectedDeviceId});
 }

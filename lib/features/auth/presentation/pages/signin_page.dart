@@ -17,8 +17,7 @@ import 'package:oshmobile/generated/l10n.dart';
 part 'verify_email_alert.dart';
 
 class SignInPage extends StatefulWidget {
-  static CupertinoPageRoute route() =>
-      CupertinoPageRoute(builder: (context) => const SignInPage());
+  static CupertinoPageRoute route() => CupertinoPageRoute(builder: (context) => const SignInPage());
 
   const SignInPage({super.key});
 
@@ -43,9 +42,7 @@ class _SignInPageState extends State<SignInPage> {
   void _signIn() {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
-    if (_formKey.currentState!.validate() &&
-        email.isNotEmpty &&
-        password.isNotEmpty) {
+    if (_formKey.currentState!.validate() && email.isNotEmpty && password.isNotEmpty) {
       context.read<AuthBloc>().add(
             AuthSignIn(
               email: email,
@@ -78,8 +75,7 @@ class _SignInPageState extends State<SignInPage> {
       body: Padding(
           padding: const EdgeInsets.all(24),
           child: BlocConsumer<AuthBloc, AuthState>(
-            listenWhen: (previous, current) =>
-                ModalRoute.of(context)?.isCurrent ?? true,
+            listenWhen: (previous, current) => ModalRoute.of(context)?.isCurrent ?? true,
             listener: (context, state) => _onAuthStateChanged(context, state),
             builder: (context, state) {
               return Column(
@@ -112,9 +108,7 @@ class _SignInPageState extends State<SignInPage> {
                               validator: (value) => FormValidator.length(
                                 value: value,
                                 length: _minPasswordLen,
-                                errorMessage: S
-                                    .of(context)
-                                    .InvalidPassword(_minPasswordLen),
+                                errorMessage: S.of(context).InvalidPassword(_minPasswordLen),
                               ),
                             ),
                             const SizedBox(height: 40),
@@ -126,24 +120,18 @@ class _SignInPageState extends State<SignInPage> {
                                   ),
                             const SizedBox(height: 20),
                             CustomElevatedButton(
-                              icon: Image.asset("assets/images/google-icon.png",
-                                  height: 25),
+                              icon: Image.asset("assets/images/google-icon.png", height: 25),
                               buttonText: S.of(context).ContinueWithGoogle,
                               backgroundColor: getColorFromUiMode(context),
                               onPressed: null,
                             ),
                             const SizedBox(height: 30),
                             GestureDetector(
-                              onTap: () => Navigator.push(
-                                  context,
-                                  ForgotPasswordPage.route(
-                                      _emailController.text.trim())),
+                              onTap: () =>
+                                  Navigator.push(context, ForgotPasswordPage.route(_emailController.text.trim())),
                               child: Text(
                                 S.of(context).ForgotYourPassword,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                       decoration: TextDecoration.underline,
                                     ),
                               ),
@@ -165,10 +153,7 @@ class _SignInPageState extends State<SignInPage> {
                           TextSpan(text: "  "),
                           TextSpan(
                             text: S.of(context).SignUp,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(color: AppPalette.blue),
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(color: AppPalette.blue),
                           ),
                         ],
                       ),

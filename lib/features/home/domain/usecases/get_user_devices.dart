@@ -22,8 +22,7 @@ class GetUserDevices implements UseCase<List<Device>, String> {
       (user) async {
         if (user.devices.isEmpty) return right(const []);
 
-        final futures =
-            user.devices.map((d) => deviceRepository.get(deviceId: d.id));
+        final futures = user.devices.map((d) => deviceRepository.get(deviceId: d.id));
         final results = await Future.wait(futures, eagerError: false);
 
         final devices = <Device>[];

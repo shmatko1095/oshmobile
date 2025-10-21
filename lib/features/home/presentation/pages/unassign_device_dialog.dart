@@ -29,8 +29,7 @@ class UnassignDeviceDialog extends StatelessWidget {
         children: [
           Icon(
             CupertinoIcons.delete,
-            color:
-                CupertinoColors.extraLightBackgroundGray.withValues(alpha: 0.8),
+            color: CupertinoColors.extraLightBackgroundGray.withValues(alpha: 0.8),
             size: 60.0,
           ),
           const SizedBox(height: 10),

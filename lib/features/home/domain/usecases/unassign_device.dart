@@ -20,7 +20,6 @@ class UnassignDevice implements UseCase<void, UnassignDeviceParams> {
 
   @override
   Future<Either<Failure, void>> call(UnassignDeviceParams params) async {
-    return userRepository.unassignDevice(
-        userId: params.userId, deviceId: params.deviceId);
+    return userRepository.unassignDevice(userId: params.userId, deviceId: params.deviceId);
   }
 }

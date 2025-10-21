@@ -18,8 +18,7 @@ class VerifyEmailDialog extends StatefulWidget {
   State<VerifyEmailDialog> createState() => _VerifyEmailDialogState();
 }
 
-class _VerifyEmailDialogState extends State<VerifyEmailDialog>
-    with SingleTickerProviderStateMixin {
+class _VerifyEmailDialogState extends State<VerifyEmailDialog> with SingleTickerProviderStateMixin {
   final TextStyle _titleStyle = const TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w600,
@@ -68,21 +67,15 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog>
               return ScaleTransition(scale: animation, child: child);
             },
             child: Icon(
-              isEmailSent
-                  ? CupertinoIcons.check_mark_circled
-                  : CupertinoIcons.mail,
+              isEmailSent ? CupertinoIcons.check_mark_circled : CupertinoIcons.mail,
               key: ValueKey<bool>(isEmailSent),
-              color: isEmailSent
-                  ? CupertinoColors.systemGreen
-                  : CupertinoColors.activeBlue,
+              color: isEmailSent ? CupertinoColors.systemGreen : CupertinoColors.activeBlue,
               size: 60.0,
             ),
           ),
           const SizedBox(height: 10),
           Text(
-            isEmailSent
-                ? S.of(context).CheckYourEmail
-                : S.of(context).VerifyYourEmail,
+            isEmailSent ? S.of(context).CheckYourEmail : S.of(context).VerifyYourEmail,
             style: _titleStyle,
           ),
         ],
@@ -92,9 +85,7 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog>
           const SizedBox(height: 10),
           Text.rich(
             TextSpan(
-              text: isEmailSent
-                  ? S.of(context).WeHaveSentVerificationEmailTo
-                  : S.of(context).YourEmailIsNotVerifiedYet,
+              text: isEmailSent ? S.of(context).WeHaveSentVerificationEmailTo : S.of(context).YourEmailIsNotVerifiedYet,
               style: _contentStyle,
               children: isEmailSent
                   ? [

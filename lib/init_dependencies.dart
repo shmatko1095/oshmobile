@@ -22,6 +22,11 @@ import 'package:oshmobile/features/auth/domain/usecases/user_signin.dart';
 import 'package:oshmobile/features/auth/domain/usecases/user_signup.dart';
 import 'package:oshmobile/features/auth/domain/usecases/verify_email.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:oshmobile/features/devices/details/domain/queries/get_device_full.dart';
+import 'package:oshmobile/features/devices/details/presentation/cubit/device_actions_cubit.dart';
+import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
+import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/device_presenter.dart';
 import 'package:oshmobile/features/home/data/datasources/device_remote_data_source.dart';
 import 'package:oshmobile/features/home/data/datasources/device_remote_data_source_impl.dart';
 import 'package:oshmobile/features/home/data/datasources/user_remote_data_source.dart';
@@ -106,7 +111,26 @@ void _initHomeFeature() {
           unassignDevice: locator<UnassignDevice>(),
           assignDevice: locator<AssignDevice>(),
           updateDeviceUserData: locator<UpdateDeviceUserData>(),
-        ));
+        ))
+
+    // query
+    ..registerLazySingleton<GetDeviceFull>(() => GetDeviceFull(locator()))
+    // cubits
+    ..registerFactory<DevicePageCubit>(
+        () => DevicePageCubit(locator<GetDeviceFull>()))
+    ..registerLazySingleton<TelemetryRepository>(
+        () => TelemetryRepositoryMock())
+    ..registerFactory<DeviceStateCubit>(
+        () => DeviceStateCubit(locator<TelemetryRepository>()))
+    ..registerLazySingleton<CommandRepository>(() => CommandRepositoryMock(
+        locator<TelemetryRepository>() as TelemetryRepositoryMock))
+    ..registerFactory<DeviceActionsCubit>(
+        () => DeviceActionsCubit(locator<CommandRepository>()))
+    // presenters registry (по modelId — пока один и тот же)
+    ..registerSingleton<DevicePresenterRegistry>(const DevicePresenterRegistry({
+      // подставь реальные modelId -> нужные презентеры
+      // '8c5ea780-3d0d-4886-9334-2b4e781dd51c': ThermostatBasicPresenter(),
+    }));
 }
 
 void _initAuthFeature() {

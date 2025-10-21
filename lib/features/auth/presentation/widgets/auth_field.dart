@@ -51,9 +51,7 @@ class _AuthFieldState extends State<AuthField> {
                 }),
                 icon: Icon(
                   widget.obscureIcon,
-                  color: _isObscure
-                      ? AppPalette.obscureIconColor
-                      : AppPalette.nonObscureIconColor,
+                  color: _isObscure ? AppPalette.obscureIconColor : AppPalette.nonObscureIconColor,
                 ),
               )
             : null,

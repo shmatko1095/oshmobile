@@ -54,9 +54,7 @@ class _ItemListState extends State<ItemList> {
                   Device device = devices[index];
                   return ThingItem(
                     id: device.id,
-                    name: device.userData.alias.isEmpty
-                        ? device.sn
-                        : device.userData.alias,
+                    name: device.userData.alias.isEmpty ? device.sn : device.userData.alias,
                     room: device.userData.description,
                     online: device.connectionInfo.online,
                     // type: device.model.configuration.osh.type,

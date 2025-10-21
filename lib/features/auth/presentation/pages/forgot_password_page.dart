@@ -12,8 +12,7 @@ import 'package:oshmobile/generated/l10n.dart';
 class ForgotPasswordPage extends StatefulWidget {
   final String email;
 
-  static route(String email) => CupertinoPageRoute(
-      builder: (context) => ForgotPasswordPage(email: email));
+  static route(String email) => CupertinoPageRoute(builder: (context) => ForgotPasswordPage(email: email));
 
   const ForgotPasswordPage({required this.email, super.key});
 

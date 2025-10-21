@@ -35,7 +35,10 @@ class ThingItem extends StatelessWidget {
         ));
   }
 
-  void _onDeviceSelected(BuildContext context) {}
+  void _onDeviceSelected(BuildContext context) {
+    context.read<HomeCubit>().selectDevice(id);
+    Navigator.of(context).pop();
+  }
 
   Widget _getIcon() {
     Color color = online ? AppPalette.onlineIndicatorColor : Colors.grey;
@@ -87,9 +90,7 @@ class ThingItem extends StatelessWidget {
 
   Widget _buildDeviceButton(BuildContext context) {
     return Card(
-      color: isDarkUi(context)
-          ? AppPalette.backgroundColorLight.withOpacity(0.05)
-          : null,
+      color: isDarkUi(context) ? AppPalette.backgroundColorLight.withOpacity(0.05) : null,
       child: ListTile(
         onTap: () => online ? _onDeviceSelected(context) : null,
         onLongPress: () => _onDeviceRename(context),
@@ -98,8 +99,7 @@ class ThingItem extends StatelessWidget {
           name,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle:
-            room.isEmpty ? null : Text(room, style: TextStyles.contentStyle),
+        subtitle: room.isEmpty ? null : Text(room, style: TextStyles.contentStyle),
       ),
     );
   }

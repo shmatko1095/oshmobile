@@ -15,8 +15,7 @@ class UpdateDeviceUserDataParams {
   });
 }
 
-class UpdateDeviceUserData
-    implements UseCase<void, UpdateDeviceUserDataParams> {
+class UpdateDeviceUserData implements UseCase<void, UpdateDeviceUserDataParams> {
   final DeviceRepository deviceRepository;
 
   UpdateDeviceUserData({required this.deviceRepository});

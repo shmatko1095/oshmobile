@@ -11,8 +11,7 @@ import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dar
 import 'package:oshmobile/generated/l10n.dart';
 
 class SignUpPage extends StatefulWidget {
-  static CupertinoPageRoute route() =>
-      CupertinoPageRoute(builder: (context) => const SignUpPage());
+  static CupertinoPageRoute route() => CupertinoPageRoute(builder: (context) => const SignUpPage());
 
   const SignUpPage({super.key});
 
@@ -39,9 +38,7 @@ class _SignUpPageState extends State<SignUpPage> {
   void _signUp() {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
-    if (_formKey.currentState!.validate() &&
-        email.isNotEmpty &&
-        password.isNotEmpty) {
+    if (_formKey.currentState!.validate() && email.isNotEmpty && password.isNotEmpty) {
       context.read<AuthBloc>().add(AuthSignUp(
             lastName: "",
             firstName: "",
@@ -112,8 +109,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       validator: (value) => FormValidator.length(
                         value: value,
                         length: _minPasswordLen,
-                        errorMessage:
-                            S.of(context).InvalidPassword(_minPasswordLen),
+                        errorMessage: S.of(context).InvalidPassword(_minPasswordLen),
                       ),
                     ),
                     const SizedBox(height: 30),

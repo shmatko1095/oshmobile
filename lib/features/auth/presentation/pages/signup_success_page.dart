@@ -6,8 +6,7 @@ import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dar
 import 'package:oshmobile/generated/l10n.dart';
 
 class SignUpSuccessPage extends StatelessWidget {
-  static route() =>
-      CupertinoPageRoute(builder: (context) => const SignUpSuccessPage());
+  static route() => CupertinoPageRoute(builder: (context) => const SignUpSuccessPage());
 
   const SignUpSuccessPage({super.key});
 

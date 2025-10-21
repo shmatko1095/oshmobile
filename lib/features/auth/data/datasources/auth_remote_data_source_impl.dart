@@ -57,11 +57,7 @@ class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
     String clientToken = await _getClientToken();
     final response = await _oshApiUserService.registerUser(
         accessToken: clientToken,
-        request: RegisterUserRequest(
-            firstName: firstName,
-            lastName: lastName,
-            email: email,
-            password: password));
+        request: RegisterUserRequest(firstName: firstName, lastName: lastName, email: email, password: password));
 
     if (!response.isSuccessful) {
       String error = response.error as String;
@@ -79,8 +75,7 @@ class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
   }) async {
     String clientToken = await _getClientToken();
     final response = await _oshApiUserService.sendResetPasswordEmail(
-        accessToken: clientToken,
-        request: SendResetPasswordEmailRequest(email: email));
+        accessToken: clientToken, request: SendResetPasswordEmailRequest(email: email));
 
     if (!response.isSuccessful) {
       throw ServerException(response.error as String);
@@ -93,8 +88,7 @@ class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
   }) async {
     String clientToken = await _getClientToken();
     final response = await _oshApiUserService.sendVerificationEmail(
-        accessToken: clientToken,
-        request: SendVerificationEmailRequest(email: email));
+        accessToken: clientToken, request: SendVerificationEmailRequest(email: email));
 
     if (!response.isSuccessful) {
       throw ServerException(response.error as String);

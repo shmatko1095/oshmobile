@@ -66,17 +66,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
   }
 
-  void _onAuthSendVerifyEmail(
-      AuthSendVerifyEmail event, Emitter<AuthState> emit) async {
+  void _onAuthSendVerifyEmail(AuthSendVerifyEmail event, Emitter<AuthState> emit) async {
     final response = await _verifyEmail(VerifyEmailParams(email: event.email));
     response.fold((l) => _emitAuthFailure(emit, l), (r) {});
   }
 
-  void _onSendResetPasswordEmail(
-      AuthSendResetPasswordEmail event, Emitter<AuthState> emit) async {
+  void _onSendResetPasswordEmail(AuthSendResetPasswordEmail event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
-    final response =
-        await _resetPassword(ResetPasswordParams(email: event.email));
+    final response = await _resetPassword(ResetPasswordParams(email: event.email));
     response.fold(
       (l) => _emitAuthFailure(emit, l),
       (r) => emit(AuthSuccess("Success")),

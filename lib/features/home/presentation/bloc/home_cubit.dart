@@ -30,8 +30,10 @@ class HomeCubit extends Cubit<HomeState> {
         _updateDeviceUserData = updateDeviceUserData,
         super(HomeInitial());
 
+  void selectDevice(String deviceId) => emit(state.copyWith(selectedDeviceId: deviceId));
+
   Future<void> updateDeviceList() async {
-    emit(const HomeLoading());
+    emit(HomeLoading(selectedDeviceId: state.selectedDeviceId));
     final result = await _getUserDevices(_userUuid);
     result.fold(
       (l) {
@@ -39,34 +41,34 @@ class HomeCubit extends Cubit<HomeState> {
       },
       (r) {
         _updateDeviceList(r);
-        emit(const HomeReady());
+        emit(HomeReady(selectedDeviceId: state.selectedDeviceId));
       },
     );
   }
 
   Future<void> unassignDevice(String deviceId) async {
-    emit(const HomeLoading());
+    emit(HomeLoading(selectedDeviceId: state.selectedDeviceId));
     final result = await _unassignDevice(UnassignDeviceParams(
       userId: _userUuid,
       deviceId: deviceId,
     ));
     result.fold(
-      (l) => emit(HomeFailed(l.message ?? "")),
+      (l) => emit(HomeFailed(l.message ?? "", selectedDeviceId: state.selectedDeviceId)),
       (r) => updateDeviceList(),
     );
   }
 
   Future<void> assignDevice(String sn, String sc) async {
-    emit(const HomeLoading());
+    emit(HomeLoading(selectedDeviceId: state.selectedDeviceId));
     final result = await _assignDevice(AssignDeviceParams(
       uuid: _userUuid,
       sn: sn,
       sc: sc,
     ));
     result.fold(
-      (l) => emit(const HomeAssignFailed()),
+      (l) => emit(HomeAssignFailed(selectedDeviceId: state.selectedDeviceId)),
       (r) {
-        emit(const HomeAssignDone());
+        emit(HomeAssignDone(selectedDeviceId: state.selectedDeviceId));
         updateDeviceList();
       },
     );
@@ -77,16 +79,16 @@ class HomeCubit extends Cubit<HomeState> {
     String alias,
     String description,
   ) async {
-    emit(const HomeLoading());
+    emit(HomeLoading(selectedDeviceId: state.selectedDeviceId));
     final result = await _updateDeviceUserData(UpdateDeviceUserDataParams(
       deviceId: deviceId,
       alias: alias,
       description: description,
     ));
     result.fold(
-      (l) => emit(const HomeUpdateDeviceUserDataFailed()),
+      (l) => emit(HomeUpdateDeviceUserDataFailed(selectedDeviceId: state.selectedDeviceId)),
       (r) {
-        emit(const HomeUpdateDeviceUserDataDone());
+        emit(HomeUpdateDeviceUserDataDone(selectedDeviceId: state.selectedDeviceId));
         updateDeviceList();
       },
     );
