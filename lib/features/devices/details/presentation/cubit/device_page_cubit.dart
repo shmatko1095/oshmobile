@@ -20,9 +20,9 @@ final class DevicePageError extends DevicePageState {
 
 final class DevicePageReady extends DevicePageState {
   final Device device;
-  final OshConfig oshConfig;
+  final OshConfig config;
 
-  const DevicePageReady({required this.device, required this.oshConfig});
+  const DevicePageReady({required this.device, required this.config});
 }
 
 class DevicePageCubit extends Cubit<DevicePageState> {
@@ -35,7 +35,7 @@ class DevicePageCubit extends Cubit<DevicePageState> {
     try {
       final full = await _getDeviceFull(deviceId);
       final cfg = OshConfig.fromJson(full.configuration['osh-config'] as Map<String, dynamic>? ?? full.configuration);
-      emit(DevicePageReady(device: full.device, oshConfig: cfg));
+      emit(DevicePageReady(device: full.device, config: cfg));
     } catch (e) {
       emit(DevicePageError(e.toString()));
     }

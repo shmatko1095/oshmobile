@@ -539,6 +539,106 @@ class S {
       args: [],
     );
   }
+
+  /// `Online`
+  String get Online {
+    return Intl.message(
+      'Online',
+      name: 'Online',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Offline`
+  String get Offline {
+    return Intl.message(
+      'Offline',
+      name: 'Offline',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tips`
+  String get Tips {
+    return Intl.message(
+      'Tips',
+      name: 'Tips',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Make sure the app is updated to the latest version.`
+  String get TipEnsureAppUpdated {
+    return Intl.message(
+      'Make sure the app is updated to the latest version.',
+      name: 'TipEnsureAppUpdated',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check the device's network connection.`
+  String get TipCheckNetwork {
+    return Intl.message(
+      'Check the device\'s network connection.',
+      name: 'TipCheckNetwork',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Contact support and provide the Model ID and Device ID.`
+  String get TipContactSupport {
+    return Intl.message(
+      'Contact support and provide the Model ID and Device ID.',
+      name: 'TipContactSupport',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Settings`
+  String get Settings {
+    return Intl.message(
+      'Settings',
+      name: 'Settings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update`
+  String get Update {
+    return Intl.message(
+      'Update',
+      name: 'Update',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Device details`
+  String get DeviceDetails {
+    return Intl.message(
+      'Device details',
+      name: 'DeviceDetails',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This device model is not yet supported by the current version of the app. You can try refreshing the data, opening the device settings, or sending a report.`
+  String get UnsupportedDeviceMessage {
+    return Intl.message(
+      'This device model is not yet supported by the current version of the app. You can try refreshing the data, opening the device settings, or sending a report.',
+      name: 'UnsupportedDeviceMessage',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

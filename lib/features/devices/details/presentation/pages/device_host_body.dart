@@ -31,11 +31,11 @@ class DeviceHostBody extends StatelessWidget {
                 return const Center(child: CupertinoActivityIndicator());
               case DevicePageError(:final message):
                 return Center(child: Text(message));
-              case DevicePageReady(:final device, :final oshConfig):
+              case DevicePageReady(:final device, :final config):
                 {
                   final registry = _sl<DevicePresenterRegistry>();
                   final presenter = registry.resolve(device.modelId);
-                  return presenter.build(context, device, oshConfig);
+                  return presenter.build(context, device, config);
                 }
             }
           },

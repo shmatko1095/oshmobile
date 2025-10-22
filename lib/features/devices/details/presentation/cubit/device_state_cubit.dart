@@ -18,7 +18,6 @@ abstract class TelemetryRepository {
   Stream<Map<String, dynamic>> stream(String deviceId);
 }
 
-// ===== Mock telemetry: температура “плавает”, тумблер хранится в памяти.
 class TelemetryRepositoryMock implements TelemetryRepository {
   final _rand = Random();
   final _switchState = <String, bool>{};
@@ -30,7 +29,6 @@ class TelemetryRepositoryMock implements TelemetryRepository {
 
     while (true) {
       await Future<void>.delayed(const Duration(seconds: 1));
-      // немного колеблем “датчик”
       current += (_rand.nextDouble() - 0.5) * 0.3;
       yield {
         'sensor.temperature': double.parse(current.toStringAsFixed(1)),
@@ -40,7 +38,6 @@ class TelemetryRepositoryMock implements TelemetryRepository {
     }
   }
 
-  // хук для команд
   void setSwitch(String deviceId, bool v) => _switchState[deviceId] = v;
 }
 

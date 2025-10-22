@@ -27,6 +27,7 @@ import 'package:oshmobile/features/devices/details/presentation/cubit/device_act
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_presenter.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/thermostat_presenters.dart';
 import 'package:oshmobile/features/home/data/datasources/device_remote_data_source.dart';
 import 'package:oshmobile/features/home/data/datasources/device_remote_data_source_impl.dart';
 import 'package:oshmobile/features/home/data/datasources/user_remote_data_source.dart';
@@ -64,8 +65,7 @@ Future<void> _initCore() async {
 
   // InternetConnectionChecker
   locator.registerFactory(
-    () => InternetConnection.createInstance(
-        checkInterval: const Duration(seconds: 1)),
+    () => InternetConnection.createInstance(checkInterval: const Duration(seconds: 1)),
   );
   locator.registerFactory<InternetConnectionChecker>(
     () => InternetConnectionCheckerImpl(internetConnection: locator()),
@@ -74,13 +74,12 @@ Future<void> _initCore() async {
 
 void _initHomeFeature() {
   locator
-    ..registerFactory<UserRemoteDataSource>(() =>
-        UserRemoteDataSourceImpl(apiUserService: locator<ApiUserService>()))
+    ..registerFactory<UserRemoteDataSource>(() => UserRemoteDataSourceImpl(apiUserService: locator<ApiUserService>()))
     ..registerFactory<UserRepository>(
       () => UserRepositoryImpl(dataSource: locator<UserRemoteDataSource>()),
     )
-    ..registerFactory<DeviceRemoteDataSource>(() => DeviceRemoteDataSourceImpl(
-        apiDeviceService: locator<ApiDeviceService>()))
+    ..registerFactory<DeviceRemoteDataSource>(
+        () => DeviceRemoteDataSourceImpl(apiDeviceService: locator<ApiDeviceService>()))
     ..registerFactory<DeviceRepository>(
       () => DeviceRepositoryImpl(dataSource: locator<DeviceRemoteDataSource>()),
     )
@@ -116,20 +115,14 @@ void _initHomeFeature() {
     // query
     ..registerLazySingleton<GetDeviceFull>(() => GetDeviceFull(locator()))
     // cubits
-    ..registerFactory<DevicePageCubit>(
-        () => DevicePageCubit(locator<GetDeviceFull>()))
-    ..registerLazySingleton<TelemetryRepository>(
-        () => TelemetryRepositoryMock())
-    ..registerFactory<DeviceStateCubit>(
-        () => DeviceStateCubit(locator<TelemetryRepository>()))
-    ..registerLazySingleton<CommandRepository>(() => CommandRepositoryMock(
-        locator<TelemetryRepository>() as TelemetryRepositoryMock))
-    ..registerFactory<DeviceActionsCubit>(
-        () => DeviceActionsCubit(locator<CommandRepository>()))
-    // presenters registry (по modelId — пока один и тот же)
+    ..registerFactory<DevicePageCubit>(() => DevicePageCubit(locator<GetDeviceFull>()))
+    ..registerLazySingleton<TelemetryRepository>(() => TelemetryRepositoryMock())
+    ..registerFactory<DeviceStateCubit>(() => DeviceStateCubit(locator<TelemetryRepository>()))
+    ..registerLazySingleton<CommandRepository>(
+        () => CommandRepositoryMock(locator<TelemetryRepository>() as TelemetryRepositoryMock))
+    ..registerFactory<DeviceActionsCubit>(() => DeviceActionsCubit(locator<CommandRepository>()))
     ..registerSingleton<DevicePresenterRegistry>(const DevicePresenterRegistry({
-      // подставь реальные modelId -> нужные презентеры
-      // '8c5ea780-3d0d-4886-9334-2b4e781dd51c': ThermostatBasicPresenter(),
+      '8c5ea780-3d0d-4886-9334-2b4e781dd51c': ThermostatBasicPresenter(),
     }));
 }
 
@@ -219,11 +212,7 @@ Future<void> _initWebClient() async {
   final chopperClient = ChopperClient(
     converter: const JsonConverter(),
     authenticator: locator<ApiAuthenticator>(),
-    services: [
-      locator<AuthService>(),
-      locator<ApiUserService>(),
-      locator<ApiDeviceService>()
-    ],
+    services: [locator<AuthService>(), locator<ApiUserService>(), locator<ApiDeviceService>()],
     interceptors: [
       AuthInterceptor(globalAuthCubit: locator<GlobalAuthCubit>()),
       const HeadersInterceptor({

@@ -47,5 +47,15 @@
   "Failed": "Failed",
   "DeviceEditTitle": "Device information",
   "Name": "Name",
-  "Room": "Room"
+  "Room": "Room",
+  "Online": "Online",
+  "Offline": "Offline",
+  "Tips": "Tips",
+  "TipEnsureAppUpdated": "Make sure the app is updated to the latest version.",
+  "TipCheckNetwork": "Check the device's network connection.",
+  "TipContactSupport": "Contact support and provide the Model ID and Device ID.",
+  "Settings": "Settings",
+  "Update": "Update",
+  "DeviceDetails": "Device details",
+  "UnsupportedDeviceMessage": "This device model is not yet supported by the current version of the app. You can try refreshing the data, opening the device settings, or sending a report."
 }

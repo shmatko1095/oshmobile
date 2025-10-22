@@ -11,7 +11,7 @@ class GetDeviceFull {
   GetDeviceFull(this.deviceRepository);
 
   Future<({Device device, Map<String, dynamic> configuration, String modelId})> call(String deviceId) async {
-    final Either<Failure, Device> res = await deviceRepository.get(deviceId: deviceId);
+    final Either<Failure, Device> res = await deviceRepository.get(deviceId: deviceId); //Should be modelRepository
     return await res.fold(
       (f) => Future.error(f.message ?? 'Failed to load device'),
       (d) async {

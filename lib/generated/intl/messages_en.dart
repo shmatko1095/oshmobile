@@ -31,6 +31,7 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Check your email"),
         "ContinueWithGoogle":
             MessageLookupByLibrary.simpleMessage("Continue with Google"),
+        "DeviceDetails": MessageLookupByLibrary.simpleMessage("Device details"),
         "DeviceEditTitle":
             MessageLookupByLibrary.simpleMessage("Device information"),
         "DeviceUnlinkAlertContent1":
@@ -61,6 +62,8 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("No device selected"),
         "NoDevicesYet": MessageLookupByLibrary.simpleMessage("No devices yet"),
         "OK": MessageLookupByLibrary.simpleMessage("OK"),
+        "Offline": MessageLookupByLibrary.simpleMessage("Offline"),
+        "Online": MessageLookupByLibrary.simpleMessage("Online"),
         "Password": MessageLookupByLibrary.simpleMessage("Password"),
         "PasswordConfirmation":
             MessageLookupByLibrary.simpleMessage("Password confirmation"),
@@ -79,15 +82,26 @@ class MessageLookup extends MessageLookupByLibrary {
         "SecureCode": MessageLookupByLibrary.simpleMessage("Secure code"),
         "SendEmail": MessageLookupByLibrary.simpleMessage("Send email"),
         "SerialNumber": MessageLookupByLibrary.simpleMessage("Serial number"),
+        "Settings": MessageLookupByLibrary.simpleMessage("Settings"),
         "SignIn": MessageLookupByLibrary.simpleMessage("Sign In"),
         "SignOut": MessageLookupByLibrary.simpleMessage("Sign Out"),
         "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
         "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
+        "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
+            "Check the device\'s network connection."),
+        "TipContactSupport": MessageLookupByLibrary.simpleMessage(
+            "Contact support and provide the Model ID and Device ID."),
+        "TipEnsureAppUpdated": MessageLookupByLibrary.simpleMessage(
+            "Make sure the app is updated to the latest version."),
+        "Tips": MessageLookupByLibrary.simpleMessage("Tips"),
         "TryDemo": MessageLookupByLibrary.simpleMessage("Try Demo"),
         "UnknownDeviceType":
             MessageLookupByLibrary.simpleMessage("Unknown device type"),
         "UnknownError": MessageLookupByLibrary.simpleMessage("Unknown error"),
         "UnlinkDevice": MessageLookupByLibrary.simpleMessage("Unlink Device"),
+        "UnsupportedDeviceMessage": MessageLookupByLibrary.simpleMessage(
+            "This device model is not yet supported by the current version of the app. You can try refreshing the data, opening the device settings, or sending a report."),
+        "Update": MessageLookupByLibrary.simpleMessage("Update"),
         "UserAlreadyExist":
             MessageLookupByLibrary.simpleMessage("User already exist"),
         "VerifyYourEmail":
