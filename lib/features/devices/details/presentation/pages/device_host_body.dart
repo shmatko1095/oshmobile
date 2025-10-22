@@ -11,8 +11,31 @@ final _sl = GetIt.instance;
 
 class DeviceHostBody extends StatelessWidget {
   final String deviceId;
+  final ValueChanged<String?>? onTitleChanged; // <- новый параметр (опционально)
 
-  const DeviceHostBody({super.key, required this.deviceId});
+  const DeviceHostBody({
+    super.key,
+    required this.deviceId,
+    this.onTitleChanged,
+  });
+
+  String? _titleFrom(DevicePageState s) {
+    if (s is DevicePageReady) {
+      String take(String v) => v.trim();
+      final alias = take(s.device.userData.alias);
+      if (alias.isNotEmpty) return alias;
+
+      final sn = take(s.device.sn);
+      if (sn.isNotEmpty) return sn;
+
+      final model = take(s.device.modelId);
+      if (model.isNotEmpty) return model;
+
+      final id = take(s.device.id);
+      if (id.isNotEmpty) return id;
+    }
+    return null; // для Loading/Error — заголовок не меняем
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +47,19 @@ class DeviceHostBody extends StatelessWidget {
           BlocProvider(create: (_) => _sl<DeviceStateCubit>()..bindDevice(deviceId)),
           BlocProvider(create: (_) => _sl<DeviceActionsCubit>()),
         ],
-        child: BlocBuilder<DevicePageCubit, DevicePageState>(
+        child: BlocConsumer<DevicePageCubit, DevicePageState>(
+          listenWhen: (prev, next) => _titleFrom(prev) != _titleFrom(next),
+          listener: (context, state) {
+            final t = _titleFrom(state);
+            onTitleChanged?.call(t); // или findAncestorStateOfType<HomePageState>()?.setAppBarTitle(t);
+          },
+          // listenWhen: (prev, next) => _titleFrom(prev) != _titleFrom(next),
+          // listener: (context, state) {
+          //   final alias = state.device.userData.alias.isEmpty ? device.sn : device.userData.alias;
+          //   onTitleChanged?.call(alias);
+          //   final title = _titleFrom(state);
+          //   onTitleChanged?.call(title);
+          // },
           builder: (context, st) {
             switch (st) {
               case DevicePageLoading():
@@ -35,6 +70,8 @@ class DeviceHostBody extends StatelessWidget {
                 {
                   final registry = _sl<DevicePresenterRegistry>();
                   final presenter = registry.resolve(device.modelId);
+                  // final alias = device.userData.alias.isEmpty ? device.sn : device.userData.alias;
+                  // onTitleChanged?.call(alias);
                   return presenter.build(context, device, config);
                 }
             }

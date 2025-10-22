@@ -23,6 +23,10 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m0(length) =>
       "Password must be at least ${length} characters long";
 
+  static String m1(temp, time) => "Next ${temp} at ${time}";
+
+  static String m2(temp) => "Target ${temp}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "AddDevice": MessageLookupByLibrary.simpleMessage("Add device"),
@@ -50,6 +54,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "ForgotYourPassword":
             MessageLookupByLibrary.simpleMessage("Forgot your password"),
         "GoToLogin": MessageLookupByLibrary.simpleMessage("Go to Login"),
+        "Heating": MessageLookupByLibrary.simpleMessage("Heating"),
         "InvalidEmailAddress":
             MessageLookupByLibrary.simpleMessage("Invalid email address"),
         "InvalidPassword": m0,
@@ -57,6 +62,7 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Invalid user credentials"),
         "InvalidValue": MessageLookupByLibrary.simpleMessage("Invalid value"),
         "Name": MessageLookupByLibrary.simpleMessage("Name"),
+        "NextAt": m1,
         "No": MessageLookupByLibrary.simpleMessage("No"),
         "NoDeviceSelected":
             MessageLookupByLibrary.simpleMessage("No device selected"),
@@ -87,6 +93,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "SignOut": MessageLookupByLibrary.simpleMessage("Sign Out"),
         "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
         "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
+        "Target": m2,
         "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
             "Check the device\'s network connection."),
         "TipContactSupport": MessageLookupByLibrary.simpleMessage(

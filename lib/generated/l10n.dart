@@ -639,6 +639,36 @@ class S {
       args: [],
     );
   }
+
+  /// `Target {temp}`
+  String Target(Object temp) {
+    return Intl.message(
+      'Target $temp',
+      name: 'Target',
+      desc: '',
+      args: [temp],
+    );
+  }
+
+  /// `Next {temp} at {time}`
+  String NextAt(Object temp, Object time) {
+    return Intl.message(
+      'Next $temp at $time',
+      name: 'NextAt',
+      desc: '',
+      args: [temp, time],
+    );
+  }
+
+  /// `Heating`
+  String get Heating {
+    return Intl.message(
+      'Heating',
+      name: 'Heating',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

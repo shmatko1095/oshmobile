@@ -34,6 +34,9 @@ class TelemetryRepositoryMock implements TelemetryRepository {
         'sensor.temperature': double.parse(current.toStringAsFixed(1)),
         'setting.target_temperature': 21.0,
         'switch.heating.state': _switchState[deviceId] ?? false,
+        'schedule.next_target_temperature': 22.0,
+        'schedule.next_time': "19:30",
+        'status.heater_enabled': true,
       };
     }
   }

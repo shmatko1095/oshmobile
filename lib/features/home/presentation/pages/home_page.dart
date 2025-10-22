@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/features/devices/details/presentation/pages/device_host_body.dart';
 import 'package:oshmobile/features/devices/no_selected_device/presentation/pages/no_selected_device_page.dart';
@@ -6,7 +7,7 @@ import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/side_menu.dart';
 
 class HomePage extends StatefulWidget {
-  static MaterialPageRoute route() => MaterialPageRoute(builder: (context) => const HomePage());
+  static MaterialPageRoute route() => MaterialPageRoute(builder: (_) => const HomePage());
 
   const HomePage({super.key});
 
@@ -15,33 +16,53 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  static const _defaultTitle = 'Osh App';
+  String? _title;
+
   @override
   void initState() {
     super.initState();
-    context.read<HomeCubit>().updateDeviceList();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<HomeCubit>().updateDeviceList();
+    });
+  }
+
+  void _setTitleSafe(String? t) {
+    if (!mounted) return;
+    final next = (t == null || t.trim().isEmpty) ? _defaultTitle : t.trim();
+    if (_title == next) return;
+
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks || phase == SchedulerPhase.transientCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _title = next);
+      });
+    } else {
+      setState(() => _title = next);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Center(child: Text("Osh App")),
-        actions: [
-          IconButton(
-            onPressed: () => {},
-            icon: const Icon(Icons.settings),
-          )
-        ],
+        centerTitle: true,
+        title: Text(_title ?? _defaultTitle, overflow: TextOverflow.ellipsis),
+        actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.settings))],
       ),
       drawer: const SideMenu(),
-      body: BlocBuilder<HomeCubit, HomeState>(
-        buildWhen: (p, n) => p.selectedDeviceId != n.selectedDeviceId,
-        builder: (context, state) {
-          final id = state.selectedDeviceId;
-          if (id == null) {
+      body: BlocSelector<HomeCubit, HomeState, String?>(
+        selector: (s) => s.selectedDeviceId,
+        builder: (context, deviceId) {
+          if (deviceId == null) {
+            _setTitleSafe(null);
             return const NoSelectedDevicePage();
           }
-          return DeviceHostBody(deviceId: id);
+
+          return DeviceHostBody(
+            deviceId: deviceId,
+            onTitleChanged: _setTitleSafe,
+          );
         },
       ),
     );
