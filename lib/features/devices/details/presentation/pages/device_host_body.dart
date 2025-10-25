@@ -11,7 +11,7 @@ final _sl = GetIt.instance;
 
 class DeviceHostBody extends StatelessWidget {
   final String deviceId;
-  final ValueChanged<String?>? onTitleChanged; // <- новый параметр (опционально)
+  final ValueChanged<String?>? onTitleChanged;
 
   const DeviceHostBody({
     super.key,
@@ -34,7 +34,7 @@ class DeviceHostBody extends StatelessWidget {
       final id = take(s.device.id);
       if (id.isNotEmpty) return id;
     }
-    return null; // для Loading/Error — заголовок не меняем
+    return null;
   }
 
   @override
@@ -51,15 +51,8 @@ class DeviceHostBody extends StatelessWidget {
           listenWhen: (prev, next) => _titleFrom(prev) != _titleFrom(next),
           listener: (context, state) {
             final t = _titleFrom(state);
-            onTitleChanged?.call(t); // или findAncestorStateOfType<HomePageState>()?.setAppBarTitle(t);
+            onTitleChanged?.call(t);
           },
-          // listenWhen: (prev, next) => _titleFrom(prev) != _titleFrom(next),
-          // listener: (context, state) {
-          //   final alias = state.device.userData.alias.isEmpty ? device.sn : device.userData.alias;
-          //   onTitleChanged?.call(alias);
-          //   final title = _titleFrom(state);
-          //   onTitleChanged?.call(title);
-          // },
           builder: (context, st) {
             switch (st) {
               case DevicePageLoading():
@@ -70,8 +63,6 @@ class DeviceHostBody extends StatelessWidget {
                 {
                   final registry = _sl<DevicePresenterRegistry>();
                   final presenter = registry.resolve(device.modelId);
-                  // final alias = device.userData.alias.isEmpty ? device.sn : device.userData.alias;
-                  // onTitleChanged?.call(alias);
                   return presenter.build(context, device, config);
                 }
             }

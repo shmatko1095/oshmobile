@@ -61,6 +61,11 @@ class MessageLookup extends MessageLookupByLibrary {
         "InvalidUserCredentials":
             MessageLookupByLibrary.simpleMessage("Invalid user credentials"),
         "InvalidValue": MessageLookupByLibrary.simpleMessage("Invalid value"),
+        "ModeAntifreeze": MessageLookupByLibrary.simpleMessage("Antifreeze"),
+        "ModeDaily": MessageLookupByLibrary.simpleMessage("Daily"),
+        "ModeManual": MessageLookupByLibrary.simpleMessage("Manual"),
+        "ModeOff": MessageLookupByLibrary.simpleMessage("Off"),
+        "ModeWeekly": MessageLookupByLibrary.simpleMessage("Weekly"),
         "Name": MessageLookupByLibrary.simpleMessage("Name"),
         "NextAt": m1,
         "No": MessageLookupByLibrary.simpleMessage("No"),
