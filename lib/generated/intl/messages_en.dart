@@ -35,6 +35,7 @@ class MessageLookup extends MessageLookupByLibrary {
             MessageLookupByLibrary.simpleMessage("Check your email"),
         "ContinueWithGoogle":
             MessageLookupByLibrary.simpleMessage("Continue with Google"),
+        "Deleted": MessageLookupByLibrary.simpleMessage("Deleted"),
         "DeviceDetails": MessageLookupByLibrary.simpleMessage("Device details"),
         "DeviceEditTitle":
             MessageLookupByLibrary.simpleMessage("Device information"),
@@ -61,6 +62,13 @@ class MessageLookup extends MessageLookupByLibrary {
         "InvalidUserCredentials":
             MessageLookupByLibrary.simpleMessage("Invalid user credentials"),
         "InvalidValue": MessageLookupByLibrary.simpleMessage("Invalid value"),
+        "ManualTemperature":
+            MessageLookupByLibrary.simpleMessage("Manual temperature"),
+        "ModeAntifreeze": MessageLookupByLibrary.simpleMessage("Antifreeze"),
+        "ModeDaily": MessageLookupByLibrary.simpleMessage("Daily"),
+        "ModeManual": MessageLookupByLibrary.simpleMessage("Manual"),
+        "ModeOff": MessageLookupByLibrary.simpleMessage("Off"),
+        "ModeWeekly": MessageLookupByLibrary.simpleMessage("Weekly"),
         "Name": MessageLookupByLibrary.simpleMessage("Name"),
         "NextAt": m1,
         "No": MessageLookupByLibrary.simpleMessage("No"),
@@ -84,7 +92,9 @@ class MessageLookup extends MessageLookupByLibrary {
         "RegistrationSuccessfulContent": MessageLookupByLibrary.simpleMessage(
             "The last step is to verify your email address. Please check your inbox and follow the instructions to complete your registration."),
         "ResetPassword": MessageLookupByLibrary.simpleMessage("Reset password"),
+        "Retry": MessageLookupByLibrary.simpleMessage("Retry"),
         "Room": MessageLookupByLibrary.simpleMessage("Room"),
+        "Save": MessageLookupByLibrary.simpleMessage("Save"),
         "SecureCode": MessageLookupByLibrary.simpleMessage("Secure code"),
         "SendEmail": MessageLookupByLibrary.simpleMessage("Send email"),
         "SerialNumber": MessageLookupByLibrary.simpleMessage("Serial number"),
@@ -102,6 +112,7 @@ class MessageLookup extends MessageLookupByLibrary {
             "Make sure the app is updated to the latest version."),
         "Tips": MessageLookupByLibrary.simpleMessage("Tips"),
         "TryDemo": MessageLookupByLibrary.simpleMessage("Try Demo"),
+        "Undo": MessageLookupByLibrary.simpleMessage("Undo"),
         "UnknownDeviceType":
             MessageLookupByLibrary.simpleMessage("Unknown device type"),
         "UnknownError": MessageLookupByLibrary.simpleMessage("Unknown error"),

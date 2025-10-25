@@ -26,6 +26,7 @@ import 'package:oshmobile/features/devices/details/domain/queries/get_device_ful
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_actions_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
+import 'package:oshmobile/features/devices/details/presentation/cubit/telemetry_repository_mock.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_presenter.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/thermostat_presenters.dart';
 import 'package:oshmobile/features/home/data/datasources/device_remote_data_source.dart';

@@ -60,5 +60,15 @@
   "UnsupportedDeviceMessage": "This device model is not yet supported by the current version of the app. You can try refreshing the data, opening the device settings, or sending a report.",
   "Target": "Target {temp}",
   "NextAt": "Next {temp} at {time}",
-  "Heating": "Heating"
+  "Heating": "Heating",
+  "ModeOff": "Off",
+  "ModeAntifreeze": "Antifreeze",
+  "ModeManual": "Manual",
+  "ModeDaily": "Daily",
+  "ModeWeekly": "Weekly",
+  "Save": "Save",
+  "ManualTemperature" : "Manual temperature",
+  "Deleted": "Deleted",
+  "Undo": "Undo",
+  "Retry": "Retry"
 }

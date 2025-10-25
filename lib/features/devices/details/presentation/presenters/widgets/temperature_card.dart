@@ -12,6 +12,7 @@ class TemperatureHeroCard extends StatelessWidget {
   final String? nextValueBind; // e.g. 'schedule.next_target_temperature' (optional)
   final String? nextTimeBind; // e.g. 'schedule.next_time' (optional)
   final String? heaterEnabledBind; // e.g. 'status.heater_enabled' (optional)
+  final String? humidityBind; // e.g. 'sensor.humidity'
 
   // Formatting / localization
   final String unit; // e.g. '°C'
@@ -24,6 +25,7 @@ class TemperatureHeroCard extends StatelessWidget {
     this.nextValueBind,
     this.nextTimeBind,
     this.heaterEnabledBind,
+    this.humidityBind,
     this.unit = '°C',
   });
 
@@ -41,7 +43,12 @@ class TemperatureHeroCard extends StatelessWidget {
     return false;
   }
 
-  String _fmtNum(num? v) => v == null ? '—' : (v % 1 == 0 ? v.toStringAsFixed(0) : v.toStringAsFixed(1));
+  String _fmtNum(num? v) {
+    if (v == null) return '—';
+    final d = v.toDouble();
+    if (d.isNaN || d.isInfinite) return '—';
+    return d.toStringAsFixed(1); // ← всегда один знак
+  }
 
   String? _fmtTime(dynamic t) {
     DateTime? dt;
@@ -98,6 +105,12 @@ class TemperatureHeroCard extends StatelessWidget {
             (c) => _asBool(c.state.valueOf(heaterEnabledBind!)),
           );
 
+    final dynamic humidity = humidityBind == null
+        ? null
+        : context.select<DeviceStateCubit, dynamic>(
+            (c) => c.state.valueOf(humidityBind!),
+          );
+
     final String currentText = '${_fmtNum(current)}$unit';
     final String targetLine = S.of(context).Target(_fmtNum(target)) + unit;
 
@@ -108,8 +121,10 @@ class TemperatureHeroCard extends StatelessWidget {
         ? S.of(context).NextAt(nextTempStr as Object, nextTimeStr as Object)
         : null;
 
+    final String? currentHumidity = (humidity != null) ? '${_fmtNum(humidity)}%' : null;
+
     return SizedBox(
-      height: 200,
+      height: 230,
       child: Card(
         elevation: 3,
         clipBehavior: Clip.antiAlias,
@@ -151,50 +166,74 @@ class TemperatureHeroCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
 
-                        // big current temperature
-                        AnimatedDefaultTextStyle(
-                          duration: const Duration(milliseconds: 200),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 48,
-                            fontWeight: FontWeight.w700,
-                            height: 1.0,
-                          ),
-                          child: Text(currentText),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 200),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 48,
+                                fontWeight: FontWeight.w700,
+                                height: 1.0,
+                              ),
+                              child: Text(
+                                currentText,
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (currentHumidity != null) ...[
+                              const SizedBox(width: 35),
+                              Flexible(
+                                child: AnimatedDefaultTextStyle(
+                                  duration: const Duration(milliseconds: 200),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 48,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.0,
+                                  ),
+                                  child: Text(
+                                    currentHumidity,
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.left,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
 
                         const SizedBox(height: 12),
                         // Target: 21.0°C
                         Text(
                           targetLine,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, height: 2),
                         ),
                         // Next: 22.5°C at 19:00   (optional)
                         if (nextLine != null) ...[
                           const SizedBox(height: 4),
                           Text(
                             nextLine,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, height: 2),
                           ),
                         ],
+                        const SizedBox(height: 15),
                       ],
                     ),
                   ),
 
-                  const SizedBox(width: 12),
+                  // const SizedBox(width: 12),
 
                   // RIGHT: optional decorative icon (can be removed if not needed)
-                  const Icon(Icons.device_thermostat, color: Colors.white30, size: 56),
+                  // const Icon(Icons.device_thermostat, color: Colors.white30, size: 56),
                 ],
               ),
             ),
-
             // bottom-center HEAT icon (visible if heaterEnabled)
             Positioned(
               bottom: 10,
@@ -210,6 +249,11 @@ class TemperatureHeroCard extends StatelessWidget {
                 ),
               ),
             ),
+            // Positioned(
+            //   bottom: 10,
+            //   right: 10,
+            //   child: const Icon(Icons.device_thermostat, color: Colors.white30, size: 56),
+            // ),
           ],
         ),
       ),

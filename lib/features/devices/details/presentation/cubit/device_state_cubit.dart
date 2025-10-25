@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/features/devices/details/presentation/cubit/telemetry_repository_mock.dart';
 
 class DeviceState {
   final Map<String, dynamic> values;
@@ -13,36 +13,46 @@ class DeviceState {
   DeviceState merge(Map<String, dynamic> delta) => DeviceState({...values, ...delta});
   static const empty = DeviceState({});
 }
+//
+// abstract class TelemetryRepository {
+//   Stream<Map<String, dynamic>> stream(String deviceId);
+// }
 
-abstract class TelemetryRepository {
-  Stream<Map<String, dynamic>> stream(String deviceId);
-}
-
-class TelemetryRepositoryMock implements TelemetryRepository {
-  final _rand = Random();
-  final _switchState = <String, bool>{};
-
-  @override
-  Stream<Map<String, dynamic>> stream(String deviceId) async* {
-    double current = 20 + _rand.nextDouble() * 2;
-    _switchState.putIfAbsent(deviceId, () => false);
-
-    while (true) {
-      await Future<void>.delayed(const Duration(seconds: 1));
-      current += (_rand.nextDouble() - 0.5) * 0.3;
-      yield {
-        'sensor.temperature': double.parse(current.toStringAsFixed(1)),
-        'setting.target_temperature': 21.0,
-        'switch.heating.state': _switchState[deviceId] ?? false,
-        'schedule.next_target_temperature': 22.0,
-        'schedule.next_time': "19:30",
-        'status.heater_enabled': true,
-      };
-    }
-  }
-
-  void setSwitch(String deviceId, bool v) => _switchState[deviceId] = v;
-}
+// class TelemetryRepositoryMock implements TelemetryRepository {
+//   final _rand = Random();
+//   final _switchState = <String, bool>{};
+//   final _modeState = <String, String>{};
+//
+//   @override
+//   Stream<Map<String, dynamic>> stream(String deviceId) async* {
+//     double current = 20 + _rand.nextDouble() * 2;
+//     double humidity = 60 + _rand.nextDouble() * 5;
+//     _switchState.putIfAbsent(deviceId, () => false);
+//
+//     while (true) {
+//       await Future<void>.delayed(const Duration(seconds: 1));
+//       current += (_rand.nextDouble() - 0.5) * 0.3;
+//       humidity += (_rand.nextDouble() + 1) * 0.3;
+//       yield {
+//         'sensor.temperature': double.parse(current.toStringAsFixed(1)),
+//         'setting.target_temperature': 21.0,
+//         'switch.heating.state': _switchState[deviceId] ?? false,
+//         'schedule.next_target_temperature': 22.0,
+//         'schedule.next_time': "19:30",
+//         'climate.mode': _modeState[deviceId] ?? "manual",
+//         'sensor.humidity': double.parse(humidity.toStringAsFixed(1)),
+//         'sensor.power': 2000,
+//         'stats.heating_duty_24h': 0.5,
+//         'sensor.water_inlet_temp': 28.5,
+//         'sensor.water_outlet_temp': 30,
+//       };
+//     }
+//   }
+//
+//   void setSwitch(String deviceId, bool v) => _switchState[deviceId] = v;
+//
+//   void setMode(String deviceId, String mode) => _modeState[deviceId] = mode;
+// }
 
 class DeviceStateCubit extends Cubit<DeviceState> {
   final TelemetryRepository telemetry;

@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import 'device_state_cubit.dart';
+import 'package:oshmobile/features/devices/details/presentation/cubit/telemetry_repository_mock.dart';
 
 abstract class CommandRepository {
   Future<void> send(String deviceId, String command, {Map<String, dynamic>? args});
@@ -14,12 +13,12 @@ class CommandRepositoryMock implements CommandRepository {
 
   @override
   Future<void> send(String deviceId, String command, {Map<String, dynamic>? args}) async {
-    // простая маршрутизация
     if (command == 'switch.heating.set') {
       final v = (args?['state'] as bool?) ?? false;
       telemetry.setSwitch(deviceId, v);
+    } else if (command == 'climate.set_mode' && args?['mode'] != null) {
+      telemetry.setMode(deviceId, args!['mode'] as String);
     }
-    // можно добавить обработку climate.set_target_temperature и т.п.
   }
 }
 

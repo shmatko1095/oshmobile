@@ -669,6 +669,106 @@ class S {
       args: [],
     );
   }
+
+  /// `Off`
+  String get ModeOff {
+    return Intl.message(
+      'Off',
+      name: 'ModeOff',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Antifreeze`
+  String get ModeAntifreeze {
+    return Intl.message(
+      'Antifreeze',
+      name: 'ModeAntifreeze',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Manual`
+  String get ModeManual {
+    return Intl.message(
+      'Manual',
+      name: 'ModeManual',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Daily`
+  String get ModeDaily {
+    return Intl.message(
+      'Daily',
+      name: 'ModeDaily',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Weekly`
+  String get ModeWeekly {
+    return Intl.message(
+      'Weekly',
+      name: 'ModeWeekly',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Save`
+  String get Save {
+    return Intl.message(
+      'Save',
+      name: 'Save',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Manual temperature`
+  String get ManualTemperature {
+    return Intl.message(
+      'Manual temperature',
+      name: 'ManualTemperature',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Deleted`
+  String get Deleted {
+    return Intl.message(
+      'Deleted',
+      name: 'Deleted',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Undo`
+  String get Undo {
+    return Intl.message(
+      'Undo',
+      name: 'Undo',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Retry`
+  String get Retry {
+    return Intl.message(
+      'Retry',
+      name: 'Retry',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

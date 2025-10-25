@@ -17,9 +17,24 @@ class GetDeviceFull {
       (d) async {
         // TODO: когда появится эндпойнт модели/конфига — подставь реальные данные
         final cfg = <String, dynamic>{
-          'capabilities': ['sensor.temperature', 'setting.target_temperature', 'switch.heating'],
+          // Add struct for caps for sensors with sensor name, caps, values
+          'capabilities': [
+            'sensor.humidity',
+            'sensor.temperature',
+            'setting.target_temperature',
+            'switch.heating',
+            'sensor.power',
+            'stats.heating_duty_24h',
+            'sensor.water_inlet_temp',
+            'sensor.water_outlet_temp',
+          ],
           'ui_hints': {
-            'dashboard.order': ['currentTemp', 'targetTemp', 'heatingToggle', 'humidity'],
+            'dashboard.order': [
+              'currentHumidity',
+              'currentTemp',
+              'targetTemp',
+              'heatingToggle',
+            ],
             'dashboard.hidden': [],
           }
         };
