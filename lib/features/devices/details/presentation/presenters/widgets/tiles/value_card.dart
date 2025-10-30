@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 
 class ValueCard extends StatelessWidget {
@@ -25,7 +26,7 @@ class ValueCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dynamic raw = context.select<DeviceStateCubit, dynamic>(
-      (c) => c.state.valueOf(bind),
+      (c) => c.state.get(Signal(bind)),
     );
     final String valueText = _fmt(raw);
     final String full = suffix != null && valueText != '—' ? '$valueText$suffix' : valueText;

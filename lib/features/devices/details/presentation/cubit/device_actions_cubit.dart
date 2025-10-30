@@ -1,62 +1,36 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/telemetry_repository_mock.dart';
+import 'package:oshmobile/core/network/mqtt/signal_command.dart';
+import 'package:oshmobile/features/devices/details/domain/repositories/control_repository.dart';
 
-abstract class CommandRepository {
-  Future<void> send(String deviceId, String command, {Map<String, dynamic>? args});
+class DeviceActionsState {
+  final bool busy;
+  final String? lastError;
+
+  const DeviceActionsState({this.busy = false, this.lastError});
 }
 
-// ===== Mock commands: меняем значения в моковой телеметрии
-class CommandRepositoryMock implements CommandRepository {
-  final TelemetryRepositoryMock telemetry;
+class DeviceActionsCubit extends Cubit<DeviceActionsState> {
+  DeviceActionsCubit(this._control) : super(const DeviceActionsState());
+  final ControlRepository _control;
+  String _deviceSn = "";
 
-  CommandRepositoryMock(this.telemetry);
-
-  @override
-  Future<void> send(String deviceId, String command, {Map<String, dynamic>? args}) async {
-    if (command == 'switch.heating.set') {
-      final v = (args?['state'] as bool?) ?? false;
-      telemetry.setSwitch(deviceId, v);
-    } else if (command == 'climate.set_mode' && args?['mode'] != null) {
-      telemetry.setMode(deviceId, args!['mode'] as String);
-    }
+  Future<void> bind(String deviceSn) async {
+    _deviceSn = deviceSn;
   }
-}
 
-sealed class ActionState {
-  const ActionState();
-}
-
-class ActionIdle extends ActionState {
-  const ActionIdle();
-}
-
-class ActionRunning extends ActionState {
-  const ActionRunning();
-}
-
-class ActionDone extends ActionState {
-  const ActionDone();
-}
-
-class ActionError extends ActionState {
-  final String message;
-
-  const ActionError(this.message);
-}
-
-class DeviceActionsCubit extends Cubit<ActionState> {
-  final CommandRepository commands;
-
-  DeviceActionsCubit(this.commands) : super(const ActionIdle());
-
-  Future<void> sendCommand(String deviceId, String command, {Map<String, dynamic>? args}) async {
-    emit(const ActionRunning());
+  Future<void> send<T>(Command<T> cmd, T value) async {
+    if (state.busy) return;
+    emit(const DeviceActionsState(busy: true));
     try {
-      await commands.send(deviceId, command, args: args);
-      emit(const ActionDone());
-      emit(const ActionIdle());
+      await _control.send(_deviceSn, cmd, value);
+      emit(const DeviceActionsState(busy: false));
     } catch (e) {
-      emit(ActionError(e.toString()));
+      emit(DeviceActionsState(busy: false, lastError: e.toString()));
     }
   }
+
+// Sugar wrappers if desired:
+  Future<void> setTargetTemp(double c) => send(ThermostatCommands.setTargetC, c);
+
+  Future<void> setMode(String m) => send(ThermostatCommands.setMode, m);
 }

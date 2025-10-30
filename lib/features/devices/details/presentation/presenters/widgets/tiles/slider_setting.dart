@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 
 class SliderSetting extends StatefulWidget {
@@ -60,7 +61,7 @@ class _SliderSettingState extends State<SliderSetting> {
   @override
   Widget build(BuildContext context) {
     final current = (context.select<DeviceStateCubit, dynamic>(
-          (c) => c.state.valueOf(widget.bind),
+          (c) => c.state.get(Signal(widget.bind)),
         ) as num?)
             ?.toDouble() ??
         (widget.min + widget.max) / 2;

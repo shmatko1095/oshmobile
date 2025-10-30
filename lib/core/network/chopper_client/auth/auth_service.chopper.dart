@@ -26,8 +26,7 @@ final class _$AuthService extends AuthService {
     String clientId = AppSecrets.oshClientId,
     String clientSecret = AppSecrets.oshClientSecret,
   }) {
-    final Uri $url = Uri.parse(
-        'https://auth.oshhome.com/realms/users-dev/protocol/openid-connect/token');
+    final Uri $url = Uri.parse('https://auth.oshhome.com/realms/users-dev/protocol/openid-connect/token');
     final Map<String, String> $headers = {
       'content-type': 'application/x-www-form-urlencoded',
     };
@@ -54,8 +53,7 @@ final class _$AuthService extends AuthService {
     String clientId = AppSecrets.oshClientId,
     String clientSecret = AppSecrets.oshClientSecret,
   }) {
-    final Uri $url = Uri.parse(
-        'https://auth.oshhome.com/realms/users-dev/protocol/openid-connect/token');
+    final Uri $url = Uri.parse('https://auth.oshhome.com/realms/users-dev/protocol/openid-connect/token');
     final Map<String, String> $headers = {
       'content-type': 'application/x-www-form-urlencoded',
     };
@@ -81,8 +79,7 @@ final class _$AuthService extends AuthService {
     String clientId = AppSecrets.oshClientId,
     String clientSecret = AppSecrets.oshClientSecret,
   }) {
-    final Uri $url = Uri.parse(
-        'https://auth.oshhome.com/realms/users-dev/protocol/openid-connect/token');
+    final Uri $url = Uri.parse('https://auth.oshhome.com/realms/users-dev/protocol/openid-connect/token');
     final Map<String, String> $headers = {
       'content-type': 'application/x-www-form-urlencoded',
     };

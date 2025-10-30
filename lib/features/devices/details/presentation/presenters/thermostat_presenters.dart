@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_mode_bar.dart';
@@ -12,7 +13,6 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/widge
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/slider_setting.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/toggle_tile.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/value_card.dart';
-import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
 
 import '../cubit/device_actions_cubit.dart';
 import '../models/osh_config.dart';
@@ -38,9 +38,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
           min: 5,
           max: 35,
           step: 0.5,
-          onSubmit: (ctx, v) => ctx
-              .read<DeviceActionsCubit>()
-              .sendCommand(device.id, 'climate.set_target_temperature', args: {'value': v}),
+          onSubmit: (ctx, v) => ctx.read<DeviceActionsCubit>().setTargetTemp(v),
         ),
       ),
       _Tile(
@@ -49,8 +47,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
         builder: () => ToggleTile(
           bind: 'switch.heating.state',
           title: 'Heating',
-          onChanged: (ctx, v) =>
-              ctx.read<DeviceActionsCubit>().sendCommand(device.id, 'switch.heating.set', args: {'state': v}),
+          onChanged: (ctx, v) => ctx.read<DeviceActionsCubit>().send(Command("switch.heating.set"), v),
         ),
       ),
       _Tile(
@@ -112,49 +109,50 @@ class ThermostatBasicPresenter implements DevicePresenter {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                 child: TemperatureMinimalPanel(
-                    currentBind: 'chipTemp',
-                    targetBind: 'setting.target_temperature',
-                    nextValueBind: 'schedule.next_target_temperature',
-                    nextTimeBind: 'schedule.next_time',
-                    heaterEnabledBind: 'switch.heating.state',
-                    unit: '°C',
-                    height: MediaQuery.sizeOf(context).height * 0.38,
-                    onTap: () {
-                      openThermostatModeEditor(
-                        context,
-                        deviceId: device.id,
-                        // можно переопределить команды/бинды при необходимости:
-                        // manualTargetBind: 'setting.target_temperature',
-                        // antifreezeMinBind: 'antifreeze.min_temperature',
-                        // antifreezeMaxBind: 'antifreeze.max_temperature',
-                        // manualCommand: 'climate.set_target_temperature',
-                        // antifreezeCommand: 'climate.set_antifreeze_range',
-                        // scheduleRepository: DeviceActionsScheduleRepository(context.read<DeviceActionsCubit>()),
-                      );
+                  currentBind: 'chipTemp',
+                  targetBind: 'setting.target_temperature',
+                  nextValueBind: 'schedule.next_target_temperature',
+                  nextTimeBind: 'schedule.next_time',
+                  heaterEnabledBind: 'switch.heating.state',
+                  unit: '°C',
+                  height: MediaQuery.sizeOf(context).height * 0.38,
+                  // onTap: () {
+                  //   openThermostatModeEditor(
+                  //     context,
+                  //     deviceId: device.id,
+                  // можно переопределить команды/бинды при необходимости:
+                  // manualTargetBind: 'setting.target_temperature',
+                  // antifreezeMinBind: 'antifreeze.min_temperature',
+                  // antifreezeMaxBind: 'antifreeze.max_temperature',
+                  // manualCommand: 'climate.set_target_temperature',
+                  // antifreezeCommand: 'climate.set_antifreeze_range',
+                  // scheduleRepository: DeviceActionsScheduleRepository(context.read<DeviceActionsCubit>()),
+                  // );
 
-                      // final deviceStateCubit = context.read<DeviceStateCubit>();
-                      // final actionsCubit = context.read<DeviceActionsCubit>();
+                  // final deviceStateCubit = context.read<DeviceStateCubit>();
+                  // final actionsCubit = context.read<DeviceActionsCubit>();
 
-                      // Navigator.of(context).push(
-                      //   MaterialPageRoute(
-                      //     builder: (_) => MultiBlocProvider(
-                      //       providers: [
-                      //         BlocProvider.value(value: deviceStateCubit),
-                      //
-                      //         // Если нужен actions на экране (например, DeviceActionsScheduleRepository):
-                      //         // BlocProvider.value(value: actionsCubit),
-                      //         BlocProvider(
-                      //           create: (_) => ScheduleCubit(
-                      //             repo: InMemoryScheduleRepository(), // или твой DeviceActionsScheduleRepository(...)
-                      //             deviceId: device.id,
-                      //           ),
-                      //         ),
-                      //       ],
-                      //       child: ScheduleEditorPage(deviceId: device.id),
-                      //     ),
-                      //   ),
-                      // );
-                    }),
+                  // Navigator.of(context).push(
+                  //   MaterialPageRoute(
+                  //     builder: (_) => MultiBlocProvider(
+                  //       providers: [
+                  //         BlocProvider.value(value: deviceStateCubit),
+                  //
+                  //         // Если нужен actions на экране (например, DeviceActionsScheduleRepository):
+                  //         // BlocProvider.value(value: actionsCubit),
+                  //         BlocProvider(
+                  //           create: (_) => ScheduleCubit(
+                  //             repo: InMemoryScheduleRepository(), // или твой DeviceActionsScheduleRepository(...)
+                  //             deviceId: device.id,
+                  //           ),
+                  //         ),
+                  //       ],
+                  //       child: ScheduleEditorPage(deviceId: device.id),
+                  //     ),
+                  //   ),
+                  // );
+                  // }
+                ),
               ),
             ),
           SliverToBoxAdapter(
@@ -178,9 +176,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
                 child: ThermostatModeBar(
-                  deviceId: device.id,
                   bind: 'climate.mode',
-                  command: 'climate.set_mode',
                 ),
               ),
             ),

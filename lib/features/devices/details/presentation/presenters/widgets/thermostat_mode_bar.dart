@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_actions_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -15,16 +16,12 @@ import 'package:oshmobile/generated/l10n.dart';
 class ThermostatModeBar extends StatefulWidget {
   const ThermostatModeBar({
     super.key,
-    required this.deviceId,
     required this.bind,
-    this.command = 'climate.set_mode',
     this.visibleModes,
     this.optimisticTimeout = const Duration(seconds: 5),
   });
 
-  final String deviceId;
   final String bind; // e.g. 'climate.mode'
-  final String command; // e.g. 'climate.set_mode'
   final List<String>? visibleModes; // optionally restrict visible items
   final Duration optimisticTimeout; // auto-clear optimistic highlight
 
@@ -82,7 +79,7 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
 
     // Actual mode from state (normalized to lowercase)
     final String? current = context.select<DeviceStateCubit, String?>((c) {
-      final v = c.state.valueOf(widget.bind);
+      final v = c.state.get(Signal(widget.bind));
       return v?.toString().trim().toLowerCase();
     });
 
@@ -93,7 +90,6 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
         _revertTimer?.cancel();
         _revertTimer = null;
         _optimistic = null; // no visible change; safe without setState in post-frame
-        // если хочешь анимировать исчезновение pending — используй setState
       });
     }
 
@@ -124,11 +120,7 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
                     if (effective == id) return; // nothing to do
                     _startOptimistic(id);
                     // Send command
-                    context.read<DeviceActionsCubit>().sendCommand(
-                      widget.deviceId,
-                      widget.command,
-                      args: {'mode': id},
-                    );
+                    context.read<DeviceActionsCubit>().setMode(id);
                   },
                 ),
               ),
@@ -185,7 +177,7 @@ class _ModeItem extends StatelessWidget {
               label,
               maxLines: 1,
               softWrap: false,
-              overflow: TextOverflow.fade, // или ellipsis
+              overflow: TextOverflow.fade,
               textAlign: TextAlign.center,
 
               // label,

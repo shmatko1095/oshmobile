@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
@@ -15,7 +16,7 @@ class TemperatureMinimalPanel extends StatelessWidget {
     this.unit = '°C',
     this.height,
     this.padding = const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-    this.borderRadius = 20, // скру=гление только для клипа (без декора)
+    this.borderRadius = 20,
   });
 
   final String currentBind;
@@ -48,7 +49,7 @@ class TemperatureMinimalPanel extends StatelessWidget {
     if (v == null) return '—';
     final d = v.toDouble();
     if (d.isNaN || d.isInfinite) return '—';
-    return d.toStringAsFixed(1); // ← всегда один знак
+    return d.toStringAsFixed(1);
   }
 
   String? _fmtTime(dynamic t) {
@@ -80,16 +81,17 @@ class TemperatureMinimalPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
 
-    final num? current = context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.valueOf(currentBind)));
-    final num? target = context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.valueOf(targetBind)));
+    final num? current = context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.get(Signal(currentBind))));
+    final num? target = context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.get(Signal(targetBind))));
     final num? nextVal = nextValueBind == null
         ? null
-        : context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.valueOf(nextValueBind!)));
-    final dynamic rawNextTime =
-        nextTimeBind == null ? null : context.select<DeviceStateCubit, dynamic>((c) => c.state.valueOf(nextTimeBind!));
+        : context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.get(Signal(nextValueBind!))));
+    final dynamic rawNextTime = nextTimeBind == null
+        ? null
+        : context.select<DeviceStateCubit, dynamic>((c) => c.state.get(Signal(nextTimeBind!)));
     final bool heaterOn = heaterEnabledBind == null
         ? false
-        : context.select<DeviceStateCubit, bool>((c) => _asBool(c.state.valueOf(heaterEnabledBind!)));
+        : context.select<DeviceStateCubit, bool>((c) => _asBool(c.state.get(Signal(heaterEnabledBind!))));
 
     final String centerText = _fmtNum(current);
     final String topLine = s.Target(_fmtNum(target)) + unit;
@@ -123,15 +125,13 @@ class TemperatureMinimalPanel extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // центральная огромная температура
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   child: AnimatedDefaultTextStyle(
                     duration: const Duration(milliseconds: 200),
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 140, // крупнее для "минималиста"
+                      fontSize: 140,
                       fontWeight: FontWeight.w300,
                       height: 1.0,
                     ),
@@ -145,7 +145,6 @@ class TemperatureMinimalPanel extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-
                 if (bottomLine != null)
                   AnimatedDefaultTextStyle(
                     duration: const Duration(milliseconds: 160),
@@ -162,7 +161,6 @@ class TemperatureMinimalPanel extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                   ),
-
                 if (heaterOn) ...[
                   const SizedBox(height: 20),
                   Row(

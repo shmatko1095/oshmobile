@@ -17,6 +17,7 @@ import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo_impl.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
 import 'package:oshmobile/core/secrets/app_secrets.dart';
+import 'package:oshmobile/core/utils/app_config.dart';
 import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source_impl.dart';
 import 'package:oshmobile/features/auth/data/repositories/auth_repository_impl.dart';
@@ -26,17 +27,19 @@ import 'package:oshmobile/features/auth/domain/usecases/user_signin.dart';
 import 'package:oshmobile/features/auth/domain/usecases/user_signup.dart';
 import 'package:oshmobile/features/auth/domain/usecases/verify_email.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:oshmobile/features/devices/details/data/mqtt_device_control_repository.dart';
-import 'package:oshmobile/features/devices/details/data/mqtt_device_telemetry_repository.dart';
+import 'package:oshmobile/features/devices/details/data/mqtt_control_repository.dart';
+import 'package:oshmobile/features/devices/details/data/mqtt_telemetry_repository.dart';
 import 'package:oshmobile/features/devices/details/domain/queries/get_device_full.dart';
-import 'package:oshmobile/features/devices/details/domain/repositories/device_control_repository.dart';
-import 'package:oshmobile/features/devices/details/domain/repositories/device_telemetry_repository.dart';
-import 'package:oshmobile/features/devices/details/domain/usecases/enable_rt_stream_usecase.dart';
-import 'package:oshmobile/features/devices/details/domain/usecases/subscribe_device_stream.dart';
+import 'package:oshmobile/features/devices/details/domain/repositories/control_repository.dart';
+import 'package:oshmobile/features/devices/details/domain/repositories/telemetry_repository.dart';
+import 'package:oshmobile/features/devices/details/domain/usecases/disable_rt_stream.dart';
+import 'package:oshmobile/features/devices/details/domain/usecases/enable_rt_stream.dart';
+import 'package:oshmobile/features/devices/details/domain/usecases/subscribe_telemetry.dart';
+import 'package:oshmobile/features/devices/details/domain/usecases/unsubscribe_telemetry.dart';
+import 'package:oshmobile/features/devices/details/domain/usecases/watch_telemetry.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_actions_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/telemetry_repository_mock.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_presenter.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/thermostat_presenters.dart';
 import 'package:oshmobile/features/home/data/datasources/device_remote_data_source.dart';
@@ -52,11 +55,18 @@ import 'package:oshmobile/features/home/domain/usecases/get_user_devices.dart';
 import 'package:oshmobile/features/home/domain/usecases/unassign_device.dart';
 import 'package:oshmobile/features/home/domain/usecases/update_device_user_data.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
+import 'package:oshmobile/features/schedule/data/mqtt_schedule_repository.dart';
+import 'package:oshmobile/features/schedule/data/schedule_repository.dart';
+import 'package:oshmobile/features/schedule/data/schedule_topics.dart';
+import 'package:oshmobile/features/schedule/domain/usecases/fetch_schedule.dart';
+import 'package:oshmobile/features/schedule/domain/usecases/save_schedule.dart';
 import 'package:path_provider/path_provider.dart';
 
 final locator = GetIt.instance;
 
 Future<void> initDependencies() async {
+  locator.registerSingleton(const AppConfig(tenantId: 'devices-dev'));
+
   await _initCore();
   await _initWebClient();
   await _initMqttClient();
@@ -170,29 +180,30 @@ void _initAuthFeature() {
 void _initDevicesFeature() {
   locator
     // DeviceControl
-    ..registerLazySingleton<DeviceControlRepository>(() => MqttDeviceControlRepository(locator<DeviceMqttRepo>()))
-    ..registerLazySingleton<EnableRtStreamUseCase>(() => EnableRtStreamUseCase(locator<DeviceControlRepository>()))
-    ..registerLazySingleton<DisableRtStreamUseCase>(() => DisableRtStreamUseCase(locator<DeviceControlRepository>()))
+    ..registerLazySingleton<ControlRepository>(
+        () => MqttControlRepositoryImpl(locator<DeviceMqttRepo>(), locator<AppConfig>().tenantId))
+    ..registerLazySingleton<EnableRtStream>(() => EnableRtStream(locator<ControlRepository>()))
+    ..registerLazySingleton<DisableRtStream>(() => DisableRtStream(locator<ControlRepository>()))
     // DeviceTelemetry
-    ..registerLazySingleton<DeviceTelemetryRepository>(() => MqttDeviceTelemetryRepository(locator<DeviceMqttRepo>()))
-    ..registerLazySingleton<SubscribeDeviceStreamUseCase>(
-        () => SubscribeDeviceStreamUseCase(locator<DeviceTelemetryRepository>()))
-    ..registerLazySingleton<UnsubscribeDeviceStreamUseCase>(
-        () => UnsubscribeDeviceStreamUseCase(locator<DeviceTelemetryRepository>()))
-    ..registerLazySingleton<GetDeviceStreamUseCase>(() => GetDeviceStreamUseCase(locator<DeviceTelemetryRepository>()))
+    ..registerLazySingleton<TelemetryRepository>(() => MqttTelemetryRepositoryImpl(locator<DeviceMqttRepo>()))
+    ..registerLazySingleton<SubscribeTelemetry>(() => SubscribeTelemetry(locator<TelemetryRepository>()))
+    ..registerLazySingleton<UnsubscribeTelemetry>(() => UnsubscribeTelemetry(locator<TelemetryRepository>()))
+    ..registerLazySingleton<WatchTelemetry>(() => WatchTelemetry(locator<TelemetryRepository>()))
     ..registerLazySingleton<GetDeviceFull>(() => GetDeviceFull(locator<DeviceRepository>()))
     ..registerFactory<DevicePageCubit>(() => DevicePageCubit(locator<GetDeviceFull>()))
-    ..registerLazySingleton<TelemetryRepository>(() => TelemetryRepositoryMock())
     ..registerFactory<DeviceStateCubit>(() => DeviceStateCubit(
-          subscribeUc: locator<SubscribeDeviceStreamUseCase>(),
-          unsubscribeUc: locator<UnsubscribeDeviceStreamUseCase>(),
-          getStreamUc: locator<GetDeviceStreamUseCase>(),
-          enableRtUc: locator<EnableRtStreamUseCase>(),
-          disableRtUc: locator<DisableRtStreamUseCase>(),
+          subscribe: locator<SubscribeTelemetry>(),
+          unsubscribe: locator<UnsubscribeTelemetry>(),
+          watch: locator<WatchTelemetry>(),
+          enableRt: locator<EnableRtStream>(),
+          disableRt: locator<DisableRtStream>(),
         ))
-    ..registerLazySingleton<CommandRepository>(
-        () => CommandRepositoryMock(locator<TelemetryRepository>() as TelemetryRepositoryMock))
-    ..registerFactory<DeviceActionsCubit>(() => DeviceActionsCubit(locator<CommandRepository>()))
+    ..registerLazySingleton<ScheduleTopics>(() => ScheduleTopics(locator<AppConfig>().tenantId))
+    ..registerLazySingleton<ScheduleRepository>(
+        () => MqttScheduleRepository(mqtt: locator<DeviceMqttRepo>(), topics: locator<ScheduleTopics>()))
+    ..registerLazySingleton<FetchSchedule>(() => FetchSchedule(locator<ScheduleRepository>()))
+    ..registerLazySingleton<SaveSchedule>(() => SaveSchedule(locator<ScheduleRepository>()))
+    ..registerFactory<DeviceActionsCubit>(() => DeviceActionsCubit(locator<ControlRepository>()))
     ..registerSingleton<DevicePresenterRegistry>(const DevicePresenterRegistry({
       '8c5ea780-3d0d-4886-9334-2b4e781dd51c': ThermostatBasicPresenter(),
     }));

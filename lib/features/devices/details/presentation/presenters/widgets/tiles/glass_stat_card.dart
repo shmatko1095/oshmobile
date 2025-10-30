@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // ---------- Common glassy card wrapper ----------
 class GlassStatCard extends StatelessWidget {
   const GlassStatCard({super.key, required this.child, this.onTap, this.padding});
+
   final Widget child;
   final VoidCallback? onTap;
   final EdgeInsets? padding;

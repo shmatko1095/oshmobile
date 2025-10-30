@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
@@ -23,18 +24,18 @@ class LoadFactorCard extends StatelessWidget {
 
   double? _computePercent(DeviceStateCubit c) {
     if (percentBind != null) {
-      final p = asNum(c.state.valueOf(percentBind!));
+      final p = asNum(c.state.get(Signal(percentBind!)));
       if (p == null) return null;
       final v = p > 1 ? (p / 100.0) : p.toDouble();
       return v.clamp(0.0, 1.0);
     }
     if (hoursBind != null) {
-      final h = asNum(c.state.valueOf(hoursBind!));
+      final h = asNum(c.state.get(Signal(hoursBind!)));
       if (h == null) return null;
       return (h / 24.0).clamp(0.0, 1.0).toDouble();
     }
     if (secondsBind != null) {
-      final s = asNum(c.state.valueOf(secondsBind!));
+      final s = asNum(c.state.get(Signal(secondsBind!)));
       if (s == null) return null;
       return (s / (24 * 3600)).clamp(0.0, 1.0).toDouble();
     }
@@ -43,11 +44,11 @@ class LoadFactorCard extends StatelessWidget {
 
   double? _computeHours(DeviceStateCubit c, double? percent) {
     if (hoursBind != null) {
-      final h = asNum(c.state.valueOf(hoursBind!));
+      final h = asNum(c.state.get(Signal(hoursBind!)));
       if (h != null) return h.toDouble();
     }
     if (secondsBind != null) {
-      final s = asNum(c.state.valueOf(secondsBind!));
+      final s = asNum(c.state.get(Signal(secondsBind!)));
       if (s != null) return s.toDouble() / 3600.0;
     }
     if (percent != null) return percent * 24.0;

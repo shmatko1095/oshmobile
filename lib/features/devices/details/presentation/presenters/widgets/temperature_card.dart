@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
@@ -80,36 +81,24 @@ class TemperatureHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Select minimal slices from state so the widget rebuilds only when those change
-    final num? current = context.select<DeviceStateCubit, num?>(
-      (c) => _asNum(c.state.valueOf(currentBind)),
-    );
-    final num? target = context.select<DeviceStateCubit, num?>(
-      (c) => _asNum(c.state.valueOf(targetBind)),
-    );
+    final num? current = context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.get(Signal(currentBind))));
+    final num? target = context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.get(Signal((targetBind)))));
 
     final num? nextVal = nextValueBind == null
         ? null
-        : context.select<DeviceStateCubit, num?>(
-            (c) => _asNum(c.state.valueOf(nextValueBind!)),
-          );
+        : context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.get(Signal(nextValueBind!))));
 
     final dynamic rawNextTime = nextTimeBind == null
         ? null
-        : context.select<DeviceStateCubit, dynamic>(
-            (c) => c.state.valueOf(nextTimeBind!),
-          );
+        : context.select<DeviceStateCubit, dynamic>((c) => c.state.get(Signal(nextTimeBind!)));
 
     final bool heaterEnabled = heaterEnabledBind == null
         ? false
-        : context.select<DeviceStateCubit, bool>(
-            (c) => _asBool(c.state.valueOf(heaterEnabledBind!)),
-          );
+        : context.select<DeviceStateCubit, bool>((c) => _asBool(c.state.get(Signal(heaterEnabledBind!))));
 
     final dynamic humidity = humidityBind == null
         ? null
-        : context.select<DeviceStateCubit, dynamic>(
-            (c) => c.state.valueOf(humidityBind!),
-          );
+        : context.select<DeviceStateCubit, dynamic>((c) => c.state.get(Signal(humidityBind!)));
 
     final String currentText = '${_fmtNum(current)}$unit';
     final String targetLine = S.of(context).Target(_fmtNum(target)) + unit;

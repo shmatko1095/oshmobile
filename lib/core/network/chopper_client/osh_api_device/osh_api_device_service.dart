@@ -7,8 +7,7 @@ part 'osh_api_device_service.chopper.dart';
 
 @ChopperApi(baseUrl: "${AppSecrets.oshApiEndpoint}/devices")
 abstract class ApiDeviceService extends ChopperService {
-  static ApiDeviceService create([ChopperClient? client]) =>
-      _$ApiDeviceService(client);
+  static ApiDeviceService create([ChopperClient? client]) => _$ApiDeviceService(client);
 
   void updateClient(ChopperClient client) {
     this.client = client;

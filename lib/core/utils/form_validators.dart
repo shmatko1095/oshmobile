@@ -11,8 +11,7 @@ class FormValidator {
     required String? value,
     required String errorMessage,
   }) {
-    const String pattern =
-        r'^[a-zA-Z0-9.a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
+    const String pattern = r'^[a-zA-Z0-9.a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
     return regExpPattern(
       value: value,
       errorMessage: errorMessage,
@@ -26,9 +25,7 @@ class FormValidator {
     required String pattern,
   }) {
     final RegExp regex = RegExp(pattern);
-    return (value == null || value.isEmpty || !regex.hasMatch(value))
-        ? errorMessage
-        : null;
+    return (value == null || value.isEmpty || !regex.hasMatch(value)) ? errorMessage : null;
   }
 
   static String? same({

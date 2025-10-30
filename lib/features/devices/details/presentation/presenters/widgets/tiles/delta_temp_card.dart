@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 
 class DeltaTCard extends StatelessWidget {
@@ -30,8 +31,8 @@ class DeltaTCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = context.select<DeviceStateCubit, ({num? inT, num? outT, num? dT})>((c) {
-      final inT = _asNum(c.state.valueOf(inletBind));
-      final outT = _asNum(c.state.valueOf(outletBind));
+      final inT = _asNum(c.state.get(Signal(inletBind)));
+      final outT = _asNum(c.state.get(Signal(outletBind)));
       final dT = (inT != null && outT != null) ? (outT - inT) : null;
       return (inT: inT, outT: outT, dT: dT);
     });
@@ -88,7 +89,6 @@ class DeltaTCard extends StatelessWidget {
 
                 const SizedBox(height: 8),
 
-                // In/Out — используем Wrap, чтобы при нехватке места переносилось
                 Wrap(
                   spacing: 12,
                   runSpacing: 4,

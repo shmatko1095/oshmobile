@@ -31,8 +31,7 @@ final class _$ApiUserService extends ApiUserService {
 
   @override
   Future<Response<dynamic>> getDevices({required String userId}) {
-    final Uri $url =
-        Uri.parse('https://api.oshhome.com/v1/users/${userId}/devices');
+    final Uri $url = Uri.parse('https://api.oshhome.com/v1/users/${userId}/devices');
     final Request $request = Request(
       'GET',
       $url,
@@ -86,8 +85,7 @@ final class _$ApiUserService extends ApiUserService {
     required String accessToken,
     required SendResetPasswordEmailRequest request,
   }) {
-    final Uri $url =
-        Uri.parse('https://api.oshhome.com/v1/users/reset-password');
+    final Uri $url = Uri.parse('https://api.oshhome.com/v1/users/reset-password');
     final Map<String, String> $headers = {
       'authorization': accessToken,
     };
@@ -119,8 +117,7 @@ final class _$ApiUserService extends ApiUserService {
     required String deviceSn,
     required AssignDeviceRequest request,
   }) {
-    final Uri $url = Uri.parse(
-        'https://api.oshhome.com/v1/users/${userId}/device/${deviceSn}');
+    final Uri $url = Uri.parse('https://api.oshhome.com/v1/users/${userId}/device/${deviceSn}');
     final $body = request;
     final Request $request = Request(
       'PUT',
@@ -136,8 +133,7 @@ final class _$ApiUserService extends ApiUserService {
     required String userId,
     required String deviceId,
   }) {
-    final Uri $url = Uri.parse(
-        'https://api.oshhome.com/v1/users/${userId}/device/${deviceId}');
+    final Uri $url = Uri.parse('https://api.oshhome.com/v1/users/${userId}/device/${deviceId}');
     final Request $request = Request(
       'DELETE',
       $url,

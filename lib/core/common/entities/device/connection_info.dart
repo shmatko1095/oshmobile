@@ -13,9 +13,7 @@ class ConnectionInfo {
     );
   }
 
-  String get timestampText => timestamp == null
-      ? ''
-      : DateFormat('yyyy-MM-dd HH:mm:ss').format(timestamp!.toLocal());
+  String get timestampText => timestamp == null ? '' : DateFormat('yyyy-MM-dd HH:mm:ss').format(timestamp!.toLocal());
 
   static DateTime? _parseUnix(dynamic v) {
     if (v == null) return null;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
@@ -20,7 +21,7 @@ class PowerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final power = context.select<DeviceStateCubit, num?>((c) => asNum(c.state.valueOf(bind)));
+    final power = context.select<DeviceStateCubit, num?>((c) => asNum(c.state.get(Signal(bind))));
     return GlassStatCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

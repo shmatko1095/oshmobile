@@ -21,17 +21,14 @@ class DarkCupertinoTextField extends StatelessWidget {
       placeholder: placeholder,
       keyboardType: keyboardType,
       obscureText: obscureText,
-
       padding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       style: TextStyle(
         color: CupertinoDynamicColor.resolve(
           CupertinoColors.label,
           context,
         ),
-
       ),
       decoration: BoxDecoration(
-
         color: CupertinoDynamicColor.resolve(
           CupertinoColors.systemGrey6,
           context,

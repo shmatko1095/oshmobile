@@ -12,8 +12,7 @@ part 'osh_api_user_service.chopper.dart';
 
 @ChopperApi(baseUrl: "${AppSecrets.oshApiEndpoint}/users")
 abstract class ApiUserService extends ChopperService {
-  static ApiUserService create([ChopperClient? client]) =>
-      _$ApiUserService(client);
+  static ApiUserService create([ChopperClient? client]) => _$ApiUserService(client);
 
   void updateClient(ChopperClient client) {
     this.client = client;

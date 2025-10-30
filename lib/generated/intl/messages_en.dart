@@ -20,50 +20,40 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'en';
 
-  static String m0(length) =>
-      "Password must be at least ${length} characters long";
+  static String m0(length) => "Password must be at least ${length} characters long";
 
   static String m1(temp, time) => "Next ${temp} at ${time}";
 
   static String m2(temp) => "Target ${temp}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
+
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
         "AddDevice": MessageLookupByLibrary.simpleMessage("Add device"),
         "Cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
-        "CheckYourEmail":
-            MessageLookupByLibrary.simpleMessage("Check your email"),
-        "ContinueWithGoogle":
-            MessageLookupByLibrary.simpleMessage("Continue with Google"),
+        "CheckYourEmail": MessageLookupByLibrary.simpleMessage("Check your email"),
+        "ContinueWithGoogle": MessageLookupByLibrary.simpleMessage("Continue with Google"),
         "Deleted": MessageLookupByLibrary.simpleMessage("Deleted"),
         "DeviceDetails": MessageLookupByLibrary.simpleMessage("Device details"),
-        "DeviceEditTitle":
-            MessageLookupByLibrary.simpleMessage("Device information"),
-        "DeviceUnlinkAlertContent1":
-            MessageLookupByLibrary.simpleMessage("The device "),
+        "DeviceEditTitle": MessageLookupByLibrary.simpleMessage("Device information"),
+        "DeviceUnlinkAlertContent1": MessageLookupByLibrary.simpleMessage("The device "),
         "DeviceUnlinkAlertContent2": MessageLookupByLibrary.simpleMessage(
             " will be removed from your list. You can re-add it anytime by scanning the QR code again."),
         "Done": MessageLookupByLibrary.simpleMessage("Done"),
-        "DontHaveAnAccount":
-            MessageLookupByLibrary.simpleMessage("Don\'t have an account?"),
+        "DontHaveAnAccount": MessageLookupByLibrary.simpleMessage("Don\'t have an account?"),
         "Email": MessageLookupByLibrary.simpleMessage("Email"),
         "Failed": MessageLookupByLibrary.simpleMessage("Failed"),
-        "ForgotPassword":
-            MessageLookupByLibrary.simpleMessage("Forgot password?"),
+        "ForgotPassword": MessageLookupByLibrary.simpleMessage("Forgot password?"),
         "ForgotPasswordContent": MessageLookupByLibrary.simpleMessage(
             "Enter your email address, and we’ll send you a link to reset your password. It’s quick and secure."),
-        "ForgotYourPassword":
-            MessageLookupByLibrary.simpleMessage("Forgot your password"),
+        "ForgotYourPassword": MessageLookupByLibrary.simpleMessage("Forgot your password"),
         "GoToLogin": MessageLookupByLibrary.simpleMessage("Go to Login"),
         "Heating": MessageLookupByLibrary.simpleMessage("Heating"),
-        "InvalidEmailAddress":
-            MessageLookupByLibrary.simpleMessage("Invalid email address"),
+        "InvalidEmailAddress": MessageLookupByLibrary.simpleMessage("Invalid email address"),
         "InvalidPassword": m0,
-        "InvalidUserCredentials":
-            MessageLookupByLibrary.simpleMessage("Invalid user credentials"),
+        "InvalidUserCredentials": MessageLookupByLibrary.simpleMessage("Invalid user credentials"),
         "InvalidValue": MessageLookupByLibrary.simpleMessage("Invalid value"),
-        "ManualTemperature":
-            MessageLookupByLibrary.simpleMessage("Manual temperature"),
+        "ManualTemperature": MessageLookupByLibrary.simpleMessage("Manual temperature"),
         "ModeAntifreeze": MessageLookupByLibrary.simpleMessage("Antifreeze"),
         "ModeDaily": MessageLookupByLibrary.simpleMessage("Daily"),
         "ModeManual": MessageLookupByLibrary.simpleMessage("Manual"),
@@ -72,23 +62,18 @@ class MessageLookup extends MessageLookupByLibrary {
         "Name": MessageLookupByLibrary.simpleMessage("Name"),
         "NextAt": m1,
         "No": MessageLookupByLibrary.simpleMessage("No"),
-        "NoDeviceSelected":
-            MessageLookupByLibrary.simpleMessage("No device selected"),
+        "NoDeviceSelected": MessageLookupByLibrary.simpleMessage("No device selected"),
         "NoDevicesYet": MessageLookupByLibrary.simpleMessage("No devices yet"),
         "OK": MessageLookupByLibrary.simpleMessage("OK"),
         "Offline": MessageLookupByLibrary.simpleMessage("Offline"),
         "Online": MessageLookupByLibrary.simpleMessage("Online"),
         "Password": MessageLookupByLibrary.simpleMessage("Password"),
-        "PasswordConfirmation":
-            MessageLookupByLibrary.simpleMessage("Password confirmation"),
-        "PasswordsDoNotMatch":
-            MessageLookupByLibrary.simpleMessage("Passwords do not match"),
+        "PasswordConfirmation": MessageLookupByLibrary.simpleMessage("Password confirmation"),
+        "PasswordsDoNotMatch": MessageLookupByLibrary.simpleMessage("Passwords do not match"),
         "PleaseCheckYourInbox": MessageLookupByLibrary.simpleMessage(
             ". Please check your inbox and follow the instructions to complete your registration."),
-        "PointCameraToQR": MessageLookupByLibrary.simpleMessage(
-            "Point the camera at the QR code"),
-        "RegistrationSuccessful":
-            MessageLookupByLibrary.simpleMessage("Almost There!"),
+        "PointCameraToQR": MessageLookupByLibrary.simpleMessage("Point the camera at the QR code"),
+        "RegistrationSuccessful": MessageLookupByLibrary.simpleMessage("Almost There!"),
         "RegistrationSuccessfulContent": MessageLookupByLibrary.simpleMessage(
             "The last step is to verify your email address. Please check your inbox and follow the instructions to complete your registration."),
         "ResetPassword": MessageLookupByLibrary.simpleMessage("Reset password"),
@@ -104,28 +89,23 @@ class MessageLookup extends MessageLookupByLibrary {
         "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
         "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
         "Target": m2,
-        "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
-            "Check the device\'s network connection."),
-        "TipContactSupport": MessageLookupByLibrary.simpleMessage(
-            "Contact support and provide the Model ID and Device ID."),
-        "TipEnsureAppUpdated": MessageLookupByLibrary.simpleMessage(
-            "Make sure the app is updated to the latest version."),
+        "TipCheckNetwork": MessageLookupByLibrary.simpleMessage("Check the device\'s network connection."),
+        "TipContactSupport":
+            MessageLookupByLibrary.simpleMessage("Contact support and provide the Model ID and Device ID."),
+        "TipEnsureAppUpdated":
+            MessageLookupByLibrary.simpleMessage("Make sure the app is updated to the latest version."),
         "Tips": MessageLookupByLibrary.simpleMessage("Tips"),
         "TryDemo": MessageLookupByLibrary.simpleMessage("Try Demo"),
         "Undo": MessageLookupByLibrary.simpleMessage("Undo"),
-        "UnknownDeviceType":
-            MessageLookupByLibrary.simpleMessage("Unknown device type"),
+        "UnknownDeviceType": MessageLookupByLibrary.simpleMessage("Unknown device type"),
         "UnknownError": MessageLookupByLibrary.simpleMessage("Unknown error"),
         "UnlinkDevice": MessageLookupByLibrary.simpleMessage("Unlink Device"),
         "UnsupportedDeviceMessage": MessageLookupByLibrary.simpleMessage(
             "This device model is not yet supported by the current version of the app. You can try refreshing the data, opening the device settings, or sending a report."),
         "Update": MessageLookupByLibrary.simpleMessage("Update"),
-        "UserAlreadyExist":
-            MessageLookupByLibrary.simpleMessage("User already exist"),
-        "VerifyYourEmail":
-            MessageLookupByLibrary.simpleMessage("Verify your email"),
-        "WeHaveSentVerificationEmailTo": MessageLookupByLibrary.simpleMessage(
-            "We have sent a verification email to "),
+        "UserAlreadyExist": MessageLookupByLibrary.simpleMessage("User already exist"),
+        "VerifyYourEmail": MessageLookupByLibrary.simpleMessage("Verify your email"),
+        "WeHaveSentVerificationEmailTo": MessageLookupByLibrary.simpleMessage("We have sent a verification email to "),
         "Yes": MessageLookupByLibrary.simpleMessage("Yes"),
         "YourEmailIsNotVerifiedYet": MessageLookupByLibrary.simpleMessage(
             "Your email is not verified yet. Click the button below to resend the verification email.")

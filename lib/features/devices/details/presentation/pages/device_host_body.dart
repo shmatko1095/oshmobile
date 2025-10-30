@@ -45,8 +45,8 @@ class DeviceHostBody extends StatelessWidget {
       child: MultiBlocProvider(
         providers: [
           BlocProvider(create: (_) => _sl<DevicePageCubit>()..load(device.id)),
-          BlocProvider(create: (_) => _sl<DeviceStateCubit>()..bindDevice(device.sn)),
-          BlocProvider(create: (_) => _sl<DeviceActionsCubit>()),
+          BlocProvider(create: (_) => _sl<DeviceStateCubit>()..bind(device.sn)),
+          BlocProvider(create: (_) => _sl<DeviceActionsCubit>()..bind(device.sn)),
         ],
         child: BlocConsumer<DevicePageCubit, DevicePageState>(
           listenWhen: (prev, next) => _titleFrom(prev) != _titleFrom(next),

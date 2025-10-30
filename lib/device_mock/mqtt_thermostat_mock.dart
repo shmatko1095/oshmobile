@@ -52,7 +52,6 @@ class MqttThermostatMock {
         {'ver': '1', 'device_id': deviceId, 'online': false, 'ts': DateTime.now().toUtc().toIso8601String()});
     _client.connectionMessage = mqtt.MqttConnectMessage()
         .withClientIdentifier('dev:$deviceId')
-        .keepAliveFor(30)
         .startClean()
         .withWillTopic(Topics.status(tenantId, deviceId))
         .withWillQos(mqtt.MqttQos.atLeastOnce)

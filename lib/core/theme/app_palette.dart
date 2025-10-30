@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 
 class AppPalette {
   static const Color backgroundColorLight = Color(0xffF1F1F1);
-  static const Color backgroundColorDark =
-      Color(0xff0E0E0E); //Color.fromRGBO(0, 0, 0, 1);
+  static const Color backgroundColorDark = Color(0xff0E0E0E); //Color.fromRGBO(0, 0, 0, 1);
   static const Color activeTextFieldColorLight = Color(0xffe7e7e7);
   static const Color activeTextFieldColorDark = Color(0xff1a1a1a);
 

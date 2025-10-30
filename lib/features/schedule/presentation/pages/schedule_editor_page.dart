@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
@@ -85,7 +86,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
   @override
   void initState() {
     super.initState();
-    final devMode = context.read<DeviceStateCubit>().state.valueOf('climate.mode');
+    final devMode = context.read<DeviceStateCubit>().state.get(Signal('climate.mode'));
     context.read<ScheduleCubit>().load(_modeFromDevice(devMode));
   }
 

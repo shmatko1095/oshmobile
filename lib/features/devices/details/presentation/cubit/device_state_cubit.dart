@@ -1,96 +1,136 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/network/mqtt/signal_command.dart';
+import 'package:oshmobile/features/devices/details/domain/usecases/disable_rt_stream.dart';
+import 'package:oshmobile/features/devices/details/domain/usecases/enable_rt_stream.dart';
+import 'package:oshmobile/features/devices/details/domain/usecases/subscribe_telemetry.dart';
+import 'package:oshmobile/features/devices/details/domain/usecases/unsubscribe_telemetry.dart';
+import 'package:oshmobile/features/devices/details/domain/usecases/watch_telemetry.dart';
 
-import '../../domain/usecases/enable_rt_stream_usecase.dart';
-// ===== domain use cases =====
-import '../../domain/usecases/subscribe_device_stream.dart';
+enum DeviceLiveStatus { idle, connecting, live, degraded }
 
-/// Simple state holding a key-value map with helper `valueOf`.
 class DeviceStateState {
-  final Map<String, dynamic> data;
+  final String? deviceId;
+  final DeviceLiveStatus status;
+  final DateTime? lastUpdate;
+  final Map<String, dynamic> data; // alias -> value
 
-  const DeviceStateState(this.data);
+  const DeviceStateState({
+    required this.data,
+    this.deviceId,
+    this.status = DeviceLiveStatus.idle,
+    this.lastUpdate,
+  });
 
-  factory DeviceStateState.initial() => const DeviceStateState({});
+  factory DeviceStateState.initial() => const DeviceStateState(data: {});
 
-  DeviceStateState merge(Map<String, dynamic> diff) => DeviceStateState({...data, ...diff});
+  T? get<T>(Signal<T> s) {
+    final v = data[s.alias];
+    return v is T ? v : null;
+  }
 
-  dynamic valueOf(String key) => data[key];
+  DeviceStateState copyWith({
+    String? deviceId,
+    DeviceLiveStatus? status,
+    DateTime? lastUpdate,
+    Map<String, dynamic>? data,
+  }) =>
+      DeviceStateState(
+        data: data ?? this.data,
+        deviceId: deviceId ?? this.deviceId,
+        status: status ?? this.status,
+        lastUpdate: lastUpdate ?? this.lastUpdate,
+      );
+
+  DeviceStateState merge(Map<String, dynamic> diff) {
+    if (diff.isEmpty) return this;
+    var changed = false;
+    final next = Map<String, dynamic>.from(data);
+    diff.forEach((k, v) {
+      if (next[k] != v) {
+        next[k] = v;
+        changed = true;
+      }
+    });
+    return changed ? copyWith(data: next, lastUpdate: DateTime.now(), status: DeviceLiveStatus.live) : this;
+  }
 }
 
 class DeviceStateCubit extends Cubit<DeviceStateState> {
   DeviceStateCubit({
-    required SubscribeDeviceStreamUseCase subscribeUc,
-    required UnsubscribeDeviceStreamUseCase unsubscribeUc,
-    required GetDeviceStreamUseCase getStreamUc,
-    required EnableRtStreamUseCase enableRtUc,
-    required DisableRtStreamUseCase disableRtUc,
-  })  : _subscribeUc = subscribeUc,
-        _unsubscribeUc = unsubscribeUc,
-        _getStreamUc = getStreamUc,
-        _enableRtUc = enableRtUc,
-        _disableRtUc = disableRtUc,
+    required SubscribeTelemetry subscribe,
+    required UnsubscribeTelemetry unsubscribe,
+    required WatchTelemetry watch,
+    required EnableRtStream enableRt,
+    required DisableRtStream disableRt,
+    this.rtInterval = const Duration(seconds: 1),
+  })  : _subscribe = subscribe,
+        _unsubscribe = unsubscribe,
+        _watch = watch,
+        _enableRt = enableRt,
+        _disableRt = disableRt,
         super(DeviceStateState.initial());
 
-  final SubscribeDeviceStreamUseCase _subscribeUc;
-  final UnsubscribeDeviceStreamUseCase _unsubscribeUc;
-  final GetDeviceStreamUseCase _getStreamUc;
-  final EnableRtStreamUseCase _enableRtUc;
-  final DisableRtStreamUseCase _disableRtUc;
+  final SubscribeTelemetry _subscribe;
+  final UnsubscribeTelemetry _unsubscribe;
+  final WatchTelemetry _watch;
+  final EnableRtStream _enableRt;
+  final DisableRtStream _disableRt;
+  final Duration rtInterval; // policy knob
 
   StreamSubscription<Map<String, dynamic>>? _sub;
-  String? _deviceId;
+  int _bindToken = 0;
 
-  /// Bind UI to a specific device: enable RT, subscribe, and start merging incoming telemetry.
-  Future<void> bindDevice(String deviceId) async {
-    if (_deviceId == deviceId) return;
+  /// Bind to a specific device and start consuming telemetry alias-diffs.
+  Future<void> bind(String deviceId) async {
+    final token = ++_bindToken;
+    await _sub?.cancel();
+    emit(DeviceStateState.initial().copyWith(deviceId: deviceId, status: DeviceLiveStatus.connecting));
 
-    // Unbind previous device (with graceful RT disable)
-    await _unbindInternal();
-
-    _deviceId = deviceId;
-
-    // 1) Ask device to push telemetry at 1Hz while this screen is active
+    // 1) Try to enable RT (non-fatal)
     try {
-      await _enableRtUc(deviceId, interval: const Duration(seconds: 1));
-    } catch (_) {
-      // Non-fatal: we still subscribe and show last-known updates
-    }
+      await _enableRt(deviceId, interval: rtInterval);
+    } catch (_) {}
 
-    // 2) Subscribe to MQTT topics for this device
-    await _subscribeUc(deviceId);
-
-    // 3) Start listening to domain stream and merge into state
-    _sub = _getStreamUc(deviceId).listen(
-      (diff) => emit(state.merge(diff)),
-      onError: (_) {}, // keep UI alive on transient errors
+    // 2) Subscribe and watch
+    try {
+      await _subscribe(deviceId);
+    } catch (_) {}
+    _sub = _watch(deviceId).listen(
+      (diff) {
+        if (token != _bindToken) return;
+        emit(state.merge(diff));
+      },
+      onError: (_) {
+        if (token != _bindToken) return;
+        emit(state.copyWith(status: DeviceLiveStatus.degraded));
+      },
       cancelOnError: false,
     );
   }
 
-  /// Explicit unbind (optional, called on presenter's dispose). Also called internally.
-  Future<void> unbind() => _unbindInternal();
-
-  Future<void> _unbindInternal() async {
+  /// Unbind and stop consuming telemetry.
+  Future<void> unbind() async {
+    final did = state.deviceId;
+    _bindToken++;
     await _sub?.cancel();
     _sub = null;
 
-    if (_deviceId != null) {
-      // Revert device telemetry rate to default (e.g., 5 minutes)
+    if (did != null) {
       try {
-        await _disableRtUc(_deviceId!);
-      } catch (_) {
-        // ignore
-      }
-      await _unsubscribeUc(_deviceId!);
-      _deviceId = null;
+        await _disableRt(did);
+      } catch (_) {}
+      try {
+        await _unsubscribe(did);
+      } catch (_) {}
     }
+    emit(DeviceStateState.initial());
   }
 
   @override
   Future<void> close() async {
-    await _unbindInternal();
+    await _sub?.cancel();
     return super.close();
   }
 }
