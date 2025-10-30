@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart' as global_auth;
+import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart' as global_mqtt;
 import 'package:oshmobile/features/devices/details/presentation/pages/device_host_body.dart';
 import 'package:oshmobile/features/devices/no_selected_device/presentation/pages/no_selected_device_page.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
@@ -24,6 +26,12 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<HomeCubit>().updateDeviceList();
+
+      // TBD to remove and migrate to app coordinator
+      final auth = context.read<global_auth.GlobalAuthCubit>();
+      final userId = auth.getJwtUserData()?.email ?? "noUser";
+      final mqtt = context.read<global_mqtt.GlobalMqttCubit>();
+      mqtt.connectWith(userId: userId, token: "11111111");
     });
   }
 
@@ -54,15 +62,16 @@ class _HomePageState extends State<HomePage> {
       body: BlocSelector<HomeCubit, HomeState, String?>(
         selector: (s) => s.selectedDeviceId,
         builder: (context, deviceId) {
-          if (deviceId == null) {
+          if (deviceId == null || context.read<HomeCubit>().getDeviceById(deviceId) == null) {
             _setTitleSafe(null);
             return const NoSelectedDevicePage();
+          } else {
+            final device = context.read<HomeCubit>().getDeviceById(deviceId);
+            return DeviceHostBody(
+              device: device!,
+              onTitleChanged: _setTitleSafe,
+            );
           }
-
-          return DeviceHostBody(
-            deviceId: deviceId,
-            onTitleChanged: _setTitleSafe,
-          );
         },
       ),
     );

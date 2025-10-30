@@ -1,8 +1,10 @@
 class AppSecrets {
-  static const oshAccessTokenUrl =
-      "https://auth.oshhome.com/realms/users-dev/protocol/openid-connect/token";
+  static const oshAccessTokenUrl = "https://auth.oshhome.com/realms/users-dev/protocol/openid-connect/token";
   static const oshClientId = "osh-home-app";
   static const oshClientSecret = "riM77mAUpRbwNJHbCji0cG05EWQR0lve";
 
   static const oshApiEndpoint = "https://api.oshhome.com/v1";
+
+  static const oshMqttEndpointUrl = "mqtt.oshhome.com";
+  static const oshMqttEndpointPort = 31883;
 }

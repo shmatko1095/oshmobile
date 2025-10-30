@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:chopper/chopper.dart';
-import 'package:oshmobile/core/common/cubits/global_auth/global_auth_cubit.dart';
+import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 
 class ApiAuthenticator extends Authenticator {
   Completer<bool>? _refreshCompleter;

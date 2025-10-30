@@ -1,73 +1,96 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/telemetry_repository_mock.dart';
 
-class DeviceState {
-  final Map<String, dynamic> values;
+import '../../domain/usecases/enable_rt_stream_usecase.dart';
+// ===== domain use cases =====
+import '../../domain/usecases/subscribe_device_stream.dart';
 
-  const DeviceState(this.values);
+/// Simple state holding a key-value map with helper `valueOf`.
+class DeviceStateState {
+  final Map<String, dynamic> data;
 
-  dynamic valueOf(String key) => values[key];
+  const DeviceStateState(this.data);
 
-  DeviceState merge(Map<String, dynamic> delta) => DeviceState({...values, ...delta});
-  static const empty = DeviceState({});
+  factory DeviceStateState.initial() => const DeviceStateState({});
+
+  DeviceStateState merge(Map<String, dynamic> diff) => DeviceStateState({...data, ...diff});
+
+  dynamic valueOf(String key) => data[key];
 }
-//
-// abstract class TelemetryRepository {
-//   Stream<Map<String, dynamic>> stream(String deviceId);
-// }
 
-// class TelemetryRepositoryMock implements TelemetryRepository {
-//   final _rand = Random();
-//   final _switchState = <String, bool>{};
-//   final _modeState = <String, String>{};
-//
-//   @override
-//   Stream<Map<String, dynamic>> stream(String deviceId) async* {
-//     double current = 20 + _rand.nextDouble() * 2;
-//     double humidity = 60 + _rand.nextDouble() * 5;
-//     _switchState.putIfAbsent(deviceId, () => false);
-//
-//     while (true) {
-//       await Future<void>.delayed(const Duration(seconds: 1));
-//       current += (_rand.nextDouble() - 0.5) * 0.3;
-//       humidity += (_rand.nextDouble() + 1) * 0.3;
-//       yield {
-//         'sensor.temperature': double.parse(current.toStringAsFixed(1)),
-//         'setting.target_temperature': 21.0,
-//         'switch.heating.state': _switchState[deviceId] ?? false,
-//         'schedule.next_target_temperature': 22.0,
-//         'schedule.next_time': "19:30",
-//         'climate.mode': _modeState[deviceId] ?? "manual",
-//         'sensor.humidity': double.parse(humidity.toStringAsFixed(1)),
-//         'sensor.power': 2000,
-//         'stats.heating_duty_24h': 0.5,
-//         'sensor.water_inlet_temp': 28.5,
-//         'sensor.water_outlet_temp': 30,
-//       };
-//     }
-//   }
-//
-//   void setSwitch(String deviceId, bool v) => _switchState[deviceId] = v;
-//
-//   void setMode(String deviceId, String mode) => _modeState[deviceId] = mode;
-// }
+class DeviceStateCubit extends Cubit<DeviceStateState> {
+  DeviceStateCubit({
+    required SubscribeDeviceStreamUseCase subscribeUc,
+    required UnsubscribeDeviceStreamUseCase unsubscribeUc,
+    required GetDeviceStreamUseCase getStreamUc,
+    required EnableRtStreamUseCase enableRtUc,
+    required DisableRtStreamUseCase disableRtUc,
+  })  : _subscribeUc = subscribeUc,
+        _unsubscribeUc = unsubscribeUc,
+        _getStreamUc = getStreamUc,
+        _enableRtUc = enableRtUc,
+        _disableRtUc = disableRtUc,
+        super(DeviceStateState.initial());
 
-class DeviceStateCubit extends Cubit<DeviceState> {
-  final TelemetryRepository telemetry;
-  StreamSubscription? _sub;
+  final SubscribeDeviceStreamUseCase _subscribeUc;
+  final UnsubscribeDeviceStreamUseCase _unsubscribeUc;
+  final GetDeviceStreamUseCase _getStreamUc;
+  final EnableRtStreamUseCase _enableRtUc;
+  final DisableRtStreamUseCase _disableRtUc;
 
-  DeviceStateCubit(this.telemetry) : super(DeviceState.empty);
+  StreamSubscription<Map<String, dynamic>>? _sub;
+  String? _deviceId;
 
-  void bindDevice(String deviceId) {
-    _sub?.cancel();
-    _sub = telemetry.stream(deviceId).listen((delta) => emit(state.merge(delta)));
+  /// Bind UI to a specific device: enable RT, subscribe, and start merging incoming telemetry.
+  Future<void> bindDevice(String deviceId) async {
+    if (_deviceId == deviceId) return;
+
+    // Unbind previous device (with graceful RT disable)
+    await _unbindInternal();
+
+    _deviceId = deviceId;
+
+    // 1) Ask device to push telemetry at 1Hz while this screen is active
+    try {
+      await _enableRtUc(deviceId, interval: const Duration(seconds: 1));
+    } catch (_) {
+      // Non-fatal: we still subscribe and show last-known updates
+    }
+
+    // 2) Subscribe to MQTT topics for this device
+    await _subscribeUc(deviceId);
+
+    // 3) Start listening to domain stream and merge into state
+    _sub = _getStreamUc(deviceId).listen(
+      (diff) => emit(state.merge(diff)),
+      onError: (_) {}, // keep UI alive on transient errors
+      cancelOnError: false,
+    );
+  }
+
+  /// Explicit unbind (optional, called on presenter's dispose). Also called internally.
+  Future<void> unbind() => _unbindInternal();
+
+  Future<void> _unbindInternal() async {
+    await _sub?.cancel();
+    _sub = null;
+
+    if (_deviceId != null) {
+      // Revert device telemetry rate to default (e.g., 5 minutes)
+      try {
+        await _disableRtUc(_deviceId!);
+      } catch (_) {
+        // ignore
+      }
+      await _unsubscribeUc(_deviceId!);
+      _deviceId = null;
+    }
   }
 
   @override
   Future<void> close() async {
-    await _sub?.cancel();
+    await _unbindInternal();
     return super.close();
   }
 }

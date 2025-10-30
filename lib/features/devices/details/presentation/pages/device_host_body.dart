@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:oshmobile/core/common/entities/device/device.dart';
 
 import '../cubit/device_actions_cubit.dart';
 import '../cubit/device_page_cubit.dart';
@@ -10,12 +11,12 @@ import '../presenters/device_presenter.dart';
 final _sl = GetIt.instance;
 
 class DeviceHostBody extends StatelessWidget {
-  final String deviceId;
+  final Device device;
   final ValueChanged<String?>? onTitleChanged;
 
   const DeviceHostBody({
     super.key,
-    required this.deviceId,
+    required this.device,
     this.onTitleChanged,
   });
 
@@ -40,11 +41,11 @@ class DeviceHostBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return KeyedSubtree(
-      key: ValueKey(deviceId),
+      key: ValueKey(device.id),
       child: MultiBlocProvider(
         providers: [
-          BlocProvider(create: (_) => _sl<DevicePageCubit>()..load(deviceId)),
-          BlocProvider(create: (_) => _sl<DeviceStateCubit>()..bindDevice(deviceId)),
+          BlocProvider(create: (_) => _sl<DevicePageCubit>()..load(device.id)),
+          BlocProvider(create: (_) => _sl<DeviceStateCubit>()..bindDevice(device.sn)),
           BlocProvider(create: (_) => _sl<DeviceActionsCubit>()),
         ],
         child: BlocConsumer<DevicePageCubit, DevicePageState>(

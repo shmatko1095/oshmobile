@@ -54,9 +54,9 @@ class TemperatureMinimalPanel extends StatelessWidget {
   String? _fmtTime(dynamic t) {
     if (t == null) return null;
     DateTime? dt;
-    if (t is DateTime)
+    if (t is DateTime) {
       dt = t;
-    else if (t is num) {
+    } else if (t is num) {
       final ms = t.toInt().toString().length >= 13 ? t.toInt() : t.toInt() * 1000;
       dt = DateTime.fromMillisecondsSinceEpoch(ms, isUtc: false);
     } else if (t is String) {
@@ -80,28 +80,16 @@ class TemperatureMinimalPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
 
-    // читаем только нужные кусочки состояния
-    final num? current = context.select<DeviceStateCubit, num?>(
-      (c) => _asNum(c.state.valueOf(currentBind)),
-    );
-    final num? target = context.select<DeviceStateCubit, num?>(
-      (c) => _asNum(c.state.valueOf(targetBind)),
-    );
+    final num? current = context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.valueOf(currentBind)));
+    final num? target = context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.valueOf(targetBind)));
     final num? nextVal = nextValueBind == null
         ? null
-        : context.select<DeviceStateCubit, num?>(
-            (c) => _asNum(c.state.valueOf(nextValueBind!)),
-          );
-    final dynamic rawNextTime = nextTimeBind == null
-        ? null
-        : context.select<DeviceStateCubit, dynamic>(
-            (c) => c.state.valueOf(nextTimeBind!),
-          );
+        : context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.valueOf(nextValueBind!)));
+    final dynamic rawNextTime =
+        nextTimeBind == null ? null : context.select<DeviceStateCubit, dynamic>((c) => c.state.valueOf(nextTimeBind!));
     final bool heaterOn = heaterEnabledBind == null
         ? false
-        : context.select<DeviceStateCubit, bool>(
-            (c) => _asBool(c.state.valueOf(heaterEnabledBind!)),
-          );
+        : context.select<DeviceStateCubit, bool>((c) => _asBool(c.state.valueOf(heaterEnabledBind!)));
 
     final String centerText = _fmtNum(current);
     final String topLine = s.Target(_fmtNum(target)) + unit;

@@ -19,7 +19,7 @@ class Session {
     required this.scope,
   });
 
-  get typedAccessToken => "$tokenType $accessToken";
+  String get typedAccessToken => "$tokenType $accessToken";
 
   /// Factory method to parse from JSON.
   factory Session.fromJson(Map<String, dynamic> json) {
@@ -45,12 +45,8 @@ class Session {
         'access_token': accessToken,
         'refresh_token': refreshToken,
         'token_type': tokenType,
-        'expires_in': accessTokenExpiry
-            .difference(DateTime.now())
-            .inSeconds, // Remaining time
-        'refresh_expires_in': refreshTokenExpiry
-            .difference(DateTime.now())
-            .inSeconds, // Remaining time
+        'expires_in': accessTokenExpiry.difference(DateTime.now()).inSeconds, // Remaining time
+        'refresh_expires_in': refreshTokenExpiry.difference(DateTime.now()).inSeconds, // Remaining time
         'session_state': sessionState,
         'not-before-policy': notBeforePolicy,
         'scope': scope,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_mode_bar.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/delta_temp_card.dart';
@@ -111,7 +112,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                 child: TemperatureMinimalPanel(
-                    currentBind: 'sensor.temperature',
+                    currentBind: 'chipTemp',
                     targetBind: 'setting.target_temperature',
                     nextValueBind: 'schedule.next_target_temperature',
                     nextTimeBind: 'schedule.next_time',
@@ -156,22 +157,22 @@ class ThermostatBasicPresenter implements DevicePresenter {
                     }),
               ),
             ),
-          // SliverToBoxAdapter(
-          //   child: Padding(
-          //     padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-          //     child: TemperatureHeroCard(
-          //       title: "Sensor name",
-          //       //TODO
-          //       currentBind: 'sensor.temperature',
-          //       targetBind: 'setting.target_temperature',
-          //       nextValueBind: 'schedule.next_target_temperature',
-          //       nextTimeBind: 'schedule.next_time',
-          //       heaterEnabledBind: 'switch.heating.state',
-          //       humidityBind: 'sensor.humidity',
-          //       unit: '°C',
-          //     ),
-          //   ),
-          // ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+              child: TemperatureHeroCard(
+                title: "Sensor name",
+                //TODO
+                currentBind: 'chipTemp',
+                targetBind: 'setting.target_temperature',
+                nextValueBind: 'schedule.next_target_temperature',
+                nextTimeBind: 'schedule.next_time',
+                heaterEnabledBind: 'switch.heating.state',
+                humidityBind: 'sensor.humidity',
+                unit: '°C',
+              ),
+            ),
+          ),
           if (canShowHero)
             SliverToBoxAdapter(
               child: Padding(
