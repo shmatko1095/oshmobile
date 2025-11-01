@@ -4,7 +4,8 @@ import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 
 class ToggleTile extends StatelessWidget {
-  final String title, bind;
+  final String title;
+  final Signal bind;
   final void Function(BuildContext, bool) onChanged;
 
   const ToggleTile({
@@ -16,7 +17,7 @@ class ToggleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool value = (context.select<DeviceStateCubit, dynamic>((c) => c.state.get(Signal(bind))) as bool?) ?? false;
+    final bool value = (context.select<DeviceStateCubit, dynamic>((c) => c.state.get(bind)) as bool?) ?? false;
 
     return Card(
       color: Colors.transparent,

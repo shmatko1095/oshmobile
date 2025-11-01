@@ -5,15 +5,20 @@ import 'package:oshmobile/features/devices/details/presentation/cubit/device_sta
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
 class OutletTempCard extends StatelessWidget {
-  const OutletTempCard({super.key, required this.bind, this.title = 'Outlet temperature', this.unit = '°C'});
+  const OutletTempCard({
+    super.key,
+    required this.bind,
+    this.title = 'Outlet temperature',
+    this.unit = '°C',
+  });
 
-  final String bind; // e.g. 'sensor.water_outlet_temp'
+  final Signal bind;
   final String title;
   final String unit;
 
   @override
   Widget build(BuildContext context) {
-    final v = context.select<DeviceStateCubit, num?>((c) => asNum(c.state.get(Signal(bind))));
+    final v = context.select<DeviceStateCubit, num?>((c) => asNum(c.state.get(bind)));
     return GlassStatCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

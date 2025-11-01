@@ -8,7 +8,7 @@ class PowerCard extends StatelessWidget {
   const PowerCard({super.key, required this.bind});
 
   /// Bind that returns instantaneous power in **watts**
-  final String bind; // e.g. 'sensor.power'
+  final Signal bind; // e.g. 'sensor.power'
 
   String _fmtPower(num? w) {
     if (w == null) return '—';
@@ -21,7 +21,7 @@ class PowerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final power = context.select<DeviceStateCubit, num?>((c) => asNum(c.state.get(Signal(bind))));
+    final power = context.select<DeviceStateCubit, num?>((c) => asNum(c.state.get(bind)));
     return GlassStatCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

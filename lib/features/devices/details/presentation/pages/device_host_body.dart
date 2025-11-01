@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 
 import '../cubit/device_actions_cubit.dart';
 import '../cubit/device_page_cubit.dart';
@@ -47,6 +48,7 @@ class DeviceHostBody extends StatelessWidget {
           BlocProvider(create: (_) => _sl<DevicePageCubit>()..load(device.id)),
           BlocProvider(create: (_) => _sl<DeviceStateCubit>()..bind(device.sn)),
           BlocProvider(create: (_) => _sl<DeviceActionsCubit>()..bind(device.sn)),
+          BlocProvider(create: (_) => _sl<DeviceScheduleCubit>()..bind(device.sn)),
         ],
         child: BlocConsumer<DevicePageCubit, DevicePageState>(
           listenWhen: (prev, next) => _titleFrom(prev) != _titleFrom(next),

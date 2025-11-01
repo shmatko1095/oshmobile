@@ -25,6 +25,10 @@ class DeviceStateState {
 
   factory DeviceStateState.initial() => const DeviceStateState(data: {});
 
+  dynamic getDynamic(Signal<dynamic> s) {
+    return data[s.alias];
+  }
+
   T? get<T>(Signal<T> s) {
     final v = data[s.alias];
     return v is T ? v : null;

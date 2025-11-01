@@ -1,17 +1,19 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/network/mqtt/signal_command.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
+import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
+import 'package:oshmobile/features/schedule/presentation/pages/manual_temperature_page.dart';
+import 'package:oshmobile/features/schedule/presentation/utils.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 import '../../domain/models/schedule_models.dart';
-import '../cubit/schedule_cubit.dart';
 
 class ScheduleEditorPage extends StatefulWidget {
-  const ScheduleEditorPage({super.key, required this.deviceId, required this.title});
+  const ScheduleEditorPage({
+    super.key,
+    required this.title,
+  });
 
-  final String deviceId;
   final String title;
 
   @override
@@ -21,14 +23,11 @@ class ScheduleEditorPage extends StatefulWidget {
 class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
   int _filterMask = 0;
 
-  CalendarMode _modeFromDevice(dynamic v) {
-    final s = v?.toString().toLowerCase() ?? '';
-    if (s == 'daily') return CalendarMode.daily;
-    if (s == 'weekly') return CalendarMode.weekly;
-    return CalendarMode.weekly; // default
-  }
-
-  Future<TimeOfDay?> _showWheelTimePicker(BuildContext context, {required TimeOfDay initial, int minuteInterval = 5}) {
+  Future<TimeOfDay?> _showWheelTimePicker(
+    BuildContext context, {
+    required TimeOfDay initial,
+    int minuteInterval = 1,
+  }) {
     return showCupertinoModalPopup<TimeOfDay>(
       context: context,
       builder: (ctx) {
@@ -49,17 +48,11 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                     children: [
                       MaterialButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: Text(
-                          S.of(context).Cancel,
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        child: Text(S.of(context).Cancel, style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                       MaterialButton(
                         onPressed: () => Navigator.pop(ctx, temp),
-                        child: Text(
-                          S.of(context).Done,
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                        child: Text(S.of(context).Done, style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -70,9 +63,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                     initialDateTime: DateTime(2020, 1, 1, initial.hour, initial.minute),
                     use24hFormat: use24h,
                     minuteInterval: minuteInterval,
-                    onDateTimeChanged: (dt) {
-                      temp = TimeOfDay(hour: dt.hour, minute: dt.minute);
-                    },
+                    onDateTimeChanged: (dt) => temp = TimeOfDay(hour: dt.hour, minute: dt.minute),
                   ),
                 ),
               ],
@@ -83,33 +74,11 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-    final devMode = context.read<DeviceStateCubit>().state.get(Signal('climate.mode'));
-    context.read<ScheduleCubit>().load(_modeFromDevice(devMode));
-  }
-
   String _fmtTime(TimeOfDay t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   String _fmtTemp(double v) => v.toStringAsFixed(1);
 
   bool _passesFilter(int mask) => _filterMask == 0 ? true : (mask & _filterMask) != 0;
-
-  void _onAddPoint(CalendarMode mode) {
-    final now = TimeOfDay.now();
-    final roundMin = ((now.minute + 14) ~/ 15) * 15;
-    final t = TimeOfDay(hour: (now.hour + (roundMin ~/ 60)) % 24, minute: roundMin % 60);
-    context.read<ScheduleCubit>().addPoint(
-          SchedulePoint(
-            time: t,
-            temperature: 21.0,
-            daysMask: mode == CalendarMode.weekly
-                ? WeekdayMask.mon | WeekdayMask.tue | WeekdayMask.wed | WeekdayMask.thu | WeekdayMask.fri
-                : 0,
-          ),
-        );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,120 +88,195 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: BlocListener<ScheduleCubit, ScheduleState>(
-        listenWhen: (_, s) => s is ScheduleReady && s.flash != null,
+      body: BlocListener<DeviceScheduleCubit, DeviceScheduleState>(
+        listenWhen: (_, s) => s is DeviceScheduleReady && s.flash != null,
         listener: (context, s) {
-          final msg = (s as ScheduleReady).flash!;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg)),
-          );
+          final msg = (s as DeviceScheduleReady).flash!;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
         },
         child: SafeArea(
-          child: BlocBuilder<ScheduleCubit, ScheduleState>(
+          child: BlocBuilder<DeviceScheduleCubit, DeviceScheduleState>(
             builder: (context, state) {
-              if (state is ScheduleLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state is ScheduleError) {
-                return Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(state.message, style: const TextStyle(color: Colors.white70)),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: () => context.read<ScheduleCubit>().load(state.mode),
-                        child: Text(S.of(context).Retry),
-                      ),
-                    ],
-                  ),
-                );
-              }
+              switch (state) {
+                case DeviceScheduleLoading():
+                  return const Center(child: CircularProgressIndicator());
+                case DeviceScheduleError(:final message):
+                  return _ErrorRetry(
+                    message: message,
+                    onRetry: () => context.read<DeviceScheduleCubit>().rebind(),
+                  );
+                case DeviceScheduleReady():
+                  final showDays = state.mode.id == CalendarMode.weekly.id;
+                  final items = state.points.asMap().entries.where((e) => _passesFilter(e.value.daysMask)).toList();
 
-              final s = state as ScheduleReady;
-              final showDays = s.mode == CalendarMode.weekly;
-              final items = s.points.asMap().entries.where((e) => _passesFilter(e.value.daysMask)).toList();
+                  return ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, i) {
+                      final idx = items[i].key;
+                      final p = items[i].value;
 
-              return ListView.separated(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
-                itemCount: items.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (context, i) {
-                  final idx = items[i].key;
-                  final p = items[i].value;
-                  return Dismissible(
-                    key: ValueKey('sp_${idx}_${p.time.hour}_${p.time.minute}_${p.temperature}_${p.daysMask}'),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(Icons.delete, color: Colors.redAccent),
-                    ),
-                    onDismissed: (_) {
-                      context.read<ScheduleCubit>().removeAt(idx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(S.of(context).Deleted),
-                          action: SnackBarAction(
-                            label: S.of(context).Undo,
-                            onPressed: () => context.read<ScheduleCubit>().addPoint(p),
+                      return Dismissible(
+                        key: ValueKey('sp_${idx}_${p.time.hour}_${p.time.minute}_${p.min}_${p.max}_${p.daysMask}'),
+                        direction: DismissDirection.endToStart,
+                        background: const SizedBox.shrink(),
+                        secondaryBackground: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
+                          child: const Icon(Icons.delete, color: Colors.redAccent),
+                        ),
+                        onDismissed: (_) {
+                          context.read<DeviceScheduleCubit>().removeAt(idx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(S.of(context).Deleted),
+                              action: SnackBarAction(
+                                label: S.of(context).Undo,
+                                onPressed: () => context.read<DeviceScheduleCubit>().addPoint(p),
+                              ),
+                            ),
+                          );
+                        },
+                        child: _ScheduleTile(
+                          timeText: _fmtTime(p.time),
+                          valueText:
+                              p.min == p.max ? '${_fmtTemp(p.min)}°C' : '${_fmtTemp(p.min)}–${_fmtTemp(p.max)}°C',
+                          daysMask: p.daysMask,
+                          showDays: showDays,
+
+                          // time picker
+                          onTapTime: () async {
+                            final picked = await _showWheelTimePicker(context, initial: p.time, minuteInterval: 1);
+                            if (picked != null) {
+                              context.read<DeviceScheduleCubit>().changePoint(idx, p.copyWith(time: picked));
+                            }
+                          },
+
+                          // fine range edits (still available on the right)
+                          onDecMin: () {
+                            final next = (p.min - 0.5).clamp(5.0, 35.0);
+                            final newMin = double.parse(next.toStringAsFixed(1));
+                            final newMax = (p.min == p.max) ? newMin : p.max.clamp(newMin, 35.0);
+                            context.read<DeviceScheduleCubit>().changePoint(idx, p.copyWith(min: newMin, max: newMax));
+                          },
+                          onIncMax: () {
+                            final base = p.max + 0.5;
+                            final next = base.clamp(5.0, 35.0);
+                            final newMax = double.parse(next.toStringAsFixed(1));
+                            final newMin = (p.min == p.max) ? newMax : p.min.clamp(5.0, newMax);
+                            context.read<DeviceScheduleCubit>().changePoint(idx, p.copyWith(min: newMin, max: newMax));
+                          },
+
+                          onToggleDay: (d) {
+                            if (!showDays) return;
+                            final newMask = WeekdayMask.toggle(p.daysMask, d);
+                            context.read<DeviceScheduleCubit>().changePoint(idx, p.copyWith(daysMask: newMask));
+                          },
+
+                          onTapValue: () {
+                            Navigator.of(context).push(
+                              CupertinoPageRoute(
+                                builder: (_) => ManualTemperaturePage(
+                                  title: S.of(context).SetTemperature,
+                                  initial: p.max,
+                                  onSave: (v) {
+                                    final vv = double.parse(v.toStringAsFixed(1));
+                                    context.read<DeviceScheduleCubit>().changePoint(idx, p.copyWith(min: vv, max: vv));
+                                  },
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       );
                     },
-                    child: _ScheduleTile(
-                      timeText: _fmtTime(p.time),
-                      tempText: '${_fmtTemp(p.temperature)}°C',
-                      daysMask: p.daysMask,
-                      showDays: showDays,
-                      onTapTime: () async {
-                        final picked = await _showWheelTimePicker(context, initial: p.time, minuteInterval: 1);
-                        if (picked != null) context.read<ScheduleCubit>().changeTime(idx, picked);
-                      },
-                      onDecTemp: () {
-                        final next = (p.temperature - 0.5).clamp(5.0, 35.0);
-                        context.read<ScheduleCubit>().changeTemp(idx, double.parse(next.toStringAsFixed(1)));
-                      },
-                      onIncTemp: () {
-                        final next = (p.temperature + 0.5).clamp(5.0, 35.0);
-                        context.read<ScheduleCubit>().changeTemp(idx, double.parse(next.toStringAsFixed(1)));
-                      },
-                      onToggleDay: (d) => context.read<ScheduleCubit>().toggleDay(idx, d),
-                    ),
                   );
-                },
-              );
+              }
             },
           ),
         ),
       ),
-      floatingActionButton: BlocBuilder<ScheduleCubit, ScheduleState>(
-        buildWhen: (p, n) => (p is ScheduleReady ? p.mode : null) != (n is ScheduleReady ? n.mode : null),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(right: 6, bottom: 10),
+        child: _AddPointFab(onPressed: () => context.read<DeviceScheduleCubit>().addPoint()),
+      ),
+      bottomNavigationBar: BlocBuilder<DeviceScheduleCubit, DeviceScheduleState>(
         builder: (context, state) {
-          final mode = (state is ScheduleReady) ? state.mode : CalendarMode.weekly;
-          return FloatingActionButton(
-            onPressed: () => _onAddPoint(mode),
-            child: const Icon(Icons.add),
-          );
+          final showDays = CalendarMode.weekly == context.read<DeviceScheduleCubit>().getMode();
+          if (showDays) {
+            return SafeArea(
+              top: false,
+              child: _WeekdayFilterBar(
+                mask: _filterMask,
+                onToggle: (d) => setState(() => _filterMask = WeekdayMask.toggle(_filterMask, d)),
+              ),
+            );
+          } else {
+            return const SizedBox.shrink();
+          }
         },
       ),
-      bottomNavigationBar: BlocBuilder<ScheduleCubit, ScheduleState>(
-        builder: (context, state) {
-          final showDays = state is ScheduleReady && state.mode == CalendarMode.weekly;
-          if (!showDays) return const SizedBox.shrink();
-          return SafeArea(
-            top: false,
-            child: _WeekdayFilterBar(
-              mask: _filterMask,
-              onToggle: (d) => setState(() => _filterMask = WeekdayMask.toggle(_filterMask, d)),
-            ),
-          );
-        },
+    );
+  }
+}
+
+class _AddPointFab extends StatelessWidget {
+  const _AddPointFab({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = Colors.white.withValues(alpha: 0.06);
+    final border = Colors.white.withValues(alpha: 0.12);
+    final shadow = Colors.black.withValues(alpha: 0.25);
+
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: shadow,
+            blurRadius: 16,
+            spreadRadius: 0,
+            offset: const Offset(0, 6),
+          ),
+        ],
+        borderRadius: BorderRadius.circular(16),
       ),
+      child: FloatingActionButton(
+        onPressed: onPressed,
+        backgroundColor: bg,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: border),
+        ),
+        child: const Icon(Icons.add_rounded, size: 26),
+      ),
+    );
+  }
+}
+
+class _ErrorRetry extends StatelessWidget {
+  const _ErrorRetry({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text(message, style: const TextStyle(color: Colors.white70)),
+        const SizedBox(height: 12),
+        OutlinedButton(onPressed: onRetry, child: Text(S.of(context).Retry)),
+      ]),
     );
   }
 }
@@ -240,24 +284,26 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
 class _ScheduleTile extends StatelessWidget {
   const _ScheduleTile({
     required this.timeText,
-    required this.tempText,
+    required this.valueText,
     required this.daysMask,
     required this.showDays,
     required this.onTapTime,
-    required this.onDecTemp,
-    required this.onIncTemp,
+    required this.onDecMin,
+    required this.onIncMax,
     required this.onToggleDay,
+    required this.onTapValue,
   });
 
   final String timeText;
-  final String tempText;
+  final String valueText;
   final int daysMask;
   final bool showDays;
 
   final VoidCallback onTapTime;
-  final VoidCallback onDecTemp;
-  final VoidCallback onIncTemp;
+  final VoidCallback onDecMin;
+  final VoidCallback onIncMax;
   final void Function(int dayBit) onToggleDay;
+  final VoidCallback onTapValue; // NEW
 
   @override
   Widget build(BuildContext context) {
@@ -269,31 +315,47 @@ class _ScheduleTile extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
         child: Column(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: onTapTime,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
-                      child: Text(
-                        timeText,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                        ),
+            LayoutBuilder(
+              builder: (ctx, constraints) {
+                final Widget time = InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: onTapTime,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+                    child: Text(
+                      timeText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                _TempStepper(valueText: tempText, onDec: onDecTemp, onInc: onIncTemp),
-              ],
+                );
+
+                final Widget stepper = FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: _TempRangeStepper(
+                    valueText: valueText,
+                    onDecMin: onDecMin,
+                    onIncMax: onIncMax,
+                    onTapValue: onTapValue,
+                  ),
+                );
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(child: time),
+                    const SizedBox(width: 12),
+                    Flexible(fit: FlexFit.loose, child: stepper),
+                  ],
+                );
+              },
             ),
             if (showDays) const SizedBox(height: 10),
             if (showDays)
@@ -305,7 +367,7 @@ class _ScheduleTile extends StatelessWidget {
                   children: [
                     for (final d in WeekdayMask.order)
                       _DayChip(
-                        label: WeekdayMask.shortLabel(d),
+                        label: shortLabel(context, d),
                         selected: WeekdayMask.has(daysMask, d),
                         onTap: () => onToggleDay(d),
                       ),
@@ -319,64 +381,73 @@ class _ScheduleTile extends StatelessWidget {
   }
 }
 
-class _TempStepper extends StatelessWidget {
-  const _TempStepper({required this.valueText, required this.onDec, required this.onInc});
+class _TempRangeStepper extends StatelessWidget {
+  const _TempRangeStepper({
+    required this.valueText,
+    required this.onDecMin,
+    required this.onIncMax,
+    required this.onTapValue,
+  });
 
   final String valueText;
-  final VoidCallback onDec;
-  final VoidCallback onInc;
+  final VoidCallback onDecMin;
+  final VoidCallback onIncMax;
+  final VoidCallback onTapValue;
+
+  static const _coolBlue = Color(0xFF40C4FF); // LightBlue A200
+  static const _warmRed = Color(0xFFFF5252); // Red A200
 
   @override
   Widget build(BuildContext context) {
-    final pill = BoxDecoration(
-      color: Colors.white.withValues(alpha: 0.06),
-      borderRadius: BorderRadius.circular(999),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-    );
-
-    return Container(
-      decoration: pill,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _IconBtn(icon: Icons.remove, onTap: onDec),
-          const SizedBox(width: 6),
-          ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 64),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // tap on value -> open temperature picker page
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTapValue,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Text(
               valueText,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 28, // same as time
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
-          const SizedBox(width: 6),
-          _IconBtn(icon: Icons.add, onTap: onInc),
-        ],
-      ),
+        ),
+        const SizedBox(width: 8),
+        _IconBtn(icon: Icons.keyboard_arrow_down, onTap: onDecMin, color: _coolBlue),
+        const SizedBox(width: 4),
+        _IconBtn(icon: Icons.keyboard_arrow_up, onTap: onIncMax, color: _warmRed),
+      ],
     );
   }
 }
 
 class _IconBtn extends StatelessWidget {
-  const _IconBtn({required this.icon, required this.onTap});
+  const _IconBtn({required this.icon, required this.onTap, this.color});
 
   final IconData icon;
   final VoidCallback onTap;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      // borderRadius: BorderRadius.circular(999),
       onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
       child: Ink(
-        // decoration: BoxDecoration(
-        //   color: Colors.white.withValues(alpha: 0.10),
-        //   shape: BoxShape.circle,
-        //   border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        // ),
         padding: const EdgeInsets.all(6),
-        child: Icon(icon, size: 18, color: Colors.white),
+        child: Icon(
+          icon,
+          size: 28,
+          color: color ?? Colors.white, // colored arrows; defaults to white
+        ),
       ),
     );
   }
@@ -400,7 +471,7 @@ class _WeekdayFilterBar extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: _DayChip(
-                  label: WeekdayMask.shortLabel(d),
+                  label: shortLabel(context, d),
                   selected: WeekdayMask.has(mask, d),
                   onTap: () => onToggle(d),
                   dense: true,
@@ -428,8 +499,8 @@ class _DayChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = selected ? Colors.white.withValues(alpha: 0.16) : null; //Colors.white.withValues(alpha: 0.06);
-    final bd = selected ? Colors.white.withValues(alpha: 0.26) : Colors.white.withValues(alpha: 0); //0.10
+    final bg = selected ? Colors.white.withValues(alpha: 0.16) : null;
+    final bd = selected ? Colors.white.withValues(alpha: 0.26) : Colors.white.withValues(alpha: 0);
     final fg = selected ? Colors.white : Colors.white70;
 
     return InkWell(

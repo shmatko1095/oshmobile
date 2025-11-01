@@ -28,9 +28,4 @@ class DeviceActionsCubit extends Cubit<DeviceActionsState> {
       emit(DeviceActionsState(busy: false, lastError: e.toString()));
     }
   }
-
-// Sugar wrappers if desired:
-  Future<void> setTargetTemp(double c) => send(ThermostatCommands.setTargetC, c);
-
-  Future<void> setMode(String m) => send(ThermostatCommands.setMode, m);
 }

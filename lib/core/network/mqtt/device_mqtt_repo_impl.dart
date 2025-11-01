@@ -18,7 +18,7 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     this.secure = false,
     this.keepAliveSeconds = 30,
     this.logging = true,
-  }) : _client = MqttServerClient(brokerHost, _mkClientId(clientIdPrefix)) {
+  }) : _client = MqttServerClient(brokerHost, "") {
     _client.logging(on: logging);
 
     _client.port = port;
@@ -46,20 +46,14 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
   String? _userId;
   String? _token;
 
-  // ---- Device-level streams (legacy/compat) ----
-  final Map<String, StreamController<Map<String, dynamic>>> _deviceCtrls = {};
-  final Map<String, int> _deviceRefCount = {}; // deviceId -> count
-  final Map<String, List<String>> _deviceActiveTopics = {}; // deviceId -> topics
-
   // ---- Arbitrary topic JSON subscriptions ----
   final Map<String, StreamController<MqttJson>> _jsonCtrls = {}; // filter -> ctrl
   final Set<String> _jsonActiveFilters = {}; // re-subscribe on reconnect
+// Track active topic strings (union of device topics + json filters)
+  final Set<String> _subscribedTopics = {};
 
   // ---- Client-level streams ----
   StreamSubscription<List<MqttReceivedMessage<MqttMessage?>>>? _updatesSub;
-
-  // Track active topic strings (union of device topics + json filters)
-  final Set<String> _subscribedTopics = {};
 
   static String _mkClientId(String prefix) =>
       '$prefix${DateTime.now().millisecondsSinceEpoch}_${(1000 + (DateTime.now().microsecond % 9000))}';
@@ -121,72 +115,6 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
       // If you prefer, you can close device/json controllers here.
     }
   }
-
-  // --------------- Device-scoped helpers (legacy/compat) ---------------
-
-  @override
-  Future<void> subscribeDevice(String deviceId) async {
-    await _ensureConnected();
-
-    // Per-device broadcast controller
-    _deviceCtrls.putIfAbsent(
-      deviceId,
-      () => StreamController<Map<String, dynamic>>.broadcast(),
-    );
-
-    // Ref-count prevents duplicate subscriptions
-    _deviceRefCount[deviceId] = (_deviceRefCount[deviceId] ?? 0) + 1;
-    if (_deviceRefCount[deviceId]! > 1) return;
-
-    final topics = _topicsForDevice(deviceId);
-    _deviceActiveTopics[deviceId] = topics;
-
-    for (final t in topics) {
-      if (_subscribedTopics.contains(t)) continue;
-      _client.subscribe(t, MqttQos.atLeastOnce);
-      _subscribedTopics.add(t);
-    }
-  }
-
-  @override
-  Future<void> unsubscribeDevice(String deviceId) async {
-    final current = _deviceRefCount[deviceId] ?? 0;
-    if (current <= 1) {
-      _deviceRefCount.remove(deviceId);
-
-      // Unsubscribe all topics for that device
-      for (final t in _deviceActiveTopics.remove(deviceId) ?? const <String>[]) {
-        _client.unsubscribe(t);
-        _subscribedTopics.remove(t);
-      }
-
-      // Close and remove controller to avoid leaks
-      final ctrl = _deviceCtrls.remove(deviceId);
-      await ctrl?.close();
-    } else {
-      _deviceRefCount[deviceId] = current - 1;
-    }
-  }
-
-  @override
-  Stream<Map<String, dynamic>> deviceStream(String deviceId) {
-    return _deviceCtrls.putIfAbsent(deviceId, () => StreamController<Map<String, dynamic>>.broadcast()).stream;
-  }
-
-  @override
-  Future<void> publishCommand(
-    String deviceId,
-    String action, {
-    Map<String, dynamic>? args,
-  }) async {
-    await _ensureConnected();
-    final topic = 'v1/tenants/$tenantId/devices/$deviceId/cmd/inbox';
-    final payload = jsonEncode({'action': action, 'args': args ?? {}});
-    final builder = MqttClientPayloadBuilder()..addString(payload);
-    _client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!, retain: false);
-  }
-
-  // --------------- Generic JSON topics (unified repos use these) ---------------
 
   @override
   Stream<MqttJson> subscribeJson(String topicFilter, {int qos = 1}) {
@@ -256,14 +184,6 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
   }
 
   void _resubscribeAll() {
-    // Re-subscribe device topics
-    for (final topics in _deviceActiveTopics.values) {
-      for (final t in topics) {
-        _client.subscribe(t, MqttQos.atLeastOnce);
-        _subscribedTopics.add(t);
-      }
-    }
-    // Re-subscribe JSON filters
     for (final f in _jsonActiveFilters) {
       _client.subscribe(f, MqttQos.atLeastOnce);
       _subscribedTopics.add(f);
@@ -276,26 +196,16 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
       final msg = evt.payload as MqttPublishMessage;
       final raw = MqttPublishPayload.bytesToStringAsString(msg.payload.message);
 
-      // 1) Route to device-level streams
-      final deviceId = _extractDeviceId(topic);
-      if (deviceId != null) {
-        final ctrl = _deviceCtrls[deviceId];
-        if (ctrl != null && !ctrl.isClosed) {
-          final data = _decodePayload(raw);
-          ctrl.add(data);
-        }
-      }
+      if (_jsonCtrls.isEmpty) continue;
 
-      // 2) Route to arbitrary JSON subscriptions by matching filters
-      if (_jsonCtrls.isNotEmpty) {
-        final decoded = _decodePayload(raw);
-        final item = MqttJson(topic, decoded);
-        for (final entry in _jsonCtrls.entries) {
-          final filter = entry.key;
-          final ctrl = entry.value;
-          if (!ctrl.isClosed && _matchesTopicFilter(filter, topic)) {
-            ctrl.add(item);
-          }
+      final decoded = _decodePayload(raw);
+      final item = MqttJson(topic, decoded);
+
+      for (final entry in _jsonCtrls.entries) {
+        final filter = entry.key;
+        final ctrl = entry.value;
+        if (!ctrl.isClosed && _matchesTopicFilter(filter, topic)) {
+          ctrl.add(item);
         }
       }
     }

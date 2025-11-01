@@ -6,7 +6,6 @@ import 'package:oshmobile/generated/l10n.dart';
 class AntifreezeRangePage extends StatefulWidget {
   const AntifreezeRangePage({
     super.key,
-    required this.deviceId,
     required this.initialMin,
     required this.initialMax,
     required this.onSave,
@@ -17,7 +16,6 @@ class AntifreezeRangePage extends StatefulWidget {
     this.unit = '°C',
   });
 
-  final String deviceId;
   final double initialMin, initialMax;
   final void Function(double minValue, double maxValue) onSave;
 

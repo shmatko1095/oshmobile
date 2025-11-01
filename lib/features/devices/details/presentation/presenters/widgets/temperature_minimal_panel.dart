@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/network/mqtt/signal_command.dart';
+import 'package:oshmobile/features/devices/details/domain/models/telemetry.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
+import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class TemperatureMinimalPanel extends StatelessWidget {
   const TemperatureMinimalPanel({
     super.key,
-    required this.currentBind, // 'sensor.temperature'
-    required this.targetBind, // 'setting.target_temperature'
-    this.nextValueBind, // 'schedule.next_target_temperature' (optional)
-    this.nextTimeBind, // 'schedule.next_time' (optional)
-    this.heaterEnabledBind, // 'status.heater_enabled' (optional)
+    required this.currentBind,
+    this.heaterEnabledBind,
     this.onTap,
     this.unit = '°C',
     this.height,
@@ -19,11 +18,8 @@ class TemperatureMinimalPanel extends StatelessWidget {
     this.borderRadius = 20,
   });
 
-  final String currentBind;
-  final String targetBind;
-  final String? nextValueBind;
-  final String? nextTimeBind;
-  final String? heaterEnabledBind;
+  final Signal currentBind;
+  final Signal? heaterEnabledBind;
 
   final String unit;
   final double? height;
@@ -52,28 +48,10 @@ class TemperatureMinimalPanel extends StatelessWidget {
     return d.toStringAsFixed(1);
   }
 
-  String? _fmtTime(dynamic t) {
+  String? _fmtTimeOfDay(TimeOfDay? t) {
     if (t == null) return null;
-    DateTime? dt;
-    if (t is DateTime) {
-      dt = t;
-    } else if (t is num) {
-      final ms = t.toInt().toString().length >= 13 ? t.toInt() : t.toInt() * 1000;
-      dt = DateTime.fromMillisecondsSinceEpoch(ms, isUtc: false);
-    } else if (t is String) {
-      final hhmm = RegExp(r'^\d{1,2}:\d{2}$');
-      if (hhmm.hasMatch(t)) return t;
-      final asInt = int.tryParse(t);
-      if (asInt != null) {
-        final ms = t.length >= 13 ? asInt : asInt * 1000;
-        dt = DateTime.fromMillisecondsSinceEpoch(ms, isUtc: false);
-      } else {
-        dt = DateTime.tryParse(t);
-      }
-    }
-    if (dt == null) return null;
-    final h = dt.hour.toString().padLeft(2, '0');
-    final m = dt.minute.toString().padLeft(2, '0');
+    final h = t.hour.toString().padLeft(2, '0');
+    final m = t.minute.toString().padLeft(2, '0');
     return '$h:$m';
   }
 
@@ -81,21 +59,21 @@ class TemperatureMinimalPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
 
-    final num? current = context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.get(Signal(currentBind))));
-    final num? target = context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.get(Signal(targetBind))));
-    final num? nextVal = nextValueBind == null
-        ? null
-        : context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.get(Signal(nextValueBind!))));
-    final dynamic rawNextTime = nextTimeBind == null
-        ? null
-        : context.select<DeviceStateCubit, dynamic>((c) => c.state.get(Signal(nextTimeBind!)));
-    final bool heaterOn = heaterEnabledBind == null
-        ? false
-        : context.select<DeviceStateCubit, bool>((c) => _asBool(c.state.get(Signal(heaterEnabledBind!))));
+    final num? current = context
+        .select<DeviceStateCubit, num?>((c) => _asNum(Telemetry.maybeFrom(c.state.getDynamic(currentBind))?.chipTemp));
+    final num? target = context
+        .select<DeviceScheduleCubit, num?>((c) => c.currentPoint() != null ? _asNum(c.currentPoint()!.max) : null);
+    final num? nextVal =
+        context.select<DeviceScheduleCubit, num?>((c) => c.nextPoint() != null ? _asNum(c.nextPoint()!.max) : null);
+    final TimeOfDay? rawNextTime = context.select<DeviceScheduleCubit, TimeOfDay?>((c) => c.nextPoint()?.time);
+
+    final bool heaterOn = heaterEnabledBind != null
+        ? context.select<DeviceStateCubit, bool>((c) => _asBool(c.state.get(heaterEnabledBind!)))
+        : false;
 
     final String centerText = _fmtNum(current);
     final String topLine = s.Target(_fmtNum(target)) + unit;
-    final String? nextTimeStr = _fmtTime(rawNextTime);
+    final String? nextTimeStr = _fmtTimeOfDay(rawNextTime);
     final String? bottomLine =
         (nextVal != null && nextTimeStr != null) ? s.NextAt('${_fmtNum(nextVal)}$unit', nextTimeStr) : null;
 

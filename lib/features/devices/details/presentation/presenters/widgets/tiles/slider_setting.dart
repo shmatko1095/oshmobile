@@ -6,7 +6,8 @@ import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 
 class SliderSetting extends StatefulWidget {
-  final String title, bind;
+  final String title;
+  final Signal bind;
   final double min, max, step;
   final void Function(BuildContext, double) onSubmit;
 
@@ -61,7 +62,7 @@ class _SliderSettingState extends State<SliderSetting> {
   @override
   Widget build(BuildContext context) {
     final current = (context.select<DeviceStateCubit, dynamic>(
-          (c) => c.state.get(Signal(widget.bind)),
+          (c) => c.state.get(widget.bind),
         ) as num?)
             ?.toDouble() ??
         (widget.min + widget.max) / 2;

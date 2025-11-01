@@ -4,7 +4,8 @@ import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 
 class ValueCard extends StatelessWidget {
-  final String title, bind;
+  final String title;
+  final Signal bind;
   final String? suffix;
 
   const ValueCard({
@@ -26,7 +27,7 @@ class ValueCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dynamic raw = context.select<DeviceStateCubit, dynamic>(
-      (c) => c.state.get(Signal(bind)),
+      (c) => c.state.get(bind),
     );
     final String valueText = _fmt(raw);
     final String full = suffix != null && valueText != '—' ? '$valueText$suffix' : valueText;
@@ -39,9 +40,9 @@ class ValueCard extends StatelessWidget {
       child: Ink(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
+          color: Colors.white.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

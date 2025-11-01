@@ -14,28 +14,28 @@ class LoadFactorCard extends StatelessWidget {
   });
 
   /// Prefer this if your backend provides “duty” directly (0..1 or 0..100).
-  final String? percentBind;
+  final Signal? percentBind;
 
   /// Or provide hours the heater was ON in last 24h.
-  final String? hoursBind;
+  final Signal? hoursBind;
 
   /// Or provide seconds the heater was ON in last 24h.
-  final String? secondsBind;
+  final Signal? secondsBind;
 
   double? _computePercent(DeviceStateCubit c) {
     if (percentBind != null) {
-      final p = asNum(c.state.get(Signal(percentBind!)));
+      final p = asNum(c.state.get(percentBind!));
       if (p == null) return null;
       final v = p > 1 ? (p / 100.0) : p.toDouble();
       return v.clamp(0.0, 1.0);
     }
     if (hoursBind != null) {
-      final h = asNum(c.state.get(Signal(hoursBind!)));
+      final h = asNum(c.state.get(hoursBind!));
       if (h == null) return null;
       return (h / 24.0).clamp(0.0, 1.0).toDouble();
     }
     if (secondsBind != null) {
-      final s = asNum(c.state.get(Signal(secondsBind!)));
+      final s = asNum(c.state.get(secondsBind!));
       if (s == null) return null;
       return (s / (24 * 3600)).clamp(0.0, 1.0).toDouble();
     }
@@ -44,11 +44,11 @@ class LoadFactorCard extends StatelessWidget {
 
   double? _computeHours(DeviceStateCubit c, double? percent) {
     if (hoursBind != null) {
-      final h = asNum(c.state.get(Signal(hoursBind!)));
+      final h = asNum(c.state.get(hoursBind!));
       if (h != null) return h.toDouble();
     }
     if (secondsBind != null) {
-      final s = asNum(c.state.get(Signal(secondsBind!)));
+      final s = asNum(c.state.get(secondsBind!));
       if (s != null) return s.toDouble() / 3600.0;
     }
     if (percent != null) return percent * 24.0;

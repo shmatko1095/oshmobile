@@ -70,5 +70,13 @@
   "ManualTemperature": "Manual temperature",
   "Deleted": "Deleted",
   "Undo": "Undo",
-  "Retry": "Retry"
+  "Retry": "Retry",
+  "MonShort": "Mon",
+  "TueShort": "Tue",
+  "WedShort": "Wed",
+  "ThuShort": "Thu",
+  "FriShort": "Fri",
+  "SatShort": "Sat",
+  "SunShort": "Sun",
+  "SetTemperature": "Set temperature"
 }

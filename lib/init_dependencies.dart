@@ -29,6 +29,7 @@ import 'package:oshmobile/features/auth/domain/usecases/verify_email.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:oshmobile/features/devices/details/data/mqtt_control_repository.dart';
 import 'package:oshmobile/features/devices/details/data/mqtt_telemetry_repository.dart';
+import 'package:oshmobile/features/devices/details/data/telemetry_topics.dart';
 import 'package:oshmobile/features/devices/details/domain/queries/get_device_full.dart';
 import 'package:oshmobile/features/devices/details/domain/repositories/control_repository.dart';
 import 'package:oshmobile/features/devices/details/domain/repositories/telemetry_repository.dart';
@@ -55,11 +56,12 @@ import 'package:oshmobile/features/home/domain/usecases/get_user_devices.dart';
 import 'package:oshmobile/features/home/domain/usecases/unassign_device.dart';
 import 'package:oshmobile/features/home/domain/usecases/update_device_user_data.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
-import 'package:oshmobile/features/schedule/data/mqtt_schedule_repository.dart';
-import 'package:oshmobile/features/schedule/data/schedule_repository.dart';
+import 'package:oshmobile/features/schedule/data/schedule_repository_mock.dart';
 import 'package:oshmobile/features/schedule/data/schedule_topics.dart';
-import 'package:oshmobile/features/schedule/domain/usecases/fetch_schedule.dart';
-import 'package:oshmobile/features/schedule/domain/usecases/save_schedule.dart';
+import 'package:oshmobile/features/schedule/domain/repositories/schedule_repository.dart';
+import 'package:oshmobile/features/schedule/domain/usecases/fetch_schedule_all.dart';
+import 'package:oshmobile/features/schedule/domain/usecases/save_schedule_all.dart';
+import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 import 'package:path_provider/path_provider.dart';
 
 final locator = GetIt.instance;
@@ -184,8 +186,11 @@ void _initDevicesFeature() {
         () => MqttControlRepositoryImpl(locator<DeviceMqttRepo>(), locator<AppConfig>().tenantId))
     ..registerLazySingleton<EnableRtStream>(() => EnableRtStream(locator<ControlRepository>()))
     ..registerLazySingleton<DisableRtStream>(() => DisableRtStream(locator<ControlRepository>()))
+    ..registerFactory<DeviceActionsCubit>(() => DeviceActionsCubit(locator<ControlRepository>()))
     // DeviceTelemetry
-    ..registerLazySingleton<TelemetryRepository>(() => MqttTelemetryRepositoryImpl(locator<DeviceMqttRepo>()))
+    ..registerLazySingleton<TelemetryTopics>(() => TelemetryTopics(locator<AppConfig>().tenantId))
+    ..registerLazySingleton<TelemetryRepository>(
+        () => MqttTelemetryRepositoryImpl(locator<DeviceMqttRepo>(), locator<TelemetryTopics>()))
     ..registerLazySingleton<SubscribeTelemetry>(() => SubscribeTelemetry(locator<TelemetryRepository>()))
     ..registerLazySingleton<UnsubscribeTelemetry>(() => UnsubscribeTelemetry(locator<TelemetryRepository>()))
     ..registerLazySingleton<WatchTelemetry>(() => WatchTelemetry(locator<TelemetryRepository>()))
@@ -199,11 +204,15 @@ void _initDevicesFeature() {
           disableRt: locator<DisableRtStream>(),
         ))
     ..registerLazySingleton<ScheduleTopics>(() => ScheduleTopics(locator<AppConfig>().tenantId))
-    ..registerLazySingleton<ScheduleRepository>(
-        () => MqttScheduleRepository(mqtt: locator<DeviceMqttRepo>(), topics: locator<ScheduleTopics>()))
-    ..registerLazySingleton<FetchSchedule>(() => FetchSchedule(locator<ScheduleRepository>()))
-    ..registerLazySingleton<SaveSchedule>(() => SaveSchedule(locator<ScheduleRepository>()))
-    ..registerFactory<DeviceActionsCubit>(() => DeviceActionsCubit(locator<ControlRepository>()))
+    // ..registerLazySingleton<ScheduleRepository>(
+    //     () => ScheduleRepositoryMqtt(locator<DeviceMqttRepo>(), locator<ScheduleTopics>()))
+    ..registerLazySingleton<ScheduleRepository>(() => ScheduleRepositoryMock.demo())
+    ..registerLazySingleton<FetchScheduleAll>(() => FetchScheduleAll(locator<ScheduleRepository>()))
+    ..registerLazySingleton<SaveScheduleAll>(() => SaveScheduleAll(locator<ScheduleRepository>()))
+    ..registerFactory<DeviceScheduleCubit>(() => DeviceScheduleCubit(
+          fetchAll: locator<FetchScheduleAll>(),
+          saveAll: locator<SaveScheduleAll>(),
+        ))
     ..registerSingleton<DevicePresenterRegistry>(const DevicePresenterRegistry({
       '8c5ea780-3d0d-4886-9334-2b4e781dd51c': ThermostatBasicPresenter(),
     }));

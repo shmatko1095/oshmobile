@@ -12,8 +12,8 @@ class DeltaTCard extends StatelessWidget {
     this.title = 'ΔT (out − in)',
   });
 
-  final String inletBind;
-  final String outletBind;
+  final Signal inletBind;
+  final Signal outletBind;
   final String unit;
   final String title;
 
@@ -31,8 +31,8 @@ class DeltaTCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = context.select<DeviceStateCubit, ({num? inT, num? outT, num? dT})>((c) {
-      final inT = _asNum(c.state.get(Signal(inletBind)));
-      final outT = _asNum(c.state.get(Signal(outletBind)));
+      final inT = _asNum(c.state.get(inletBind));
+      final outT = _asNum(c.state.get(outletBind));
       final dT = (inT != null && outT != null) ? (outT - inT) : null;
       return (inT: inT, outT: outT, dT: dT);
     });

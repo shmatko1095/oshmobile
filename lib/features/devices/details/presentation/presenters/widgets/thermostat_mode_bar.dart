@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/network/mqtt/signal_command.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_actions_cubit.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
-import 'package:oshmobile/generated/l10n.dart';
+import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
+import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
+import 'package:oshmobile/features/schedule/presentation/utils.dart';
 
 /// Bottom-nav-like bar to show and switch thermostat modes with optimistic UI.
 /// Modes: off, antifreeze, manual, daily, weekly.
@@ -21,17 +21,17 @@ class ThermostatModeBar extends StatefulWidget {
     this.optimisticTimeout = const Duration(seconds: 5),
   });
 
-  final String bind; // e.g. 'climate.mode'
-  final List<String>? visibleModes; // optionally restrict visible items
-  final Duration optimisticTimeout; // auto-clear optimistic highlight
+  final Signal bind;
+  final List<CalendarMode>? visibleModes;
+  final Duration optimisticTimeout;
 
   @override
   State<ThermostatModeBar> createState() => _ThermostatModeBarState();
 }
 
 class _ThermostatModeBarState extends State<ThermostatModeBar> {
-  String? _optimistic; // pending desired mode (lowercase)
-  Timer? _revertTimer; // timeout reverter
+  CalendarMode? _optimistic;
+  Timer? _revertTimer;
 
   @override
   void dispose() {
@@ -39,7 +39,7 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
     super.dispose();
   }
 
-  void _startOptimistic(String modeId) {
+  void _startOptimistic(CalendarMode modeId) {
     _revertTimer?.cancel();
     setState(() => _optimistic = modeId);
     _revertTimer = Timer(widget.optimisticTimeout, () {
@@ -49,39 +49,9 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
     });
   }
 
-  IconData _iconFor(String id) {
-    switch (id) {
-      case 'off':
-        return Icons.power_settings_new;
-      case 'antifreeze':
-        return Icons.ac_unit;
-      case 'manual':
-        return Icons.touch_app;
-      case 'daily':
-        return Icons.schedule;
-      case 'weekly':
-        return Icons.calendar_today;
-      default:
-        return Icons.tune;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final s = S.of(context);
-    final localized = <String, String>{
-      'off': s.ModeOff,
-      'antifreeze': s.ModeAntifreeze,
-      'manual': s.ModeManual,
-      'daily': s.ModeDaily,
-      'weekly': s.ModeWeekly,
-    };
-
-    // Actual mode from state (normalized to lowercase)
-    final String? current = context.select<DeviceStateCubit, String?>((c) {
-      final v = c.state.get(Signal(widget.bind));
-      return v?.toString().trim().toLowerCase();
-    });
+    final current = context.select<DeviceScheduleCubit, CalendarMode>((c) => c.getMode());
 
     // If device confirmed our optimistic choice — clear the optimistic flag post-frame.
     if (_optimistic != null && current == _optimistic) {
@@ -93,11 +63,12 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
       });
     }
 
-    final all = const ['off', 'antifreeze', 'manual', 'daily', 'weekly'];
-    final modes = widget.visibleModes == null ? all : all.where((m) => widget.visibleModes!.contains(m)).toList();
+    final modes = widget.visibleModes == null
+        ? CalendarMode.all
+        : CalendarMode.all.where((m) => widget.visibleModes!.contains(m)).toList();
 
     // Effective (what UI highlights): prefer optimistic if present.
-    String? effective = _optimistic ?? current;
+    CalendarMode? effective = _optimistic ?? current;
 
     return Card(
       color: Colors.white.withValues(alpha: 0.06),
@@ -107,24 +78,20 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         child: Row(
           children: [
-            for (final id in modes) ...[
+            for (final mode in modes) ...[
               Expanded(
                 child: _ModeItem(
-                  id: id,
-                  label: localized[id] ?? id,
-                  icon: _iconFor(id),
-                  selected: effective == id,
-                  // "pending" means we picked this id, but device hasn't confirmed yet
-                  pending: _optimistic == id && current != id,
+                  mode: mode,
+                  selected: effective == mode,
+                  pending: _optimistic == mode && current != mode,
                   onTap: () {
-                    if (effective == id) return; // nothing to do
-                    _startOptimistic(id);
-                    // Send command
-                    context.read<DeviceActionsCubit>().setMode(id);
+                    if (effective == mode) return;
+                    _startOptimistic(mode);
+                    context.read<DeviceScheduleCubit>().setMode(mode);
                   },
                 ),
               ),
-              if (id != modes.last) const SizedBox(width: 6),
+              if (mode != modes.last) const SizedBox(width: 6),
             ],
           ],
         ),
@@ -135,20 +102,33 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
 
 class _ModeItem extends StatelessWidget {
   const _ModeItem({
-    required this.id,
-    required this.label,
-    required this.icon,
+    required this.mode,
     required this.selected,
     required this.onTap,
     this.pending = false, // still passed but not visually indicated
   });
 
-  final String id;
-  final String label;
-  final IconData icon;
+  final CalendarMode mode;
   final bool selected;
   final bool pending; // kept for future use if needed
   final VoidCallback onTap;
+
+  IconData _iconFor(final CalendarMode mode) {
+    switch (mode) {
+      case CalendarMode.off:
+        return Icons.power_settings_new;
+      case CalendarMode.antifreeze:
+        return Icons.ac_unit;
+      case CalendarMode.manual:
+        return Icons.touch_app;
+      case CalendarMode.daily:
+        return Icons.schedule;
+      case CalendarMode.weekly:
+        return Icons.calendar_today;
+      default:
+        return Icons.error;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -170,11 +150,10 @@ class _ModeItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Icon only (no spinner overlay)
-            Icon(icon, size: 22, color: fg),
+            Icon(_iconFor(mode), size: 22, color: fg),
             const SizedBox(height: 6),
             Text(
-              label,
+              labelForCalendarMode(context, mode),
               maxLines: 1,
               softWrap: false,
               overflow: TextOverflow.fade,

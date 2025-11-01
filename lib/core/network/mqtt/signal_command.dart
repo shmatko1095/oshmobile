@@ -9,18 +9,6 @@ class Command<T> {
   const Command(this.alias);
 }
 
-// Example capability set (extend as needed)
-abstract class ThermostatSignals {
-  static const targetC = Signal<double>('hvac.targetC');
-  static const mode = Signal<String>('hvac.mode');
-  static const powerW = Signal<double>('energy.powerW');
-}
-
-abstract class ThermostatCommands {
-  static const setTargetC = Command<double>('hvac.setTargetC');
-  static const setMode = Command<String>('hvac.setMode');
-}
-
 abstract class DeviceCommands {
   /// Enable real-time stream with a given interval in milliseconds.
   static const enableRt = Command<int>('rt.enable');

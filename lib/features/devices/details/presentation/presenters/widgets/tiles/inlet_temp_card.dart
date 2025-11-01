@@ -8,13 +8,13 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/widge
 class InletTempCard extends StatelessWidget {
   const InletTempCard({super.key, required this.bind, this.title = 'Inlet temperature', this.unit = '°C'});
 
-  final String bind; // e.g. 'sensor.water_inlet_temp'
+  final Signal bind; // e.g. 'sensor.water_inlet_temp'
   final String title;
   final String unit;
 
   @override
   Widget build(BuildContext context) {
-    final v = context.select<DeviceStateCubit, num?>((c) => asNum(c.state.get(Signal(bind))));
+    final v = context.select<DeviceStateCubit, num?>((c) => asNum(c.state.get(bind)));
     return GlassStatCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

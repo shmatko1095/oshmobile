@@ -6,7 +6,6 @@ import 'package:oshmobile/generated/l10n.dart';
 class ManualTemperaturePage extends StatefulWidget {
   const ManualTemperaturePage({
     super.key,
-    required this.deviceId,
     required this.initial,
     required this.onSave,
     required this.title,
@@ -16,7 +15,6 @@ class ManualTemperaturePage extends StatefulWidget {
     this.unit = '°C',
   });
 
-  final String deviceId;
   final double initial;
   final void Function(double value) onSave;
 

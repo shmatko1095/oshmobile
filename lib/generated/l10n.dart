@@ -768,6 +768,86 @@ class S {
       args: [],
     );
   }
+
+  /// `Mon`
+  String get MonShort {
+    return Intl.message(
+      'Mon',
+      name: 'MonShort',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tue`
+  String get TueShort {
+    return Intl.message(
+      'Tue',
+      name: 'TueShort',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Wed`
+  String get WedShort {
+    return Intl.message(
+      'Wed',
+      name: 'WedShort',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Thu`
+  String get ThuShort {
+    return Intl.message(
+      'Thu',
+      name: 'ThuShort',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fri`
+  String get FriShort {
+    return Intl.message(
+      'Fri',
+      name: 'FriShort',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sat`
+  String get SatShort {
+    return Intl.message(
+      'Sat',
+      name: 'SatShort',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sun`
+  String get SunShort {
+    return Intl.message(
+      'Sun',
+      name: 'SunShort',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Set temperature`
+  String get SetTemperature {
+    return Intl.message(
+      'Set temperature',
+      name: 'SetTemperature',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {
