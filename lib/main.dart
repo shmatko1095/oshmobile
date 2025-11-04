@@ -61,9 +61,8 @@ class _MyAppState extends State<MyApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: S.delegate.supportedLocales,
-      home: BlocSelector<global_auth.GlobalAuthCubit, global_auth.GlobalAuthState, bool>(
-        selector: (state) => state is global_auth.AuthAuthenticated,
-        builder: (_, state) => state ? const HomePage() : const SignInPage(),
+      home: BlocBuilder<global_auth.GlobalAuthCubit, global_auth.GlobalAuthState>(
+        builder: (_, state) => (state is global_auth.AuthAuthenticated) ? const HomePage() : const SignInPage(),
       ),
     );
   }

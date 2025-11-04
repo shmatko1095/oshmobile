@@ -162,7 +162,6 @@ class _SignInPageState extends State<SignInPage> {
                   const SizedBox(height: 10),
                 ],
               );
-              // }
             },
           )),
     );

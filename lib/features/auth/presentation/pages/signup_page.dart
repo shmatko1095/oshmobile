@@ -48,10 +48,6 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  //CALENDAR VIEW
-  //FL CHART
-  // chashed network images
-
   void _onAuthStateChanged(BuildContext context, AuthState state) {
     if (state is AuthConflict) {
       SnackBarUtils.showFail(
@@ -59,10 +55,9 @@ class _SignUpPageState extends State<SignUpPage> {
         content: S.of(context).UserAlreadyExist,
       );
     } else if (state is AuthSuccess) {
-      Navigator.pushAndRemoveUntil(
+      Navigator.pushReplacement(
         context,
         SignUpSuccessPage.route(),
-        (route) => false,
       );
     } else if (state is AuthFailed) {
       SnackBarUtils.showFail(
