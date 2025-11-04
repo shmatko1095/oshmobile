@@ -64,7 +64,7 @@ class _ManualTemperaturePageState extends State<ManualTemperaturePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        // elevation: 0,
+        elevation: 0,
         title: Text(widget.title),
       ),
       body: SafeArea(

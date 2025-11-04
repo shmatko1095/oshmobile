@@ -16,8 +16,15 @@ class ScheduleRepositoryMock implements ScheduleRepository {
   final double failureRate;
 
   final Random _rng;
+
+  /// DeviceId -> normalized snapshot.
   final Map<String, CalendarSnapshot> _db = {};
+
+  /// Optional: external "changed" notifier (deviceId); can be used in tests.
   final _changed = StreamController<String>.broadcast();
+
+  /// Per-device broadcast streams for real-time updates.
+  final Map<String, StreamController<CalendarSnapshot>> _ctrls = {};
 
   ScheduleRepositoryMock({
     this.delay = const Duration(milliseconds: 250),
@@ -49,6 +56,10 @@ class ScheduleRepositoryMock implements ScheduleRepository {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // ScheduleRepository
+  // ---------------------------------------------------------------------------
+
   @override
   Future<CalendarSnapshot> fetchAll(String deviceId) async {
     await _maybeDelayAndFail('fetchAll($deviceId)');
@@ -60,9 +71,57 @@ class ScheduleRepositoryMock implements ScheduleRepository {
     await _maybeDelayAndFail('saveAll($deviceId)');
     _db[deviceId] = _normalize(snapshot);
     _changed.add(deviceId);
+    _emitToWatchers(deviceId);
   }
 
-  // --------------------- Helpers ---------------------
+  @override
+  Stream<CalendarSnapshot> watchSnapshot(String deviceId) {
+    // Reuse existing controller if present
+    final existing = _ctrls[deviceId];
+    if (existing != null && !existing.isClosed) {
+      // Emit current snapshot immediately for late subscribers.
+      scheduleMicrotask(() => _emitToWatchers(deviceId));
+      return existing.stream;
+    }
+
+    // Create a new broadcast controller.
+    final ctrl = StreamController<CalendarSnapshot>.broadcast(
+      onListen: () {
+        // Emit current (or empty) immediately.
+        _emitToWatchers(deviceId);
+      },
+      onCancel: () async {
+        // If nobody is listening, keep controller alive for simplicity.
+        // You may close it here if you want stricter lifecycle management.
+      },
+    );
+
+    _ctrls[deviceId] = ctrl;
+    // Emit once right after creation to cover the first listener case.
+    scheduleMicrotask(() => _emitToWatchers(deviceId));
+    return ctrl.stream;
+  }
+
+  @override
+  Future<void> setMode(String deviceId, CalendarMode mode) async {
+    await _maybeDelayAndFail('setMode($deviceId)');
+    final cur = _db.putIfAbsent(deviceId, () => _normalize(_defaultEmptySnapshot()));
+    final next = cur.copyWith(mode: mode);
+    _db[deviceId] = _normalize(next);
+    _changed.add(deviceId);
+    _emitToWatchers(deviceId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  void _emitToWatchers(String deviceId) {
+    final ctrl = _ctrls[deviceId];
+    if (ctrl == null || ctrl.isClosed) return;
+    final snap = _db[deviceId] ?? _defaultEmptySnapshot();
+    ctrl.add(snap);
+  }
 
   Future<void> _maybeDelayAndFail(String op) async {
     if (delay > Duration.zero) {
@@ -89,7 +148,7 @@ class ScheduleRepositoryMock implements ScheduleRepository {
     const wd = WeekdayMask.mon | WeekdayMask.tue | WeekdayMask.wed | WeekdayMask.thu | WeekdayMask.fri;
     const we = WeekdayMask.sat | WeekdayMask.sun;
 
-    List<SchedulePoint> weekly = [
+    final weekly = <SchedulePoint>[
       SchedulePoint(time: const TimeOfDay(hour: 6, minute: 30), daysMask: wd, min: 21.0, max: 21.0),
       SchedulePoint(time: const TimeOfDay(hour: 9, minute: 0), daysMask: wd, min: 19.0, max: 19.0),
       SchedulePoint(time: const TimeOfDay(hour: 17, minute: 30), daysMask: wd, min: 21.0, max: 21.0),
@@ -120,7 +179,7 @@ class ScheduleRepositoryMock implements ScheduleRepository {
     ensure(CalendarMode.daily);
     ensure(CalendarMode.weekly);
 
-    Map<CalendarMode, List<SchedulePoint>> out = {};
+    final Map<CalendarMode, List<SchedulePoint>> out = {};
     for (final e in lists.entries) {
       out[e.key] = _sortedDedup(e.value.map(_fixPoint).toList());
     }

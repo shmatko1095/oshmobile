@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/oshmobile.iml" filepath="$PROJECT_DIR$/oshmobile.iml" />
-      <module fileurl="file://$PROJECT_DIR$/android/oshmobile_android.iml" filepath="$PROJECT_DIR$/android/oshmobile_android.iml" />
     </modules>
   </component>
 </project>

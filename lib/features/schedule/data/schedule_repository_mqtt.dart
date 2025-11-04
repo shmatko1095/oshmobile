@@ -24,6 +24,11 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   final ScheduleTopics _topics;
   final Duration timeout;
 
+  final Map<String, StreamController<CalendarSnapshot>> _ctrls = {};
+  final Map<String, StreamSubscription> _subs = {};
+  final Map<String, int> _refs = {};
+  final Map<String, CalendarSnapshot> _last = {};
+
   ScheduleRepositoryMqtt(
     this._mqtt,
     this._topics, {
@@ -180,4 +185,59 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   String _newReqId() => DateTime.now().microsecondsSinceEpoch.toString();
 
   int pMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
+
+  @override
+  Stream<CalendarSnapshot> watchSnapshot(String deviceId) {
+    // Reuse existing controller if present.
+    final existing = _ctrls[deviceId];
+    if (existing != null && !existing.isClosed) {
+      return existing.stream;
+    }
+
+    // Create the controller first, then store it — avoid self-reference issue.
+    late final StreamController<CalendarSnapshot> ctrl;
+    ctrl = StreamController<CalendarSnapshot>.broadcast(
+      onListen: () async {
+        // Ref-counting: start MQTT wiring on first listener.
+        _refs[deviceId] = (_refs[deviceId] ?? 0) + 1;
+        if (_refs[deviceId]! > 1) return;
+
+        final reportedTopic = _topics.reported(deviceId);
+        final getTopic = _topics.getReq(deviceId);
+
+        // Subscribe to reported/* and forward to stream.
+        _subs[deviceId] = _mqtt.subscribeJson(reportedTopic).listen((msg) {
+          final snap = _decodeSnapshot(msg.payload);
+          _last[deviceId] = snap;
+          if (!ctrl.isClosed) ctrl.add(snap);
+        });
+
+        // Ask for retained snapshot.
+        unawaited(_mqtt.publishJson(getTopic, {'reqId': _newReqId()}));
+      },
+      onCancel: () async {
+        // Ref-counting: tear down MQTT on last listener.
+        _refs[deviceId] = (_refs[deviceId] ?? 1) - 1;
+        if (_refs[deviceId]! <= 0) {
+          _refs.remove(deviceId);
+          await _subs.remove(deviceId)?.cancel();
+          final c = _ctrls.remove(deviceId);
+          if (c != null && !c.isClosed) await c.close();
+        }
+      },
+    );
+
+    _ctrls[deviceId] = ctrl;
+    return ctrl.stream;
+  }
+
+  @override
+  Future<void> setMode(String deviceId, CalendarMode mode) async {
+    // Keep lists unchanged; use last known snapshot or fetch once.
+    final current = _last[deviceId] ?? await fetchAll(deviceId);
+    final desired = current.copyWith(mode: mode);
+
+    // Reuse saveAll to honor reqId/ack flow.
+    await saveAll(deviceId, desired);
+  }
 }

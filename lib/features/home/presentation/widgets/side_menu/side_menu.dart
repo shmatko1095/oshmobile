@@ -10,14 +10,17 @@ class SideMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: Column(
-        children: [
-          const AccountDrawerHeader(),
-          const ItemList(),
-          const AddDeviceButton(),
-          const Divider(thickness: 1.5),
-          const LogoutButton(),
-        ],
+      child: SafeArea(
+        bottom: true,
+        child: Column(
+          children: [
+            const AccountDrawerHeader(),
+            const ItemList(),
+            const AddDeviceButton(),
+            const Divider(thickness: 1.5),
+            const LogoutButton(),
+          ],
+        ),
       ),
     );
   }

@@ -6,22 +6,37 @@ import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/fetch_schedule_all.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/save_schedule_all.dart';
+import 'package:oshmobile/features/schedule/domain/usecases/set_schedule_mode.dart';
+import 'package:oshmobile/features/schedule/domain/usecases/watch_schedule_stream.dart';
 
 part 'schedule_state.dart';
 
 class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   final FetchScheduleAll _fetchAll;
   final SaveScheduleAll _saveAll;
+  final SetScheduleMode _setMode;
+  final WatchScheduleStream _watchSchedule;
 
   DeviceScheduleCubit({
     required FetchScheduleAll fetchAll,
     required SaveScheduleAll saveAll,
+    required SetScheduleMode setMode,
+    required WatchScheduleStream watchSchedule,
   })  : _fetchAll = fetchAll,
         _saveAll = saveAll,
+        _setMode = setMode,
+        _watchSchedule = watchSchedule,
         super(const DeviceScheduleLoading());
 
+  StreamSubscription<CalendarSnapshot>? _snapSub;
   String _deviceSn = '';
   int _bindToken = 0;
+
+  @override
+  Future<void> close() {
+    _snapSub?.cancel();
+    return super.close();
+  }
 
   Future<void> rebind() async {
     await bind(_deviceSn);
@@ -31,14 +46,55 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   Future<void> bind(String deviceSn) async {
     _deviceSn = deviceSn;
     final token = ++_bindToken;
-    emit(DeviceScheduleLoading());
+
+    // 1) Always (re)wire the real-time subscription FIRST.
+    await _snapSub?.cancel();
+    _snapSub = _watchSchedule(deviceSn).listen((remote) {
+      // Ignore late events from older bind sessions.
+      if (token != _bindToken) return;
+
+      // Sanitize mode just in case.
+      final safeMode = CalendarMode.all.any((m) => m.id == remote.mode.id) ? remote.mode : CalendarMode.off;
+
+      final s = state;
+
+      // Strategy:
+      // - Mode must always follow the device.
+      // - Full list updates only if we're not editing/saving.
+      if (s is DeviceScheduleReady) {
+        if (s.dirty || s.saving) {
+          emit(s.copyWith(snap: s.snap.copyWith(mode: safeMode)));
+        } else {
+          emit(s.copyWith(snap: remote.copyWith(mode: safeMode), dirty: false, saving: false));
+        }
+      } else {
+        // From Loading/Error -> Ready on first remote snapshot.
+        emit(DeviceScheduleReady(snap: remote.copyWith(mode: safeMode)));
+      }
+    });
+
+    // 2) Show Loading while we try to fetch a snapshot (nice for first paint).
+    emit(const DeviceScheduleLoading());
+
+    // 3) Try fetch; even if it fails, the stream stays alive and will recover us.
     try {
       final snap = await _fetchAll(deviceSn);
       if (token != _bindToken) return;
-      final safeMode = CalendarMode.all.any((m) => m.id == snap.mode.id) ? snap.mode : CalendarMode.off;
-      emit(DeviceScheduleReady(snap: snap.copyWith(mode: safeMode)));
+
+      // If stream already delivered something and we're editing, don't overwrite.
+      final s = state;
+      if (s is DeviceScheduleReady && (s.dirty || s.saving)) {
+        return;
+      }
+
+      // If we're still not in Ready (e.g., no stream event yet), seed with fetched snapshot.
+      if (s is! DeviceScheduleReady) {
+        final safeMode = CalendarMode.all.any((m) => m.id == snap.mode.id) ? snap.mode : CalendarMode.off;
+        emit(DeviceScheduleReady(snap: snap.copyWith(mode: safeMode)));
+      }
     } catch (e) {
       if (token != _bindToken) return;
+      // Non-fatal: we keep listening and will flip to Ready on the next reported snapshot.
       emit(DeviceScheduleError(e.toString()));
     }
   }
@@ -46,24 +102,41 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   // ---------------- Mode API ----------------
   CalendarMode getMode() => state.mode;
 
-  /// Only switches active list. Does NOT transform data.
+  /// Switch active mode AND push it to the device immediately.
+  /// We do optimistic UI update for snappy UX; the reported stream will confirm.
   void setMode(CalendarMode next) {
     final s = state;
     if (s is! DeviceScheduleReady) return;
     if (s.snap.mode.id == next.id) return;
+
+    // Optimistic UI update: show new mode and "saving" spinner.
+    final prev = s.snap.mode;
     emit(s.copyWith(
       snap: s.snap.copyWith(mode: next),
-      dirty: true,
+      saving: true,
+      dirty: false, // do not mark as dirty for mode-only change
       flash: null,
     ));
+
+    unawaited(_setMode(_deviceSn, next).then((_) {
+      // The real-time stream will bring the final snapshot; just clear saving.
+      final cur = state;
+      if (cur is DeviceScheduleReady) {
+        emit(cur.copyWith(saving: false));
+      }
+    }).catchError((e) {
+      // Rollback on failure
+      final cur = state;
+      if (cur is DeviceScheduleReady) {
+        emit(cur.copyWith(
+          snap: cur.snap.copyWith(mode: prev),
+          saving: false,
+          flash: 'Failed to set mode: $e',
+        ));
+        _clearFlashSoon();
+      }
+    }));
   }
-
-  // ---------------- Mutations (active list only) ----------------
-
-  // --- add to imports if needed ---
-// no extra imports required
-
-// ===================== NEW HELPERS =====================
 
   TimeOfDay _addMinutes(TimeOfDay t, int delta) {
     var total = (t.hour * 60 + t.minute + delta) % 1440;
@@ -91,9 +164,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     return start;
   }
 
-// ===================== UPDATED addPoint =====================
-
-  // Add a new point to the active mode.
+// Add a new point to the active mode.
 // If [p] is null, the cubit creates a default point:
 // - time: now rounded to 15 minutes (forward),
 // - days: workdays for weekly mode, otherwise all days,

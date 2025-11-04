@@ -56,11 +56,13 @@ import 'package:oshmobile/features/home/domain/usecases/get_user_devices.dart';
 import 'package:oshmobile/features/home/domain/usecases/unassign_device.dart';
 import 'package:oshmobile/features/home/domain/usecases/update_device_user_data.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
-import 'package:oshmobile/features/schedule/data/schedule_repository_mock.dart';
+import 'package:oshmobile/features/schedule/data/schedule_repository_mqtt.dart';
 import 'package:oshmobile/features/schedule/data/schedule_topics.dart';
 import 'package:oshmobile/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/fetch_schedule_all.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/save_schedule_all.dart';
+import 'package:oshmobile/features/schedule/domain/usecases/set_schedule_mode.dart';
+import 'package:oshmobile/features/schedule/domain/usecases/watch_schedule_stream.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -204,14 +206,18 @@ void _initDevicesFeature() {
           disableRt: locator<DisableRtStream>(),
         ))
     ..registerLazySingleton<ScheduleTopics>(() => ScheduleTopics(locator<AppConfig>().tenantId))
-    // ..registerLazySingleton<ScheduleRepository>(
-    //     () => ScheduleRepositoryMqtt(locator<DeviceMqttRepo>(), locator<ScheduleTopics>()))
-    ..registerLazySingleton<ScheduleRepository>(() => ScheduleRepositoryMock.demo())
+    ..registerLazySingleton<ScheduleRepository>(
+        () => ScheduleRepositoryMqtt(locator<DeviceMqttRepo>(), locator<ScheduleTopics>()))
+    // ..registerLazySingleton<ScheduleRepository>(() => ScheduleRepositoryMock.demo())
     ..registerLazySingleton<FetchScheduleAll>(() => FetchScheduleAll(locator<ScheduleRepository>()))
     ..registerLazySingleton<SaveScheduleAll>(() => SaveScheduleAll(locator<ScheduleRepository>()))
+    ..registerLazySingleton<SetScheduleMode>(() => SetScheduleMode(locator<ScheduleRepository>()))
+    ..registerLazySingleton<WatchScheduleStream>(() => WatchScheduleStream(locator<ScheduleRepository>()))
     ..registerFactory<DeviceScheduleCubit>(() => DeviceScheduleCubit(
           fetchAll: locator<FetchScheduleAll>(),
           saveAll: locator<SaveScheduleAll>(),
+          setMode: locator<SetScheduleMode>(),
+          watchSchedule: locator<WatchScheduleStream>(),
         ))
     ..registerSingleton<DevicePresenterRegistry>(const DevicePresenterRegistry({
       '8c5ea780-3d0d-4886-9334-2b4e781dd51c': ThermostatBasicPresenter(),

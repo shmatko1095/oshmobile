@@ -39,7 +39,7 @@ class ThermostatModeNavigator {
     if (s is DeviceScheduleReady) {
       final manual = s.snap.lists[CalendarMode.manual] ?? const <SchedulePoint>[];
       final p = manual.isNotEmpty ? manual.first : cubit.currentPoint();
-      if (p != null && p.min == p.max) initial = p.min;
+      if (p != null) initial = p.max;
     }
 
     await Navigator.of(context)

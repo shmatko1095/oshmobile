@@ -158,10 +158,6 @@ class _ModeItem extends StatelessWidget {
               softWrap: false,
               overflow: TextOverflow.fade,
               textAlign: TextAlign.center,
-
-              // label,
-              // textAlign: TextAlign.center,
-              // overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: fg,
                 fontSize: 12,
