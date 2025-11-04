@@ -38,6 +38,7 @@ class HomeCubit extends Cubit<HomeState> {
     result.fold(
       (l) {
         _updateDeviceList([]);
+        emit(HomeInitial());
       },
       (r) {
         _updateDeviceList(r);
