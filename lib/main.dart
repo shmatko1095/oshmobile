@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart' as global_auth;
@@ -13,6 +14,8 @@ import 'package:oshmobile/init_dependencies.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
   await initDependencies();
   runApp(MultiBlocProvider(
     providers: [
