@@ -107,7 +107,9 @@ class ThermostatBasicPresenter implements DevicePresenter {
             SliverToBoxAdapter(
               child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                  child: ThermostatModeBar(bind: ThermostatSignals.settingClimateMode)),
+                  child: ThermostatModeBar(
+                    bind: ThermostatSignals.settingClimateMode,
+                  )),
             ),
           SliverPadding(
             padding: const EdgeInsets.all(12),

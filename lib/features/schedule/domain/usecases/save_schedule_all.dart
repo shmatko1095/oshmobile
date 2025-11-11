@@ -6,5 +6,6 @@ class SaveScheduleAll {
 
   const SaveScheduleAll(this.repo);
 
-  Future<void> call(String deviceSn, CalendarSnapshot snapshot) => repo.saveAll(deviceSn, snapshot);
+  Future<void> call(String deviceSn, CalendarSnapshot snapshot, {String? reqId}) =>
+      repo.saveAll(deviceSn, snapshot, reqId: reqId);
 }

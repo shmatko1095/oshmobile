@@ -73,11 +73,8 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
       return;
     }
 
-    // IMPORTANT: left as you designed it. Do not change.
-    final connMsg = MqttConnectMessage()
-        .withClientIdentifier(_mkClientId(userId))
-        .startClean()
-        .authenticateAs("oshmobile", token); // <— keep as-is
+    final connMsg =
+        MqttConnectMessage().withClientIdentifier(_mkClientId(userId)).startClean().authenticateAs(userId, token);
 
     _client.connectionMessage = connMsg;
 

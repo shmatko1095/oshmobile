@@ -3,7 +3,8 @@ import 'package:oshmobile/features/schedule/domain/repositories/schedule_reposit
 
 class SetScheduleMode {
   final ScheduleRepository repo;
+
   const SetScheduleMode(this.repo);
 
-  Future<void> call(String deviceSn, CalendarMode mode) => repo.setMode(deviceSn, mode);
+  Future<void> call(String deviceSn, CalendarMode mode, {String? reqId}) => repo.setMode(deviceSn, mode, reqId: reqId);
 }

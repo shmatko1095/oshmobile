@@ -13,13 +13,13 @@ class CalendarMode {
   @override
   int get hashCode => id.hashCode;
 
+  static const on = CalendarMode('on');
   static const off = CalendarMode('off');
   static const antifreeze = CalendarMode('antifreeze');
-  static const manual = CalendarMode('manual');
   static const daily = CalendarMode('daily');
   static const weekly = CalendarMode('weekly');
 
-  static const all = [off, antifreeze, manual, daily, weekly];
+  static const all = [off, antifreeze, on, daily, weekly];
 }
 
 /// Bit masks for weekdays. Use any mapping you already have if different.

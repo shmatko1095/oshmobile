@@ -3,7 +3,8 @@ import 'package:oshmobile/features/schedule/domain/repositories/schedule_reposit
 
 class WatchScheduleStream {
   final ScheduleRepository repo;
+
   const WatchScheduleStream(this.repo);
 
-  Stream<CalendarSnapshot> call(String deviceSn) => repo.watchSnapshot(deviceSn);
+  Stream<MapEntry<String?, CalendarSnapshot>> call(String deviceSn) => repo.watchSnapshot(deviceSn);
 }

@@ -9,8 +9,8 @@ String labelForCalendarMode(BuildContext context, final CalendarMode mode) {
       return s.ModeOff;
     case CalendarMode.antifreeze:
       return s.ModeAntifreeze;
-    case CalendarMode.manual:
-      return s.ModeManual;
+    case CalendarMode.on:
+      return s.ModeOn;
     case CalendarMode.daily:
       return s.ModeDaily;
     case CalendarMode.weekly:

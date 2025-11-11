@@ -119,7 +119,7 @@ class _ModeItem extends StatelessWidget {
         return Icons.power_settings_new;
       case CalendarMode.antifreeze:
         return Icons.ac_unit;
-      case CalendarMode.manual:
+      case CalendarMode.on:
         return Icons.touch_app;
       case CalendarMode.daily:
         return Icons.schedule;

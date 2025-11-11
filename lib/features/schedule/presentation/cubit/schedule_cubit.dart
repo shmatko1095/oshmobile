@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/fetch_schedule_all.dart';
@@ -17,84 +18,73 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   final SetScheduleMode _setMode;
   final WatchScheduleStream _watchSchedule;
 
+  /// ACK wait timeout for each command.
+  final Duration ackTimeout;
+
   DeviceScheduleCubit({
     required FetchScheduleAll fetchAll,
     required SaveScheduleAll saveAll,
     required SetScheduleMode setMode,
     required WatchScheduleStream watchSchedule,
+    this.ackTimeout = const Duration(seconds: 6),
   })  : _fetchAll = fetchAll,
         _saveAll = saveAll,
         _setMode = setMode,
         _watchSchedule = watchSchedule,
         super(const DeviceScheduleLoading());
 
-  StreamSubscription<CalendarSnapshot>? _snapSub;
+  StreamSubscription<MapEntry<String?, CalendarSnapshot>>? _snapSub;
+  final Map<String, Timer> _pendingTimers = <String, Timer>{};
+
   String _deviceSn = '';
   int _bindToken = 0;
 
   @override
   Future<void> close() {
     _snapSub?.cancel();
+    _cancelAllPendingTimers();
     return super.close();
   }
 
-  Future<void> rebind() async {
-    await bind(_deviceSn);
-  }
+  Future<void> rebind() async => bind(_deviceSn);
 
   // ---------------- Bind & load ----------------
   Future<void> bind(String deviceSn) async {
     _deviceSn = deviceSn;
     final token = ++_bindToken;
 
-    // 1) Always (re)wire the real-time subscription FIRST.
+    // Reset transient state on new bind.
+    final cur = state;
+    if (cur is DeviceScheduleReady) {
+      _cancelAllPendingTimers();
+      emit(cur.copyWith(
+        saving: false,
+        flash: null,
+        dirty: false,
+        pendingQueue: const <PendingTxn>[],
+      ));
+    }
+
     await _snapSub?.cancel();
-    _snapSub = _watchSchedule(deviceSn).listen((remote) {
-      // Ignore late events from older bind sessions.
+    _snapSub = _watchSchedule(deviceSn).listen((entry) {
       if (token != _bindToken) return;
-
-      // Sanitize mode just in case.
-      final safeMode = CalendarMode.all.any((m) => m.id == remote.mode.id) ? remote.mode : CalendarMode.off;
-
-      final s = state;
-
-      // Strategy:
-      // - Mode must always follow the device.
-      // - Full list updates only if we're not editing/saving.
-      if (s is DeviceScheduleReady) {
-        if (s.dirty || s.saving) {
-          emit(s.copyWith(snap: s.snap.copyWith(mode: safeMode)));
-        } else {
-          emit(s.copyWith(snap: remote.copyWith(mode: safeMode), dirty: false, saving: false));
-        }
-      } else {
-        // From Loading/Error -> Ready on first remote snapshot.
-        emit(DeviceScheduleReady(snap: remote.copyWith(mode: safeMode)));
-      }
+      _onReported(entry.key, entry.value);
     });
 
-    // 2) Show Loading while we try to fetch a snapshot (nice for first paint).
     emit(const DeviceScheduleLoading());
 
-    // 3) Try fetch; even if it fails, the stream stays alive and will recover us.
     try {
       final snap = await _fetchAll(deviceSn);
       if (token != _bindToken) return;
 
-      // If stream already delivered something and we're editing, don't overwrite.
       final s = state;
-      if (s is DeviceScheduleReady && (s.dirty || s.saving)) {
-        return;
-      }
+      if (s is DeviceScheduleReady && (s.dirty || s.saving)) return;
 
-      // If we're still not in Ready (e.g., no stream event yet), seed with fetched snapshot.
       if (s is! DeviceScheduleReady) {
-        final safeMode = CalendarMode.all.any((m) => m.id == snap.mode.id) ? snap.mode : CalendarMode.off;
-        emit(DeviceScheduleReady(snap: snap.copyWith(mode: safeMode)));
+        emit(DeviceScheduleReady(snap: _withSafeMode(snap)));
       }
     } catch (e) {
       if (token != _bindToken) return;
-      // Non-fatal: we keep listening and will flip to Ready on the next reported snapshot.
       emit(DeviceScheduleError(e.toString()));
     }
   }
@@ -102,40 +92,191 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   // ---------------- Mode API ----------------
   CalendarMode getMode() => state.mode;
 
-  /// Switch active mode AND push it to the device immediately.
-  /// We do optimistic UI update for snappy UX; the reported stream will confirm.
+  /// Optimistic mode change; we enqueue op with reqId and wait reported acks.
   void setMode(CalendarMode next) {
     final s = state;
     if (s is! DeviceScheduleReady) return;
     if (s.snap.mode.id == next.id) return;
 
-    // Optimistic UI update: show new mode and "saving" spinner.
-    final prev = s.snap.mode;
-    emit(s.copyWith(
-      snap: s.snap.copyWith(mode: next),
-      saving: true,
-      dirty: false, // do not mark as dirty for mode-only change
-      flash: null,
-    ));
+    final reqId = newReqId();
+    final before = s.snap;
+    final desired = s.snap.copyWith(mode: next);
 
-    unawaited(_setMode(_deviceSn, next).then((_) {
-      // The real-time stream will bring the final snapshot; just clear saving.
-      final cur = state;
-      if (cur is DeviceScheduleReady) {
-        emit(cur.copyWith(saving: false));
-      }
-    }).catchError((e) {
-      // Rollback on failure
-      final cur = state;
-      if (cur is DeviceScheduleReady) {
-        emit(cur.copyWith(
-          snap: cur.snap.copyWith(mode: prev),
-          saving: false,
-          flash: 'Failed to set mode: $e',
-        ));
-        _clearFlashSoon();
-      }
+    final q = List<PendingTxn>.from(s.pendingQueue)
+      ..add(PendingTxn(
+        reqId: reqId,
+        beforeSnap: before,
+        desiredSnap: desired,
+        deadline: DateTime.now().add(ackTimeout),
+        kind: 'mode',
+        desiredMode: next,
+      ));
+
+    // Optimistic UI (we also keep s.snap updated for immediate widgets)
+    emit(s.copyWith(
+      snap: desired,
+      saving: true,
+      dirty: false,
+      flash: null,
+      pendingQueue: q,
+    ));
+    _armTimer(reqId);
+
+    unawaited(_setMode(_deviceSn, next, reqId: reqId).catchError((e) {
+      _onPublishError(reqId, 'Failed to set mode: $e');
     }));
+  }
+
+  // ---------------- Persist (bundle) ----------------
+
+  Future<void> persistAll() async {
+    final s = state;
+    if (s is! DeviceScheduleReady) return;
+
+    final reqId = newReqId();
+    final before = s.snap;
+    final desired = s.snap; // we already hold edited lists/mode in snap
+
+    final q = List<PendingTxn>.from(s.pendingQueue)
+      ..add(PendingTxn(
+        reqId: reqId,
+        beforeSnap: before,
+        desiredSnap: desired,
+        deadline: DateTime.now().add(ackTimeout),
+        kind: 'saveAll',
+      ));
+    emit(s.copyWith(
+      saving: true,
+      flash: null,
+      pendingQueue: q,
+    ));
+    _armTimer(reqId);
+
+    try {
+      await _saveAll(_deviceSn, desired, reqId: reqId);
+      // Wait for reported to drain queue
+    } catch (e) {
+      _onPublishError(reqId, 'Failed to save: $e');
+    }
+  }
+
+  void _onReported(String? appliedReqId, CalendarSnapshot remote) {
+    final safe = _withSafeMode(remote);
+    final st = state;
+    if (st is! DeviceScheduleReady) {
+      emit(DeviceScheduleReady(snap: safe));
+      return;
+    }
+
+    if (st.pendingQueue.isNotEmpty) {
+      // No correlation id -> we keep fully optimistic UI; do not adopt device snapshot.
+      if (appliedReqId == null || appliedReqId.isEmpty) {
+        emit(st.copyWith(saving: true)); // keep optimistic snap as-is
+        return;
+      }
+
+      // Drop any txn(s) matched by this appliedReqId (acks may arrive out-of-order).
+      final newQ = List<PendingTxn>.from(st.pendingQueue)..removeWhere((t) => t.reqId == appliedReqId);
+      _pendingTimers.remove(appliedReqId)?.cancel();
+
+      if (newQ.isEmpty) {
+        // Queue drained -> adopt device snapshot (becomes the new confirmed base).
+        emit(st.copyWith(
+          snap: safe,
+          saving: false,
+          dirty: false,
+          pendingQueue: newQ,
+        ));
+      } else {
+        // Still pending -> remain optimistic; do not adopt device snapshot yet.
+        emit(st.copyWith(
+          pendingQueue: newQ,
+          saving: true,
+          // snap unchanged (optimistic)
+        ));
+      }
+      return;
+    }
+
+    // No pending -> adopt reported normally (unless editing lists).
+    if (st.dirty || st.saving) {
+      emit(st.copyWith(snap: st.snap.copyWith(mode: safe.mode), saving: false));
+    } else {
+      emit(st.copyWith(snap: safe, dirty: false, saving: false));
+    }
+  }
+
+  // ---------------- Pending timers & errors ----------------
+
+  void _onPublishError(String reqId, String message) {
+    final st = state;
+    if (st is! DeviceScheduleReady) return;
+
+    final idx = st.pendingQueue.indexWhere((t) => t.reqId == reqId);
+    if (idx == -1) {
+      emit(st.copyWith(saving: st.pendingQueue.isNotEmpty, flash: message));
+      _clearFlashSoon();
+      return;
+    }
+
+    final failed = st.pendingQueue[idx];
+    _cancelAllPendingTimers();
+
+    emit(st.copyWith(
+      snap: failed.beforeSnap, // rollback to a consistent state
+      saving: false,
+      dirty: false,
+      flash: message,
+      pendingQueue: const <PendingTxn>[],
+    ));
+    _clearFlashSoon();
+  }
+
+  void _onTimeout(String reqId) {
+    final st = state;
+    if (st is! DeviceScheduleReady) return;
+    final idx = st.pendingQueue.indexWhere((t) => t.reqId == reqId);
+    if (idx == -1) return; // already acked
+
+    final failed = st.pendingQueue[idx];
+    _cancelAllPendingTimers();
+
+    emit(st.copyWith(
+      snap: failed.beforeSnap, // rollback to BEFORE the stuck op
+      saving: false,
+      dirty: false,
+      flash: 'Operation timed out',
+      pendingQueue: const <PendingTxn>[],
+    ));
+    _clearFlashSoon();
+  }
+
+  void _armTimer(String reqId) {
+    _pendingTimers[reqId]?.cancel();
+    _pendingTimers[reqId] = Timer(ackTimeout, () => _onTimeout(reqId));
+  }
+
+  void _cancelAllPendingTimers() {
+    for (final t in _pendingTimers.values) {
+      t.cancel();
+    }
+    _pendingTimers.clear();
+  }
+
+  // ---------------- Current / Next (active list) ----------------
+
+  SchedulePoint? currentPoint({DateTime? now}) {
+    final pts = state.points;
+    if (pts.isEmpty) return null;
+    now ??= DateTime.now();
+    return _currentFor(pts, now);
+  }
+
+  SchedulePoint? nextPoint({DateTime? now}) {
+    final pts = state.points;
+    if (pts.isEmpty) return null;
+    now ??= DateTime.now();
+    return _nextFor(pts, now);
   }
 
   TimeOfDay _addMinutes(TimeOfDay t, int delta) {
@@ -145,31 +286,25 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   }
 
   bool _existsAt(List<SchedulePoint> pts, int daysMask, TimeOfDay t) {
-    return pts.any((p) => p.daysMask == daysMask && p.time.hour == t.hour && p.time.minute == t.minute);
+    return pts.any(
+      (p) => p.daysMask == daysMask && p.time.hour == t.hour && p.time.minute == t.minute,
+    );
   }
 
-  /// Finds the first free time >= start with a given step (minutes).
   TimeOfDay _nextFreeTime(
     List<SchedulePoint> pts,
     int daysMask,
     TimeOfDay start, {
-    int stepMinutes = 15, // keep your 15-min grid by default
+    int stepMinutes = 15,
   }) {
     var t = start;
     for (int i = 0; i < 1440; i += stepMinutes) {
       if (!_existsAt(pts, daysMask, t)) return t;
       t = _addMinutes(t, stepMinutes);
     }
-    // Shouldn't happen (only if all minutes of a day are taken).
     return start;
   }
 
-// Add a new point to the active mode.
-// If [p] is null, the cubit creates a default point:
-// - time: now rounded to 15 minutes (forward),
-// - days: workdays for weekly mode, otherwise all days,
-// - setpoint: 21.0°C (min == max).
-// Time is auto-shifted to the nearest free minute to keep (daysMask, hh:mm) unique.
   void addPoint([SchedulePoint? p, int stepMinutes = 15]) {
     final s = state;
     if (s is! DeviceScheduleReady) return;
@@ -177,7 +312,6 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     final mode = s.snap.mode;
     final current = List<SchedulePoint>.from(s.snap.lists[mode] ?? const <SchedulePoint>[]);
 
-    // --- defaults if no point passed in ---
     int daysMask;
     TimeOfDay t;
     double minV, maxV;
@@ -200,16 +334,13 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       maxV = p.max;
     }
 
-    // normalize values (clamp, order min<=max, mask sanitize)
     var candidate = _norm(SchedulePoint(time: t, daysMask: daysMask, min: minV, max: maxV));
 
-    // ensure unique time within (daysMask, hh:mm) in the current active list
     final freeTime = _nextFreeTime(current, candidate.daysMask, candidate.time, stepMinutes: stepMinutes);
     if (freeTime != candidate.time) {
       candidate = candidate.copyWith(time: freeTime);
     }
 
-    // push via the common mutate pipeline (sort + dedup for safety)
     _mutateActive((list) => [...list, candidate]);
   }
 
@@ -235,38 +366,6 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     final lists = Map<CalendarMode, List<SchedulePoint>>.from(s.snap.lists);
     lists[mode] = _sortedDedup(pts.map(_norm).toList());
     emit(s.copyWith(snap: s.snap.copyWith(lists: lists), dirty: true, flash: null));
-  }
-
-  // ---------------- Persist (bundle) ----------------
-
-  Future<void> persistAll() async {
-    final s = state;
-    if (s is! DeviceScheduleReady || s.saving) return;
-    emit(s.copyWith(saving: true, flash: null));
-    try {
-      await _saveAll(_deviceSn, s.snap);
-      emit(s.copyWith(saving: false, dirty: false, flash: 'Saved'));
-      _clearFlashSoon();
-    } catch (e) {
-      emit(s.copyWith(saving: false, flash: 'Failed: ${e.toString()}'));
-      _clearFlashSoon();
-    }
-  }
-
-  // ---------------- Current / Next (active list) ----------------
-
-  SchedulePoint? currentPoint({DateTime? now}) {
-    final pts = state.points;
-    if (pts.isEmpty) return null;
-    now ??= DateTime.now();
-    return _currentFor(pts, now);
-  }
-
-  SchedulePoint? nextPoint({DateTime? now}) {
-    final pts = state.points;
-    if (pts.isEmpty) return null;
-    now ??= DateTime.now();
-    return _nextFor(pts, now);
   }
 
   // ---------------- Internals ----------------
@@ -304,8 +403,8 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     }
     final out = map.values.toList()
       ..sort((a, b) {
-        final ai = a.time.hour * 60 + a.time.minute;
-        final bi = b.time.hour * 60 + b.time.minute;
+        final ai = _todMinutes(a.time);
+        final bi = _todMinutes(b.time);
         if (ai != bi) return ai.compareTo(bi);
         return a.daysMask.compareTo(b.daysMask);
       });
@@ -313,6 +412,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   }
 
   int _todMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
+  int _weekdayBit(DateTime dt) => 1 << ((dt.weekday - 1) % 7);
 
   SchedulePoint? _currentFor(List<SchedulePoint> pts, DateTime now) {
     for (int d = 0; d < 7; d++) {
@@ -333,15 +433,19 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       final todays = pts.where((p) => WeekdayMask.has(p.daysMask, _weekdayBit(day))).toList()
         ..sort((a, b) => _todMinutes(a.time).compareTo(_todMinutes(b.time)));
       if (todays.isEmpty) continue;
-      final m =
-          _todMinutes(d == 0 ? TimeOfDay(hour: now.hour, minute: now.minute) : const TimeOfDay(hour: 0, minute: 0));
+      final m = _todMinutes(
+        d == 0 ? TimeOfDay(hour: now.hour, minute: now.minute) : const TimeOfDay(hour: 0, minute: 0),
+      );
       final idx = todays.indexWhere((p) => _todMinutes(p.time) > m);
       if (idx >= 0) return todays[idx];
     }
     return null;
   }
 
-  int _weekdayBit(DateTime dt) => 1 << ((dt.weekday - 1) % 7);
+  CalendarSnapshot _withSafeMode(CalendarSnapshot snap) {
+    final ok = CalendarMode.all.any((m) => m.id == snap.mode.id);
+    return ok ? snap : snap.copyWith(mode: CalendarMode.off);
+  }
 
   void _clearFlashSoon() {
     scheduleMicrotask(() {

@@ -16,8 +16,8 @@ class ThermostatModeNavigator {
   static Future<void> openForCurrentMode(BuildContext context) async {
     final mode = context.read<DeviceScheduleCubit>().getMode();
 
-    if (mode == CalendarMode.manual) {
-      return _openManual(context);
+    if (mode == CalendarMode.on) {
+      return _openOn(context);
     }
     if (mode == CalendarMode.antifreeze) {
       return _openAntifreeze(context);
@@ -30,15 +30,15 @@ class ThermostatModeNavigator {
 
   /// Open manual setpoint editor.
   /// On save: updates the MANUAL list to a single 00:00 setpoint for all days and sets mode=manual.
-  static Future<void> _openManual(BuildContext context) async {
+  static Future<void> _openOn(BuildContext context) async {
     final cubit = context.read<DeviceScheduleCubit>();
 
     // Initial value: prefer current manual list value if present; otherwise fallback
     double initial = 21.0;
     final s = cubit.state;
     if (s is DeviceScheduleReady) {
-      final manual = s.snap.lists[CalendarMode.manual] ?? const <SchedulePoint>[];
-      final p = manual.isNotEmpty ? manual.first : cubit.currentPoint();
+      final on = s.snap.lists[CalendarMode.on] ?? const <SchedulePoint>[];
+      final p = on.isNotEmpty ? on.first : cubit.currentPoint();
       if (p != null) initial = p.max;
     }
 
@@ -56,8 +56,8 @@ class ThermostatModeNavigator {
                   min: v,
                   max: v,
                 );
-                cubit.setMode(CalendarMode.manual);
-                cubit.setListFor(CalendarMode.manual, [pt]);
+                cubit.setMode(CalendarMode.on);
+                cubit.setListFor(CalendarMode.on, [pt]);
               },
             ),
           ),
@@ -125,7 +125,7 @@ class ThermostatModeNavigator {
 
   // -------- Explicit public variants (optional API) --------
 
-  static Future<void> openManual(BuildContext context) => _openManual(context);
+  static Future<void> openOn(BuildContext context) => _openOn(context);
 
   static Future<void> openAntifreeze(BuildContext context) => _openAntifreeze(context);
 
