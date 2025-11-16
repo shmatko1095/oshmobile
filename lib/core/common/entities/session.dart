@@ -1,22 +1,22 @@
 class Session {
   final String accessToken;
   final String refreshToken;
-  final String tokenType;
-  final DateTime accessTokenExpiry;
-  final DateTime refreshTokenExpiry;
-  final String sessionState;
-  final int notBeforePolicy;
-  final String scope;
+  final String? tokenType;
+  final DateTime? accessTokenExpiry;
+  final DateTime? refreshTokenExpiry;
+  final String? sessionState;
+  final int? notBeforePolicy;
+  final String? scope;
 
   Session({
     required this.accessToken,
     required this.refreshToken,
-    required this.tokenType,
-    required this.accessTokenExpiry,
-    required this.refreshTokenExpiry,
-    required this.sessionState,
-    required this.notBeforePolicy,
-    required this.scope,
+    this.tokenType,
+    this.accessTokenExpiry,
+    this.refreshTokenExpiry,
+    this.sessionState,
+    this.notBeforePolicy,
+    this.scope,
   });
 
   String get typedAccessToken => "$tokenType $accessToken";
@@ -45,8 +45,10 @@ class Session {
         'access_token': accessToken,
         'refresh_token': refreshToken,
         'token_type': tokenType,
-        'expires_in': accessTokenExpiry.difference(DateTime.now()).inSeconds, // Remaining time
-        'refresh_expires_in': refreshTokenExpiry.difference(DateTime.now()).inSeconds, // Remaining time
+        'expires_in':
+            accessTokenExpiry != null ? accessTokenExpiry!.difference(DateTime.now()).inSeconds : 0, // Remaining time
+        'refresh_expires_in':
+            refreshTokenExpiry != null ? refreshTokenExpiry!.difference(DateTime.now()).inSeconds : 0, // Remaining time
         'session_state': sessionState,
         'not-before-policy': notBeforePolicy,
         'scope': scope,
@@ -54,12 +56,16 @@ class Session {
 
   /// Validate if access token is still valid.
   bool get isAccessTokenValid {
-    return DateTime.now().isBefore(accessTokenExpiry);
+    return DateTime.now().isBefore(accessTokenExpiry ?? DateTime.now());
   }
 
   /// Validate if refresh token is still valid.
   bool get isRefreshTokenValid {
-    return DateTime.now().isBefore(refreshTokenExpiry);
+    // If we don't know expiry (e.g. Google sign-in), fall back to "we have a non-empty refresh token".
+    if (refreshTokenExpiry == null) {
+      return refreshToken.isNotEmpty;
+    }
+    return DateTime.now().isBefore(refreshTokenExpiry!);
   }
 
   /// Create a copy of the session with modified fields.

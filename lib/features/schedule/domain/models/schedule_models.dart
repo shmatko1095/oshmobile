@@ -44,6 +44,21 @@ class WeekdayMask {
   static bool has(int mask, int dayBit) => (mask & dayBit) != 0;
 
   static int toggle(int mask, int dayBit) => mask ^ dayBit;
+
+  static int weekdayBit(DateTime dt) => 1 << ((dt.weekday - 1) % 7);
+
+  /// Rotate single-bit weekday backwards (Mon -> Sun, Tue -> Mon, ...).
+  static int prevDayBit(int dayBit) {
+    // Monday is the lowest bit, Sunday is the highest.
+    if (dayBit == WeekdayMask.mon) return WeekdayMask.sun;
+    return dayBit >> 1;
+  }
+
+  /// Rotate single-bit weekday forwards (Sun -> Mon, Sat -> Sun, ...).
+  static int nextDayBit(int dayBit) {
+    if (dayBit == WeekdayMask.sun) return WeekdayMask.mon;
+    return dayBit << 1;
+  }
 }
 
 /// Unified schedule point (range). If [min]==[max], it's a fixed setpoint.

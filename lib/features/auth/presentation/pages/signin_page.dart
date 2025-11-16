@@ -52,6 +52,10 @@ class _SignInPageState extends State<SignInPage> {
     }
   }
 
+  void _signInWithGoogle() {
+    context.read<AuthBloc>().add(AuthSignInWithGoogle());
+  }
+
   void _onAuthStateChanged(BuildContext context, AuthState state) {
     if (state is AuthFailedEmailNotVerified) {
       _showVerifyDialog(context, _emailController.text.trim());
@@ -123,7 +127,7 @@ class _SignInPageState extends State<SignInPage> {
                               icon: Image.asset("assets/images/google-icon.png", height: 25),
                               buttonText: S.of(context).ContinueWithGoogle,
                               backgroundColor: getColorFromUiMode(context),
-                              onPressed: null,
+                              onPressed: () => _signInWithGoogle(),
                             ),
                             const SizedBox(height: 30),
                             GestureDetector(

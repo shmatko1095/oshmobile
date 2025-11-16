@@ -3,42 +3,48 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/core/error/failures.dart';
+import 'package:oshmobile/core/usecase/usecase.dart';
 import 'package:oshmobile/features/auth/domain/usecases/reset_password.dart';
-import 'package:oshmobile/features/auth/domain/usecases/user_signin.dart';
-import 'package:oshmobile/features/auth/domain/usecases/user_signup.dart';
+import 'package:oshmobile/features/auth/domain/usecases/sign_in.dart';
+import 'package:oshmobile/features/auth/domain/usecases/sign_in_google.dart';
+import 'package:oshmobile/features/auth/domain/usecases/sign_up.dart';
 import 'package:oshmobile/features/auth/domain/usecases/verify_email.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  final UserSignUp _userSignUp;
-  final UserSignIn _userSignIn;
+  final SignUp _signUp;
+  final SignIn _signIn;
+  final SignInWithGoogle _signInWithGoogle;
   final VerifyEmail _verifyEmail;
   final ResetPassword _resetPassword;
   final GlobalAuthCubit _globalAuthCubit;
 
   AuthBloc({
-    required UserSignUp userSignUp,
-    required UserSignIn userSignIn,
+    required SignUp signUp,
+    required SignIn signIn,
+    required SignInWithGoogle signInWithGoogle,
     required VerifyEmail verifyEmail,
     required ResetPassword resetPassword,
     required GlobalAuthCubit globalAuthCubit,
-  })  : _userSignUp = userSignUp,
-        _userSignIn = userSignIn,
+  })  : _signUp = signUp,
+        _signIn = signIn,
+        _signInWithGoogle = signInWithGoogle,
         _verifyEmail = verifyEmail,
         _resetPassword = resetPassword,
         _globalAuthCubit = globalAuthCubit,
         super(const AuthInitial()) {
     on<AuthSignUp>(_onAuthSignUp);
     on<AuthSignIn>(_onAuthSignIn);
+    on<AuthSignInWithGoogle>(_onSignInWithGoogle);
     on<AuthSendVerifyEmail>(_onAuthSendVerifyEmail);
     on<AuthSendResetPasswordEmail>(_onSendResetPasswordEmail);
   }
 
   void _onAuthSignUp(AuthSignUp event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
-    final response = await _userSignUp(
+    final response = await _signUp(
       UserSignUpParams(
         email: event.email,
         password: event.password,
@@ -54,13 +60,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   void _onAuthSignIn(AuthSignIn event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
-    final response = await _userSignIn(
-      UserSignInParams(
+    final response = await _signIn(
+      SignInParams(
         email: event.email,
         password: event.password,
       ),
     );
     response.fold(
+      (l) => _emitAuthFailure(emit, l),
+      (r) => _emitAuthSuccess(emit, r),
+    );
+  }
+
+  Future<void> _onSignInWithGoogle(AuthSignInWithGoogle event, Emitter<AuthState> emit) async {
+    emit(const AuthLoading());
+    final result = await _signInWithGoogle(NoParams());
+    result.fold(
       (l) => _emitAuthFailure(emit, l),
       (r) => _emitAuthSuccess(emit, r),
     );

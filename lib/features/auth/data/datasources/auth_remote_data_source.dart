@@ -13,6 +13,10 @@ abstract interface class IAuthRemoteDataSource {
     required String password,
   });
 
+  Future<Session> signInWithRefreshToken({
+    required String refreshToken,
+  });
+
   Future<void> verifyEmail({
     required String email,
   });

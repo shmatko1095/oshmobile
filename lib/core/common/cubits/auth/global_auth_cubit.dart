@@ -21,13 +21,8 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
         _sessionStorage = sessionStorage,
         super(AuthInitial());
 
-  void checkAuthStatus() {
-    final session = _sessionStorage.getSession();
-    if (session != null && session.isRefreshTokenValid) {
-      emit(const AuthAuthenticated());
-    } else {
-      emit(const AuthInitial());
-    }
+  Future<void> checkAuthStatus() async {
+    await refreshToken();
   }
 
   Future<void> signedIn(Session session) async {
@@ -68,8 +63,12 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
     }
   }
 
-  String? getAccessToken() {
+  String? getTypedAccessToken() {
     return _sessionStorage.getSession()?.typedAccessToken;
+  }
+
+  String? getAccessToken() {
+    return _sessionStorage.getSession()?.accessToken;
   }
 
   JwtUserData? getJwtUserData() {

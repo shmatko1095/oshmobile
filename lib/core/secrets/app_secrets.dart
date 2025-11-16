@@ -1,10 +1,6 @@
 class AppSecrets {
   static const oshAccessTokenUrl = "https://auth.oshhome.com/realms/users-dev/protocol/openid-connect/token";
-  static const oshClientId = "osh-home-app";
-  static const oshClientSecret = "riM77mAUpRbwNJHbCji0cG05EWQR0lve";
-
+  static const clientSecret = "n9LkmFP3yAsi9azPP5bS5aTCWzgnI59O";
+  static const clientId = "oshmobile";
   static const oshApiEndpoint = "https://api.oshhome.com/v1";
-
-  static const oshMqttEndpointUrl = "mqtt.oshhome.com";
-  static const oshMqttEndpointPort = 31883;
 }

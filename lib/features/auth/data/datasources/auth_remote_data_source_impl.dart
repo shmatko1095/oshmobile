@@ -28,8 +28,8 @@ class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
     final response = await _authClient.signInWithUserCred(
       username: email,
       password: password,
-      clientId: AppSecrets.oshClientId,
-      clientSecret: AppSecrets.oshClientSecret,
+      clientId: AppSecrets.clientId,
+      clientSecret: AppSecrets.clientSecret,
     );
 
     if (response.isSuccessful && response.body != null) {
@@ -44,6 +44,24 @@ class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
       } else {
         throw ServerException(errorDescription);
       }
+    }
+  }
+
+  @override
+  Future<Session> signInWithRefreshToken({
+    required String refreshToken,
+  }) async {
+    // Uses Keycloak /token endpoint with grant_type=refresh_token.
+    final response = await _authClient.refreshToken(
+      refreshToken: refreshToken,
+      clientId: AppSecrets.clientId,
+      clientSecret: AppSecrets.clientSecret,
+    );
+
+    if (response.isSuccessful && response.body != null) {
+      return Session.fromJson(response.body);
+    } else {
+      throw ServerException(response.error as String);
     }
   }
 
@@ -97,8 +115,8 @@ class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
 
   Future<String> _getClientToken() async {
     final response = await _authClient.signInWithClientCred(
-      clientId: AppSecrets.oshClientId,
-      clientSecret: AppSecrets.oshClientSecret,
+      clientId: AppSecrets.clientId,
+      clientSecret: AppSecrets.clientSecret,
     );
 
     if (response.isSuccessful && response.body != null) {

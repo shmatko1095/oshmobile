@@ -23,8 +23,8 @@ final class _$AuthService extends AuthService {
     required String username,
     required String password,
     String grantType = "password",
-    String clientId = AppSecrets.oshClientId,
-    String clientSecret = AppSecrets.oshClientSecret,
+    String clientId = AppSecrets.clientId,
+    String clientSecret = AppSecrets.clientSecret,
   }) {
     final Uri $url = Uri.parse('https://auth.oshhome.com/realms/users-dev/protocol/openid-connect/token');
     final Map<String, String> $headers = {
@@ -50,8 +50,8 @@ final class _$AuthService extends AuthService {
   @override
   Future<Response<dynamic>> signInWithClientCred({
     String grantType = "client_credentials",
-    String clientId = AppSecrets.oshClientId,
-    String clientSecret = AppSecrets.oshClientSecret,
+    String clientId = AppSecrets.clientId,
+    String clientSecret = AppSecrets.clientSecret,
   }) {
     final Uri $url = Uri.parse('https://auth.oshhome.com/realms/users-dev/protocol/openid-connect/token');
     final Map<String, String> $headers = {
@@ -76,8 +76,8 @@ final class _$AuthService extends AuthService {
   Future<Response<dynamic>> refreshToken({
     required String refreshToken,
     String grantType = "refresh_token",
-    String clientId = AppSecrets.oshClientId,
-    String clientSecret = AppSecrets.oshClientSecret,
+    String clientId = AppSecrets.clientId,
+    String clientSecret = AppSecrets.clientSecret,
   }) {
     final Uri $url = Uri.parse('https://auth.oshhome.com/realms/users-dev/protocol/openid-connect/token');
     final Map<String, String> $headers = {

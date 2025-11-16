@@ -15,6 +15,8 @@ abstract interface class AuthRepository {
     required String password,
   });
 
+  Future<Either<Failure, Session>> signInWithGoogle();
+
   Future<Either<Failure, void>> verifyEmail({
     required String email,
   });

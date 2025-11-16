@@ -49,6 +49,7 @@ sealed class DeviceScheduleState {
 
 class DeviceScheduleLoading extends DeviceScheduleState {
   final CalendarMode modeHint;
+
   const DeviceScheduleLoading({this.modeHint = CalendarMode.off});
 
   @override
@@ -60,6 +61,7 @@ class DeviceScheduleLoading extends DeviceScheduleState {
 
 class DeviceScheduleError extends DeviceScheduleState {
   final String message;
+
   const DeviceScheduleError(this.message);
 
   @override

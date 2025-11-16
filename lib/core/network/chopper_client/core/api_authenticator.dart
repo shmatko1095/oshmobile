@@ -49,13 +49,13 @@ class ApiAuthenticator extends Authenticator {
   }
 
   Request? _buildAuthenticatedRequest(Request request) {
-    final accessToken = _globalAuthCubit.getAccessToken();
-    return accessToken == null
+    final typedToken = _globalAuthCubit.getTypedAccessToken();
+    return typedToken == null
         ? null
         : applyHeader(
             request,
             HttpHeaders.authorizationHeader,
-            'Bearer $accessToken',
+            typedToken,
           );
   }
 }

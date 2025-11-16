@@ -223,7 +223,8 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     _cancelAllPendingTimers();
 
     emit(st.copyWith(
-      snap: failed.beforeSnap, // rollback to a consistent state
+      snap: failed.beforeSnap,
+      // rollback to a consistent state
       saving: false,
       dirty: false,
       flash: message,
@@ -242,7 +243,8 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     _cancelAllPendingTimers();
 
     emit(st.copyWith(
-      snap: failed.beforeSnap, // rollback to BEFORE the stuck op
+      snap: failed.beforeSnap,
+      // rollback to BEFORE the stuck op
       saving: false,
       dirty: false,
       flash: 'Operation timed out',
@@ -412,33 +414,90 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   }
 
   int _todMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
-  int _weekdayBit(DateTime dt) => 1 << ((dt.weekday - 1) % 7);
 
+  /// Returns the "current" schedule point according to device logic:
+  /// - latest point for today with time <= now
+  /// - if none today: latest point from previous days (looking back up to 6 days).
   SchedulePoint? _currentFor(List<SchedulePoint> pts, DateTime now) {
-    for (int d = 0; d < 7; d++) {
-      final day = now.subtract(Duration(days: d));
-      final todays = pts.where((p) => WeekdayMask.has(p.daysMask, _weekdayBit(day))).toList()
-        ..sort((a, b) => _todMinutes(a.time).compareTo(_todMinutes(b.time)));
-      if (todays.isEmpty) continue;
-      final m = _todMinutes(TimeOfDay(hour: day.hour, minute: day.minute));
-      final idx = (d == 0) ? todays.lastIndexWhere((p) => _todMinutes(p.time) <= m) : todays.length - 1;
-      if (idx >= 0) return todays[idx];
+    if (pts.isEmpty) return null;
+
+    // Make sure points are sorted by time-of-day ascending, like in firmware.
+    final sorted = [...pts]..sort(
+        (a, b) => _todMinutes(a.time).compareTo(_todMinutes(b.time)),
+      );
+
+    final nowMinutes = _todMinutes(TimeOfDay(hour: now.hour, minute: now.minute));
+    final todayBit = WeekdayMask.weekdayBit(now);
+
+    // 1) Today: last point with time <= now
+    for (var i = sorted.length - 1; i >= 0; i--) {
+      final p = sorted[i];
+      if (!WeekdayMask.has(p.daysMask, todayBit)) continue;
+
+      final t = _todMinutes(p.time);
+      if (t <= nowMinutes) {
+        return p;
+      }
     }
+
+    // 2) Previous days: up to 6 days back (do not wrap full week to same day)
+    var dayBit = todayBit;
+    for (var step = 0; step < 6; step++) {
+      dayBit = WeekdayMask.prevDayBit(dayBit);
+
+      // For that previous day: take the *last* point (latest time-of-day)
+      for (var i = sorted.length - 1; i >= 0; i--) {
+        final p = sorted[i];
+        if (!WeekdayMask.has(p.daysMask, dayBit)) continue;
+
+        return p; // latest point of that previous day
+      }
+    }
+
+    // No point in the whole week.
     return null;
   }
 
+  /// Returns the "next" schedule point according to device logic:
+  /// - earliest point for today with time > now
+  /// - if none today: earliest point from future days (looking forward up to 6 days).
   SchedulePoint? _nextFor(List<SchedulePoint> pts, DateTime now) {
-    for (int d = 0; d < 7; d++) {
-      final day = now.add(Duration(days: d));
-      final todays = pts.where((p) => WeekdayMask.has(p.daysMask, _weekdayBit(day))).toList()
-        ..sort((a, b) => _todMinutes(a.time).compareTo(_todMinutes(b.time)));
-      if (todays.isEmpty) continue;
-      final m = _todMinutes(
-        d == 0 ? TimeOfDay(hour: now.hour, minute: now.minute) : const TimeOfDay(hour: 0, minute: 0),
+    if (pts.length <= 1) return null;
+
+    // Same ordering assumption as firmware: sorted by time-of-day ascending.
+    final sorted = [...pts]..sort(
+        (a, b) => _todMinutes(a.time).compareTo(_todMinutes(b.time)),
       );
-      final idx = todays.indexWhere((p) => _todMinutes(p.time) > m);
-      if (idx >= 0) return todays[idx];
+
+    final nowMinutes = _todMinutes(TimeOfDay(hour: now.hour, minute: now.minute));
+    final todayBit = WeekdayMask.weekdayBit(now);
+
+    // 1) Today: first point with time > now
+    for (var i = 0; i < sorted.length; i++) {
+      final p = sorted[i];
+      if (!WeekdayMask.has(p.daysMask, todayBit)) continue;
+
+      final t = _todMinutes(p.time);
+      if (t > nowMinutes) {
+        return p;
+      }
     }
+
+    // 2) Future days: up to 6 days ahead (do not wrap back to the same day)
+    var dayBit = todayBit;
+    for (var step = 0; step < 6; step++) {
+      dayBit = WeekdayMask.nextDayBit(dayBit);
+
+      // For that future day: take the *first* point (earliest time-of-day)
+      for (var i = 0; i < sorted.length; i++) {
+        final p = sorted[i];
+        if (!WeekdayMask.has(p.daysMask, dayBit)) continue;
+
+        return p; // earliest point of that future day
+      }
+    }
+
+    // No next point in the next 6 days.
     return null;
   }
 

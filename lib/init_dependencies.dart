@@ -1,10 +1,11 @@
 import 'dart:developer';
 
 import 'package:chopper/chopper.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
-import 'package:hive/hive.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
+import 'package:keycloak_wrapper/keycloak_wrapper.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
@@ -23,8 +24,9 @@ import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source
 import 'package:oshmobile/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:oshmobile/features/auth/domain/repository/auth_repository.dart';
 import 'package:oshmobile/features/auth/domain/usecases/reset_password.dart';
-import 'package:oshmobile/features/auth/domain/usecases/user_signin.dart';
-import 'package:oshmobile/features/auth/domain/usecases/user_signup.dart';
+import 'package:oshmobile/features/auth/domain/usecases/sign_in.dart';
+import 'package:oshmobile/features/auth/domain/usecases/sign_in_google.dart';
+import 'package:oshmobile/features/auth/domain/usecases/sign_up.dart';
 import 'package:oshmobile/features/auth/domain/usecases/verify_email.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:oshmobile/features/devices/details/data/mqtt_control_repository.dart';
@@ -64,12 +66,11 @@ import 'package:oshmobile/features/schedule/domain/usecases/save_schedule_all.da
 import 'package:oshmobile/features/schedule/domain/usecases/set_schedule_mode.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/watch_schedule_stream.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
-import 'package:path_provider/path_provider.dart';
 
 final locator = GetIt.instance;
 
 Future<void> initDependencies() async {
-  locator.registerSingleton(const AppConfig(tenantId: 'devices-dev'));
+  locator.registerSingleton<AppConfig>(const AppConfig.dev());
 
   await _initCore();
   await _initWebClient();
@@ -81,9 +82,9 @@ Future<void> initDependencies() async {
 
 Future<void> _initCore() async {
   // Box
-  Hive.init((await getApplicationDocumentsDirectory()).path);
-  Box hiveBox = await Hive.openBox("blogs");
-  locator.registerLazySingleton<Box>(() => hiveBox);
+  // Hive.init((await getApplicationDocumentsDirectory()).path);
+  // Box hiveBox = await Hive.openBox("blogs");
+  // locator.registerLazySingleton<Box>(() => hiveBox);
 
   // SessionStorage
   final sessionStorage = SessionStorage(storage: FlutterSecureStorage());
@@ -97,6 +98,24 @@ Future<void> _initCore() async {
   locator.registerFactory<InternetConnectionChecker>(
     () => InternetConnectionCheckerImpl(internetConnection: locator()),
   );
+
+  final keycloakConfig = KeycloakConfig(
+    bundleIdentifier: 'com.oshmobile.oshmobile',
+    clientId: AppSecrets.clientId,
+    clientSecret: AppSecrets.clientSecret,
+    frontendUrl: locator<AppConfig>().frontendUrl,
+    realm: locator<AppConfig>().usersRealmId,
+    additionalScopes: ['offline_access'],
+  );
+
+  final keycloakWrapper = KeycloakWrapper(config: keycloakConfig);
+  keycloakWrapper.initialize();
+  keycloakWrapper.onError = (message, error, stackTrace) async {
+    debugPrint('Keycloak error: $message $error');
+    keycloakWrapper.logout();
+    keycloakWrapper.initialize();
+  };
+  locator.registerSingleton<KeycloakWrapper>(keycloakWrapper);
 }
 
 void _initHomeFeature() {
@@ -149,19 +168,29 @@ void _initAuthFeature() {
         oshApiUserService: locator<ApiUserService>(),
       ),
     )
+    // ..registerFactory<GoogleKeycloakPkceAuthService>(
+    //   () => GoogleKeycloakPkceAuthService(
+    //     clientId: AppSecrets.clientId,
+    //     realmBaseUrl: AppSecrets.issuerUri,
+    //   ),
+    // )
     //Repository
     ..registerFactory<AuthRepository>(
       () => AuthRepositoryImpl(
         authRemoteDataSource: locator(),
         connectionChecker: locator(),
+        kc: locator(),
       ),
     )
     //Use cases
-    ..registerFactory<UserSignUp>(
-      () => UserSignUp(authRepository: locator()),
+    ..registerFactory<SignUp>(
+      () => SignUp(authRepository: locator()),
     )
-    ..registerFactory<UserSignIn>(
-      () => UserSignIn(authRepository: locator()),
+    ..registerFactory<SignIn>(
+      () => SignIn(authRepository: locator()),
+    )
+    ..registerFactory<SignInWithGoogle>(
+      () => SignInWithGoogle(authRepository: locator()),
     )
     ..registerFactory<VerifyEmail>(
       () => VerifyEmail(authRepository: locator()),
@@ -172,8 +201,9 @@ void _initAuthFeature() {
     //Bloc
     ..registerLazySingleton<AuthBloc>(
       () => AuthBloc(
-        userSignUp: locator(),
-        userSignIn: locator(),
+        signUp: locator(),
+        signIn: locator(),
+        signInWithGoogle: locator(),
         verifyEmail: locator(),
         resetPassword: locator(),
         globalAuthCubit: locator<GlobalAuthCubit>(),
@@ -185,12 +215,12 @@ void _initDevicesFeature() {
   locator
     // DeviceControl
     ..registerLazySingleton<ControlRepository>(
-        () => MqttControlRepositoryImpl(locator<DeviceMqttRepo>(), locator<AppConfig>().tenantId))
+        () => MqttControlRepositoryImpl(locator<DeviceMqttRepo>(), locator<AppConfig>().devicesTenantId))
     ..registerLazySingleton<EnableRtStream>(() => EnableRtStream(locator<ControlRepository>()))
     ..registerLazySingleton<DisableRtStream>(() => DisableRtStream(locator<ControlRepository>()))
     ..registerFactory<DeviceActionsCubit>(() => DeviceActionsCubit(locator<ControlRepository>()))
     // DeviceTelemetry
-    ..registerLazySingleton<TelemetryTopics>(() => TelemetryTopics(locator<AppConfig>().tenantId))
+    ..registerLazySingleton<TelemetryTopics>(() => TelemetryTopics(locator<AppConfig>().devicesTenantId))
     ..registerLazySingleton<TelemetryRepository>(
         () => MqttTelemetryRepositoryImpl(locator<DeviceMqttRepo>(), locator<TelemetryTopics>()))
     ..registerLazySingleton<SubscribeTelemetry>(() => SubscribeTelemetry(locator<TelemetryRepository>()))
@@ -205,7 +235,7 @@ void _initDevicesFeature() {
           enableRt: locator<EnableRtStream>(),
           disableRt: locator<DisableRtStream>(),
         ))
-    ..registerLazySingleton<ScheduleTopics>(() => ScheduleTopics(locator<AppConfig>().tenantId))
+    ..registerLazySingleton<ScheduleTopics>(() => ScheduleTopics(locator<AppConfig>().devicesTenantId))
     ..registerLazySingleton<ScheduleRepository>(
         () => ScheduleRepositoryMqtt(locator<DeviceMqttRepo>(), locator<ScheduleTopics>()))
     // ..registerLazySingleton<ScheduleRepository>(() => ScheduleRepositoryMock.demo())
@@ -289,8 +319,8 @@ Future<void> _initWebClient() async {
 
 Future<void> _initMqttClient() async {
   final repo = DeviceMqttRepoImpl(
-    brokerHost: AppSecrets.oshMqttEndpointUrl,
-    port: AppSecrets.oshMqttEndpointPort,
+    brokerHost: locator<AppConfig>().oshMqttEndpointUrl,
+    port: locator<AppConfig>().oshMqttEndpointPort,
     tenantId: "dev",
   );
   locator

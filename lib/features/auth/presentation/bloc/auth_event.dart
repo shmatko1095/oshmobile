@@ -27,6 +27,10 @@ final class AuthSignIn extends AuthEvent {
   });
 }
 
+final class AuthSignInWithGoogle extends AuthEvent {
+  AuthSignInWithGoogle();
+}
+
 final class AuthSendVerifyEmail extends AuthEvent {
   final String email;
 

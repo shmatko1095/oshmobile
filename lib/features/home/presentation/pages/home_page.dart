@@ -29,9 +29,10 @@ class _HomePageState extends State<HomePage> {
 
       // TBD to remove and migrate to app coordinator
       final auth = context.read<global_auth.GlobalAuthCubit>();
-      final userId = auth.getJwtUserData()?.email ?? "noUser";
+      final userId = auth.getJwtUserData()?.email ?? "";
+      final token = auth.getAccessToken() ?? "";
       final mqtt = context.read<global_mqtt.GlobalMqttCubit>();
-      mqtt.connectWith(userId: userId, token: "11111111"); //TODO: Use JWT instead of 11111111
+      mqtt.connectWith(userId: userId ?? "", token: token);
     });
   }
 

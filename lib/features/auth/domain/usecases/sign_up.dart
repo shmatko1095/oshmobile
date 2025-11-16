@@ -17,10 +17,10 @@ class UserSignUpParams {
   });
 }
 
-class UserSignUp implements UseCase<void, UserSignUpParams> {
+class SignUp implements UseCase<void, UserSignUpParams> {
   final AuthRepository authRepository;
 
-  UserSignUp({required this.authRepository});
+  SignUp({required this.authRepository});
 
   @override
   Future<Either<Failure, void>> call(UserSignUpParams params) async {

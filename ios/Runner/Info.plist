@@ -54,5 +54,17 @@
     <key>NSCameraUsageDescription</key>
     <string>Camera is used to scan QR codes</string>
 
+    <key>CFBundleURLTypes</key>
+    <array>
+      <dict>
+        <key>CFBundleTypeRole</key>
+        <string>Editor</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>com.oshmobile.oshmobile</string>
+        </array>
+      </dict>
+    </array>
+
 </dict>
 </plist>

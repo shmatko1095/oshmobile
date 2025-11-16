@@ -18,11 +18,11 @@ class AuthInterceptor implements Interceptor {
 
     final processedRequest = request.isAuthRequest
         ? request
-        : _authCubit.getAccessToken() != null
+        : _authCubit.getTypedAccessToken() != null
             ? applyHeader(
                 request,
                 HttpHeaders.authorizationHeader,
-                _authCubit.getAccessToken()!,
+                _authCubit.getTypedAccessToken()!,
                 override: false,
               )
             : request;

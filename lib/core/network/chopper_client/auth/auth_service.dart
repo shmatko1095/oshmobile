@@ -19,16 +19,16 @@ abstract class AuthService extends ChopperService {
     @Field() required String username,
     @Field() required String password,
     @Field("grant_type") String grantType = "password",
-    @Field("client_id") String clientId = AppSecrets.oshClientId,
-    @Field("client_secret") String clientSecret = AppSecrets.oshClientSecret,
+    @Field("client_id") String clientId = AppSecrets.clientId,
+    @Field("client_secret") String clientSecret = AppSecrets.clientSecret,
   });
 
   @POST()
   @formUrlEncoded
   Future<Response> signInWithClientCred({
     @Field("grant_type") String grantType = "client_credentials",
-    @Field("client_id") String clientId = AppSecrets.oshClientId,
-    @Field("client_secret") String clientSecret = AppSecrets.oshClientSecret,
+    @Field("client_id") String clientId = AppSecrets.clientId,
+    @Field("client_secret") String clientSecret = AppSecrets.clientSecret,
   });
 
   @POST()
@@ -36,7 +36,7 @@ abstract class AuthService extends ChopperService {
   Future<Response> refreshToken({
     @Field("refresh_token") required String refreshToken,
     @Field("grant_type") String grantType = "refresh_token",
-    @Field("client_id") String clientId = AppSecrets.oshClientId,
-    @Field("client_secret") String clientSecret = AppSecrets.oshClientSecret,
+    @Field("client_id") String clientId = AppSecrets.clientId,
+    @Field("client_secret") String clientSecret = AppSecrets.clientSecret,
   });
 }
