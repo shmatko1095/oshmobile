@@ -14,6 +14,7 @@ import 'package:oshmobile/core/network/chopper_client/core/auth_interceptor.dart
 import 'package:oshmobile/core/network/chopper_client/core/session_storage.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api_device/osh_api_device_service.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api_user/osh_api_user_service.dart';
+import 'package:oshmobile/core/network/mqtt/app_device_id_provider.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo_impl.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
@@ -73,6 +74,7 @@ Future<void> initDependencies() async {
   locator.registerSingleton<AppConfig>(const AppConfig.dev());
 
   await _initCore();
+  await _initKeycloakWrapper();
   await _initWebClient();
   await _initMqttClient();
   _initAuthFeature();
@@ -98,7 +100,9 @@ Future<void> _initCore() async {
   locator.registerFactory<InternetConnectionChecker>(
     () => InternetConnectionCheckerImpl(internetConnection: locator()),
   );
+}
 
+Future<void> _initKeycloakWrapper() async {
   final keycloakConfig = KeycloakConfig(
     bundleIdentifier: 'com.oshmobile.oshmobile',
     clientId: AppSecrets.clientId,
@@ -109,12 +113,19 @@ Future<void> _initCore() async {
   );
 
   final keycloakWrapper = KeycloakWrapper(config: keycloakConfig);
-  keycloakWrapper.initialize();
+
+  try {
+    await keycloakWrapper.initialize();
+  } catch (e, st) {
+    debugPrint('Keycloak initialize failed: $e');
+    debugPrint(st.toString());
+    rethrow;
+  }
+
   keycloakWrapper.onError = (message, error, stackTrace) async {
     debugPrint('Keycloak error: $message $error');
-    keycloakWrapper.logout();
-    keycloakWrapper.initialize();
   };
+
   locator.registerSingleton<KeycloakWrapper>(keycloakWrapper);
 }
 
@@ -168,12 +179,6 @@ void _initAuthFeature() {
         oshApiUserService: locator<ApiUserService>(),
       ),
     )
-    // ..registerFactory<GoogleKeycloakPkceAuthService>(
-    //   () => GoogleKeycloakPkceAuthService(
-    //     clientId: AppSecrets.clientId,
-    //     realmBaseUrl: AppSecrets.issuerUri,
-    //   ),
-    // )
     //Repository
     ..registerFactory<AuthRepository>(
       () => AuthRepositoryImpl(
@@ -286,9 +291,9 @@ Future<void> _initWebClient() async {
     )
     ..registerLazySingleton<GlobalAuthCubit>(
       () => GlobalAuthCubit(
-        sessionStorage: locator<SessionStorage>(),
-        authService: locator<AuthService>(),
-      ),
+          sessionStorage: locator<SessionStorage>(),
+          authService: locator<AuthService>(),
+          keycloakWrapper: locator<KeycloakWrapper>()),
     )
     ..registerLazySingleton<ApiAuthenticator>(
       () => ApiAuthenticator(
@@ -318,7 +323,12 @@ Future<void> _initWebClient() async {
 }
 
 Future<void> _initMqttClient() async {
+  locator.registerLazySingleton<AppDeviceIdProvider>(
+    () => AppDeviceIdProvider(),
+  );
+
   final repo = DeviceMqttRepoImpl(
+    deviceIdProvider: locator<AppDeviceIdProvider>(),
     brokerHost: locator<AppConfig>().oshMqttEndpointUrl,
     port: locator<AppConfig>().oshMqttEndpointPort,
     tenantId: "dev",

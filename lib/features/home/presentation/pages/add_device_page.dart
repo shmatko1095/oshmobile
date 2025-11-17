@@ -28,11 +28,10 @@ class _AddDevicePageState extends State<AddDevicePage> with WidgetsBindingObserv
 
   final MobileScannerController _scanner = MobileScannerController(
     detectionSpeed: DetectionSpeed.normal,
-    facing: CameraFacing.back,
-    torchEnabled: false,
     formats: [BarcodeFormat.qrCode],
+    facing: CameraFacing.back,
   );
-  bool _handledScan = false; // prevent double pop
+  bool _handledScan = false;
 
   @override
   void initState() {

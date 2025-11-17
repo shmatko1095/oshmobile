@@ -43,12 +43,7 @@ class _SignInPageState extends State<SignInPage> {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     if (_formKey.currentState!.validate() && email.isNotEmpty && password.isNotEmpty) {
-      context.read<AuthBloc>().add(
-            AuthSignIn(
-              email: email,
-              password: password,
-            ),
-          );
+      context.read<AuthBloc>().add(AuthSignIn(email: email, password: password));
     }
   }
 

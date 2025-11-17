@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart' as global_auth;
 import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart' as global_mqtt;
+import 'package:oshmobile/core/common/widgets/auth_mqtt_coordinator.dart';
 import 'package:oshmobile/core/theme/theme.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:oshmobile/features/auth/presentation/pages/signin_page.dart';
@@ -11,12 +12,21 @@ import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/home/presentation/pages/home_page.dart';
 import 'package:oshmobile/generated/l10n.dart';
 import 'package:oshmobile/init_dependencies.dart';
+import 'package:oshmobile/startup_error_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  await initDependencies();
+  try {
+    await initDependencies();
+  } catch (e, st) {
+    debugPrint('initDependencies failed: $e');
+    debugPrint(st.toString());
+    runApp(StartupErrorApp(error: e.toString()));
+    return;
+  }
+
   runApp(MultiBlocProvider(
     providers: [
       BlocProvider(
@@ -52,7 +62,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return AuthMqttCoordinator(
+        child: MaterialApp(
       title: 'OSH Mobile',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
@@ -67,6 +78,6 @@ class _MyAppState extends State<MyApp> {
       home: BlocBuilder<global_auth.GlobalAuthCubit, global_auth.GlobalAuthState>(
         builder: (_, state) => (state is global_auth.AuthAuthenticated) ? const HomePage() : const SignInPage(),
       ),
-    );
+    ));
   }
 }

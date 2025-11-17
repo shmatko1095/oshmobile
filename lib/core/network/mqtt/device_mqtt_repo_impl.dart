@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:oshmobile/core/network/mqtt/app_device_id_provider.dart';
 
 import 'device_mqtt_repo.dart';
 
@@ -10,6 +11,7 @@ import 'device_mqtt_repo.dart';
 /// Transport-only: knows nothing about domain semantics.
 class DeviceMqttRepoImpl implements DeviceMqttRepo {
   DeviceMqttRepoImpl({
+    required AppDeviceIdProvider deviceIdProvider,
     required String brokerHost, // host only, e.g. "mqtt.example.com"
     required int port, // 8883 for TLS, 8083/8084 for WSS
     required this.tenantId,
@@ -18,7 +20,8 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     this.secure = false,
     this.keepAliveSeconds = 30,
     this.logging = true,
-  }) : _client = MqttServerClient(brokerHost, "") {
+  })  : _deviceIdProvider = deviceIdProvider,
+        _client = MqttServerClient(brokerHost, "") {
     _client.logging(on: logging);
 
     _client.port = port;
@@ -33,6 +36,7 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     _client.onSubscribed = (t) => _subscribedTopics.add(t);
   }
 
+  final AppDeviceIdProvider _deviceIdProvider;
   final String tenantId;
   final String clientIdPrefix;
   final bool useWebSocket;
@@ -55,9 +59,10 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
   // ---- Client-level streams ----
   StreamSubscription<List<MqttReceivedMessage<MqttMessage?>>>? _updatesSub;
 
-  static String _mkClientId(String prefix) =>
-      '$prefix${DateTime.now().millisecondsSinceEpoch}_${(1000 + (DateTime.now().microsecond % 9000))}';
-
+  Future<String> _buildClientId(String userId) async {
+    final deviceId = await _deviceIdProvider.getDeviceId();
+    return 'u_${userId}_d_$deviceId';
+  }
   // ---------------- DeviceMqttRepo (transport) ----------------
 
   @override
@@ -73,8 +78,11 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
       return;
     }
 
-    final connMsg =
-        MqttConnectMessage().withClientIdentifier(_mkClientId(userId)).startClean().authenticateAs(userId, token);
+    final clientId = await _buildClientId(userId);
+    final connMsg = MqttConnectMessage()
+        // .startClean()
+        .withClientIdentifier(clientId)
+        .authenticateAs(clientId, token);
 
     _client.connectionMessage = connMsg;
 

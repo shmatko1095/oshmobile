@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/theme/text_styles.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:oshmobile/features/auth/presentation/pages/signin_page.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/auth_field.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -12,7 +11,8 @@ import 'package:oshmobile/generated/l10n.dart';
 class ForgotPasswordPage extends StatefulWidget {
   final String email;
 
-  static route(String email) => CupertinoPageRoute(builder: (context) => ForgotPasswordPage(email: email));
+  static CupertinoPageRoute route(String email) =>
+      CupertinoPageRoute(builder: (context) => ForgotPasswordPage(email: email));
 
   const ForgotPasswordPage({required this.email, super.key});
 
@@ -49,11 +49,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         context: context,
         content: state.message,
       );
-      Navigator.pushAndRemoveUntil(
-        context,
-        SignInPage.route(),
-        (route) => false,
-      );
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } else if (state is AuthFailed) {
       SnackBarUtils.showFail(
         context: context,

@@ -16,13 +16,13 @@ class GetUserDevices implements UseCase<List<Device>, String> {
 
   @override
   Future<Either<Failure, List<Device>>> call(String userId) async {
-    final userEither = await userRepository.get(userId: userId);
-    return await userEither.fold(
+    final devicesEither = await userRepository.getDevices(userId: userId);
+    return await devicesEither.fold(
       (l) async => left(l),
-      (user) async {
-        if (user.devices.isEmpty) return right(const []);
+      (userDevices) async {
+        if (userDevices.isEmpty) return right(const []);
 
-        final futures = user.devices.map((d) => deviceRepository.get(deviceId: d.id));
+        final futures = userDevices.map((d) => deviceRepository.get(deviceId: d.id));
         final results = await Future.wait(futures, eagerError: false);
 
         final devices = <Device>[];

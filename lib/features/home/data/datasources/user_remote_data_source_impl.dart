@@ -5,6 +5,7 @@ import 'package:oshmobile/core/network/chopper_client/osh_api_user/osh_api_user_
 import 'package:oshmobile/core/network/chopper_client/osh_api_user/requests/assign_device_request.dart';
 import 'package:oshmobile/features/home/data/datasources/user_remote_data_source.dart';
 import 'package:oshmobile/features/home/domain/entities/user.dart';
+import 'package:oshmobile/features/home/domain/entities/user_device.dart';
 
 class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   final ApiUserService apiUserService;
@@ -38,6 +39,26 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
     );
     if (!response.isSuccessful) {
       throw ServerException(response.error as String);
+    }
+  }
+
+  @override
+  Future<List<UserDevice>> getDevices({
+    required String userId,
+  }) async {
+    final response = await apiUserService.getDevices(userId: userId);
+    if (response.isSuccessful && response.body != null) {
+      if (response.body is List) {
+        return (response.body as List)
+            .map((deviceJson) => UserDevice.fromJson(deviceJson as Map<String, dynamic>))
+            .toList();
+      } else {
+        return [];
+      }
+    } else {
+      final error = jsonDecode(response.error as String);
+      final errorDescription = error["error"] as String;
+      throw ServerException(errorDescription);
     }
   }
 

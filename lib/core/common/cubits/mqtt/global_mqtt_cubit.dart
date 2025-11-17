@@ -23,7 +23,6 @@ class GlobalMqttCubit extends Cubit<GlobalMqttState> {
     required String userId,
     required String token,
   }) async {
-    // Avoid duplicate connects
     if (isConnected) {
       emit(const MqttConnected());
     } else {

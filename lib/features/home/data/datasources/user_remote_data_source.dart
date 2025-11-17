@@ -1,4 +1,5 @@
 import 'package:oshmobile/features/home/domain/entities/user.dart';
+import 'package:oshmobile/features/home/domain/entities/user_device.dart';
 
 abstract interface class UserRemoteDataSource {
   Future<void> assignDevice({
@@ -10,6 +11,10 @@ abstract interface class UserRemoteDataSource {
   Future<void> unassignDevice({
     required String userId,
     required String deviceId,
+  });
+
+  Future<List<UserDevice>> getDevices({
+    required String userId,
   });
 
   Future<User> get({
