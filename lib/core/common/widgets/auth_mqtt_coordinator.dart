@@ -14,41 +14,55 @@ class AuthMqttCoordinator extends StatefulWidget {
   State<AuthMqttCoordinator> createState() => _AuthMqttCoordinatorState();
 }
 
-class _AuthMqttCoordinatorState extends State<AuthMqttCoordinator> with WidgetsBindingObserver {
+class _AuthMqttCoordinatorState extends State<AuthMqttCoordinator>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // If we already have a session on startup – connect MQTT.
     final auth = context.read<global_auth.GlobalAuthCubit>();
     final mqtt = context.read<global_mqtt.GlobalMqttCubit>();
 
-    if (auth.state is global_auth.AuthAuthenticated) {
-      final userId = auth.getJwtUserData()?.email;
-      final token = auth.getAccessToken();
-      if (userId != null && token != null) {
-        mqtt.connectWith(userId: userId, token: token);
-      }
+    _connectIfAuthenticated(auth, mqtt);
+  }
+
+  /// Connects MQTT if auth state is authenticated and we have required data.
+  void _connectIfAuthenticated(
+    global_auth.GlobalAuthCubit auth,
+    global_mqtt.GlobalMqttCubit mqtt,
+  ) {
+    if (auth.state is! global_auth.AuthAuthenticated) return;
+
+    final jwt = auth.getJwtUserData();
+    final token = auth.getAccessToken();
+    // IMPORTANT: use email as userId everywhere
+    final userId = jwt?.email;
+
+    if (userId != null && token != null) {
+      mqtt.connectWith(userId: userId, token: token);
     }
+  }
+
+  /// Best-effort MQTT disconnect helper.
+  void _disconnectMqtt(global_mqtt.GlobalMqttCubit mqtt) {
+    mqtt.disconnect();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
     final auth = context.read<global_auth.GlobalAuthCubit>();
     final mqtt = context.read<global_mqtt.GlobalMqttCubit>();
 
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
       // Best-effort graceful disconnect when app goes background / closes.
-      mqtt.disconnect();
+      _disconnectMqtt(mqtt);
     } else if (state == AppLifecycleState.resumed) {
-      if (auth.state is global_auth.AuthAuthenticated) {
-        final userId = auth.getJwtUserData()?.uuid;
-        final token = auth.getAccessToken();
-        if (userId != null && token != null) {
-          mqtt.connectWith(userId: userId, token: token);
-        }
-      }
+      // On resume – reconnect if still authenticated.
+      _connectIfAuthenticated(auth, mqtt);
     }
   }
 
@@ -67,14 +81,10 @@ class _AuthMqttCoordinatorState extends State<AuthMqttCoordinator> with WidgetsB
         final mqtt = context.read<global_mqtt.GlobalMqttCubit>();
 
         if (state is global_auth.AuthAuthenticated) {
-          final userId = auth.getJwtUserData()?.email;
-          final token = auth.getAccessToken();
-          if (userId != null && token != null) {
-            mqtt.connectWith(userId: userId, token: token);
-          }
+          _connectIfAuthenticated(auth, mqtt);
         } else {
           // Any non-authenticated state => disconnect.
-          mqtt.disconnect();
+          _disconnectMqtt(mqtt);
         }
       },
       child: widget.child,
