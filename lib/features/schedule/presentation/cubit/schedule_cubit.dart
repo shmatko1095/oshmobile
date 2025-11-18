@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
@@ -18,6 +19,8 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   final SetScheduleMode _setMode;
   final WatchScheduleStream _watchSchedule;
 
+  final MqttCommCubit _comm;
+
   /// ACK wait timeout for each command.
   final Duration ackTimeout;
 
@@ -25,11 +28,13 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     required FetchScheduleAll fetchAll,
     required SaveScheduleAll saveAll,
     required SetScheduleMode setMode,
+    required MqttCommCubit comm,
     required WatchScheduleStream watchSchedule,
     this.ackTimeout = const Duration(seconds: 6),
   })  : _fetchAll = fetchAll,
         _saveAll = saveAll,
         _setMode = setMode,
+        _comm = comm,
         _watchSchedule = watchSchedule,
         super(const DeviceScheduleLoading());
 
@@ -43,6 +48,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   Future<void> close() {
     _snapSub?.cancel();
     _cancelAllPendingTimers();
+    _comm.dropForDevice(_deviceSn);
     return super.close();
   }
 
@@ -50,13 +56,20 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
 
   // ---------------- Bind & load ----------------
   Future<void> bind(String deviceSn) async {
+    final prevDeviceSn = _deviceSn;
     _deviceSn = deviceSn;
     final token = ++_bindToken;
+
+    final reqId = newReqId();
+    _comm.start(reqId: reqId, deviceSn: deviceSn);
 
     // Reset transient state on new bind.
     final cur = state;
     if (cur is DeviceScheduleReady) {
       _cancelAllPendingTimers();
+      if (prevDeviceSn.isNotEmpty) {
+        _comm.dropForDevice(prevDeviceSn);
+      }
       emit(cur.copyWith(
         saving: false,
         flash: null,
@@ -78,13 +91,19 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       if (token != _bindToken) return;
 
       final s = state;
-      if (s is DeviceScheduleReady && (s.dirty || s.saving)) return;
+      if (s is DeviceScheduleReady && (s.dirty || s.saving)) {
+        // UI already has a newer optimistic state, do not override.
+        _comm.complete(reqId);
+        return;
+      }
 
       if (s is! DeviceScheduleReady) {
         emit(DeviceScheduleReady(snap: _withSafeMode(snap)));
       }
+      _comm.complete(reqId);
     } catch (e) {
       if (token != _bindToken) return;
+      _comm.fail(reqId, 'Failed to load schedule: $e');
       emit(DeviceScheduleError(e.toString()));
     }
   }
@@ -120,7 +139,8 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       flash: null,
       pendingQueue: q,
     ));
-    _armTimer(reqId);
+
+    _trackPendingReq(reqId);
 
     unawaited(_setMode(_deviceSn, next, reqId: reqId).catchError((e) {
       _onPublishError(reqId, 'Failed to set mode: $e');
@@ -150,7 +170,8 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       flash: null,
       pendingQueue: q,
     ));
-    _armTimer(reqId);
+
+    _trackPendingReq(reqId);
 
     try {
       await _saveAll(_deviceSn, desired, reqId: reqId);
@@ -178,6 +199,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       // Drop any txn(s) matched by this appliedReqId (acks may arrive out-of-order).
       final newQ = List<PendingTxn>.from(st.pendingQueue)..removeWhere((t) => t.reqId == appliedReqId);
       _pendingTimers.remove(appliedReqId)?.cancel();
+      _comm.complete(appliedReqId);
 
       if (newQ.isEmpty) {
         // Queue drained -> adopt device snapshot (becomes the new confirmed base).
@@ -222,6 +244,10 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     final failed = st.pendingQueue[idx];
     _cancelAllPendingTimers();
 
+    for (final txn in st.pendingQueue) {
+      _comm.fail(txn.reqId, message);
+    }
+
     emit(st.copyWith(
       snap: failed.beforeSnap,
       // rollback to a consistent state
@@ -242,6 +268,10 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     final failed = st.pendingQueue[idx];
     _cancelAllPendingTimers();
 
+    for (final txn in st.pendingQueue) {
+      _comm.fail(txn.reqId, 'Operation timed out');
+    }
+
     emit(st.copyWith(
       snap: failed.beforeSnap,
       // rollback to BEFORE the stuck op
@@ -253,7 +283,8 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     _clearFlashSoon();
   }
 
-  void _armTimer(String reqId) {
+  void _trackPendingReq(String reqId) {
+    _comm.start(reqId: reqId, deviceSn: _deviceSn);
     _pendingTimers[reqId]?.cancel();
     _pendingTimers[reqId] = Timer(ackTimeout, () => _onTimeout(reqId));
   }

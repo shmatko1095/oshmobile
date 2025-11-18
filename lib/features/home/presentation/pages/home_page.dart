@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/features/devices/details/presentation/pages/device_host_body.dart';
 import 'package:oshmobile/features/devices/no_selected_device/presentation/pages/no_selected_device_page.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
+import 'package:oshmobile/features/home/presentation/widgets/mqtt_activity_icon.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/side_menu.dart';
 
 class HomePage extends StatefulWidget {
@@ -48,7 +49,10 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(_title ?? _defaultTitle, overflow: TextOverflow.ellipsis),
-        actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.settings))],
+        actions: const [
+          Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: MqttActivityIcon()),
+          IconButton(onPressed: null, icon: Icon(Icons.settings)),
+        ],
       ),
       drawer: const SideMenu(),
       body: BlocSelector<HomeCubit, HomeState, String?>(

@@ -15,7 +15,6 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     required String brokerHost, // host only, e.g. "mqtt.example.com"
     required int port, // 8883 for TLS, 8083/8084 for WSS
     required this.tenantId,
-    this.clientIdPrefix = 'oshmobile',
     this.useWebSocket = false,
     this.secure = false,
     this.keepAliveSeconds = 30,
@@ -38,7 +37,6 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
 
   final AppDeviceIdProvider _deviceIdProvider;
   final String tenantId;
-  final String clientIdPrefix;
   final bool useWebSocket;
   final bool secure;
   final int keepAliveSeconds;
@@ -79,11 +77,7 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     }
 
     final clientId = await _buildClientId(userId);
-    final connMsg = MqttConnectMessage()
-        // .startClean()
-        .withClientIdentifier(clientId)
-        .authenticateAs(clientId, token);
-
+    final connMsg = MqttConnectMessage().withClientIdentifier(clientId).authenticateAs(clientId, token);
     _client.connectionMessage = connMsg;
 
     try {

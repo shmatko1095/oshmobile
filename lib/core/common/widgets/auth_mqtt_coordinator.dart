@@ -14,8 +14,7 @@ class AuthMqttCoordinator extends StatefulWidget {
   State<AuthMqttCoordinator> createState() => _AuthMqttCoordinatorState();
 }
 
-class _AuthMqttCoordinatorState extends State<AuthMqttCoordinator>
-    with WidgetsBindingObserver {
+class _AuthMqttCoordinatorState extends State<AuthMqttCoordinator> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -36,7 +35,6 @@ class _AuthMqttCoordinatorState extends State<AuthMqttCoordinator>
 
     final jwt = auth.getJwtUserData();
     final token = auth.getAccessToken();
-    // IMPORTANT: use email as userId everywhere
     final userId = jwt?.email;
 
     if (userId != null && token != null) {
@@ -56,8 +54,7 @@ class _AuthMqttCoordinatorState extends State<AuthMqttCoordinator>
     final auth = context.read<global_auth.GlobalAuthCubit>();
     final mqtt = context.read<global_mqtt.GlobalMqttCubit>();
 
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.detached) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
       // Best-effort graceful disconnect when app goes background / closes.
       _disconnectMqtt(mqtt);
     } else if (state == AppLifecycleState.resumed) {

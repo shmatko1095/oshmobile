@@ -8,6 +8,7 @@ import 'package:internet_connection_checker_plus/internet_connection_checker_plu
 import 'package:keycloak_wrapper/keycloak_wrapper.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart';
+import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/core/api_authenticator.dart';
 import 'package:oshmobile/core/network/chopper_client/core/auth_interceptor.dart';
@@ -252,6 +253,7 @@ void _initDevicesFeature() {
           fetchAll: locator<FetchScheduleAll>(),
           saveAll: locator<SaveScheduleAll>(),
           setMode: locator<SetScheduleMode>(),
+          comm: locator<MqttCommCubit>(),
           watchSchedule: locator<WatchScheduleStream>(),
         ))
     ..registerSingleton<DevicePresenterRegistry>(const DevicePresenterRegistry({
@@ -339,5 +341,8 @@ Future<void> _initMqttClient() async {
       () => GlobalMqttCubit(
         mqttRepo: locator<DeviceMqttRepo>(),
       ),
+    )
+    ..registerLazySingleton<MqttCommCubit>(
+      () => MqttCommCubit(),
     );
 }
