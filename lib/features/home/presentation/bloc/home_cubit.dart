@@ -33,11 +33,12 @@ class HomeCubit extends Cubit<HomeState> {
   void selectDevice(String deviceId) => emit(state.copyWith(selectedDeviceId: deviceId));
 
   Future<void> updateDeviceList() async {
-    emit(HomeLoading(selectedDeviceId: state.selectedDeviceId));
+    //clear device list to avoid opening any of them before list updated
+    _updateDeviceList([]);
+    emit(HomeLoading(selectedDeviceId: null));
     final result = await _getUserDevices(_userUuid);
     result.fold(
       (l) {
-        _updateDeviceList([]);
         emit(HomeInitial());
       },
       (r) {

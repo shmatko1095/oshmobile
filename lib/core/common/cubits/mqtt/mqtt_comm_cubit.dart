@@ -69,6 +69,12 @@ class MqttCommCubit extends Cubit<MqttCommState> {
     ));
   }
 
+  /// Reset all pending operations and errors.
+  /// Call this when auth session ends or user account changes.
+  void reset() {
+    emit(const MqttCommState());
+  }
+
   /// Drop all operations for the given device without error message.
   /// Useful when the UI is re-bound to another device or cubit is closed.
   void dropForDevice(String deviceSn) {

@@ -30,7 +30,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     required SetScheduleMode setMode,
     required MqttCommCubit comm,
     required WatchScheduleStream watchSchedule,
-    this.ackTimeout = const Duration(seconds: 6),
+    this.ackTimeout = const Duration(seconds: 4),
   })  : _fetchAll = fetchAll,
         _saveAll = saveAll,
         _setMode = setMode,

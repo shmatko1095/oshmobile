@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart' as global_auth;
 import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart' as global_mqtt;
+import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 
 /// High-level coordinator that keeps MQTT connection in sync with Auth state
 /// and app lifecycle. Put it above MaterialApp.
@@ -45,6 +46,7 @@ class _AuthMqttCoordinatorState extends State<AuthMqttCoordinator> with WidgetsB
   /// Best-effort MQTT disconnect helper.
   void _disconnectMqtt(global_mqtt.GlobalMqttCubit mqtt) {
     mqtt.disconnect();
+    context.read<MqttCommCubit>().reset();
   }
 
   @override

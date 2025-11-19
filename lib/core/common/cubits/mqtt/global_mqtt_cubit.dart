@@ -32,6 +32,7 @@ class GlobalMqttCubit extends Cubit<GlobalMqttState> {
         emit(const MqttConnected());
       } catch (e) {
         emit(MqttError(e.toString()));
+        await updateCredentials(userId: userId, token: token);
       }
     }
   }
