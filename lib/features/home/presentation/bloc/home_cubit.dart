@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
@@ -6,6 +7,7 @@ import 'package:oshmobile/features/home/domain/usecases/assign_device.dart';
 import 'package:oshmobile/features/home/domain/usecases/get_user_devices.dart';
 import 'package:oshmobile/features/home/domain/usecases/unassign_device.dart';
 import 'package:oshmobile/features/home/domain/usecases/update_device_user_data.dart';
+import 'package:oshmobile/features/home/utils/selected_device_storage.dart';
 
 part 'home_state.dart';
 
@@ -15,6 +17,7 @@ class HomeCubit extends Cubit<HomeState> {
   final UnassignDevice _unassignDevice;
   final AssignDevice _assignDevice;
   final UpdateDeviceUserData _updateDeviceUserData;
+  final SelectedDeviceStorage _selectedDeviceStorage;
 
   List<Device> userDevices = [];
 
@@ -24,26 +27,47 @@ class HomeCubit extends Cubit<HomeState> {
     required UnassignDevice unassignDevice,
     required AssignDevice assignDevice,
     required UpdateDeviceUserData updateDeviceUserData,
+    required SelectedDeviceStorage selectedDeviceStorage,
   })  : _getUserDevices = getUserDevices,
         _unassignDevice = unassignDevice,
         _assignDevice = assignDevice,
         _updateDeviceUserData = updateDeviceUserData,
+        _selectedDeviceStorage = selectedDeviceStorage,
         super(HomeInitial());
 
-  void selectDevice(String deviceId) => emit(state.copyWith(selectedDeviceId: deviceId));
+  void selectDevice(String deviceId) {
+    emit(state.copyWith(selectedDeviceId: deviceId));
+    _selectedDeviceStorage.saveSelectedDevice(_userUuid, deviceId);
+  }
 
   Future<void> updateDeviceList() async {
-    //clear device list to avoid opening any of them before list updated
-    _updateDeviceList([]);
-    emit(HomeLoading(selectedDeviceId: null));
-    final result = await _getUserDevices(_userUuid);
+    final userId = _userUuid;
+
+    // Load previously selected device for this user
+    final savedSelected = _selectedDeviceStorage.loadSelectedDevice(userId);
+
+    emit(HomeLoading(selectedDeviceId: savedSelected));
+
+    final result = await _getUserDevices(userId);
+
     result.fold(
       (l) {
-        emit(HomeInitial());
+        emit(HomeFailed(l.message, selectedDeviceId: savedSelected));
       },
-      (r) {
-        _updateDeviceList(r);
-        emit(HomeReady(selectedDeviceId: state.selectedDeviceId));
+      (devices) {
+        _updateDeviceList(devices);
+
+        // Keep saved selection only if this device still exists
+        final stillExists = savedSelected != null && devices.any((d) => d.id == savedSelected);
+
+        final selectedId = stillExists ? savedSelected : null;
+
+        if (!stillExists && savedSelected != null) {
+          // Clear invalid stored selection if device no longer exists
+          _selectedDeviceStorage.clearSelectedDevice(userId);
+        }
+
+        emit(HomeReady(selectedDeviceId: selectedId));
       },
     );
   }
@@ -97,9 +121,7 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Device? getDeviceById(String id) {
-    return userDevices.firstWhere(
-      (element) => element.id == id,
-    );
+    return userDevices.firstWhereOrNull((e) => e.id == id);
   }
 
   List<Device> getUserDevices() {

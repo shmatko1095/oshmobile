@@ -60,6 +60,7 @@ import 'package:oshmobile/features/home/domain/usecases/get_user_devices.dart';
 import 'package:oshmobile/features/home/domain/usecases/unassign_device.dart';
 import 'package:oshmobile/features/home/domain/usecases/update_device_user_data.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
+import 'package:oshmobile/features/home/utils/selected_device_storage.dart';
 import 'package:oshmobile/features/schedule/data/schedule_repository_mqtt.dart';
 import 'package:oshmobile/features/schedule/data/schedule_topics.dart';
 import 'package:oshmobile/features/schedule/domain/repositories/schedule_repository.dart';
@@ -68,6 +69,7 @@ import 'package:oshmobile/features/schedule/domain/usecases/save_schedule_all.da
 import 'package:oshmobile/features/schedule/domain/usecases/set_schedule_mode.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/watch_schedule_stream.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final locator = GetIt.instance;
 
@@ -93,6 +95,9 @@ Future<void> _initCore() async {
   final sessionStorage = SessionStorage(storage: FlutterSecureStorage());
   await sessionStorage.initialize();
   locator.registerSingleton<SessionStorage>(sessionStorage);
+
+  final sharedPreferences = await SharedPreferences.getInstance();
+  locator.registerSingleton<SharedPreferences>(sharedPreferences);
 
   // InternetConnectionChecker
   locator.registerFactory(
@@ -162,12 +167,16 @@ void _initHomeFeature() {
         deviceRepository: locator<DeviceRepository>(),
       ),
     )
+    ..registerFactory<SelectedDeviceStorage>(
+      () => SelectedDeviceStorage(locator<SharedPreferences>()),
+    )
     ..registerLazySingleton<HomeCubit>(() => HomeCubit(
           globalAuthCubit: locator<GlobalAuthCubit>(),
           getUserDevices: locator<GetUserDevices>(),
           unassignDevice: locator<UnassignDevice>(),
           assignDevice: locator<AssignDevice>(),
           updateDeviceUserData: locator<UpdateDeviceUserData>(),
+          selectedDeviceStorage: locator<SelectedDeviceStorage>(),
         ));
 }
 
