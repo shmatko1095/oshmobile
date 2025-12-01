@@ -5,7 +5,7 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/unkno
 import '../models/osh_config.dart';
 
 abstract class DevicePresenter {
-  Widget build(BuildContext context, Device device, OshConfig cfg);
+  Widget build(BuildContext context, Device device, DeviceConfig cfg);
 }
 
 class DevicePresenterRegistry {

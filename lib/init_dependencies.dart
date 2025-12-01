@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:chopper/chopper.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
@@ -19,6 +20,7 @@ import 'package:oshmobile/core/network/mqtt/app_device_id_provider.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo_impl.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
+import 'package:oshmobile/core/permissions/ble_permission_service.dart';
 import 'package:oshmobile/core/secrets/app_secrets.dart';
 import 'package:oshmobile/core/utils/app_config.dart';
 import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source.dart';
@@ -31,6 +33,18 @@ import 'package:oshmobile/features/auth/domain/usecases/sign_in_google.dart';
 import 'package:oshmobile/features/auth/domain/usecases/sign_up.dart';
 import 'package:oshmobile/features/auth/domain/usecases/verify_email.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:oshmobile/features/ble_provisioning/data/ble/ble_client.dart';
+import 'package:oshmobile/features/ble_provisioning/data/ble/flutter_reactive_ble.dart';
+import 'package:oshmobile/features/ble_provisioning/data/crypto/ble_secure_codec.dart';
+import 'package:oshmobile/features/ble_provisioning/data/crypto/ble_secure_codec_dev.dart';
+import 'package:oshmobile/features/ble_provisioning/data/repositories/ble_provisioning_repository_impl.dart';
+import 'package:oshmobile/features/ble_provisioning/domain/repositories/ble_provisioning_repository.dart';
+import 'package:oshmobile/features/ble_provisioning/domain/usecases/connect_ble_device.dart';
+import 'package:oshmobile/features/ble_provisioning/domain/usecases/connect_wifi_network.dart';
+import 'package:oshmobile/features/ble_provisioning/domain/usecases/disconnect_ble_device.dart';
+import 'package:oshmobile/features/ble_provisioning/domain/usecases/observe_device_nearby.dart';
+import 'package:oshmobile/features/ble_provisioning/domain/usecases/scan_wifi_networks.dart';
+import 'package:oshmobile/features/ble_provisioning/presentation/cubit/ble_provisioning_cubit.dart';
 import 'package:oshmobile/features/devices/details/data/mqtt_control_repository.dart';
 import 'package:oshmobile/features/devices/details/data/mqtt_telemetry_repository.dart';
 import 'package:oshmobile/features/devices/details/data/telemetry_topics.dart';
@@ -83,6 +97,7 @@ Future<void> initDependencies() async {
   _initAuthFeature();
   _initHomeFeature();
   _initDevicesFeature();
+  _initBleProvisioningFeature();
 }
 
 Future<void> _initCore() async {
@@ -120,17 +135,40 @@ Future<void> _initKeycloakWrapper() async {
 
   final keycloakWrapper = KeycloakWrapper(config: keycloakConfig);
 
-  try {
-    await keycloakWrapper.initialize();
-  } catch (e, st) {
-    debugPrint('Keycloak initialize failed: $e');
-    debugPrint(st.toString());
-    rethrow;
-  }
+  bool isRetrying = false;
 
   keycloakWrapper.onError = (message, error, stackTrace) async {
-    debugPrint('Keycloak error: $message $error');
+    final errorStr = error.toString();
+    debugPrint('Keycloak onError triggered: $message $errorStr');
+
+    if (errorStr.contains('BadPaddingException') ||
+        errorStr.contains('BAD_DECRYPT') ||
+        errorStr.contains('Cipher functions')) {
+      if (isRetrying) {
+        debugPrint('❌ Fatal: Keycloak recovery failed even after cleanup.');
+        return;
+      }
+
+      debugPrint('⚠️ Detected corrupted storage via onError. Starting recovery...');
+      isRetrying = true;
+
+      try {
+        await const FlutterSecureStorage().deleteAll();
+        debugPrint('🧹 Storage cleared. Retrying initialization...');
+
+        await keycloakWrapper.initialize();
+        debugPrint('✅ Keycloak recovered successfully inside onError.');
+      } catch (e) {
+        debugPrint('❌ Recovery threw an exception: $e');
+      }
+    }
   };
+
+  try {
+    await keycloakWrapper.initialize();
+  } catch (e) {
+    debugPrint('Keycloak initialize threw explicitly: $e');
+  }
 
   locator.registerSingleton<KeycloakWrapper>(keycloakWrapper);
 }
@@ -268,6 +306,39 @@ void _initDevicesFeature() {
     ..registerSingleton<DevicePresenterRegistry>(const DevicePresenterRegistry({
       '8c5ea780-3d0d-4886-9334-2b4e781dd51c': ThermostatBasicPresenter(),
     }));
+}
+
+void _initBleProvisioningFeature() {
+  locator
+    ..registerLazySingleton<BleSecureCodecFactory>(
+      () => (secureCode) => DevBleSecureCodec(secureCode),
+    )
+    ..registerLazySingleton<BlePermissionService>(() => BlePermissionService())
+    ..registerLazySingleton<FlutterReactiveBle>(() => FlutterReactiveBle())
+    // data
+    ..registerLazySingleton<BleClient>(() => ReactiveBleClientImpl(locator()))
+    ..registerLazySingleton<BleProvisioningRepository>(
+      () => BleProvisioningRepositoryImpl(
+        locator<BleClient>(),
+        locator<BleSecureCodecFactory>(),
+      ),
+    )
+// domain
+    ..registerLazySingleton(() => ConnectBleDevice(locator()))
+    ..registerLazySingleton(() => DisconnectBleDevice(locator()))
+    ..registerLazySingleton(() => ScanWifiNetworks(locator()))
+    ..registerLazySingleton(() => ConnectWifiNetwork(locator()))
+    ..registerLazySingleton(() => ObserveDeviceNearby(locator()))
+
+// presentation
+    ..registerFactory(() => BleProvisioningCubit(
+          permissions: locator(),
+          connectBleDevice: locator(),
+          disconnectBleDevice: locator(),
+          scanWifiNetworks: locator(),
+          connectWifiNetwork: locator(),
+          observeDeviceNearby: locator(),
+        ));
 }
 
 Future<void> _initWebClient() async {

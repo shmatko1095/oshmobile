@@ -78,5 +78,17 @@
   "FriShort": "Fri",
   "SatShort": "Sat",
   "SunShort": "Sun",
-  "SetTemperature": "Set temperature"
+  "SetTemperature": "Set temperature",
+  "ChooseWiFi": "Choose Wi-Fi",
+  "Search": "Search",
+  "ChooseWifiToConnect": "Choose the wifi network you want to connect your device.",
+  "NoNetworksFound": "No networks found",
+  "Connect": "Connect",
+  "offlineBlePermissionHint": "Bluetooth access is needed to change Wi-Fi settings.",
+  "offlineBleNotNearbyHint": "Move closer to the device to set up Wi-Fi.",
+  "deviceOfflineTitle": "Device is offline",
+  "deviceOfflineSubtitle": "No internet connection detected.Connect to a Wi-Fi network to continue",
+  "bleConnectingToDevice": "Connecting to device…",
+  "deviceConnectedToWifi": "Device connected to Wi-Fi",
+  "wifiConnectFailed": "Failed to connect to Wi-Fi"
 }

@@ -92,7 +92,7 @@ class ThingItem extends StatelessWidget {
     return Card(
       color: isDarkUi(context) ? AppPalette.backgroundColorLight.withOpacity(0.05) : null,
       child: ListTile(
-        onTap: () => online ? _onDeviceSelected(context) : null,
+        onTap: () => _onDeviceSelected(context),
         onLongPress: () => _onDeviceRename(context),
         leading: _getIcon(),
         title: Text(

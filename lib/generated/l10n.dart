@@ -849,6 +849,126 @@ class S {
       args: [],
     );
   }
+
+  /// `Choose Wi-Fi`
+  String get ChooseWiFi {
+    return Intl.message(
+      'Choose Wi-Fi',
+      name: 'ChooseWiFi',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search`
+  String get Search {
+    return Intl.message(
+      'Search',
+      name: 'Search',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Choose the wifi network you want to connect your device.`
+  String get ChooseWifiToConnect {
+    return Intl.message(
+      'Choose the wifi network you want to connect your device.',
+      name: 'ChooseWifiToConnect',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No networks found`
+  String get NoNetworksFound {
+    return Intl.message(
+      'No networks found',
+      name: 'NoNetworksFound',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connect`
+  String get Connect {
+    return Intl.message(
+      'Connect',
+      name: 'Connect',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Bluetooth access is needed to change Wi-Fi settings.`
+  String get offlineBlePermissionHint {
+    return Intl.message(
+      'Bluetooth access is needed to change Wi-Fi settings.',
+      name: 'offlineBlePermissionHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Move closer to the device to set up Wi-Fi.`
+  String get offlineBleNotNearbyHint {
+    return Intl.message(
+      'Move closer to the device to set up Wi-Fi.',
+      name: 'offlineBleNotNearbyHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Device is offline`
+  String get deviceOfflineTitle {
+    return Intl.message(
+      'Device is offline',
+      name: 'deviceOfflineTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No internet connection detected.Connect to a Wi-Fi network to continue`
+  String get deviceOfflineSubtitle {
+    return Intl.message(
+      'No internet connection detected.Connect to a Wi-Fi network to continue',
+      name: 'deviceOfflineSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connecting to device…`
+  String get bleConnectingToDevice {
+    return Intl.message(
+      'Connecting to device…',
+      name: 'bleConnectingToDevice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Device connected to Wi-Fi`
+  String get deviceConnectedToWifi {
+    return Intl.message(
+      'Device connected to Wi-Fi',
+      name: 'deviceConnectedToWifi',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failed to connect to Wi-Fi`
+  String get wifiConnectFailed {
+    return Intl.message(
+      'Failed to connect to Wi-Fi',
+      name: 'wifiConnectFailed',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

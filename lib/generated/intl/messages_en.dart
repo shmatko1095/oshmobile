@@ -33,6 +33,10 @@ class MessageLookup extends MessageLookupByLibrary {
         "Cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
         "CheckYourEmail":
             MessageLookupByLibrary.simpleMessage("Check your email"),
+        "ChooseWiFi": MessageLookupByLibrary.simpleMessage("Choose Wi-Fi"),
+        "ChooseWifiToConnect": MessageLookupByLibrary.simpleMessage(
+            "Choose the wifi network you want to connect your device."),
+        "Connect": MessageLookupByLibrary.simpleMessage("Connect"),
         "ContinueWithGoogle":
             MessageLookupByLibrary.simpleMessage("Continue with Google"),
         "Deleted": MessageLookupByLibrary.simpleMessage("Deleted"),
@@ -77,6 +81,8 @@ class MessageLookup extends MessageLookupByLibrary {
         "NoDeviceSelected":
             MessageLookupByLibrary.simpleMessage("No device selected"),
         "NoDevicesYet": MessageLookupByLibrary.simpleMessage("No devices yet"),
+        "NoNetworksFound":
+            MessageLookupByLibrary.simpleMessage("No networks found"),
         "OK": MessageLookupByLibrary.simpleMessage("OK"),
         "Offline": MessageLookupByLibrary.simpleMessage("Offline"),
         "Online": MessageLookupByLibrary.simpleMessage("Online"),
@@ -98,6 +104,7 @@ class MessageLookup extends MessageLookupByLibrary {
         "Room": MessageLookupByLibrary.simpleMessage("Room"),
         "SatShort": MessageLookupByLibrary.simpleMessage("Sat"),
         "Save": MessageLookupByLibrary.simpleMessage("Save"),
+        "Search": MessageLookupByLibrary.simpleMessage("Search"),
         "SecureCode": MessageLookupByLibrary.simpleMessage("Secure code"),
         "SendEmail": MessageLookupByLibrary.simpleMessage("Send email"),
         "SerialNumber": MessageLookupByLibrary.simpleMessage("Serial number"),
@@ -137,6 +144,20 @@ class MessageLookup extends MessageLookupByLibrary {
         "WedShort": MessageLookupByLibrary.simpleMessage("Wed"),
         "Yes": MessageLookupByLibrary.simpleMessage("Yes"),
         "YourEmailIsNotVerifiedYet": MessageLookupByLibrary.simpleMessage(
-            "Your email is not verified yet. Click the button below to resend the verification email.")
+            "Your email is not verified yet. Click the button below to resend the verification email."),
+        "bleConnectingToDevice":
+            MessageLookupByLibrary.simpleMessage("Connecting to device…"),
+        "deviceConnectedToWifi":
+            MessageLookupByLibrary.simpleMessage("Device connected to Wi-Fi"),
+        "deviceOfflineSubtitle": MessageLookupByLibrary.simpleMessage(
+            "No internet connection detected.Connect to a Wi-Fi network to continue"),
+        "deviceOfflineTitle":
+            MessageLookupByLibrary.simpleMessage("Device is offline"),
+        "offlineBleNotNearbyHint": MessageLookupByLibrary.simpleMessage(
+            "Move closer to the device to set up Wi-Fi."),
+        "offlineBlePermissionHint": MessageLookupByLibrary.simpleMessage(
+            "Bluetooth access is needed to change Wi-Fi settings."),
+        "wifiConnectFailed":
+            MessageLookupByLibrary.simpleMessage("Failed to connect to Wi-Fi")
       };
 }

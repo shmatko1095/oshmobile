@@ -32,10 +32,15 @@ final class SessionStorage {
   }
 
   Future<void> initialize() async {
-    final sessionJson = await _storage.read(key: sessionKey);
-    if (sessionJson != null) {
-      _session = Session.fromJson(jsonDecode(sessionJson));
+    try {
+      final sessionJson = await _storage.read(key: sessionKey);
+      if (sessionJson != null) {
+        _session = Session.fromJson(jsonDecode(sessionJson));
+      }
+    } catch (e) {
+      clearSession();
+    } finally {
+      _initialized = true;
     }
-    _initialized = true;
   }
 }

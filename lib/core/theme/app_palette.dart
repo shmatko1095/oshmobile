@@ -28,4 +28,9 @@ class AppPalette {
 
   static const Color errorSnackBarColor = errorColor;
   static const Color successSnackBarColor = CupertinoColors.systemGreen;
+
+  static const Color backgroundDark = Color(0xFF121212);
+  static const Color cardDark = Color(0xFF1E1E1E);
+  static const Color buttonDark = Color(0xFF5C9DFF);
+  static const Color textDark = Color(0xFFE0E0E0);
 }
