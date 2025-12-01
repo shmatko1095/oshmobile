@@ -30,21 +30,11 @@ void main() async {
 
   runApp(MultiBlocProvider(
     providers: [
-      BlocProvider(
-        create: (_) => locator<global_auth.GlobalAuthCubit>(),
-      ),
-      BlocProvider(
-        create: (_) => locator<global_mqtt.GlobalMqttCubit>(),
-      ),
-      BlocProvider(
-        create: (_) => locator<MqttCommCubit>(),
-      ),
-      BlocProvider(
-        create: (_) => locator<AuthBloc>(),
-      ),
-      BlocProvider(
-        create: (_) => locator<HomeCubit>(),
-      ),
+      BlocProvider(create: (_) => locator<global_auth.GlobalAuthCubit>()),
+      BlocProvider(create: (_) => locator<global_mqtt.GlobalMqttCubit>()),
+      BlocProvider(create: (_) => locator<MqttCommCubit>()),
+      BlocProvider(create: (_) => locator<AuthBloc>()),
+      BlocProvider(create: (_) => locator<HomeCubit>()),
     ],
     child: const MyApp(),
   ));

@@ -54,6 +54,13 @@
     <key>NSCameraUsageDescription</key>
     <string>Camera is used to scan QR codes</string>
 
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>We use Bluetooth to configure your OSH device.</string>
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>We use Bluetooth to configure your OSH device.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Required to detect nearby BLE devices.</string>
+
     <key>CFBundleURLTypes</key>
     <array>
       <dict>

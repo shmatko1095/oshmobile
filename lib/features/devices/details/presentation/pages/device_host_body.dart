@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/device_offline_page.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 
 import '../cubit/device_actions_cubit.dart';
@@ -64,9 +65,13 @@ class DeviceHostBody extends StatelessWidget {
                 return Center(child: Text(message));
               case DevicePageReady(:final device, :final config):
                 {
-                  final registry = _sl<DevicePresenterRegistry>();
-                  final presenter = registry.resolve(device.modelId);
-                  return presenter.build(context, device, config);
+                  if (device.connectionInfo.online) {
+                    final registry = _sl<DevicePresenterRegistry>();
+                    final presenter = registry.resolve(device.modelId);
+                    return presenter.build(context, device, config);
+                  } else {
+                    return DeviceOfflinePage(device: device);
+                  }
                 }
             }
           },

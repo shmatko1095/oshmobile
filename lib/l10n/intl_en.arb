@@ -78,5 +78,10 @@
   "FriShort": "Fri",
   "SatShort": "Sat",
   "SunShort": "Sun",
-  "SetTemperature": "Set temperature"
+  "SetTemperature": "Set temperature",
+  "ChooseWiFi": "Choose Wi-Fi",
+  "Search": "Search",
+  "ChooseWifiToConnect" : "Choose the wifi network you want to connect your device.",
+  "NoNetworksFound": "No networks found",
+  "Connect": "Connect"
 }

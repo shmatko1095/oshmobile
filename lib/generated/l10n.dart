@@ -849,6 +849,56 @@ class S {
       args: [],
     );
   }
+
+  /// `Choose Wi-Fi`
+  String get ChooseWiFi {
+    return Intl.message(
+      'Choose Wi-Fi',
+      name: 'ChooseWiFi',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search`
+  String get Search {
+    return Intl.message(
+      'Search',
+      name: 'Search',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Choose the wifi network you want to connect your device.`
+  String get ChooseWifiToConnect {
+    return Intl.message(
+      'Choose the wifi network you want to connect your device.',
+      name: 'ChooseWifiToConnect',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No networks found`
+  String get NoNetworksFound {
+    return Intl.message(
+      'No networks found',
+      name: 'NoNetworksFound',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connect`
+  String get Connect {
+    return Intl.message(
+      'Connect',
+      name: 'Connect',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

@@ -22,7 +22,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
   const ThermostatBasicPresenter();
 
   @override
-  Widget build(BuildContext context, Device device, OshConfig cfg) {
+  Widget build(BuildContext context, Device device, DeviceConfig cfg) {
     final tiles = <_Tile>[
       _Tile(
           id: 'currentHumidity',

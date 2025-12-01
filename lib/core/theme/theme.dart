@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 
 class AppTheme {
-  static _border([Color color = AppPalette.borderColor]) => OutlineInputBorder(
+  static OutlineInputBorder _border([Color color = AppPalette.borderColor]) => OutlineInputBorder(
         borderSide: BorderSide(
           color: color,
           width: 1.3,
@@ -10,7 +10,7 @@ class AppTheme {
         borderRadius: BorderRadius.circular(15),
       );
 
-  static get lightTheme => lightThemeMode;
+  static ThemeData get lightTheme => lightThemeMode;
 
   static final lightThemeMode = ThemeData.light().copyWith(
     scaffoldBackgroundColor: AppPalette.backgroundColorLight,
@@ -32,7 +32,7 @@ class AppTheme {
     ),
   );
 
-  static get darkTheme => darkThemeMode;
+  static ThemeData get darkTheme => darkThemeMode;
 
   static final darkThemeMode = ThemeData.dark().copyWith(
     scaffoldBackgroundColor: AppPalette.backgroundColorDark,

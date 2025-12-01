@@ -11,7 +11,7 @@ class UnknownConfigPresenter implements DevicePresenter {
   const UnknownConfigPresenter();
 
   @override
-  Widget build(BuildContext context, Device device, OshConfig cfg) {
+  Widget build(BuildContext context, Device device, DeviceConfig cfg) {
     final alias = (device.userData.alias.isEmpty) ? device.sn : device.userData.alias;
 
     return Scaffold(
@@ -76,7 +76,7 @@ class _MetaCard extends StatelessWidget {
   const _MetaCard({required this.device, required this.cfg});
 
   final Device device;
-  final OshConfig cfg;
+  final DeviceConfig cfg;
 
   @override
   Widget build(BuildContext context) {
