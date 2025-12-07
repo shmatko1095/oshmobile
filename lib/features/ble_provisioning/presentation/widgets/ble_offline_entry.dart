@@ -25,6 +25,7 @@ class BleOfflineEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
+      key: ValueKey('ble_offline_$deviceSn'),
       create: (_) => _sl<BleProvisioningCubit>()
         ..startNearbyCheck(
           serialNumber: deviceSn,
@@ -99,6 +100,7 @@ class _BleOfflineEntryBody extends StatelessWidget {
   Future<void> _openBleFlow(BuildContext context) async {
     final cubit = context.read<BleProvisioningCubit>();
 
+    await cubit.ensureBleDisconnected();
     cubit.resetForNewFlow();
 
     final connected = await Navigator.of(context).push<bool>(

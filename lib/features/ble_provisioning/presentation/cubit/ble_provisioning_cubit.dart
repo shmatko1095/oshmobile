@@ -80,12 +80,25 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
     );
   }
 
+  Future<void> ensureBleDisconnected() async {
+    await _scanSub?.cancel();
+    _scanSub = null;
+    await _wifiConnSub?.cancel();
+    _wifiConnSub = null;
+
+    try {
+      await _disconnectBleDevice();
+    } catch (_) {}
+  }
+
   Future<void> connect({
     required String serialNumber,
     required String secureCode,
   }) async {
     await _nearbySub?.cancel();
     _nearbySub = null;
+
+    await ensureBleDisconnected();
 
     final hasPerms = await _permissions.ensureBlePermissions();
     if (!hasPerms) {
@@ -96,28 +109,14 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
       return;
     }
 
-    emit(state.copyWith(
-      status: ProvisioningStatus.connectingBle,
-      error: null,
-    ));
+    emit(state.copyWith(status: ProvisioningStatus.connectingBle, error: null));
 
     try {
-      await _connectBleDevice(
-        serialNumber: serialNumber,
-        secureCode: secureCode,
-      );
-
-      emit(state.copyWith(
-        status: ProvisioningStatus.wifiScanIdle,
-        error: null,
-      ));
-
+      await _connectBleDevice(serialNumber: serialNumber, secureCode: secureCode);
+      emit(state.copyWith(status: ProvisioningStatus.wifiScanIdle, error: null));
       await refreshScan();
     } catch (e) {
-      emit(state.copyWith(
-        status: ProvisioningStatus.error,
-        error: 'Failed to connect via BLE: $e',
-      ));
+      emit(state.copyWith(status: ProvisioningStatus.error, error: 'Failed to connect via BLE: $e'));
     }
   }
 
@@ -133,21 +132,13 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
 
     _scanSub = _scanWifiNetworks().listen(
       (networks) {
-        emit(state.copyWith(
-          status: ProvisioningStatus.wifiScanInProgress,
-          networks: networks,
-        ));
+        emit(state.copyWith(status: ProvisioningStatus.wifiScanInProgress, networks: networks));
       },
       onError: (e) {
-        emit(state.copyWith(
-          status: ProvisioningStatus.error,
-          error: 'Wi-Fi scan failed: $e',
-        ));
+        emit(state.copyWith(status: ProvisioningStatus.error, error: 'Wi-Fi scan failed: $e'));
       },
       onDone: () {
-        emit(state.copyWith(
-          status: ProvisioningStatus.wifiScanDone,
-        ));
+        emit(state.copyWith(status: ProvisioningStatus.wifiScanDone));
       },
     );
   }
@@ -206,17 +197,15 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
       case WifiConnectState.failed:
         return ProvisioningStatus.wifiFailed;
       case WifiConnectState.idle:
-      default:
         return state.status;
     }
   }
 
   @override
   Future<void> close() async {
-    await _scanSub?.cancel();
-    await _wifiConnSub?.cancel();
     await _nearbySub?.cancel();
-    await _disconnectBleDevice();
+    _nearbySub = null;
+    await ensureBleDisconnected();
     return super.close();
   }
 }

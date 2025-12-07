@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/features/devices/details/presentation/pages/device_host_body.dart';
 import 'package:oshmobile/features/devices/no_selected_device/presentation/pages/no_selected_device_page.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
@@ -55,19 +56,43 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       drawer: const SideMenu(),
-      body: BlocSelector<HomeCubit, HomeState, String?>(
-        selector: (s) => s.selectedDeviceId,
-        builder: (context, deviceId) {
-          if (deviceId == null || context.read<HomeCubit>().getDeviceById(deviceId) == null) {
-            _setTitleSafe(null);
-            return const NoSelectedDevicePage();
-          } else {
-            final device = context.read<HomeCubit>().getDeviceById(deviceId);
-            return DeviceHostBody(
-              device: device!,
-              onTitleChanged: _setTitleSafe,
-            );
+      body: BlocBuilder<HomeCubit, HomeState>(
+        builder: (context, state) {
+          final homeCubit = context.read<HomeCubit>();
+
+          switch (state) {
+            case HomeInitial():
+            case HomeLoading():
+              _setTitleSafe(null);
+              return const Loader();
+
+            case HomeFailed(:final message):
+              _setTitleSafe(null);
+              return Center(child: Text(message ?? ""));
+
+            case HomeReady(:final selectedDeviceId):
+              {
+                if (selectedDeviceId == null) {
+                  _setTitleSafe(null);
+                  return const NoSelectedDevicePage();
+                }
+
+                final device = homeCubit.getDeviceById(selectedDeviceId);
+
+                if (device == null) {
+                  _setTitleSafe(null);
+                  return const NoSelectedDevicePage();
+                }
+
+                return DeviceHostBody(
+                  device: device,
+                  onTitleChanged: _setTitleSafe,
+                );
+              }
           }
+
+          _setTitleSafe(null);
+          return const NoSelectedDevicePage();
         },
       ),
     );

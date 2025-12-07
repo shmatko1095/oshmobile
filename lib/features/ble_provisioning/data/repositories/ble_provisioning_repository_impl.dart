@@ -26,16 +26,32 @@ class BleProvisioningRepositoryImpl implements BleProvisioningRepository {
   Stream<Map<String, dynamic>>? _innerStream;
   StreamSubscription<List<int>>? _notifySub;
 
+  /// SN -> deviceId cache (last seen)
+  final Map<String, String> _lastSeenDeviceIdForSerial = {};
+
+  /// Global "nearby" tracking
+  final Set<String> _nearbySerials = {}; // devices currently considered "nearby"
+  final Map<String, Timer> _disappearTimers = {}; // SN -> inactivity timer
+  final Map<String, Set<StreamController<bool>>> _nearbyControllersBySerial = {};
+  StreamSubscription<BleAdvertisement>? _globalScanSub;
+  int _nearbyListeners = 0; // total active observeDeviceNearby listeners
+
   BleProvisioningRepositoryImpl(this._bleClient, this._codecFactory);
 
-  bool get _isConnected => _deviceId != null && _codec != null;
+  bool get _isConnected => _deviceId != null && _codec != null && _innerStream != null;
 
   bool _advertMatchesSerial(BleAdvertisement adv, String serialNumber) {
     final data = adv.manufacturerData[_manufacturerCompanyId];
     if (data == null || data.isEmpty) return false;
 
     final sn = utf8.decode(data, allowMalformed: true);
-    return sn == serialNumber;
+    final isMatch = sn == serialNumber;
+
+    if (isMatch) {
+      _lastSeenDeviceIdForSerial[serialNumber] = adv.deviceId;
+    }
+
+    return isMatch;
   }
 
   @override
@@ -44,9 +60,14 @@ class BleProvisioningRepositoryImpl implements BleProvisioningRepository {
     required String secureCode,
     Duration timeout = const Duration(seconds: 10),
   }) async {
-    final deviceId = await _findDeviceBySerial(serialNumber, timeout);
-    _deviceId = deviceId;
-    _codec = _codecFactory(secureCode);
+    if (_isConnected && _lastSeenDeviceIdForSerial[serialNumber] == _deviceId) {
+      return;
+    }
+
+    await disconnect();
+
+    final deviceId = await _findOrScanDeviceId(serialNumber, timeout);
+    final codec = _codecFactory(secureCode);
 
     await _bleClient.connect(deviceId);
     _mtu = await _bleClient.requestMtu(deviceId, 512);
@@ -59,19 +80,26 @@ class BleProvisioningRepositoryImpl implements BleProvisioningRepository {
 
     final innerController = StreamController<Map<String, dynamic>>.broadcast();
 
+    await _notifySub?.cancel();
     _notifySub = rawNotifyStream.listen(
-        (chunk) {
-          final str = utf8.decode(chunk);
-          final codec = _codec;
-          if (codec == null) return;
-          final inner = codec.decode(str);
-          innerController.add(inner);
-        },
-        onError: innerController.addError,
-        onDone: () {
-          innerController.close();
-        });
+      (chunk) {
+        final currentCodec = _codec;
+        if (currentCodec == null) return;
 
+        try {
+          final str = utf8.decode(chunk);
+          final inner = currentCodec.decode(str);
+          innerController.add(inner);
+        } catch (e, st) {
+          innerController.addError(e, st);
+        }
+      },
+      onError: innerController.addError,
+      onDone: innerController.close,
+    );
+
+    _deviceId = deviceId;
+    _codec = codec;
     _innerStream = innerController.stream;
   }
 
@@ -89,9 +117,7 @@ class BleProvisioningRepositoryImpl implements BleProvisioningRepository {
   }
 
   @override
-  Stream<List<WifiNetwork>> scanWifiNetworks({
-    Duration? timeout,
-  }) async* {
+  Stream<List<WifiNetwork>> scanWifiNetworks({Duration? timeout}) async* {
     if (!_isConnected || _innerStream == null) {
       throw StateError('BLE device is not connected');
     }
@@ -108,7 +134,7 @@ class BleProvisioningRepositoryImpl implements BleProvisioningRepository {
     final transportJson = codec.encode(innerReq);
     await _writeJson(deviceId, transportJson);
 
-    final List<WifiNetwork> acc = [];
+    final acc = <WifiNetwork>[];
     final stream = _innerStream!.where((msg) => msg['reqId'] == reqId);
 
     await for (final msg in stream) {
@@ -120,56 +146,6 @@ class BleProvisioningRepositoryImpl implements BleProvisioningRepository {
         break;
       }
     }
-  }
-
-  @override
-  Stream<bool> observeDeviceNearby({required String serialNumber}) {
-    final controller = StreamController<bool>();
-
-    Timer? inactivityTimer;
-    late final StreamSubscription<BleAdvertisement> sub;
-
-    void emitIfChanged(bool value) {
-      if (!controller.isClosed) {
-        controller.add(value);
-      }
-    }
-
-    void scheduleDisappear() {
-      inactivityTimer?.cancel();
-      inactivityTimer = Timer(_nearbyTimeout, () {
-        emitIfChanged(false);
-      });
-    }
-
-    controller.onListen = () {
-      emitIfChanged(false);
-
-      sub = _bleClient.scan().listen(
-        (adv) {
-          final isMatch = _advertMatchesSerial(adv, serialNumber);
-
-          if (isMatch) {
-            emitIfChanged(true);
-            scheduleDisappear();
-          }
-        },
-        onError: (e, st) {
-          if (!controller.isClosed) {
-            controller.addError(e, st);
-          }
-        },
-      );
-    };
-
-    controller.onCancel = () async {
-      await sub.cancel();
-      inactivityTimer?.cancel();
-      inactivityTimer = null;
-      await controller.close();
-    };
-
-    return controller.stream;
   }
 
   @override
@@ -208,7 +184,136 @@ class BleProvisioningRepositoryImpl implements BleProvisioningRepository {
     }
   }
 
-  Future<String> _findDeviceBySerial(String serialNumber, Duration timeout) async {
+  @override
+  Stream<bool> observeDeviceNearby({required String serialNumber}) {
+    final controller = StreamController<bool>();
+
+    void emitCurrent() {
+      if (!controller.isClosed) {
+        controller.add(_nearbySerials.contains(serialNumber));
+      }
+    }
+
+    controller.onListen = () {
+      _nearbyListeners++;
+      // Register this controller for given serial
+      final set = _nearbyControllersBySerial.putIfAbsent(serialNumber, () => <StreamController<bool>>{});
+      set.add(controller);
+
+      // Ensure global scan is running
+      _ensureGlobalScanStarted();
+
+      // Emit current state (false by default)
+      emitCurrent();
+    };
+
+    controller.onCancel = () async {
+      _nearbyListeners = (_nearbyListeners - 1).clamp(0, 1 << 31);
+
+      final set = _nearbyControllersBySerial[serialNumber];
+      set?.remove(controller);
+      if (set != null && set.isEmpty) {
+        _nearbyControllersBySerial.remove(serialNumber);
+      }
+
+      if (_nearbyListeners == 0) {
+        await _stopGlobalScan();
+      }
+
+      await controller.close();
+    };
+
+    return controller.stream;
+  }
+
+  void _ensureGlobalScanStarted() {
+    if (_globalScanSub != null) return;
+
+    _globalScanSub = _bleClient.scan().listen(
+      (adv) {
+        final data = adv.manufacturerData[_manufacturerCompanyId];
+        if (data == null || data.isEmpty) return;
+
+        final sn = utf8.decode(data, allowMalformed: true);
+        if (sn.isEmpty) return;
+
+        // Update last seen deviceId cache
+        _lastSeenDeviceIdForSerial[sn] = adv.deviceId;
+
+        // Mark as nearby
+        final wasNearby = _nearbySerials.contains(sn);
+        _nearbySerials.add(sn);
+
+        // Reset disappear timer for this serial
+        _disappearTimers[sn]?.cancel();
+        _disappearTimers[sn] = Timer(_nearbyTimeout, () {
+          _nearbySerials.remove(sn);
+          _disappearTimers.remove(sn);
+          _notifyNearbySerial(sn);
+        });
+
+        if (!wasNearby) {
+          _notifyNearbySerial(sn);
+        }
+      },
+      onError: (e, st) async {
+        // On scan error we pessimistically mark all as "not nearby"
+        final affected = _nearbySerials.toList();
+        _nearbySerials.clear();
+        for (final sn in affected) {
+          _disappearTimers[sn]?.cancel();
+          _disappearTimers.remove(sn);
+          _notifyNearbySerial(sn);
+        }
+
+        await _globalScanSub?.cancel();
+        _globalScanSub = null;
+
+        // Try to restart scanning after small backoff if listeners are still present.
+        if (_nearbyListeners > 0) {
+          Future<void>.delayed(const Duration(seconds: 2), () {
+            if (_nearbyListeners > 0 && _globalScanSub == null) {
+              _ensureGlobalScanStarted();
+            }
+          });
+        }
+      },
+      cancelOnError: false,
+    );
+  }
+
+  Future<void> _stopGlobalScan() async {
+    await _globalScanSub?.cancel();
+    _globalScanSub = null;
+
+    for (final timer in _disappearTimers.values) {
+      timer.cancel();
+    }
+    _disappearTimers.clear();
+    _nearbySerials.clear();
+  }
+
+  void _notifyNearbySerial(String serialNumber) {
+    final controllers = _nearbyControllersBySerial[serialNumber];
+    if (controllers == null || controllers.isEmpty) return;
+
+    final value = _nearbySerials.contains(serialNumber);
+    for (final c in controllers.toList()) {
+      if (!c.isClosed) {
+        c.add(value);
+      }
+    }
+  }
+
+  Future<String> _findOrScanDeviceId(
+    String serialNumber,
+    Duration timeout,
+  ) async {
+    final cachedId = _lastSeenDeviceIdForSerial[serialNumber];
+    if (cachedId != null && cachedId.isNotEmpty) {
+      return cachedId;
+    }
+
     try {
       final adv = await _bleClient.scan().firstWhere((adv) => _advertMatchesSerial(adv, serialNumber)).timeout(timeout);
       return adv.deviceId;
