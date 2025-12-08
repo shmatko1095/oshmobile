@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 import 'package:oshmobile/features/schedule/presentation/pages/manual_temperature_page.dart';
 import 'package:oshmobile/features/schedule/presentation/utils.dart';
@@ -92,7 +93,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
         listenWhen: (_, s) => s is DeviceScheduleReady && s.flash != null,
         listener: (context, s) {
           final msg = (s as DeviceScheduleReady).flash!;
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+          SnackBarUtils.showFail(context: context, content: msg);
         },
         child: SafeArea(
           child: BlocBuilder<DeviceScheduleCubit, DeviceScheduleState>(
