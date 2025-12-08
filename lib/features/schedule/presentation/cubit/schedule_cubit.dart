@@ -45,14 +45,20 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   int _bindToken = 0;
 
   @override
-  Future<void> close() {
-    _snapSub?.cancel();
+  Future<void> close() async {
+    await _snapSub?.cancel();
+    _snapSub = null;
     _cancelAllPendingTimers();
-    _comm.dropForDevice(_deviceSn);
+    if (_deviceSn.isNotEmpty) {
+      _comm.dropForDevice(_deviceSn);
+    }
     return super.close();
   }
 
-  Future<void> rebind() async => bind(_deviceSn);
+  Future<void> rebind() async {
+    if (isClosed || _deviceSn.isEmpty) return;
+    await bind(_deviceSn);
+  }
 
   // ---------------- Bind & load ----------------
   Future<void> bind(String deviceSn) async {
@@ -78,7 +84,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       ));
     }
 
-    await _snapSub?.cancel();
+    // await _snapSub?.cancel();
     _snapSub = _watchSchedule(deviceSn).listen((entry) {
       if (token != _bindToken) return;
       _onReported(entry.key, entry.value);
@@ -102,7 +108,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       }
       _comm.complete(reqId);
     } catch (e) {
-      if (token != _bindToken) return;
+      if (token != _bindToken || isClosed) return;
       _comm.fail(reqId, 'Failed to load schedule: $e');
       emit(DeviceScheduleError(e.toString()));
     }
@@ -182,6 +188,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   }
 
   void _onReported(String? appliedReqId, CalendarSnapshot remote) {
+    if (isClosed) return;
     final safe = _withSafeMode(remote);
     final st = state;
     if (st is! DeviceScheduleReady) {
@@ -231,6 +238,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   // ---------------- Pending timers & errors ----------------
 
   void _onPublishError(String reqId, String message) {
+    if (isClosed) return;
     final st = state;
     if (st is! DeviceScheduleReady) return;
 
@@ -260,6 +268,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   }
 
   void _onTimeout(String reqId) {
+    if (isClosed) return;
     final st = state;
     if (st is! DeviceScheduleReady) return;
     final idx = st.pendingQueue.indexWhere((t) => t.reqId == reqId);
