@@ -131,18 +131,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                           ),
                           child: const Icon(Icons.delete, color: Colors.redAccent),
                         ),
-                        onDismissed: (_) {
-                          context.read<DeviceScheduleCubit>().removeAt(idx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(S.of(context).Deleted),
-                              action: SnackBarAction(
-                                label: S.of(context).Undo,
-                                onPressed: () => context.read<DeviceScheduleCubit>().addPoint(p),
-                              ),
-                            ),
-                          );
-                        },
+                        onDismissed: (_) => context.read<DeviceScheduleCubit>().removeAt(idx),
                         child: _ScheduleTile(
                           timeText: _fmtTime(p.time),
                           valueText:
@@ -304,7 +293,7 @@ class _ScheduleTile extends StatelessWidget {
   final VoidCallback onDecMin;
   final VoidCallback onIncMax;
   final void Function(int dayBit) onToggleDay;
-  final VoidCallback onTapValue; // NEW
+  final VoidCallback onTapValue;
 
   @override
   Widget build(BuildContext context) {

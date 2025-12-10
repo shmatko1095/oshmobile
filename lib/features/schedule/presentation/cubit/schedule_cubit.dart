@@ -13,6 +13,7 @@ import 'package:oshmobile/features/schedule/domain/usecases/watch_schedule_strea
 
 part 'schedule_state.dart';
 
+/// Manages the schedule of a device.
 class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   final FetchScheduleAll _fetchAll;
   final SaveScheduleAll _saveAll;
@@ -55,12 +56,14 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     return super.close();
   }
 
+  /// Re-binds to the same device.
   Future<void> rebind() async {
     if (isClosed || _deviceSn.isEmpty) return;
     await bind(_deviceSn);
   }
 
   // ---------------- Bind & load ----------------
+  /// Binds the cubit to a specific device by its serial number.
   Future<void> bind(String deviceSn) async {
     final prevDeviceSn = _deviceSn;
     _deviceSn = deviceSn;
@@ -84,7 +87,6 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       ));
     }
 
-    // await _snapSub?.cancel();
     _snapSub = _watchSchedule(deviceSn).listen((entry) {
       if (token != _bindToken) return;
       _onReported(entry.key, entry.value);
@@ -115,6 +117,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   }
 
   // ---------------- Mode API ----------------
+  /// Returns the current calendar mode.
   CalendarMode getMode() => state.mode;
 
   /// Optimistic mode change; we enqueue op with reqId and wait reported acks.
@@ -155,6 +158,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
 
   // ---------------- Persist (bundle) ----------------
 
+  /// Saves all pending changes to the device.
   Future<void> persistAll() async {
     final s = state;
     if (s is! DeviceScheduleReady) return;
@@ -307,6 +311,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
 
   // ---------------- Current / Next (active list) ----------------
 
+  /// Returns the currently active schedule point.
   SchedulePoint? currentPoint({DateTime? now}) {
     final pts = state.points;
     if (pts.isEmpty) return null;
@@ -314,6 +319,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     return _currentFor(pts, now);
   }
 
+  /// Returns the next upcoming schedule point.
   SchedulePoint? nextPoint({DateTime? now}) {
     final pts = state.points;
     if (pts.isEmpty) return null;
@@ -347,6 +353,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     return start;
   }
 
+  /// Adds a new point to the current schedule.
   void addPoint([SchedulePoint? p, int stepMinutes = 15]) {
     final s = state;
     if (s is! DeviceScheduleReady) return;
@@ -386,6 +393,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     _mutateActive((list) => [...list, candidate]);
   }
 
+  /// Modifies an existing schedule point.
   void changePoint(int index, SchedulePoint p) => _mutateActive((list) {
         if (index < 0 || index >= list.length) return list;
         final copy = [...list];
@@ -393,12 +401,14 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
         return copy;
       });
 
+  /// Removes a schedule point at a given index.
   void removeAt(int index) => _mutateActive((list) {
         if (index < 0 || index >= list.length) return list;
         final copy = [...list]..removeAt(index);
         return copy;
       });
 
+  /// Replaces all schedule points with a new list.
   void replaceAll(List<SchedulePoint> next) => _mutateActive((_) => next.map(_norm).toList());
 
   /// Replace list for a specific mode (not necessarily active).

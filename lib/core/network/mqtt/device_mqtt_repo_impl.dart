@@ -61,6 +61,7 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     final deviceId = await _deviceIdProvider.getDeviceId();
     return 'u_${userId}_d_$deviceId';
   }
+
   // ---------------- DeviceMqttRepo (transport) ----------------
 
   @override

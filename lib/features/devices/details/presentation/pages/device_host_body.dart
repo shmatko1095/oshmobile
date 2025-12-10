@@ -6,6 +6,7 @@ import 'package:oshmobile/features/devices/details/presentation/cubit/device_hos
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_offline_page.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
+import 'package:oshmobile/features/settings/presentation/cubit/device_settings_cubit.dart';
 
 import '../cubit/device_actions_cubit.dart';
 import '../cubit/device_host_cubit.dart';
@@ -18,11 +19,13 @@ final _sl = GetIt.instance;
 class DeviceHostBody extends StatelessWidget {
   final Device device;
   final ValueChanged<String?>? onTitleChanged;
+  final GlobalKey? settingsHostKey;
 
   const DeviceHostBody({
     super.key,
     required this.device,
-    this.onTitleChanged,
+    required this.onTitleChanged,
+    this.settingsHostKey,
   });
 
   String? _titleFrom(DevicePageState s) {
@@ -61,51 +64,56 @@ class DeviceHostBody extends StatelessWidget {
           deviceId: device.id,
         ),
         child: MultiBlocProvider(
-          providers: [
-            BlocProvider(create: (_) => _sl<DevicePageCubit>()..load(device.id)),
-            BlocProvider(create: (_) => _sl<DeviceStateCubit>()..bind(device.sn)),
-            BlocProvider(create: (_) => _sl<DeviceActionsCubit>()..bind(device.sn)),
-            BlocProvider(create: (_) => _sl<DeviceScheduleCubit>()..bind(device.sn)),
-          ],
-          child: BlocBuilder<DeviceHostCubit, DeviceHostState>(
-            builder: (context, hostState) {
-              if (hostState.isWaitingOnline) {
-                return const Center(child: CupertinoActivityIndicator());
-              }
-
-              return BlocConsumer<DevicePageCubit, DevicePageState>(
-                listenWhen: (prev, next) => _titleFrom(prev) != _titleFrom(next),
-                listener: (context, state) {
-                  final t = _titleFrom(state);
-                  onTitleChanged?.call(t);
-                },
-                builder: (context, st) {
-                  switch (st) {
-                    case DevicePageLoading():
+            providers: [
+              BlocProvider(create: (_) => _sl<DevicePageCubit>()..load(device.id)),
+              BlocProvider(create: (_) => _sl<DeviceStateCubit>()..bind(device.sn)),
+              BlocProvider(create: (_) => _sl<DeviceActionsCubit>()..bind(device.sn)),
+              BlocProvider(create: (_) => _sl<DeviceScheduleCubit>()..bind(device.sn)),
+              BlocProvider(create: (_) => _sl<DeviceSettingsCubit>()..bind(device.sn)),
+            ],
+            child: Builder(
+              key: settingsHostKey,
+              builder: (innerCtx) {
+                return BlocBuilder<DeviceHostCubit, DeviceHostState>(
+                  builder: (context, hostState) {
+                    if (hostState.isWaitingOnline) {
                       return const Center(child: CupertinoActivityIndicator());
-                    case DevicePageError(:final message):
-                      return Center(child: Text(message));
-                    case DevicePageReady(:final config):
-                      {
-                        if (liveDevice.connectionInfo.online) {
-                          final registry = _sl<DevicePresenterRegistry>();
-                          final presenter = registry.resolve(liveDevice.modelId);
-                          return presenter.build(context, liveDevice, config);
-                        } else {
-                          return DeviceOfflinePage(
-                            device: liveDevice,
-                            onWifiProvisioningSuccess: () {
-                              context.read<DeviceHostCubit>().onWifiProvisioningSuccess();
-                            },
-                          );
+                    }
+
+                    return BlocConsumer<DevicePageCubit, DevicePageState>(
+                      listenWhen: (prev, next) => _titleFrom(prev) != _titleFrom(next),
+                      listener: (context, state) {
+                        final t = _titleFrom(state);
+                        onTitleChanged?.call(t);
+                      },
+                      builder: (context, st) {
+                        switch (st) {
+                          case DevicePageLoading():
+                            return const Center(child: CupertinoActivityIndicator());
+                          case DevicePageError(:final message):
+                            return Center(child: Text(message));
+                          case DevicePageReady(:final config):
+                            {
+                              if (liveDevice.connectionInfo.online) {
+                                final registry = _sl<DevicePresenterRegistry>();
+                                final presenter = registry.resolve(liveDevice.modelId);
+                                return presenter.build(context, liveDevice, config);
+                              } else {
+                                return DeviceOfflinePage(
+                                  device: liveDevice,
+                                  onWifiProvisioningSuccess: () {
+                                    context.read<DeviceHostCubit>().onWifiProvisioningSuccess();
+                                  },
+                                );
+                              }
+                            }
                         }
-                      }
-                  }
-                },
-              );
-            },
-          ),
-        ),
+                      },
+                    );
+                  },
+                );
+              },
+            )),
       ),
     );
   }

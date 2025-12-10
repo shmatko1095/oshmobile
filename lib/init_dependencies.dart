@@ -83,6 +83,13 @@ import 'package:oshmobile/features/schedule/domain/usecases/save_schedule_all.da
 import 'package:oshmobile/features/schedule/domain/usecases/set_schedule_mode.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/watch_schedule_stream.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
+import 'package:oshmobile/features/settings/data/settings_repository_mock.dart';
+import 'package:oshmobile/features/settings/data/settings_topics.dart';
+import 'package:oshmobile/features/settings/domain/repositories/settings_repository.dart';
+import 'package:oshmobile/features/settings/domain/usecases/fetch_settings_all.dart';
+import 'package:oshmobile/features/settings/domain/usecases/save_settings_all.dart';
+import 'package:oshmobile/features/settings/domain/usecases/watch_settings_stream.dart';
+import 'package:oshmobile/features/settings/presentation/cubit/device_settings_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final locator = GetIt.instance;
@@ -302,6 +309,19 @@ void _initDevicesFeature() {
           setMode: locator<SetScheduleMode>(),
           comm: locator<MqttCommCubit>(),
           watchSchedule: locator<WatchScheduleStream>(),
+        ))
+    ..registerLazySingleton<SettingsTopics>(() => SettingsTopics(locator<AppConfig>().devicesTenantId))
+    // ..registerLazySingleton<SettingsRepository>(
+    //     () => SettingsRepositoryMqtt(locator<DeviceMqttRepo>(), locator<SettingsTopics>()))
+    ..registerLazySingleton<SettingsRepository>(() => SettingsRepositoryMock())
+    ..registerLazySingleton<FetchSettingsAll>(() => FetchSettingsAll(locator<SettingsRepository>()))
+    ..registerLazySingleton<SaveSettingsAll>(() => SaveSettingsAll(locator<SettingsRepository>()))
+    ..registerLazySingleton<WatchSettingsStream>(() => WatchSettingsStream(locator<SettingsRepository>()))
+    ..registerFactory<DeviceSettingsCubit>(() => DeviceSettingsCubit(
+          fetchAll: locator<FetchSettingsAll>(),
+          saveAll: locator<SaveSettingsAll>(),
+          watchStream: locator<WatchSettingsStream>(),
+          comm: locator<MqttCommCubit>(),
         ))
     ..registerSingleton<DevicePresenterRegistry>(const DevicePresenterRegistry({
       '8c5ea780-3d0d-4886-9334-2b4e781dd51c': ThermostatBasicPresenter(),
