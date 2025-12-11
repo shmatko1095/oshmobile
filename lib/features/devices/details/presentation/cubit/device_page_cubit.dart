@@ -34,8 +34,9 @@ class DevicePageCubit extends Cubit<DevicePageState> {
     emit(const DevicePageLoading());
     try {
       final full = await _getDeviceFull(deviceId);
-      final cfg =
-          DeviceConfig.fromJson(full.configuration['osh-config'] as Map<String, dynamic>? ?? full.configuration);
+      final cfg = DeviceConfig.fromJson(
+          full.configuration['osh-config'] as Map<String, dynamic>? ??
+              full.configuration);
       emit(DevicePageReady(device: full.device, config: cfg));
     } catch (e) {
       emit(DevicePageError(e.toString()));

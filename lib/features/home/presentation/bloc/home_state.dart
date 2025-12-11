@@ -44,6 +44,17 @@ final class HomeLoading extends HomeState {
   }
 }
 
+final class HomeRefreshing extends HomeState {
+  const HomeRefreshing({required super.selectedDeviceId});
+
+  @override
+  HomeRefreshing copyWith({String? selectedDeviceId}) {
+    return HomeRefreshing(
+      selectedDeviceId: selectedDeviceId ?? this.selectedDeviceId,
+    );
+  }
+}
+
 final class HomeFailed extends HomeState {
   final String? message;
 

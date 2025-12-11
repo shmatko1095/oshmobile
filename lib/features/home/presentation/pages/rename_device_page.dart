@@ -68,7 +68,7 @@ class _RenameDevicePageState extends State<RenameDevicePage> {
   }
 
   void _submit() {
-    if (!_canSave) return; // защита от лишних вызовов
+    if (!_canSave) return;
     if (_formKey.currentState!.validate()) {
       context.read<HomeCubit>().updateDeviceUserData(
             widget.deviceId,

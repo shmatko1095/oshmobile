@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
-import 'package:oshmobile/features/devices/details/presentation/pages/device_host_body.dart';
+import 'package:oshmobile/features/devices/details/presentation/pages/device_host_scope.dart';
 import 'package:oshmobile/features/devices/no_selected_device/presentation/pages/no_selected_device_page.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/home/presentation/widgets/mqtt_activity_icon.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/side_menu.dart';
-import 'package:oshmobile/features/settings/presentation/open_settings_page.dart';
 
 class HomePage extends StatefulWidget {
-  static MaterialPageRoute route() => MaterialPageRoute(builder: (_) => const HomePage());
+  static MaterialPageRoute route() =>
+      MaterialPageRoute(builder: (_) => const HomePage());
 
   const HomePage({super.key});
 
@@ -21,8 +22,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   static const _defaultTitle = 'Osh App';
+  VoidCallback? _openSettingsAction;
   String? _title;
-  final GlobalKey _deviceHostInnerKey = GlobalKey();
 
   @override
   void initState() {
@@ -38,13 +39,46 @@ class _HomePageState extends State<HomePage> {
     if (_title == next) return;
 
     final phase = SchedulerBinding.instance.schedulerPhase;
-    if (phase == SchedulerPhase.persistentCallbacks || phase == SchedulerPhase.transientCallbacks) {
+    if (phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.transientCallbacks) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() => _title = next);
       });
     } else {
       setState(() => _title = next);
     }
+  }
+
+  void _onIconPressed() {
+    final homeCubit = context.read<HomeCubit>();
+    final state = homeCubit.state;
+    final selectedId = state.selectedDeviceId;
+    if (selectedId == null) {
+      SnackBarUtils.showFail(
+        context: context,
+        content: 'Select a device first.',
+      );
+      return;
+    }
+
+    final device = homeCubit.getDeviceById(selectedId);
+    if (device == null) {
+      SnackBarUtils.showFail(
+        context: context,
+        content: 'Selected device not found.',
+      );
+      return;
+    }
+
+    if (_openSettingsAction == null) {
+      SnackBarUtils.showFail(
+        context: context,
+        content: 'Device view is not ready yet.',
+      );
+      return;
+    }
+
+    _openSettingsAction!.call();
   }
 
   @override
@@ -60,61 +94,42 @@ class _HomePageState extends State<HomePage> {
           ),
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {
-              final homeCubit = context.read<HomeCubit>();
-              final state = homeCubit.state;
-              final selectedId = state.selectedDeviceId;
-              if (selectedId == null) {
-                SnackBarUtils.showFail(
-                  context: context,
-                  content: 'Select a device first.',
-                );
-                return;
-              }
-
-              final device = homeCubit.getDeviceById(selectedId);
-              if (device == null) {
-                SnackBarUtils.showFail(
-                  context: context,
-                  content: 'Selected device not found.',
-                );
-                return;
-              }
-
-              final hostCtx = _deviceHostInnerKey.currentContext;
-              if (hostCtx == null) {
-                // DeviceHostBody ещё не построен (или мы на экране без девайса).
-                SnackBarUtils.showFail(
-                  context: context,
-                  content: 'Device view is not ready yet.',
-                );
-                return;
-              }
-
-              DeviceSettingsNavigator.openFromHost(hostCtx, device);
-            },
+            onPressed: _onIconPressed,
           ),
         ],
       ),
       drawer: const SideMenu(),
       body: BlocBuilder<HomeCubit, HomeState>(
+        buildWhen: (previous, current) {
+          if (previous is HomeReady && current is HomeRefreshing) return false;
+          if (previous is HomeRefreshing && current is HomeReady) return false;
+          if (previous is HomeReady && current is HomeReady) {
+            return previous.selectedDeviceId != current.selectedDeviceId;
+          }
+
+          return true;
+        },
         builder: (context, state) {
           final homeCubit = context.read<HomeCubit>();
 
           switch (state) {
             case HomeInitial():
             case HomeLoading():
+            case HomeRefreshing():
               _setTitleSafe(null);
+              _openSettingsAction = null;
               return const Loader();
 
             case HomeFailed(:final message):
               _setTitleSafe(null);
+              _openSettingsAction = null;
               return Center(child: Text(message ?? ""));
 
             case HomeReady(:final selectedDeviceId):
               {
                 if (selectedDeviceId == null) {
                   _setTitleSafe(null);
+                  _openSettingsAction = null;
                   return const NoSelectedDevicePage();
                 }
 
@@ -122,18 +137,20 @@ class _HomePageState extends State<HomePage> {
 
                 if (device == null) {
                   _setTitleSafe(null);
+                  _openSettingsAction = null;
                   return const NoSelectedDevicePage();
                 }
 
-                return DeviceHostBody(
+                return DeviceHostScope(
                   device: device,
                   onTitleChanged: _setTitleSafe,
-                  settingsHostKey: _deviceHostInnerKey,
+                  onSettingsActionChanged: (cb) => _openSettingsAction = cb,
                 );
               }
           }
 
           _setTitleSafe(null);
+          _openSettingsAction = null;
           return const NoSelectedDevicePage();
         },
       ),

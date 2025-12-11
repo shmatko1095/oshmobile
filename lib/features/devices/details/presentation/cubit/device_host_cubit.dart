@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_host_state.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
@@ -46,13 +47,8 @@ class DeviceHostCubit extends Cubit<DeviceHostState> {
     if (isClosed) return;
     await _homeCubit.updateDeviceList();
 
-    Device? device;
-    try {
-      device = _homeCubit.userDevices.firstWhere((d) => d.id == _deviceId);
-    } catch (_) {
-      device = null;
-    }
-
+    Device? device =
+        _homeCubit.userDevices.filter((d) => d.id == _deviceId).firstOrNull;
     final isOnline = device?.connectionInfo.online == true;
 
     if (isOnline) {

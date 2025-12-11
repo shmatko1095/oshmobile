@@ -135,20 +135,6 @@ class _ActionsRow extends StatelessWidget {
             color: color,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _ActionButton(
-            icon: Icons.settings_outlined,
-            label: S.of(context).Settings,
-            onTap: () {
-              // TODO: открой экран настроек устройства, если он у тебя есть
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('TODO')),
-              );
-            },
-            color: color,
-          ),
-        ),
       ],
     );
   }

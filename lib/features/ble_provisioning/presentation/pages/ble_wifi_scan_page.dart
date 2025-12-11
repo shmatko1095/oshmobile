@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/ble_provisioning/domain/entities/wifi_network.dart';
 import 'package:oshmobile/features/ble_provisioning/presentation/cubit/ble_provisioning_cubit.dart';
 import 'package:oshmobile/features/ble_provisioning/presentation/pages/ble_wifi_password_page.dart';
@@ -47,15 +48,15 @@ class _BleWifiScanPageState extends State<BleWifiScanPage> {
 
     return BlocConsumer<BleProvisioningCubit, BleProvisioningState>(
       listenWhen: (prev, cur) =>
-          prev.status != cur.status || prev.error != cur.error || prev.lastConnectStatus != cur.lastConnectStatus,
+          prev.status != cur.status ||
+          prev.error != cur.error ||
+          prev.lastConnectStatus != cur.lastConnectStatus,
       listener: (context, state) {
         final error = state.error;
         final s = S.of(context);
 
         if (error != null && error.isNotEmpty) {
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(error)));
+          SnackBarUtils.showAlert(context: context, content: error);
           Navigator.of(context).pop(false);
           return;
         }
@@ -63,15 +64,12 @@ class _BleWifiScanPageState extends State<BleWifiScanPage> {
         final selected = state.selectedNetwork;
         if (selected?.auth == WifiAuthType.open) {
           if (state.status == ProvisioningStatus.wifiSuccess) {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(SnackBar(content: Text(s.deviceConnectedToWifi)));
+            SnackBarUtils.showSuccess(
+                context: context, content: s.deviceConnectedToWifi);
             Navigator.of(context).pop(true);
           } else if (state.status == ProvisioningStatus.wifiFailed) {
             final msg = state.lastConnectStatus?.message ?? s.wifiConnectFailed;
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(SnackBar(content: Text(msg)));
+            SnackBarUtils.showAlert(context: context, content: msg);
           }
         }
       },
@@ -83,11 +81,12 @@ class _BleWifiScanPageState extends State<BleWifiScanPage> {
         if (status == ProvisioningStatus.connectingBle) {
           body = _ConnectingBleView();
         } else {
-          final isActive =
-              status == ProvisioningStatus.wifiScanInProgress || status == ProvisioningStatus.wifiConnecting;
+          final isActive = status == ProvisioningStatus.wifiScanInProgress ||
+              status == ProvisioningStatus.wifiConnecting;
           body = WifiListStep(
             isScanning: isActive,
-            onNetworkSelected: (network) => _onNetworkSelected(context, network),
+            onNetworkSelected: (network) =>
+                _onNetworkSelected(context, network),
           );
         }
 
