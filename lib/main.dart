@@ -59,7 +59,7 @@ class _MyAppState extends State<MyApp> {
     return AuthMqttCoordinator(
         child: MaterialApp(
       title: 'OSH Mobile',
-      theme: AppTheme.lightTheme,
+      theme: AppTheme.darkTheme,
       darkTheme: AppTheme.darkTheme,
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
