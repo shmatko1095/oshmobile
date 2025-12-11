@@ -28,3 +28,4 @@ lib/core/secrets/*
 
 .flutter-plugins
 .flutter-plugins-dependencies
+/.idea/
