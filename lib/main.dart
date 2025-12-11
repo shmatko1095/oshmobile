@@ -1,3 +1,8 @@
+import 'dart:async';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,38 +11,71 @@ import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart' as glo
 import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart' as global_mqtt;
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/widgets/auth_mqtt_coordinator.dart';
+import 'package:oshmobile/core/logging/osh_bloc_observer.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/theme/theme.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:oshmobile/features/auth/presentation/pages/signin_page.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/home/presentation/pages/home_page.dart';
+import 'package:oshmobile/firebase_options.dart';
 import 'package:oshmobile/generated/l10n.dart';
 import 'package:oshmobile/init_dependencies.dart';
 import 'package:oshmobile/startup_error_app.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+Future<void> main() async {
+  runZonedGuarded<Future<void>>(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  try {
-    await initDependencies();
-  } catch (e, st) {
-    debugPrint('initDependencies failed: $e');
-    debugPrint(st.toString());
-    runApp(StartupErrorApp(error: e.toString()));
-    return;
-  }
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  runApp(MultiBlocProvider(
-    providers: [
-      BlocProvider(create: (_) => locator<global_auth.GlobalAuthCubit>()),
-      BlocProvider(create: (_) => locator<global_mqtt.GlobalMqttCubit>()),
-      BlocProvider(create: (_) => locator<MqttCommCubit>()),
-      BlocProvider(create: (_) => locator<AuthBloc>()),
-      BlocProvider(create: (_) => locator<HomeCubit>()),
-    ],
-    child: const MyApp(),
-  ));
+    // await OshCrashReporter.setCollectionEnabled(!kDebugMode);
+    await OshCrashReporter.setCollectionEnabled(true);
+    Bloc.observer = OshBlocObserver();
+
+    FlutterError.onError = (FlutterErrorDetails details) {
+      if (kDebugMode) {
+        FlutterError.dumpErrorToConsole(details);
+      }
+      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    };
+
+      try {
+        await initDependencies();
+      } catch (e, st) {
+        await FirebaseCrashlytics.instance.recordError(
+          e,
+          st,
+          fatal: false,
+          reason: 'initDependencies failed',
+        );
+
+        debugPrint('initDependencies failed: $e');
+        debugPrint(st.toString());
+
+        runApp(StartupErrorApp(error: e.toString()));
+        return;
+      }
+
+      runApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => locator<global_auth.GlobalAuthCubit>()),
+            BlocProvider(create: (_) => locator<global_mqtt.GlobalMqttCubit>()),
+            BlocProvider(create: (_) => locator<MqttCommCubit>()),
+            BlocProvider(create: (_) => locator<AuthBloc>()),
+            BlocProvider(create: (_) => locator<HomeCubit>()),
+          ],
+          child: const MyApp(),
+        ),
+      );
+    }, (Object error, StackTrace stack) {
+      OshCrashReporter.logFatal(error, stack, reason: 'Uncaught zone error');
+    },
+  );
 }
 
 class MyApp extends StatefulWidget {
