@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:oshmobile/core/utils/crashlytics_test_button.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/account_drawer_header.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/add_device_button.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/item_list.dart';
@@ -19,6 +20,7 @@ class SideMenu extends StatelessWidget {
             const AddDeviceButton(),
             const Divider(thickness: 1.5),
             const LogoutButton(),
+            // const CrashlyticsTestButton(),
           ],
         ),
       ),
