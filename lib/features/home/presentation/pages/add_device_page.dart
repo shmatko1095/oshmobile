@@ -51,6 +51,11 @@ class _AddDevicePageState extends State<AddDevicePage> with WidgetsBindingObserv
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!mounted) return;
+
+    if (!_scanner.value.hasCameraPermission) {
+      return;
+    }
+
     if (state == AppLifecycleState.paused) {
       _scanner.stop();
     } else if (state == AppLifecycleState.resumed) {
