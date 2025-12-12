@@ -29,16 +29,27 @@ final class DevicePageReady extends DevicePageState {
 class DevicePageCubit extends Cubit<DevicePageState> {
   final GetDeviceFull _getDeviceFull;
 
+  // Used to ignore stale async results (e.g. if the widget was rebuilt
+  // and the previous cubit instance was disposed while an in-flight load
+  // was still running).
+  int _loadToken = 0;
+
   DevicePageCubit(this._getDeviceFull) : super(const DevicePageLoading());
 
   Future<void> load(String deviceId) async {
+    final token = ++_loadToken;
+    if (isClosed) return;
+
     emit(const DevicePageLoading());
     try {
       final full = await _getDeviceFull(deviceId);
+      if (isClosed || token != _loadToken) return;
+
       final cfg =
           DeviceConfig.fromJson(full.configuration['osh-config'] as Map<String, dynamic>? ?? full.configuration);
       emit(DevicePageReady(device: full.device, config: cfg));
     } catch (e, st) {
+      if (isClosed || token != _loadToken) return;
       OshCrashReporter.logNonFatal(e, st,
           reason: "DevicePageCubit, failed to load config", context: {"deviceId": deviceId});
       emit(DevicePageError(e.toString()));

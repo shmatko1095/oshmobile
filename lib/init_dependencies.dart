@@ -217,7 +217,7 @@ void _initHomeFeature() {
     ..registerFactory<SelectedDeviceStorage>(
       () => SelectedDeviceStorage(locator<SharedPreferences>()),
     )
-    ..registerLazySingleton<HomeCubit>(() => HomeCubit(
+    ..registerFactory<HomeCubit>(() => HomeCubit(
           globalAuthCubit: locator<GlobalAuthCubit>(),
           getUserDevices: locator<GetUserDevices>(),
           unassignDevice: locator<UnassignDevice>(),
