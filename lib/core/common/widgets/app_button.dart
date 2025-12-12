@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 
@@ -46,9 +47,8 @@ class AppButton extends StatelessWidget {
             ? SizedBox(
                 height: 24,
                 width: 24,
-                child: CircularProgressIndicator(
+                child: CupertinoActivityIndicator(
                   color: disabledFgColor,
-                  strokeWidth: 2.5,
                 ),
               )
             : Text(

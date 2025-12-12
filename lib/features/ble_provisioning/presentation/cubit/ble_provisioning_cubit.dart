@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meta/meta.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/permissions/ble_permission_service.dart';
 import 'package:oshmobile/features/ble_provisioning/domain/entities/wifi_connect_status.dart';
 import 'package:oshmobile/features/ble_provisioning/domain/entities/wifi_network.dart';
@@ -70,7 +71,8 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
           error: null,
         ));
       },
-      onError: (e) {
+      onError: (e, st) {
+        OshCrashReporter.logNonFatal(e, st, reason: "Nearby check failed");
         emit(state.copyWith(
           status: ProvisioningStatus.error,
           deviceNearby: null,
@@ -115,7 +117,8 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
       await _connectBleDevice(serialNumber: serialNumber, secureCode: secureCode);
       emit(state.copyWith(status: ProvisioningStatus.wifiScanIdle, error: null));
       await refreshScan();
-    } catch (e) {
+    } catch (e, st) {
+      OshCrashReporter.logNonFatal(e, st, reason: "Failed to connect via BLE");
       emit(state.copyWith(status: ProvisioningStatus.error, error: 'Failed to connect via BLE: $e'));
     }
   }
@@ -135,6 +138,7 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
         emit(state.copyWith(status: ProvisioningStatus.wifiScanInProgress, networks: networks));
       },
       onError: (e) {
+        OshCrashReporter.logNonFatal(e, null, reason: "Wi-Fi scan failed");
         emit(state.copyWith(status: ProvisioningStatus.error, error: 'Wi-Fi scan failed: $e'));
       },
       onDone: () {

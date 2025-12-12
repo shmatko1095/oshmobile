@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 import 'package:oshmobile/features/schedule/presentation/pages/manual_temperature_page.dart';
@@ -100,7 +101,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
             builder: (context, state) {
               switch (state) {
                 case DeviceScheduleLoading():
-                  return const Center(child: CircularProgressIndicator());
+                  return const Loader();
                 case DeviceScheduleError(:final message):
                   return _ErrorRetry(
                     message: message,

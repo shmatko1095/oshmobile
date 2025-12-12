@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:chopper/chopper.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 
 class ApiAuthenticator extends Authenticator {
   Completer<bool>? _refreshCompleter;
@@ -37,7 +38,8 @@ class ApiAuthenticator extends Authenticator {
           if (success) {
             result = _buildAuthenticatedRequest(request);
           }
-        } catch (_) {
+        } catch (e, st) {
+          OshCrashReporter.logNonFatal(e, st);
           _refreshCompleter?.complete(false);
         } finally {
           _refreshCompleter = null;

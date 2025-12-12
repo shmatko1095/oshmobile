@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
@@ -109,9 +110,10 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
         emit(DeviceScheduleReady(snap: _withSafeMode(snap)));
       }
       _comm.complete(reqId);
-    } catch (e) {
+    } catch (e, st) {
       if (token != _bindToken || isClosed) return;
       _comm.fail(reqId, 'Failed to load schedule: $e');
+      OshCrashReporter.logNonFatal(e, st, reason: "Failed to load schedule", context: {"deviceSn": deviceSn});
       emit(DeviceScheduleError(e.toString()));
     }
   }
@@ -260,6 +262,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       _comm.fail(txn.reqId, message);
     }
 
+    OshCrashReporter.log("DeviceScheduleCubit: _onPublishError, message: $message");
     emit(st.copyWith(
       snap: failed.beforeSnap,
       // rollback to a consistent state
@@ -285,6 +288,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       _comm.fail(txn.reqId, 'Operation timed out');
     }
 
+    OshCrashReporter.log("Schedule operation timed out, deviceSn: $_deviceSn");
     emit(st.copyWith(
       snap: failed.beforeSnap,
       // rollback to BEFORE the stuck op

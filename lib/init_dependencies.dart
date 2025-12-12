@@ -10,6 +10,7 @@ import 'package:keycloak_wrapper/keycloak_wrapper.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/core/api_authenticator.dart';
 import 'package:oshmobile/core/network/chopper_client/core/auth_interceptor.dart';
@@ -165,7 +166,8 @@ Future<void> _initKeycloakWrapper() async {
 
         await keycloakWrapper.initialize();
         debugPrint('✅ Keycloak recovered successfully inside onError.');
-      } catch (e) {
+      } catch (e, st) {
+        OshCrashReporter.logFatal(e, st, reason: "Failed to initialize Keycloak");
         debugPrint('❌ Recovery threw an exception: $e');
       }
     }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/domain/usecases/disable_rt_stream.dart';
 import 'package:oshmobile/features/devices/details/domain/usecases/enable_rt_stream.dart';
@@ -95,19 +96,24 @@ class DeviceStateCubit extends Cubit<DeviceStateState> {
     // 1) Try to enable RT (non-fatal)
     try {
       await _enableRt(deviceId, interval: rtInterval);
-    } catch (_) {}
+    } catch (e, st) {
+      OshCrashReporter.logNonFatal(e, st, reason: "Failed to enable RT stream", context: {"deviceId":deviceId});
+    }
 
     // 2) Subscribe and watch
     try {
       await _subscribe(deviceId);
-    } catch (_) {}
+    } catch (e, st) {
+      OshCrashReporter.logNonFatal(e, st, reason: "Failed to subscribe", context: {"deviceId":deviceId});
+    }
     _sub = _watch(deviceId).listen(
       (diff) {
         if (token != _bindToken) return;
         emit(state.merge(diff));
       },
-      onError: (_) {
+      onError: (e) {
         if (token != _bindToken) return;
+        OshCrashReporter.log("DeviceStateState: onError: error: $e");
         emit(state.copyWith(status: DeviceLiveStatus.degraded));
       },
       cancelOnError: false,

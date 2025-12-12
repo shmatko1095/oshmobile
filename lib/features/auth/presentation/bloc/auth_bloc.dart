@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/core/error/failures.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/usecase/usecase.dart';
 import 'package:oshmobile/features/auth/domain/usecases/reset_password.dart';
 import 'package:oshmobile/features/auth/domain/usecases/sign_in.dart';
@@ -109,6 +110,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       case FailureType.invalidUserCredentials:
         emit(const AuthFailedInvalidUserCredentials());
       case FailureType.unexpected:
+        OshCrashReporter.log("AuthBloc: Unexpected failure: ${failure.message}");
         emit(AuthFailedUnexpected(failure.message));
       case FailureType.conflict:
         emit(const AuthConflict());

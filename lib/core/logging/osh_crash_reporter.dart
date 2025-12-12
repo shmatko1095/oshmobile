@@ -35,7 +35,7 @@ class OshCrashReporter {
   /// Report a non-fatal error (app continues to run).
   static Future<void> logNonFatal(
     Object error,
-    StackTrace stack, {
+    StackTrace? stack, {
     String? reason,
     Map<String, Object?>? context,
   }) async {

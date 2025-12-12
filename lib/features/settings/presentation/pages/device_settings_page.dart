@@ -1,6 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/devices/details/presentation/models/osh_config.dart';
 import 'package:oshmobile/features/devices/details/presentation/models/settings_schema.dart';
@@ -114,7 +116,7 @@ class DeviceSettingsPage extends StatelessWidget {
                       child: SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CupertinoActivityIndicator(),
                       ),
                     ),
                   );
@@ -161,7 +163,7 @@ class DeviceSettingsPage extends StatelessWidget {
       builder: (context, state) {
         switch (state) {
           case DeviceSettingsLoading():
-            return const Center(child: CircularProgressIndicator());
+            return const Loader();
           case DeviceSettingsError(:final message):
             return _buildError(context, message);
           case DeviceSettingsReady(:final snapshot):

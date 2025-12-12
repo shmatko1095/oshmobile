@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 import 'package:oshmobile/features/settings/domain/usecases/fetch_settings_all.dart';
@@ -84,8 +85,9 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
       if (token != _bindToken) return;
       _comm.complete(reqId);
       emit(DeviceSettingsReady(snapshot: snap));
-    } catch (e) {
+    } catch (e, st) {
       if (token != _bindToken) return;
+      OshCrashReporter.logNonFatal(e, st, reason: "Failed to load settings", context: {"deviceSn":deviceSn});
       _comm.fail(reqId, 'Failed to load settings: $e');
       emit(DeviceSettingsError(e.toString()));
     }
@@ -165,7 +167,8 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
     try {
       await _saveAll(_deviceSn, st.snapshot, reqId: reqId);
       _scheduleTimeout(reqId);
-    } catch (e) {
+    } catch (e, stack) {
+      OshCrashReporter.logNonFatal(e, stack, reason: "Failed to save settings", context: {"deviceSn":_deviceSn});
       _comm.fail(reqId, 'Failed to save settings: $e');
       emit(st.copyWith(
         saving: false,
@@ -196,6 +199,7 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
     _pendingTimers.remove(reqId)?.cancel();
     _comm.fail(reqId, 'Settings operation timed out');
 
+    OshCrashReporter.log("Settings operation timed out, deviceSn: $_deviceSn");
     emit(st.copyWith(
       saving: false,
       // keep dirty = true to allow user to retry

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/features/ble_provisioning/data/ble/ble_client.dart';
 
 class ReactiveBleClientImpl implements BleClient {
@@ -37,6 +38,7 @@ class ReactiveBleClientImpl implements BleClient {
 
   @override
   Future<void> connect(String deviceId) async {
+    OshCrashReporter.log("BLE: Connect to device $deviceId");
     final completer = Completer<void>();
 
     _connSub?.cancel();
@@ -54,6 +56,7 @@ class ReactiveBleClientImpl implements BleClient {
         );
       }
     }, onError: (e) {
+      OshCrashReporter.log("BLE: onError in connect, $deviceId");
       if (!completer.isCompleted) {
         completer.completeError(e);
       }
@@ -68,6 +71,7 @@ class ReactiveBleClientImpl implements BleClient {
       final mtu = await _ble.requestMtu(deviceId: deviceId, mtu: requested);
       return mtu;
     } catch (_) {
+      OshCrashReporter.log("Failed to set BLE MTU for $deviceId");
       return 23;
     }
   }

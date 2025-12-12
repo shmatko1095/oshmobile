@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/features/home/domain/usecases/assign_device.dart';
 import 'package:oshmobile/features/home/domain/usecases/get_user_devices.dart';
 import 'package:oshmobile/features/home/domain/usecases/unassign_device.dart';
@@ -56,6 +57,7 @@ class HomeCubit extends Cubit<HomeState> {
 
     result.fold(
       (l) {
+        OshCrashReporter.log("Failed to updateDeviceList, user: $userId device: $savedSelected");
         emit(HomeFailed(l.message, selectedDeviceId: savedSelected));
       },
       (devices) {
@@ -80,7 +82,10 @@ class HomeCubit extends Cubit<HomeState> {
       deviceId: deviceId,
     ));
     result.fold(
-      (l) => emit(HomeFailed(l.message ?? "", selectedDeviceId: state.selectedDeviceId)),
+      (l) {
+        OshCrashReporter.log("Failed to unassignDevice, user: $_userUuid device: $deviceId");
+        emit(HomeFailed(l.message ?? "", selectedDeviceId: state.selectedDeviceId));
+      },
       (r) => updateDeviceList(),
     );
   }
@@ -93,7 +98,10 @@ class HomeCubit extends Cubit<HomeState> {
       sc: sc,
     ));
     result.fold(
-      (l) => emit(HomeAssignFailed(selectedDeviceId: state.selectedDeviceId)),
+      (l) {
+        OshCrashReporter.log("Failed to assignDevice, user: $_userUuid device: $sn");
+        emit(HomeAssignFailed(selectedDeviceId: state.selectedDeviceId));
+      },
       (r) {
         emit(HomeAssignDone(selectedDeviceId: state.selectedDeviceId));
         updateDeviceList();
@@ -113,7 +121,10 @@ class HomeCubit extends Cubit<HomeState> {
       description: description,
     ));
     result.fold(
-      (l) => emit(HomeUpdateDeviceUserDataFailed(selectedDeviceId: state.selectedDeviceId)),
+      (l) {
+        OshCrashReporter.log("Failed to updateDeviceUserData, user: $_userUuid device: $deviceId");
+        emit(HomeUpdateDeviceUserDataFailed(selectedDeviceId: state.selectedDeviceId));
+      },
       (r) {
         emit(HomeUpdateDeviceUserDataDone(selectedDeviceId: state.selectedDeviceId));
         updateDeviceList();

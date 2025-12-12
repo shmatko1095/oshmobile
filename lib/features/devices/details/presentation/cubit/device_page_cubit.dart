@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 
 import '../../../details/domain/queries/get_device_full.dart';
 import '../models/osh_config.dart';
@@ -38,7 +39,10 @@ class DevicePageCubit extends Cubit<DevicePageState> {
           full.configuration['osh-config'] as Map<String, dynamic>? ??
               full.configuration);
       emit(DevicePageReady(device: full.device, config: cfg));
-    } catch (e) {
+    } catch (e, st) {
+      OshCrashReporter.logNonFatal(e, st,
+          reason: "DevicePageCubit, failed to load config",
+          context: {"deviceId" : deviceId});
       emit(DevicePageError(e.toString()));
     }
   }

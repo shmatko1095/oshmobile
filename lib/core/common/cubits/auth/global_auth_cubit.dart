@@ -6,6 +6,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:keycloak_wrapper/keycloak_wrapper.dart';
 import 'package:oshmobile/core/common/entities/jwt_user_data.dart';
 import 'package:oshmobile/core/common/entities/session.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/core/session_storage.dart';
 
@@ -31,6 +32,7 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
 
   Future<void> signedIn(Session session) async {
     await _sessionStorage.setSession(session);
+    OshCrashReporter.setUserId(getJwtUserData()?.email ?? getJwtUserData()!.uuid);
     emit(const AuthAuthenticated());
   }
 
@@ -38,7 +40,8 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
     if (_isLoggedInWithKeycloak) {
       try {
         await _keycloakWrapper.logout();
-      } catch (e) {
+      } catch (e, st) {
+        OshCrashReporter.logNonFatal(e, st, reason: 'Keycloak logout failed');
         debugPrint('Keycloak logout failed: $e');
       }
     }
@@ -62,6 +65,7 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
       if (response.isSuccessful && response.body != null) {
         final newSession = Session.fromJson(response.body);
         await _sessionStorage.setSession(newSession);
+        OshCrashReporter.setUserId(getJwtUserData()?.email ?? getJwtUserData()!.uuid);
         emit(const AuthAuthenticated());
         return true;
       } else {
@@ -69,7 +73,8 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
         log(response.bodyString);
         return false;
       }
-    } catch (error) {
+    } catch (error, st) {
+      OshCrashReporter.logNonFatal(error, st, reason: 'Token refresh failed');
       emit(const AuthInitial());
       return false;
     }

@@ -46,16 +46,9 @@ Future<void> main() async {
       try {
         await initDependencies();
       } catch (e, st) {
-        await FirebaseCrashlytics.instance.recordError(
-          e,
-          st,
-          fatal: false,
-          reason: 'initDependencies failed',
-        );
-
+        OshCrashReporter.logNonFatal(e, st, reason: 'initDependencies failed');
         debugPrint('initDependencies failed: $e');
         debugPrint(st.toString());
-
         runApp(StartupErrorApp(error: e.toString()));
         return;
       }

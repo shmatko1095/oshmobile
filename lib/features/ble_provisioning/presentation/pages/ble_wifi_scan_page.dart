@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
@@ -136,7 +137,7 @@ class _ConnectingBleView extends StatelessWidget {
           const SizedBox(
             width: 32,
             height: 32,
-            child: CircularProgressIndicator(),
+            child: CupertinoActivityIndicator(),
           ),
           const SizedBox(height: 16),
           Text(

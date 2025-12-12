@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meta/meta.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 
 part 'global_mqtt_state.dart';
@@ -45,7 +46,8 @@ class GlobalMqttCubit extends Cubit<GlobalMqttState> {
     try {
       await _repo.reconnect(userId: userId, token: token);
       emit(const MqttConnected());
-    } catch (e) {
+    } catch (e, st) {
+      OshCrashReporter.logNonFatal(e, st, reason: 'Mqtt update credentials failed');
       emit(MqttError(e.toString()));
     }
   }

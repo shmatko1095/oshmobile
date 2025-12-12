@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/mqtt/app_device_id_provider.dart';
 
 import 'device_mqtt_repo.dart';
@@ -243,7 +244,8 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
       if (d is Map) return Map<String, dynamic>.from(d);
       if (d is List) return {'data': d};
       return {'value': d};
-    } catch (_) {
+    } catch (e, st) {
+      OshCrashReporter.logNonFatal(e, st, reason: "failed to decode", context: {'raw': raw});
       return {'raw': raw};
     }
   }
