@@ -40,6 +40,7 @@ class _AuthMqttCoordinatorState extends State<AuthMqttCoordinator> with WidgetsB
 
     if (userId != null && token != null) {
       mqtt.connectWith(userId: userId, token: token);
+      context.read<MqttCommCubit>().reset();
     }
   }
 
@@ -57,10 +58,8 @@ class _AuthMqttCoordinatorState extends State<AuthMqttCoordinator> with WidgetsB
     final mqtt = context.read<global_mqtt.GlobalMqttCubit>();
 
     if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
-      // Best-effort graceful disconnect when app goes background / closes.
       _disconnectMqtt(mqtt);
     } else if (state == AppLifecycleState.resumed) {
-      // On resume – reconnect if still authenticated.
       _connectIfAuthenticated(auth, mqtt);
     }
   }
@@ -82,7 +81,6 @@ class _AuthMqttCoordinatorState extends State<AuthMqttCoordinator> with WidgetsB
         if (state is global_auth.AuthAuthenticated) {
           _connectIfAuthenticated(auth, mqtt);
         } else {
-          // Any non-authenticated state => disconnect.
           _disconnectMqtt(mqtt);
         }
       },

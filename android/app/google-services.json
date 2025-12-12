@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "627243814142",
+    "project_id": "osh-mobile-2c3c6",
+    "storage_bucket": "osh-mobile-2c3c6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:627243814142:android:88de377118f34d3c4d69af",
+        "android_client_info": {
+          "package_name": "com.oshmobile.oshmobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAF50RsjamDNgFR3oSqXcPx0x_237voWDA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

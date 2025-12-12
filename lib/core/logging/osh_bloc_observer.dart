@@ -21,9 +21,9 @@ class OshBlocObserver extends BlocObserver {
 
   @override
   void onEvent(Bloc bloc, Object? event) {
-    OshCrashReporter.log(
-      'Bloc event: ${bloc.runtimeType}, event: $event',
-    );
+    // OshCrashReporter.log(
+    //   'Bloc event: ${bloc.runtimeType}, event: $event',
+    // );
 
     super.onEvent(bloc, event);
   }

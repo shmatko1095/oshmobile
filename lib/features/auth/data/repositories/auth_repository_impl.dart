@@ -36,9 +36,9 @@ class AuthRepositoryImpl implements AuthRepository {
       // }
     } on ServerException catch (e) {
       return left(Failure.unexpected(e.message));
-    } on InvalidUserCredentialsException catch (e) {
+    } on InvalidUserCredentialsException catch (_) {
       return left(Failure.invalidUserCredentials());
-    } on EmailNotVerifiedException catch (e) {
+    } on EmailNotVerifiedException catch (_) {
       return left(Failure.emailNotVerified());
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
@@ -94,7 +94,7 @@ class AuthRepositoryImpl implements AuthRepository {
       // } else {
       //   return left(Failure.noInternetConnection());
       // }
-    } on ConflictException catch (e) {
+    } on ConflictException catch (_) {
       return left(Failure.conflict());
     } on ServerException catch (e) {
       return left(Failure.unexpected(e.message));

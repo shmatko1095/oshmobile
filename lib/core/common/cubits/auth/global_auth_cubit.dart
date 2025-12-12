@@ -40,8 +40,7 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
     if (_isLoggedInWithKeycloak) {
       try {
         await _keycloakWrapper.logout();
-      } catch (e, st) {
-        OshCrashReporter.logNonFatal(e, st, reason: 'Keycloak logout failed');
+      } catch (e) {
         debugPrint('Keycloak logout failed: $e');
       }
     }

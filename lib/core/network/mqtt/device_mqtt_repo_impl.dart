@@ -19,10 +19,9 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     this.useWebSocket = false,
     this.secure = false,
     this.keepAliveSeconds = 30,
-    this.logging = true,
   })  : _deviceIdProvider = deviceIdProvider,
         _client = MqttServerClient(brokerHost, "") {
-    _client.logging(on: logging);
+    _client.logging(on: true);
 
     _client.port = port;
     _client.secure = secure;
@@ -41,21 +40,13 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
   final bool useWebSocket;
   final bool secure;
   final int keepAliveSeconds;
-  final bool logging;
 
   final MqttServerClient _client;
 
-  // Credentials (persisted to support reconnect-on-demand)
-  String? _userId;
-  String? _token;
-
-  // ---- Arbitrary topic JSON subscriptions ----
-  final Map<String, StreamController<MqttJson>> _jsonCtrls = {}; // filter -> ctrl
-  final Set<String> _jsonActiveFilters = {}; // re-subscribe on reconnect
-// Track active topic strings (union of device topics + json filters)
+  final Map<String, StreamController<MqttJson>> _jsonCtrls = {};
+  final Set<String> _jsonActiveFilters = {};
   final Set<String> _subscribedTopics = {};
 
-  // ---- Client-level streams ----
   StreamSubscription<List<MqttReceivedMessage<MqttMessage?>>>? _updatesSub;
 
   Future<String> _buildClientId(String userId) async {
@@ -68,11 +59,10 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
   @override
   bool get isConnected => _client.connectionStatus?.state == MqttConnectionState.connected;
 
+  bool get _isConnecting => _client.connectionStatus?.state == MqttConnectionState.connecting;
+
   @override
   Future<void> connect({required String userId, required String token}) async {
-    _userId = userId;
-    _token = token;
-
     if (isConnected) {
       _attachUpdatesStream();
       return;
@@ -85,18 +75,16 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     try {
       await _client.connect();
       _attachUpdatesStream();
-      // Re-subscribe active topics/filters after a fresh connect.
       _resubscribeAll();
-    } on Exception {
+    } catch (e, st) {
+      await OshCrashReporter.logNonFatal(e, st, reason: 'Mqtt connect failed', context: {'userId': userId});
       _client.disconnect();
       rethrow;
-    }
+    } finally {}
   }
 
   @override
   Future<void> reconnect({required String userId, required String token}) async {
-    _userId = userId;
-    _token = token;
     try {
       _client.disconnect();
     } catch (_) {}
@@ -146,22 +134,38 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
 
   @override
   Future<void> publishJson(String topic, Map<String, dynamic> payload, {int qos = 1, bool retain = false}) async {
-    await _ensureConnected();
-    final builder = MqttClientPayloadBuilder()..addString(jsonEncode(payload));
-    _client.publishMessage(topic, _qosFromInt(qos), builder.payload!, retain: retain);
-  }
+    if (!isConnected && _isConnecting) {
+      await _waitForConnectCompletion();
+    }
 
-  // ---------------- Internal plumbing ----------------
+    if (!isConnected) {
+      final error = StateError('MQTT not connected, cannot publish');
+      await OshCrashReporter.logNonFatal(error, StackTrace.current,
+          reason: 'Mqtt publish attempted while disconnected', context: {'topic': topic, 'payload': payload});
+      return;
+    }
 
-  Future<void> _ensureConnected() async {
-    if (isConnected) return;
-    if (_userId != null && _token != null) {
-      await connect(userId: _userId!, token: _token!);
-    } else {
-      throw StateError('MQTT not connected and no stored credentials.');
+    try {
+      final builder = MqttClientPayloadBuilder()..addString(jsonEncode(payload));
+      _client.publishMessage(topic, _qosFromInt(qos), builder.payload!, retain: retain);
+    } catch (e, st) {
+      await OshCrashReporter.logNonFatal(e, st,
+          reason: 'Mqtt publish failed', context: {'topic': topic, 'payload': payload});
+      rethrow;
     }
   }
 
+  Future<void> _waitForConnectCompletion() async {
+    const timeout = Duration(seconds: 5);
+    const step = Duration(milliseconds: 100);
+    final start = DateTime.now();
+
+    while (_isConnecting && DateTime.now().difference(start) < timeout) {
+      await Future.delayed(step);
+    }
+  }
+
+  // ---------------- Internal plumbing ----------------
   void _onConnected() {
     _attachUpdatesStream();
     _resubscribeAll();
@@ -175,12 +179,7 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     _updatesSub?.cancel();
     _updatesSub = _client.updates?.listen(
       _onUpdates,
-      onError: (e, st) {
-        if (logging) {
-          // ignore: avoid_print
-          print('MQTT updates error: $e');
-        }
-      },
+      onError: (e, st) => OshCrashReporter.log('MQTT updates error: $e'),
     );
   }
 
@@ -210,31 +209,6 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
         }
       }
     }
-  }
-
-  // Topics for a device: adjust to your firmware structure
-  List<String> _topicsForDevice(String deviceId) => <String>[
-        'v1/tenants/$tenantId/devices/$deviceId/state',
-        'v1/tenants/$tenantId/devices/$deviceId/telemetry/#',
-        '/service/device/telemetry/$deviceId/#',
-      ];
-
-  /// Extracts deviceId from topic:
-  /// - v1/tenants/{tenantId}/devices/{deviceId}/...
-  /// - /service/device/telemetry/{deviceId}[/...]
-  String? _extractDeviceId(String topic) {
-    final parts = topic.split('/');
-    final i = parts.indexOf('devices');
-    if (i >= 0 && i + 1 < parts.length) {
-      return parts[i + 1];
-    }
-    const svcPrefix = '/service/device/telemetry/';
-    if (topic.startsWith(svcPrefix)) {
-      final rest = topic.substring(svcPrefix.length);
-      final id = rest.split('/').firstWhere((e) => e.isNotEmpty, orElse: () => '');
-      return id.isEmpty ? null : id;
-    }
-    return null;
   }
 
   Map<String, dynamic> _decodePayload(String raw) {

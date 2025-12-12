@@ -35,14 +35,12 @@ class DevicePageCubit extends Cubit<DevicePageState> {
     emit(const DevicePageLoading());
     try {
       final full = await _getDeviceFull(deviceId);
-      final cfg = DeviceConfig.fromJson(
-          full.configuration['osh-config'] as Map<String, dynamic>? ??
-              full.configuration);
+      final cfg =
+          DeviceConfig.fromJson(full.configuration['osh-config'] as Map<String, dynamic>? ?? full.configuration);
       emit(DevicePageReady(device: full.device, config: cfg));
     } catch (e, st) {
       OshCrashReporter.logNonFatal(e, st,
-          reason: "DevicePageCubit, failed to load config",
-          context: {"deviceId" : deviceId});
+          reason: "DevicePageCubit, failed to load config", context: {"deviceId": deviceId});
       emit(DevicePageError(e.toString()));
     }
   }

@@ -60,8 +60,7 @@ class DeviceHostBody extends StatelessWidget {
     return Builder(
       builder: (innerCtx) {
         if (onSettingsActionChanged != null) {
-          onSettingsActionChanged!(
-              () => DeviceSettingsNavigator.openFromHost(innerCtx, liveDevice));
+          onSettingsActionChanged!(() => DeviceSettingsNavigator.openFromHost(innerCtx, liveDevice));
         }
 
         return BlocBuilder<DeviceHostCubit, DeviceHostState>(
@@ -90,9 +89,7 @@ class DeviceHostBody extends StatelessWidget {
                         return DeviceOfflinePage(
                           device: liveDevice,
                           onWifiProvisioningSuccess: () {
-                            context
-                                .read<DeviceHostCubit>()
-                                .onWifiProvisioningSuccess();
+                            context.read<DeviceHostCubit>().onWifiProvisioningSuccess();
                           },
                         );
                       }

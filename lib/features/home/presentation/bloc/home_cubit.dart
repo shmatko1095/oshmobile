@@ -21,6 +21,7 @@ class HomeCubit extends Cubit<HomeState> {
   final SelectedDeviceStorage _selectedDeviceStorage;
 
   List<Device> userDevices = [];
+  String? _currentUserUuid;
 
   HomeCubit({
     required this.globalAuthCubit,
@@ -44,9 +45,13 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> updateDeviceList() async {
     final userId = _userUuid;
 
-    // Load previously selected device for this user
+    final bool userChanged = _currentUserUuid != null && _currentUserUuid != userId;
+    _currentUserUuid = userId;
+
     final savedSelected = _selectedDeviceStorage.loadSelectedDevice(userId);
-    final bool hasSelectedInState = state is HomeReady && state.selectedDeviceId != null;
+
+    final bool hasSelectedInState = !userChanged && state is HomeReady && state.selectedDeviceId != null;
+
     if (hasSelectedInState) {
       emit(HomeRefreshing(selectedDeviceId: state.selectedDeviceId));
     } else {
@@ -62,11 +67,9 @@ class HomeCubit extends Cubit<HomeState> {
       },
       (devices) {
         _updateDeviceList(devices);
-        // Keep saved selection only if this device still exists
         final stillExists = savedSelected != null && devices.any((d) => d.id == savedSelected);
         final selectedId = stillExists ? savedSelected : null;
         if (!stillExists && savedSelected != null) {
-          // Clear invalid stored selection if device no longer exists
           _selectedDeviceStorage.clearSelectedDevice(userId);
         }
 

@@ -11,8 +11,7 @@ import 'package:oshmobile/features/home/presentation/widgets/mqtt_activity_icon.
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/side_menu.dart';
 
 class HomePage extends StatefulWidget {
-  static MaterialPageRoute route() =>
-      MaterialPageRoute(builder: (_) => const HomePage());
+  static MaterialPageRoute route() => MaterialPageRoute(builder: (_) => const HomePage());
 
   const HomePage({super.key});
 
@@ -39,8 +38,7 @@ class _HomePageState extends State<HomePage> {
     if (_title == next) return;
 
     final phase = SchedulerBinding.instance.schedulerPhase;
-    if (phase == SchedulerPhase.persistentCallbacks ||
-        phase == SchedulerPhase.transientCallbacks) {
+    if (phase == SchedulerPhase.persistentCallbacks || phase == SchedulerPhase.transientCallbacks) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() => _title = next);
       });
@@ -54,27 +52,18 @@ class _HomePageState extends State<HomePage> {
     final state = homeCubit.state;
     final selectedId = state.selectedDeviceId;
     if (selectedId == null) {
-      SnackBarUtils.showFail(
-        context: context,
-        content: 'Select a device first.',
-      );
+      SnackBarUtils.showFail(context: context, content: 'Select a device first.');
       return;
     }
 
     final device = homeCubit.getDeviceById(selectedId);
     if (device == null) {
-      SnackBarUtils.showFail(
-        context: context,
-        content: 'Selected device not found.',
-      );
+      SnackBarUtils.showFail(context: context, content: 'Selected device not found.');
       return;
     }
 
     if (_openSettingsAction == null) {
-      SnackBarUtils.showFail(
-        context: context,
-        content: 'Device view is not ready yet.',
-      );
+      SnackBarUtils.showFail(context: context, content: 'Device view is not ready yet.');
       return;
     }
 
