@@ -35,7 +35,7 @@ class SettingsSliderTile extends StatelessWidget {
     final divisionsDouble = (clampedMax - clampedMin) / (step <= 0 ? 1 : step);
     final divisions = divisionsDouble.isFinite ? divisionsDouble.round().clamp(1, 200) : 10;
 
-    String _fmt(double v) {
+    String fmt(double v) {
       // Compact value formatting; add unit if present.
       final rounded = v % 1 == 0 ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
       return unit == null ? rounded : '$rounded $unit';
@@ -55,7 +55,7 @@ class SettingsSliderTile extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                _fmt(clampedValue),
+                fmt(clampedValue),
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: theme.colorScheme.primary,
                   fontWeight: FontWeight.w600,
@@ -79,12 +79,12 @@ class SettingsSliderTile extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                _fmt(clampedMin),
+                fmt(clampedMin),
                 style: theme.textTheme.bodySmall,
               ),
               const Spacer(),
               Text(
-                _fmt(clampedMax),
+                fmt(clampedMax),
                 style: theme.textTheme.bodySmall,
               ),
             ],

@@ -431,20 +431,19 @@ Future<void> _initMqttClient() async {
     () => AppDeviceIdProvider(),
   );
 
-  final repo = DeviceMqttRepoImpl(
-    deviceIdProvider: locator<AppDeviceIdProvider>(),
-    brokerHost: locator<AppConfig>().oshMqttEndpointUrl,
-    port: locator<AppConfig>().oshMqttEndpointPort,
-    tenantId: "dev",
-  );
   locator
-    ..registerSingleton<DeviceMqttRepo>(repo)
-    ..registerLazySingleton<GlobalMqttCubit>(
+    ..registerFactory<DeviceMqttRepo>(() => DeviceMqttRepoImpl(
+          deviceIdProvider: locator<AppDeviceIdProvider>(),
+          brokerHost: locator<AppConfig>().oshMqttEndpointUrl,
+          port: locator<AppConfig>().oshMqttEndpointPort,
+          tenantId: "dev",
+        ))
+    ..registerFactory<GlobalMqttCubit>(
       () => GlobalMqttCubit(
         mqttRepo: locator<DeviceMqttRepo>(),
       ),
     )
-    ..registerLazySingleton<MqttCommCubit>(
+    ..registerFactory<MqttCommCubit>(
       () => MqttCommCubit(),
     );
 }

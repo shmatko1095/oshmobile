@@ -78,7 +78,7 @@ class ThingItem extends StatelessWidget {
 
   Widget _buildDismissBackground() {
     return Container(
-      color: Colors.red.withOpacity(0.6),
+      color: Colors.red.withValues(alpha: 0.6),
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: const Icon(
@@ -90,7 +90,7 @@ class ThingItem extends StatelessWidget {
 
   Widget _buildDeviceButton(BuildContext context) {
     return Card(
-      color: isDarkUi(context) ? AppPalette.backgroundColorLight.withOpacity(0.05) : null,
+      color: isDarkUi(context) ? AppPalette.backgroundColorLight.withValues(alpha: 0.05) : null,
       child: ListTile(
         onTap: () => _onDeviceSelected(context),
         onLongPress: () => _onDeviceRename(context),

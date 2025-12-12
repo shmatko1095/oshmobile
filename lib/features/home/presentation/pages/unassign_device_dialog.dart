@@ -18,7 +18,7 @@ class UnassignDeviceDialog extends StatelessWidget {
     color: CupertinoColors.systemGrey,
   );
   static final TextStyle _deviceNameStyle = TextStyle(
-    color: CupertinoColors.activeBlue.withOpacity(0.8),
+    color: CupertinoColors.activeBlue.withValues(alpha: 0.8),
     fontWeight: FontWeight.w600,
   );
 

@@ -24,7 +24,11 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
   })  : _authService = authService,
         _sessionStorage = sessionStorage,
         _keycloakWrapper = keycloakWrapper,
-        super(AuthInitial());
+        super(const AuthInitial(revision: 0));
+
+  int _revision = 0;
+  void _emitAuthenticated() => emit(AuthAuthenticated(revision: ++_revision));
+  void _emitInitial() => emit(AuthInitial(revision: ++_revision));
 
   Future<void> checkAuthStatus() async {
     await refreshToken();
@@ -33,7 +37,7 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
   Future<void> signedIn(Session session) async {
     await _sessionStorage.setSession(session);
     OshCrashReporter.setUserId(getJwtUserData()?.email ?? getJwtUserData()!.uuid);
-    emit(const AuthAuthenticated());
+    _emitAuthenticated();
   }
 
   Future<void> signedOut() async {
@@ -46,35 +50,33 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
     }
 
     await _sessionStorage.clearSession();
-    emit(const AuthInitial());
+    _emitInitial();
   }
 
   Future<bool> refreshToken() async {
     try {
       final currentSession = _sessionStorage.getSession();
       if (currentSession == null) {
-        emit(const AuthInitial());
+        _emitInitial();
         return false;
       }
 
       final response = await _authService.refreshToken(
         refreshToken: currentSession.refreshToken,
       );
-
-      if (response.isSuccessful && response.body != null) {
-        final newSession = Session.fromJson(response.body);
+      if (response.isSuccessful) {
+        final newSession = currentSession.copyWith(accessToken: response.body!.accessToken);
         await _sessionStorage.setSession(newSession);
         OshCrashReporter.setUserId(getJwtUserData()?.email ?? getJwtUserData()!.uuid);
-        emit(const AuthAuthenticated());
+        _emitAuthenticated();
         return true;
       } else {
-        emit(const AuthInitial());
+        _emitInitial();
         log(response.bodyString);
         return false;
       }
-    } catch (error, st) {
-      OshCrashReporter.logNonFatal(error, st, reason: 'Token refresh failed');
-      emit(const AuthInitial());
+    } catch (error) {
+      _emitInitial();
       return false;
     }
   }

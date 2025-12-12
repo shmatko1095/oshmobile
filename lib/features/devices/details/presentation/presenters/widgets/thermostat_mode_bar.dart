@@ -11,7 +11,7 @@ import 'package:oshmobile/features/schedule/presentation/utils.dart';
 /// Bottom-nav-like bar to show and switch thermostat modes with optimistic UI.
 /// Modes: off, antifreeze, manual, daily, weekly.
 /// - Reads current mode from [bind] via DeviceStateCubit (e.g. 'climate.mode').
-/// - Sends [command] via DeviceActionsCubit {'mode': <id>}.
+/// - Sends [command] via DeviceActionsCubit {'mode': id}.
 /// - Optimistic selection is highlighted immediately; cleared on confirmation or timeout.
 class ThermostatModeBar extends StatefulWidget {
   const ThermostatModeBar({
@@ -134,8 +134,8 @@ class _ModeItem extends StatelessWidget {
   Widget build(BuildContext context) {
     // Colors tuned for glassy/dark background
     final Color fg = selected ? Colors.white : Colors.white70;
-    final Color bg = selected ? Colors.white.withOpacity(0.14) : Colors.transparent;
-    final Color bd = selected ? Colors.white.withOpacity(0.22) : Colors.white.withOpacity(0.08);
+    final Color bg = selected ? Colors.white.withValues(alpha: 0.14) : Colors.transparent;
+    final Color bd = selected ? Colors.white.withValues(alpha: 0.22) : Colors.white.withValues(alpha: 0.08);
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),

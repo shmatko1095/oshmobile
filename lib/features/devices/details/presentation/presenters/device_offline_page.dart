@@ -37,7 +37,7 @@ class DeviceOfflinePage extends StatelessWidget {
                         Icon(
                           Icons.wifi_off_rounded,
                           size: 120,
-                          color: theme.colorScheme.onSurface.withOpacity(0.8),
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
                         ),
                         const SizedBox(height: 24),
                         Text(
@@ -64,7 +64,7 @@ class DeviceOfflinePage extends StatelessWidget {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 12,
-                              color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                             ),
                           ),
                         ],

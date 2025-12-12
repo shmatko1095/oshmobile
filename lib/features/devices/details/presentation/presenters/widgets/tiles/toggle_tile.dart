@@ -30,9 +30,9 @@ class ToggleTile extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.06),
+            color: Colors.white.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.08)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           ),
           child: Row(
             children: [
@@ -66,8 +66,8 @@ class ToggleTile extends StatelessWidget {
               Switch(
                 value: value,
                 onChanged: (v) => onChanged(context, v),
-                activeColor: Colors.white,
-                activeTrackColor: Colors.white.withOpacity(0.35),
+                activeThumbColor: Colors.white,
+                activeTrackColor: Colors.white.withValues(alpha: 0.35),
                 inactiveThumbColor: Colors.white70,
                 inactiveTrackColor: Colors.white24,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

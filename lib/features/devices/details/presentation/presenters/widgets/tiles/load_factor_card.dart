@@ -91,7 +91,7 @@ class LoadFactorCard extends StatelessWidget {
                         CircularProgressIndicator(
                           value: value,
                           strokeWidth: 6,
-                          backgroundColor: Colors.white.withOpacity(0.08),
+                          backgroundColor: Colors.white.withValues(alpha: 0.08),
                           valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                         Text(

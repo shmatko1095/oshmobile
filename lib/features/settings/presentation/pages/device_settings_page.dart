@@ -205,7 +205,7 @@ class DeviceSettingsPage extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 16),

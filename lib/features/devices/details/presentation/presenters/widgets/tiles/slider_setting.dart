@@ -77,9 +77,9 @@ class _SliderSettingState extends State<SliderSetting> {
       child: Ink(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.06),
+          color: Colors.white.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,10 +117,10 @@ class _SliderSettingState extends State<SliderSetting> {
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 4,
                 activeTrackColor: Colors.white,
-                inactiveTrackColor: Colors.white.withOpacity(0.25),
+                inactiveTrackColor: Colors.white.withValues(alpha: 0.25),
                 thumbColor: Colors.white,
-                overlayColor: Colors.white.withOpacity(0.15),
-                valueIndicatorColor: Colors.white.withOpacity(0.12),
+                overlayColor: Colors.white.withValues(alpha: 0.15),
+                valueIndicatorColor: Colors.white.withValues(alpha: 0.12),
               ),
               child: Slider(
                 value: v,

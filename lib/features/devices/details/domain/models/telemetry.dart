@@ -18,7 +18,7 @@ class Telemetry {
     required this.runTimeStat,
   });
 
-  /// Alias name you can use for Signal<Telemetry>('telemetry')
+  /// Alias name you can use for Signal Telemetry('telemetry')
   static const alias = 'telemetry';
 
   Telemetry copyWith({
