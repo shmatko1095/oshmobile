@@ -5,8 +5,11 @@ import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 
 part 'global_mqtt_state.dart';
 
-/// MQTT connection cubit.
-/// Important: methods are best-effort and must not leak uncaught Future errors.
+/// Session-scoped MQTT cubit.
+///
+/// This cubit only manages connection state and delegates transport work to
+/// [DeviceMqttRepo]. It is safe to call connect/disconnect multiple times;
+/// operations are best-effort and won't leak errors to the Zone.
 class GlobalMqttCubit extends Cubit<GlobalMqttState> {
   final DeviceMqttRepo _repo;
 

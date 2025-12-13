@@ -1,6 +1,6 @@
 import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:meta/meta.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
@@ -23,9 +23,6 @@ class HomeCubit extends Cubit<HomeState> {
   List<Device> userDevices = [];
   String? _currentUserUuid;
 
-  // Prevents emitting stale async results after logout/dispose.
-  int _opToken = 0;
-
   HomeCubit({
     required this.globalAuthCubit,
     required GetUserDevices getUserDevices,
@@ -41,19 +38,12 @@ class HomeCubit extends Cubit<HomeState> {
         super(HomeInitial());
 
   void selectDevice(String deviceId) {
-    if (isClosed) return;
-    final jwt = globalAuthCubit.getJwtUserData();
-    if (jwt == null) return;
     emit(state.copyWith(selectedDeviceId: deviceId));
-    _selectedDeviceStorage.saveSelectedDevice(jwt.uuid, deviceId);
+    _selectedDeviceStorage.saveSelectedDevice(_userUuid, deviceId);
   }
 
   Future<void> updateDeviceList() async {
-    final jwt = globalAuthCubit.getJwtUserData();
-    if (jwt == null) return;
-    final userId = jwt.uuid;
-
-    final token = ++_opToken;
+    final userId = _userUuid;
 
     final bool userChanged = _currentUserUuid != null && _currentUserUuid != userId;
     _currentUserUuid = userId;
@@ -62,8 +52,6 @@ class HomeCubit extends Cubit<HomeState> {
 
     final bool hasSelectedInState = !userChanged && state is HomeReady && state.selectedDeviceId != null;
 
-    if (isClosed || token != _opToken) return;
-
     if (hasSelectedInState) {
       emit(HomeRefreshing(selectedDeviceId: state.selectedDeviceId));
     } else {
@@ -71,7 +59,6 @@ class HomeCubit extends Cubit<HomeState> {
     }
 
     final result = await _getUserDevices(userId);
-    if (isClosed || token != _opToken) return;
 
     result.fold(
       (l) {
@@ -93,22 +80,14 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> unassignDevice(String deviceId) async {
-    final jwt = globalAuthCubit.getJwtUserData();
-    if (jwt == null) return;
-    final userId = jwt.uuid;
-    final token = ++_opToken;
-
-    if (isClosed) return;
     emit(HomeLoading(selectedDeviceId: state.selectedDeviceId));
     final result = await _unassignDevice(UnassignDeviceParams(
-      userId: userId,
+      userId: _userUuid,
       deviceId: deviceId,
     ));
-
-    if (isClosed || token != _opToken) return;
     result.fold(
       (l) {
-        OshCrashReporter.log("Failed to unassignDevice, user: $userId device: $deviceId");
+        OshCrashReporter.log("Failed to unassignDevice, user: $_userUuid device: $deviceId");
         emit(HomeFailed(l.message ?? "", selectedDeviceId: state.selectedDeviceId));
       },
       (r) => updateDeviceList(),
@@ -116,23 +95,15 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> assignDevice(String sn, String sc) async {
-    final jwt = globalAuthCubit.getJwtUserData();
-    if (jwt == null) return;
-    final userId = jwt.uuid;
-    final token = ++_opToken;
-
-    if (isClosed) return;
     emit(HomeLoading(selectedDeviceId: state.selectedDeviceId));
     final result = await _assignDevice(AssignDeviceParams(
-      uuid: userId,
+      uuid: _userUuid,
       sn: sn,
       sc: sc,
     ));
-
-    if (isClosed || token != _opToken) return;
     result.fold(
       (l) {
-        OshCrashReporter.log("Failed to assignDevice, user: $userId device: $sn");
+        OshCrashReporter.log("Failed to assignDevice, user: $_userUuid device: $sn");
         emit(HomeAssignFailed(selectedDeviceId: state.selectedDeviceId));
       },
       (r) {
@@ -147,22 +118,15 @@ class HomeCubit extends Cubit<HomeState> {
     String alias,
     String description,
   ) async {
-    final jwt = globalAuthCubit.getJwtUserData();
-    if (jwt == null) return;
-    final token = ++_opToken;
-
-    if (isClosed) return;
     emit(HomeLoading(selectedDeviceId: state.selectedDeviceId));
     final result = await _updateDeviceUserData(UpdateDeviceUserDataParams(
       deviceId: deviceId,
       alias: alias,
       description: description,
     ));
-
-    if (isClosed || token != _opToken) return;
     result.fold(
       (l) {
-        OshCrashReporter.log("Failed to updateDeviceUserData, device: $deviceId");
+        OshCrashReporter.log("Failed to updateDeviceUserData, user: $_userUuid device: $deviceId");
         emit(HomeUpdateDeviceUserDataFailed(selectedDeviceId: state.selectedDeviceId));
       },
       (r) {
@@ -183,4 +147,6 @@ class HomeCubit extends Cubit<HomeState> {
   void _updateDeviceList(List<Device> list) {
     userDevices = list;
   }
+
+  String get _userUuid => globalAuthCubit.getJwtUserData()!.uuid;
 }

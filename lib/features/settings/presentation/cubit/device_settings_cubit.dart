@@ -11,84 +11,58 @@ import 'package:oshmobile/features/settings/domain/usecases/watch_settings_strea
 
 part 'device_settings_state.dart';
 
+/// Device-scoped settings cubit: one instance per deviceSn.
 class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
+  final String deviceSn;
+
   final FetchSettingsAll _fetchAll;
   final SaveSettingsAll _saveAll;
   final WatchSettingsStream _watchStream;
   final MqttCommCubit _comm;
 
-  /// ACK wait timeout for each save operation.
   final Duration ackTimeout;
-
-  String _deviceSn = '';
-  int _bindToken = 0;
 
   StreamSubscription<MapEntry<String?, SettingsSnapshot>>? _sub;
   final Map<String, Timer> _pendingTimers = {};
 
+  bool _watchStarted = false;
+
   DeviceSettingsCubit({
+    required this.deviceSn,
     required FetchSettingsAll fetchAll,
     required SaveSettingsAll saveAll,
     required WatchSettingsStream watchStream,
     required MqttCommCubit comm,
-    Duration ackTimeoutOverride = const Duration(seconds: 8),
+    this.ackTimeout = const Duration(seconds: 8),
   })  : _fetchAll = fetchAll,
         _saveAll = saveAll,
         _watchStream = watchStream,
         _comm = comm,
-        ackTimeout = ackTimeoutOverride,
         super(const DeviceSettingsLoading());
 
-  /// Rebind to the last known deviceSn.
-  Future<void> rebind() async {
-    if (_deviceSn.isEmpty) return;
-    await bind(_deviceSn);
-  }
-
-  /// Bind this cubit to a device.
-  ///
-  /// - Subscribes to reported settings stream.
-  /// - Fetches initial snapshot.
-  /// - Uses MqttCommCubit to track in-flight "load settings" operation.
-  Future<void> bind(String deviceSn) async {
-    await _sub?.cancel();
-    _cancelAllTimers();
-
-    final prevDeviceSn = _deviceSn;
-    _deviceSn = deviceSn;
-    final token = ++_bindToken;
-
-    final reqId = newReqId();
-    _comm.start(reqId: reqId, deviceSn: deviceSn);
-
-    // Reset transient state when changing device.
-    final current = state;
-    if (current is DeviceSettingsReady && prevDeviceSn.isNotEmpty) {
-      _comm.dropForDevice(prevDeviceSn);
-      emit(current.copyWith(
-        dirty: false,
-        saving: false,
-        flash: null,
-        pendingReqId: null,
-      ));
-    }
-
-    emit(const DeviceSettingsLoading());
+  /// Call once after creation (from DeviceScope).
+  void start() {
+    if (_watchStarted) return;
+    _watchStarted = true;
 
     _sub = _watchStream(deviceSn).listen((entry) {
-      if (token != _bindToken) return;
       _onReported(entry.key, entry.value);
     });
+  }
+
+  Future<void> refresh() => _loadInitial();
+
+  Future<void> _loadInitial() async {
+    if (isClosed) return;
+    emit(const DeviceSettingsLoading());
 
     try {
       final snap = await _fetchAll(deviceSn);
-      if (token != _bindToken) return;
-      _comm.complete(reqId);
+      if (isClosed) return;
       emit(DeviceSettingsReady(snapshot: snap));
     } catch (e, st) {
-      if (token != _bindToken) return;
-      OshCrashReporter.logNonFatal(e, st, reason: "Failed to load settings", context: {"deviceSn":deviceSn});
-      _comm.fail(reqId, 'Failed to load settings: $e');
+      if (isClosed) return;
+      OshCrashReporter.logNonFatal(e, st, reason: "Failed to load settings", context: {"deviceSn": deviceSn});
       emit(DeviceSettingsError(e.toString()));
     }
   }
@@ -101,7 +75,6 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
       return;
     }
 
-    // Correlated ACK for our last save.
     if (st.pendingReqId != null &&
         st.pendingReqId!.isNotEmpty &&
         appliedReqId != null &&
@@ -118,45 +91,28 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
       return;
     }
 
-    // Spontaneous update or unrelated reqId.
     if (st.dirty || st.saving) {
-      // User is editing; adopt remote snapshot but keep dirty/saving flags
-      // so UI remains optimistic.
       emit(st.copyWith(snapshot: remote));
     } else {
-      emit(st.copyWith(
-        snapshot: remote,
-        dirty: false,
-        saving: false,
-      ));
+      emit(st.copyWith(snapshot: remote, dirty: false, saving: false));
     }
   }
 
-  /// Update single field optimistically.
-  ///
-  /// [fieldId] is a path like "display.activeBrightness".
   void changeValue(String fieldId, Object? value) {
     final st = state;
     if (st is! DeviceSettingsReady) return;
 
     final nextSnap = st.snapshot.copyWithValue(fieldId, value);
-    emit(st.copyWith(
-      snapshot: nextSnap,
-      dirty: true,
-      flash: null,
-    ));
+    emit(st.copyWith(snapshot: nextSnap, dirty: true, flash: null));
   }
 
-  /// Persist current snapshot to device.
-  ///
-  /// Generates reqId, registers it with MqttCommCubit and waits for reported ACK.
   Future<void> persist() async {
     final st = state;
     if (st is! DeviceSettingsReady) return;
     if (!st.dirty || st.saving) return;
 
     final reqId = newReqId();
-    _comm.start(reqId: reqId, deviceSn: _deviceSn);
+    _comm.start(reqId: reqId, deviceSn: deviceSn);
 
     emit(st.copyWith(
       saving: true,
@@ -165,20 +121,17 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
     ));
 
     try {
-      await _saveAll(_deviceSn, st.snapshot, reqId: reqId);
+      await _saveAll(deviceSn, st.snapshot, reqId: reqId);
+      if (isClosed) return;
       _scheduleTimeout(reqId);
     } catch (e, stack) {
-      OshCrashReporter.logNonFatal(e, stack, reason: "Failed to save settings", context: {"deviceSn":_deviceSn});
+      OshCrashReporter.logNonFatal(e, stack, reason: "Failed to save settings", context: {"deviceSn": deviceSn});
       _comm.fail(reqId, 'Failed to save settings: $e');
-      emit(st.copyWith(
-        saving: false,
-        flash: 'Failed to save settings',
-        pendingReqId: null,
-      ));
+      if (isClosed) return;
+      emit(st.copyWith(saving: false, flash: 'Failed to save settings', pendingReqId: null));
     }
   }
 
-  /// Discard local unsaved changes and revert to last snapshot (no reload).
   void discardLocalChanges() {
     final st = state;
     if (st is! DeviceSettingsReady) return;
@@ -199,10 +152,8 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
     _pendingTimers.remove(reqId)?.cancel();
     _comm.fail(reqId, 'Settings operation timed out');
 
-    OshCrashReporter.log("Settings operation timed out, deviceSn: $_deviceSn");
     emit(st.copyWith(
       saving: false,
-      // keep dirty = true to allow user to retry
       flash: 'Settings operation timed out',
       pendingReqId: null,
     ));
@@ -218,7 +169,11 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
   @override
   Future<void> close() async {
     await _sub?.cancel();
+    _sub = null;
     _cancelAllTimers();
+
+    _comm.dropForDevice(deviceSn);
+
     return super.close();
   }
 }

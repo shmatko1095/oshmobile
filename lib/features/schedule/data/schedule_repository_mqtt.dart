@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
+import 'package:oshmobile/core/utils/stream_waiters.dart';
 import 'package:oshmobile/features/schedule/data/schedule_topics.dart';
 import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
@@ -25,6 +26,38 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   final Map<String, int> _refs = {};
   final Map<String, CalendarSnapshot> _last = {};
 
+  bool _disposed = false;
+
+  /// Best-effort cleanup when session scope is disposed.
+  /// Not part of ScheduleRepository interface on purpose.
+  void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    unawaited(_disposeAsync());
+  }
+
+  Future<void> _disposeAsync() async {
+    final subs = _subs.values.toList(growable: false);
+    final ctrls = _ctrls.values.toList(growable: false);
+
+    _subs.clear();
+    _ctrls.clear();
+    _refs.clear();
+    _last.clear();
+
+    for (final s in subs) {
+      try {
+        await s.cancel();
+      } catch (_) {}
+    }
+    for (final c in ctrls) {
+      try {
+        if (!c.isClosed) await c.close();
+      } catch (_) {}
+    }
+  }
+
+  // Stream waiting helpers live in core/utils/stream_waiters.dart.
   ScheduleRepositoryMqtt(
     this._mqtt,
     this._topics, {
@@ -33,6 +66,8 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
 
   @override
   Future<CalendarSnapshot> fetchAll(String deviceId) async {
+    if (_disposed) throw StateError('ScheduleRepositoryMqtt is disposed');
+
     final reportedTopic = _topics.reported(deviceId);
     final getTopic = _topics.getReq(deviceId);
 
@@ -41,7 +76,11 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     final reqId = newReqId();
     unawaited(_mqtt.publishJson(getTopic, {'reqId': reqId}));
 
-    final msg = await stream.first.timeout(timeout);
+    final msg = await firstWithTimeout(
+      stream,
+      timeout,
+      timeoutMessage: 'Timeout waiting for first schedule reported',
+    );
     final map = _decodeMap(msg.payload);
     final snap = _mergePartial(deviceId, map);
     _last[deviceId] = snap;
@@ -50,6 +89,8 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
 
   @override
   Future<void> saveAll(String deviceId, CalendarSnapshot snapshot, {String? reqId}) async {
+    if (_disposed) throw StateError('ScheduleRepositoryMqtt is disposed');
+
     final reportedTopic = _topics.reported(deviceId);
     final desiredTopic = _topics.desired(deviceId);
 
@@ -73,14 +114,25 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
 
     // Prefer correlation by reqId; otherwise accept first next reported.
     try {
-      await repStream.map((e) => e.payload).firstWhere((p) => _matchesReqId(p, id)).timeout(timeout);
+      await firstWhereWithTimeout<dynamic>(
+        repStream.map((e) => e.payload),
+        (p) => _matchesReqId(p, id),
+        timeout,
+        timeoutMessage: 'Timeout waiting for schedule ACK',
+      );
     } on TimeoutException {
-      await repStream.first.timeout(timeout);
+      await firstWithTimeout(
+        repStream,
+        timeout,
+        timeoutMessage: 'Timeout waiting for schedule reported after publish',
+      );
     }
   }
 
   @override
   Future<void> setMode(String deviceId, CalendarMode mode, {String? reqId}) async {
+    if (_disposed) throw StateError('ScheduleRepositoryMqtt is disposed');
+
     final reportedTopic = _topics.reported(deviceId);
     final desiredTopic = _topics.desired(deviceId);
 
@@ -94,14 +146,25 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     await _mqtt.publishJson(desiredTopic, payload);
 
     try {
-      await repStream.map((e) => e.payload).firstWhere((p) => _matchesReqId(p, id)).timeout(timeout);
+      await firstWhereWithTimeout<dynamic>(
+        repStream.map((e) => e.payload),
+        (p) => _matchesReqId(p, id),
+        timeout,
+        timeoutMessage: 'Timeout waiting for schedule ACK',
+      );
     } on TimeoutException {
-      await repStream.first.timeout(timeout);
+      await firstWithTimeout(
+        repStream,
+        timeout,
+        timeoutMessage: 'Timeout waiting for schedule reported after setMode',
+      );
     }
   }
 
   @override
   Stream<MapEntry<String?, CalendarSnapshot>> watchSnapshot(String deviceId) {
+    if (_disposed) return Stream<MapEntry<String?, CalendarSnapshot>>.empty();
+
     final existing = _ctrls[deviceId];
     if (existing != null && !existing.isClosed) {
       return existing.stream;

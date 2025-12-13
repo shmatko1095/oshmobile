@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:oshmobile/core/utils/stream_waiters.dart';
 import 'package:oshmobile/features/ble_provisioning/data/ble/ble_client.dart';
 import 'package:oshmobile/features/ble_provisioning/data/crypto/ble_secure_codec.dart';
 import 'package:oshmobile/features/ble_provisioning/domain/entities/wifi_connect_status.dart';
@@ -315,12 +316,19 @@ class BleProvisioningRepositoryImpl implements BleProvisioningRepository {
     }
 
     try {
-      final adv = await _bleClient.scan().firstWhere((adv) => _advertMatchesSerial(adv, serialNumber)).timeout(timeout);
+      final adv = await firstWhereWithTimeout<BleAdvertisement>(
+        _bleClient.scan(),
+        (adv) => _advertMatchesSerial(adv, serialNumber),
+        timeout,
+        timeoutMessage: 'Device with SN $serialNumber not found',
+      );
       return adv.deviceId;
     } on TimeoutException {
+      // Keep a stable public error message.
       throw TimeoutException('Device with SN $serialNumber not found');
     }
   }
+
 
   String _makeReqId(String prefix) {
     final now = DateTime.now().millisecondsSinceEpoch;

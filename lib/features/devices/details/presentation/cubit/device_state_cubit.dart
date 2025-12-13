@@ -15,7 +15,7 @@ class DeviceStateState {
   final String? deviceId;
   final DeviceLiveStatus status;
   final DateTime? lastUpdate;
-  final Map<String, dynamic> data; // alias -> value
+  final Map<String, dynamic> data;
 
   const DeviceStateState({
     required this.data,
@@ -26,9 +26,7 @@ class DeviceStateState {
 
   factory DeviceStateState.initial() => const DeviceStateState(data: {});
 
-  dynamic getDynamic(Signal<dynamic> s) {
-    return data[s.alias];
-  }
+  dynamic getDynamic(Signal<dynamic> s) => data[s.alias];
 
   T? get<T>(Signal<T> s) {
     final v = data[s.alias];
@@ -50,20 +48,42 @@ class DeviceStateState {
 
   DeviceStateState merge(Map<String, dynamic> diff) {
     if (diff.isEmpty) return this;
-    var changed = false;
     final next = Map<String, dynamic>.from(data);
+    var changed = false;
+
     diff.forEach((k, v) {
       if (next[k] != v) {
         next[k] = v;
         changed = true;
       }
     });
-    return changed ? copyWith(data: next, lastUpdate: DateTime.now(), status: DeviceLiveStatus.live) : this;
+
+    return changed
+        ? copyWith(
+            data: next,
+            lastUpdate: DateTime.now(),
+            status: DeviceLiveStatus.live,
+          )
+        : this;
   }
 }
 
+/// Device-scoped: one instance per deviceSn.
+/// Lifecycle is handled by DeviceScope disposal.
 class DeviceStateCubit extends Cubit<DeviceStateState> {
+  final SubscribeTelemetry _subscribe;
+  final UnsubscribeTelemetry _unsubscribe;
+  final WatchTelemetry _watch;
+  final EnableRtStream _enableRt;
+  final DisableRtStream _disableRt;
+
+  final String deviceSn;
+  final Duration rtInterval;
+
+  StreamSubscription<Map<String, dynamic>>? _sub;
+
   DeviceStateCubit({
+    required this.deviceSn,
     required SubscribeTelemetry subscribe,
     required UnsubscribeTelemetry unsubscribe,
     required WatchTelemetry watch,
@@ -77,70 +97,69 @@ class DeviceStateCubit extends Cubit<DeviceStateState> {
         _disableRt = disableRt,
         super(DeviceStateState.initial());
 
-  final SubscribeTelemetry _subscribe;
-  final UnsubscribeTelemetry _unsubscribe;
-  final WatchTelemetry _watch;
-  final EnableRtStream _enableRt;
-  final DisableRtStream _disableRt;
-  final Duration rtInterval; // policy knob
+  /// Call once after creation (from DeviceScope).
+  Future<void> start() async {
+    if (isClosed) return;
 
-  StreamSubscription<Map<String, dynamic>>? _sub;
-  int _bindToken = 0;
+    emit(state.copyWith(deviceId: deviceSn, status: DeviceLiveStatus.connecting));
 
-  /// Bind to a specific device and start consuming telemetry alias-diffs.
-  Future<void> bind(String deviceId) async {
-    final token = ++_bindToken;
+    // Enable RT stream (best-effort).
+    try {
+      await _enableRt(deviceSn, interval: rtInterval);
+    } catch (e, st) {
+      unawaited(OshCrashReporter.logNonFatal(
+        e,
+        st,
+        reason: 'Failed to enable RT stream',
+        context: {'deviceSn': deviceSn},
+      ));
+    }
+    if (isClosed) return;
+
+    // Subscribe (best-effort).
+    try {
+      await _subscribe(deviceSn);
+    } catch (e, st) {
+      unawaited(OshCrashReporter.logNonFatal(
+        e,
+        st,
+        reason: 'Failed to subscribe telemetry',
+        context: {'deviceSn': deviceSn},
+      ));
+    }
+    if (isClosed) return;
+
+    // Watch telemetry stream.
     await _sub?.cancel();
-    emit(DeviceStateState.initial().copyWith(deviceId: deviceId, status: DeviceLiveStatus.connecting));
+    if (isClosed) return;
 
-    // 1) Try to enable RT (non-fatal)
-    try {
-      await _enableRt(deviceId, interval: rtInterval);
-    } catch (e, st) {
-      OshCrashReporter.logNonFatal(e, st, reason: "Failed to enable RT stream", context: {"deviceId":deviceId});
-    }
-
-    // 2) Subscribe and watch
-    try {
-      await _subscribe(deviceId);
-    } catch (e, st) {
-      OshCrashReporter.logNonFatal(e, st, reason: "Failed to subscribe", context: {"deviceId":deviceId});
-    }
-    _sub = _watch(deviceId).listen(
+    _sub = _watch(deviceSn).listen(
       (diff) {
-        if (token != _bindToken) return;
+        if (isClosed) return;
         emit(state.merge(diff));
       },
       onError: (e) {
-        if (token != _bindToken) return;
-        OshCrashReporter.log("DeviceStateState: onError: error: $e");
+        if (isClosed) return;
+        OshCrashReporter.log('DeviceStateCubit: watch error: $e');
         emit(state.copyWith(status: DeviceLiveStatus.degraded));
       },
       cancelOnError: false,
     );
   }
 
-  /// Unbind and stop consuming telemetry.
-  Future<void> unbind() async {
-    final did = state.deviceId;
-    _bindToken++;
-    await _sub?.cancel();
-    _sub = null;
-
-    if (did != null) {
-      try {
-        await _disableRt(did);
-      } catch (_) {}
-      try {
-        await _unsubscribe(did);
-      } catch (_) {}
-    }
-    emit(DeviceStateState.initial());
-  }
-
   @override
   Future<void> close() async {
     await _sub?.cancel();
+    _sub = null;
+
+    // Best-effort cleanup on device dispose.
+    try {
+      await _disableRt(deviceSn);
+    } catch (_) {}
+    try {
+      await _unsubscribe(deviceSn);
+    } catch (_) {}
+
     return super.close();
   }
 }

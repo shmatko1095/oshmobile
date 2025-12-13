@@ -9,22 +9,29 @@ class DeviceActionsState {
   const DeviceActionsState({this.busy = false, this.lastError});
 }
 
+/// Device-scoped: one instance per device.
 class DeviceActionsCubit extends Cubit<DeviceActionsState> {
-  DeviceActionsCubit(this._control) : super(const DeviceActionsState());
   final ControlRepository _control;
-  String _deviceSn = "";
+  final String deviceSn;
 
-  Future<void> bind(String deviceSn) async {
-    _deviceSn = deviceSn;
-  }
+  DeviceActionsCubit({
+    required ControlRepository control,
+    required this.deviceSn,
+  })  : _control = control,
+        super(const DeviceActionsState());
 
   Future<void> send<T>(Command<T> cmd, T value) async {
+    if (isClosed) return;
     if (state.busy) return;
+
     emit(const DeviceActionsState(busy: true));
+
     try {
-      await _control.send(_deviceSn, cmd, value);
+      await _control.send(deviceSn, cmd, value);
+      if (isClosed) return;
       emit(const DeviceActionsState(busy: false));
     } catch (e) {
+      if (isClosed) return;
       emit(DeviceActionsState(busy: false, lastError: e.toString()));
     }
   }

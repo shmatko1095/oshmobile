@@ -9,6 +9,11 @@ class MqttJson {
 }
 
 /// Repository interface for app-side MQTT actions.
+///
+/// Semantics:
+/// - connect/reconnect/disconnect are transport operations.
+/// - disposeSession() is called ONLY when the login session ends (logout),
+///   and must close controllers / clear state.
 abstract class DeviceMqttRepo {
   bool get isConnected;
 
@@ -17,6 +22,8 @@ abstract class DeviceMqttRepo {
   Future<void> reconnect({required String userId, required String token});
 
   Future<void> disconnect();
+
+  Future<void> disposeSession();
 
   Stream<MqttJson> subscribeJson(String topicFilter, {int qos = 1});
 

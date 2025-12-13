@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
+import 'package:oshmobile/core/utils/stream_waiters.dart';
 import 'package:oshmobile/features/settings/data/settings_topics.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 import 'package:oshmobile/features/settings/domain/repositories/settings_repository.dart';
@@ -17,6 +18,40 @@ class SettingsRepositoryMqtt implements SettingsRepository {
   final Map<String, int> _refs = {};
   final Map<String, SettingsSnapshot> _last = {};
 
+  bool _disposed = false;
+
+  /// Best-effort cleanup when session scope is disposed.
+  /// Not part of SettingsRepository interface on purpose.
+  void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    unawaited(_disposeAsync());
+  }
+
+  Future<void> _disposeAsync() async {
+    final subs = _subs.values.toList(growable: false);
+    final ctrls = _ctrls.values.toList(growable: false);
+
+    _subs.clear();
+    _ctrls.clear();
+    _refs.clear();
+    _last.clear();
+
+    for (final s in subs) {
+      try {
+        await s.cancel();
+      } catch (_) {}
+    }
+    for (final c in ctrls) {
+      try {
+        if (!c.isClosed) await c.close();
+      } catch (_) {}
+    }
+  }
+
+  // Stream waiting helpers live in core/utils/stream_waiters.dart.
+
+
   SettingsRepositoryMqtt(
     this._mqtt,
     this._topics, {
@@ -25,6 +60,8 @@ class SettingsRepositoryMqtt implements SettingsRepository {
 
   @override
   Future<SettingsSnapshot> fetchAll(String deviceSn) async {
+    if (_disposed) throw StateError('SettingsRepositoryMqtt is disposed');
+
     final reportedTopic = _topics.reported(deviceSn);
     final getTopic = _topics.getReq(deviceSn);
 
@@ -33,7 +70,11 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     final reqId = newReqId();
     unawaited(_mqtt.publishJson(getTopic, {'reqId': reqId}));
 
-    final msg = await stream.first.timeout(timeout);
+    final msg = await firstWithTimeout(
+      stream,
+      timeout,
+      timeoutMessage: 'Timeout waiting for first settings reported',
+    );
     final map = _decodeMap(msg.payload);
     final snap = _mergePartial(deviceSn, map);
     _last[deviceSn] = snap;
@@ -46,6 +87,8 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     SettingsSnapshot snapshot, {
     String? reqId,
   }) async {
+    if (_disposed) throw StateError('SettingsRepositoryMqtt is disposed');
+
     final reportedTopic = _topics.reported(deviceSn);
     final desiredTopic = _topics.desired(deviceSn);
 
@@ -62,14 +105,25 @@ class SettingsRepositoryMqtt implements SettingsRepository {
 
     // Предпочитаем корреляцию по reqId; иначе берём первый reported.
     try {
-      await repStream.map((e) => e.payload).firstWhere((p) => _matchesReqId(p, id)).timeout(timeout);
+      await firstWhereWithTimeout<dynamic>(
+        repStream.map((e) => e.payload),
+        (p) => _matchesReqId(p, id),
+        timeout,
+        timeoutMessage: 'Timeout waiting for settings ACK',
+      );
     } on TimeoutException {
-      await repStream.first.timeout(timeout);
+      await firstWithTimeout(
+        repStream,
+        timeout,
+        timeoutMessage: 'Timeout waiting for settings reported after publish',
+      );
     }
   }
 
   @override
   Stream<MapEntry<String?, SettingsSnapshot>> watchSnapshot(String deviceSn) {
+    if (_disposed) return Stream<MapEntry<String?, SettingsSnapshot>>.empty();
+
     final existing = _ctrls[deviceSn];
     if (existing != null && !existing.isClosed) {
       return existing.stream;

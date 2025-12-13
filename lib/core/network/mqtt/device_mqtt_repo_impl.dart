@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
@@ -9,9 +10,20 @@ import 'package:oshmobile/core/network/mqtt/app_device_id_provider.dart';
 import 'device_mqtt_repo.dart';
 
 /// Transport-only MQTT repo.
-/// Notes:
-/// - Keep auth style compatible with broker config (username=clientId).
-/// - Avoid autoReconnect if you manage session lifecycle manually.
+///
+/// Clean semantics:
+/// - connect/reconnect/disconnect do NOT close JSON controllers
+///   (so reconnect will not break listeners).
+/// - disposeSession() closes everything and must be called ONLY on logout/session end.
+/// - publishJson does not throw when disconnected (prevents unhandled async errors
+///   when callers use unawaited()).
+///
+/// Subscription semantics:
+/// - subscribeJson() is reference-counted by stream subscription lifetime.
+///   When the last listener cancels, we unsubscribe from broker and dispose
+///   the internal filter controller.
+///
+/// This prevents unbounded growth of topic filters after screen switches.
 class DeviceMqttRepoImpl implements DeviceMqttRepo {
   DeviceMqttRepoImpl({
     required AppDeviceIdProvider deviceIdProvider,
@@ -22,6 +34,7 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     this.secure = false,
     this.keepAliveSeconds = 30,
     this.autoReconnect = false,
+    this.publishWaitTimeout = const Duration(seconds: 6),
   })  : _deviceIdProvider = deviceIdProvider,
         _client = MqttServerClient(brokerHost, "") {
     _client.logging(on: true);
@@ -31,12 +44,13 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     _client.useWebSocket = useWebSocket;
     _client.keepAlivePeriod = keepAliveSeconds;
 
-    // If session-scoped: keep it OFF to avoid background reconnect with stale tokens.
+    // If you use token-based auth, consider managing reconnect in your session manager,
+    // because autoReconnect will retry with the same credentials.
     _client.autoReconnect = autoReconnect;
 
     _client.onConnected = _onConnected;
     _client.onDisconnected = _onDisconnected;
-    _client.onSubscribed = (t) => _subscribedTopics.add(t);
+    _client.onSubscribed = _onSubscribed;
   }
 
   final AppDeviceIdProvider _deviceIdProvider;
@@ -45,16 +59,28 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
   final bool secure;
   final int keepAliveSeconds;
   final bool autoReconnect;
+  final Duration publishWaitTimeout;
 
   final MqttServerClient _client;
 
+  // One controller per topic filter.
   final Map<String, StreamController<MqttJson>> _jsonCtrls = {};
-  final Set<String> _jsonActiveFilters = {};
-  final Set<String> _subscribedTopics = {};
+
+  // Reference counter for topic filters (one ref per subscribeJson() listener).
+  final Map<String, int> _filterRefs = {};
+
+  // QoS per filter (we keep the max seen).
+  final Map<String, int> _filterQos = {};
+
+  // Optional: keep for debugging/telemetry only.
+  final Set<String> _ackSubscribed = {};
 
   StreamSubscription<List<MqttReceivedMessage<MqttMessage?>>>? _updatesSub;
 
   Future<void>? _connectInFlight;
+
+  // A gate that completes when we are connected (used to await short publish-before-connect races).
+  Completer<void> _connectedGate = Completer<void>();
 
   Future<String> _buildClientId(String userId) async {
     final deviceId = await _deviceIdProvider.getDeviceId();
@@ -66,79 +92,91 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
 
   bool get _isConnecting => _client.connectionStatus?.state == MqttConnectionState.connecting;
 
+  // ------------------- Connection lifecycle -------------------
+
   @override
   Future<void> connect({required String userId, required String token}) async {
     if (isConnected) {
+      // Ensure updates subscription is attached (defensive).
       _attachUpdatesStream();
       return;
     }
 
-    // Prevent concurrent handshakes.
-    if (_connectInFlight != null) return _connectInFlight!;
+    // Prevent parallel handshakes from different callers.
+    if (_connectInFlight != null) {
+      await _connectInFlight;
+      return;
+    }
 
-    final f = _connectInternal(userId: userId, token: token);
-    _connectInFlight = f;
+    final fut = _connectInternal(userId: userId, token: token);
+    _connectInFlight = fut;
     try {
-      await f;
+      await fut;
     } finally {
       _connectInFlight = null;
     }
   }
 
-  Future<void> _connectInternal({
-    required String userId,
-    required String token,
-  }) async {
+  Future<void> _connectInternal({required String userId, required String token}) async {
     final clientId = await _buildClientId(userId);
 
-    // Keep the same auth method as your previous working version.
-    final connMsg = MqttConnectMessage().withClientIdentifier(clientId).authenticateAs(clientId, token);
+    // IMPORTANT: broker auth style must match your backend/broker config.
+    // Here: username = clientId, password = token.
+    final connMsg = MqttConnectMessage()
+        .withClientIdentifier(clientId)
+        .authenticateAs(clientId, token)
+        .startClean(); // clean session -> always resubscribe after connect
 
+    _client.clientIdentifier = clientId;
     _client.connectionMessage = connMsg;
 
     try {
       await _client.connect();
-
-      if (!isConnected) {
-        throw StateError(
-          'MQTT connect failed: ${_client.connectionStatus?.returnCode}',
-        );
-      }
-
-      _attachUpdatesStream();
-      _resubscribeAll();
     } catch (e, st) {
       await OshCrashReporter.logNonFatal(
         e,
         st,
-        reason: 'Mqtt connect failed',
-        context: {
-          'host': _client.server,
-          'port': _client.port,
-          'secure': secure,
-          'websocket': useWebSocket,
-        },
+        reason: 'MQTT connect() threw',
+        context: {'clientId': clientId},
       );
-
-      // Best-effort cleanup.
       try {
         _client.disconnect();
       } catch (_) {}
-
       rethrow;
     }
+
+    if (!isConnected) {
+      final rc = _client.connectionStatus?.returnCode.toString();
+      await OshCrashReporter.logNonFatal(
+        'MQTT connect rejected: $rc',
+        StackTrace.current,
+        reason: 'MQTT connect() not accepted',
+        context: {'clientId': clientId},
+      );
+      try {
+        _client.disconnect();
+      } catch (_) {}
+      throw StateError('MQTT connect failed: $rc');
+    }
+
+    _markConnected();
+    _attachUpdatesStream();
+    _resubscribeAllActiveFilters();
   }
 
   @override
   Future<void> reconnect({required String userId, required String token}) async {
+    // Transport reconnect: keep controllers alive.
     try {
       _client.disconnect();
     } catch (_) {}
+    _markDisconnected();
     await connect(userId: userId, token: token);
   }
 
   @override
   Future<void> disconnect() async {
+    // Transport disconnect: keep controllers alive.
     try {
       await _updatesSub?.cancel();
       _updatesSub = null;
@@ -147,29 +185,118 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     try {
       _client.disconnect();
     } catch (_) {}
+
+    _markDisconnected();
   }
 
   @override
-  Stream<MqttJson> subscribeJson(String topicFilter, {int qos = 1}) {
-    final ctrl = _jsonCtrls.putIfAbsent(topicFilter, () {
-      if (isConnected && !_subscribedTopics.contains(topicFilter)) {
-        _client.subscribe(topicFilter, _qosFromInt(qos));
-        _subscribedTopics.add(topicFilter);
-      }
-      _jsonActiveFilters.add(topicFilter);
+  Future<void> disposeSession() async {
+    // Session end (logout): close controllers + clear all local state.
+    await disconnect();
 
-      return StreamController<MqttJson>.broadcast(
-        onListen: () {
-          if (isConnected && !_subscribedTopics.contains(topicFilter)) {
-            _client.subscribe(topicFilter, _qosFromInt(qos));
-            _subscribedTopics.add(topicFilter);
-          }
-        },
-      );
-    });
+    final ctrls = _jsonCtrls.values.toList(growable: false);
+    _jsonCtrls.clear();
+    _filterRefs.clear();
+    _filterQos.clear();
+    _ackSubscribed.clear();
 
-    return ctrl.stream;
+    for (final c in ctrls) {
+      try {
+        await c.close();
+      } catch (_) {}
+    }
   }
+
+  // ------------------- Subscriptions -------------------
+
+  @override
+  Stream<MqttJson> subscribeJson(String topicFilter, {int qos = 1}) {
+    // A new stream per caller so we can ref-count on cancel.
+    return Stream<MqttJson>.multi((controller) {
+      _acquireFilter(topicFilter, qos: qos);
+
+      final base = _jsonCtrls[topicFilter];
+      if (base == null) {
+        controller.addError(StateError('Failed to acquire MQTT filter: $topicFilter'));
+        controller.close();
+        return;
+      }
+
+      late final StreamSubscription sub;
+      sub = base.stream.listen(
+        controller.add,
+        onError: controller.addError,
+        onDone: controller.close,
+        cancelOnError: false,
+      );
+
+      controller.onCancel = () async {
+        await sub.cancel();
+        _releaseFilter(topicFilter);
+      };
+    });
+  }
+
+  void _acquireFilter(String topicFilter, {required int qos}) {
+    final nextRefs = (_filterRefs[topicFilter] ?? 0) + 1;
+    _filterRefs[topicFilter] = nextRefs;
+
+    final prevQos = _filterQos[topicFilter] ?? qos;
+    final nextQos = max(prevQos, qos);
+    _filterQos[topicFilter] = nextQos;
+
+    _jsonCtrls.putIfAbsent(topicFilter, () => StreamController<MqttJson>.broadcast());
+
+    // If already connected, subscribe immediately.
+    // If QoS was upgraded, re-subscribe with the new QoS (best-effort).
+    if (isConnected && (nextRefs == 1 || nextQos != prevQos)) {
+      _client.subscribe(topicFilter, _qosFromInt(nextQos));
+    }
+  }
+
+  void _releaseFilter(String topicFilter) {
+    final cur = _filterRefs[topicFilter];
+    if (cur == null) return;
+
+    final next = cur - 1;
+    if (next > 0) {
+      _filterRefs[topicFilter] = next;
+      return;
+    }
+
+    _filterRefs.remove(topicFilter);
+    _filterQos.remove(topicFilter);
+
+    // Broker unsubscribe is best-effort.
+    if (isConnected) {
+      try {
+        _client.unsubscribe(topicFilter);
+      } catch (_) {}
+    }
+
+    _ackSubscribed.remove(topicFilter);
+
+    final ctrl = _jsonCtrls.remove(topicFilter);
+    if (ctrl != null && !ctrl.isClosed) {
+      unawaited(ctrl.close());
+    }
+  }
+
+  void _resubscribeAllActiveFilters() {
+    // With startClean(), broker forgets all subscriptions -> must resubscribe always.
+    _ackSubscribed.clear();
+
+    if (!isConnected) return;
+    if (_filterRefs.isEmpty) return;
+
+    for (final entry in _filterRefs.entries) {
+      final filter = entry.key;
+      final qos = _filterQos[filter] ?? 1;
+      _client.subscribe(filter, _qosFromInt(qos));
+    }
+  }
+
+  // ------------------- Publish -------------------
 
   @override
   Future<void> publishJson(
@@ -178,48 +305,36 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     int qos = 1,
     bool retain = false,
   }) async {
-    if (!isConnected && _isConnecting) {
-      await _waitForConnectCompletion();
+    // If connect/reconnect is in-flight, wait briefly.
+    if (!isConnected && (_isConnecting || _connectInFlight != null)) {
+      try {
+        await Future.any([
+          _connectInFlight ?? _waitForConnectCompletion(),
+          Future.delayed(publishWaitTimeout),
+        ]);
+      } catch (_) {}
     }
 
     if (!isConnected) {
-      final error = StateError('MQTT not connected, cannot publish');
-      await OshCrashReporter.logNonFatal(
-        error,
-        StackTrace.current,
-        reason: 'Publish while disconnected',
-        context: {'topic': topic},
-      );
+      OshCrashReporter.log('MQTT publish skipped (disconnected). topic=$topic');
       return;
     }
 
-    final builder = MqttClientPayloadBuilder()..addString(jsonEncode(payload));
-    _client.publishMessage(
-      topic,
-      _qosFromInt(qos),
-      builder.payload!,
-      retain: retain,
-    );
-  }
-
-  Future<void> _waitForConnectCompletion() async {
-    const timeout = Duration(seconds: 5);
-    const step = Duration(milliseconds: 100);
-    final start = DateTime.now();
-
-    while (_isConnecting && DateTime.now().difference(start) < timeout) {
-      await Future.delayed(step);
+    try {
+      final builder = MqttClientPayloadBuilder()..addString(jsonEncode(payload));
+      _client.publishMessage(topic, _qosFromInt(qos), builder.payload!, retain: retain);
+    } catch (e, st) {
+      // Do NOT rethrow: some callers may use unawaited().
+      unawaited(OshCrashReporter.logNonFatal(
+        e,
+        st,
+        reason: 'MQTT publish failed',
+        context: {'topic': topic},
+      ));
     }
   }
 
-  void _onConnected() {
-    _attachUpdatesStream();
-    _resubscribeAll();
-  }
-
-  void _onDisconnected() {
-    // If autoReconnect=false, your coordinator controls reconnection.
-  }
+  // ------------------- Incoming messages fan-out -------------------
 
   void _attachUpdatesStream() {
     _updatesSub?.cancel();
@@ -229,28 +344,24 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     );
   }
 
-  void _resubscribeAll() {
-    for (final f in _jsonActiveFilters) {
-      _client.subscribe(f, MqttQos.atLeastOnce);
-      _subscribedTopics.add(f);
-    }
-  }
-
   void _onUpdates(List<MqttReceivedMessage<MqttMessage?>> events) {
+    if (_jsonCtrls.isEmpty) return;
+
     for (final evt in events) {
       final topic = evt.topic;
-      final msg = evt.payload as MqttPublishMessage;
+      final msg = evt.payload;
+      if (msg is! MqttPublishMessage) continue;
+
       final raw = MqttPublishPayload.bytesToStringAsString(msg.payload.message);
-
-      if (_jsonCtrls.isEmpty) continue;
-
       final decoded = _decodePayload(raw);
       final item = MqttJson(topic, decoded);
 
       for (final entry in _jsonCtrls.entries) {
         final filter = entry.key;
         final ctrl = entry.value;
-        if (!ctrl.isClosed && _matchesTopicFilter(filter, topic)) {
+        if (ctrl.isClosed) continue;
+
+        if (_matchesTopicFilter(filter, topic)) {
           ctrl.add(item);
         }
       }
@@ -265,12 +376,12 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
       if (d is List) return {'data': d};
       return {'value': d};
     } catch (e, st) {
-      OshCrashReporter.logNonFatal(
+      unawaited(OshCrashReporter.logNonFatal(
         e,
         st,
-        reason: 'Failed to decode MQTT payload',
+        reason: 'MQTT JSON decode failed',
         context: {'raw': raw},
-      );
+      ));
       return {'raw': raw};
     }
   }
@@ -281,9 +392,9 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
 
     for (int i = 0, j = 0; i < f.length; i++, j++) {
       final ft = f[i];
-      if (ft == '#') return true;
-      if (j >= t.length) return false;
-      if (ft == '+') continue;
+      if (ft == '#') return true; // multi-level wildcard matches the rest
+      if (j >= t.length) return false; // topic shorter than filter
+      if (ft == '+') continue; // single-level wildcard
       if (ft != t[j]) return false;
     }
     return t.length == f.length;
@@ -299,5 +410,43 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
       default:
         return MqttQos.atMostOnce;
     }
+  }
+
+  Future<void> _waitForConnectCompletion() async {
+    const timeout = Duration(seconds: 6);
+    const step = Duration(milliseconds: 100);
+    final start = DateTime.now();
+
+    while (_isConnecting && DateTime.now().difference(start) < timeout) {
+      await Future.delayed(step);
+    }
+  }
+
+  // ------------------- Client callbacks -------------------
+
+  void _onConnected() {
+    _markConnected();
+    _attachUpdatesStream();
+    _resubscribeAllActiveFilters();
+  }
+
+  void _onDisconnected() {
+    _markDisconnected();
+    // If autoReconnect=true, mqtt_client will reconnect with the same credentials.
+    // After auto reconnect, onConnected() will resubscribe filters again.
+  }
+
+  void _onSubscribed(String topic) {
+    _ackSubscribed.add(topic);
+  }
+
+  void _markConnected() {
+    if (_connectedGate.isCompleted) return;
+    _connectedGate.complete();
+  }
+
+  void _markDisconnected() {
+    _connectedGate = Completer<void>();
+    _ackSubscribed.clear();
   }
 }

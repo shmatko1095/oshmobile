@@ -1,7 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
 import 'intl/messages_all.dart';
 
 // **************************************************************************
@@ -20,14 +19,18 @@ class S {
 
   static S get current {
     assert(
-        _current != null, 'No instance of S was loaded. Try to initialize the S delegate before accessing S.current.');
+      _current != null,
+      'No instance of S was loaded. Try to initialize the S delegate before accessing S.current.',
+    );
     return _current!;
   }
 
   static const AppLocalizationDelegate delegate = AppLocalizationDelegate();
 
   static Future<S> load(Locale locale) {
-    final name = (locale.countryCode?.isEmpty ?? false) ? locale.languageCode : locale.toString();
+    final name = (locale.countryCode?.isEmpty ?? false)
+        ? locale.languageCode
+        : locale.toString();
     final localeName = Intl.canonicalizedLocale(name);
     return initializeMessages(localeName).then((_) {
       Intl.defaultLocale = localeName;
@@ -40,8 +43,10 @@ class S {
 
   static S of(BuildContext context) {
     final instance = S.maybeOf(context);
-    assert(instance != null,
-        'No instance of S present in the widget tree. Did you add S.delegate in localizationsDelegates?');
+    assert(
+      instance != null,
+      'No instance of S present in the widget tree. Did you add S.delegate in localizationsDelegates?',
+    );
     return instance!;
   }
 
@@ -51,32 +56,17 @@ class S {
 
   /// `Sign In`
   String get SignIn {
-    return Intl.message(
-      'Sign In',
-      name: 'SignIn',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Sign In', name: 'SignIn', desc: '', args: []);
   }
 
   /// `Sign Up`
   String get SignUp {
-    return Intl.message(
-      'Sign Up',
-      name: 'SignUp',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Sign Up', name: 'SignUp', desc: '', args: []);
   }
 
   /// `Sign Out`
   String get SignOut {
-    return Intl.message(
-      'Sign Out',
-      name: 'SignOut',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Sign Out', name: 'SignOut', desc: '', args: []);
   }
 
   /// `Invalid user credentials`
@@ -101,22 +91,12 @@ class S {
 
   /// `Email`
   String get Email {
-    return Intl.message(
-      'Email',
-      name: 'Email',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Email', name: 'Email', desc: '', args: []);
   }
 
   /// `Password`
   String get Password {
-    return Intl.message(
-      'Password',
-      name: 'Password',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Password', name: 'Password', desc: '', args: []);
   }
 
   /// `Invalid email address`
@@ -161,12 +141,7 @@ class S {
 
   /// `Try Demo`
   String get TryDemo {
-    return Intl.message(
-      'Try Demo',
-      name: 'TryDemo',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Try Demo', name: 'TryDemo', desc: '', args: []);
   }
 
   /// `Don't have an account?`
@@ -291,42 +266,22 @@ class S {
 
   /// `Send email`
   String get SendEmail {
-    return Intl.message(
-      'Send email',
-      name: 'SendEmail',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Send email', name: 'SendEmail', desc: '', args: []);
   }
 
   /// `OK`
   String get OK {
-    return Intl.message(
-      'OK',
-      name: 'OK',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('OK', name: 'OK', desc: '', args: []);
   }
 
   /// `Cancel`
   String get Cancel {
-    return Intl.message(
-      'Cancel',
-      name: 'Cancel',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Cancel', name: 'Cancel', desc: '', args: []);
   }
 
   /// `Successful`
   String get Successful {
-    return Intl.message(
-      'Successful',
-      name: 'Successful',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Successful', name: 'Successful', desc: '', args: []);
   }
 
   /// `Almost There!`
@@ -351,22 +306,12 @@ class S {
 
   /// `Go to Login`
   String get GoToLogin {
-    return Intl.message(
-      'Go to Login',
-      name: 'GoToLogin',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Go to Login', name: 'GoToLogin', desc: '', args: []);
   }
 
   /// `Add device`
   String get AddDevice {
-    return Intl.message(
-      'Add device',
-      name: 'AddDevice',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Add device', name: 'AddDevice', desc: '', args: []);
   }
 
   /// `No devices yet`
@@ -391,22 +336,12 @@ class S {
 
   /// `Yes`
   String get Yes {
-    return Intl.message(
-      'Yes',
-      name: 'Yes',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Yes', name: 'Yes', desc: '', args: []);
   }
 
   /// `No`
   String get No {
-    return Intl.message(
-      'No',
-      name: 'No',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('No', name: 'No', desc: '', args: []);
   }
 
   /// `The device `
@@ -461,12 +396,7 @@ class S {
 
   /// `Secure code`
   String get SecureCode {
-    return Intl.message(
-      'Secure code',
-      name: 'SecureCode',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Secure code', name: 'SecureCode', desc: '', args: []);
   }
 
   /// `Invalid value`
@@ -491,22 +421,12 @@ class S {
 
   /// `Done`
   String get Done {
-    return Intl.message(
-      'Done',
-      name: 'Done',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Done', name: 'Done', desc: '', args: []);
   }
 
   /// `Failed`
   String get Failed {
-    return Intl.message(
-      'Failed',
-      name: 'Failed',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Failed', name: 'Failed', desc: '', args: []);
   }
 
   /// `Device information`
@@ -521,52 +441,27 @@ class S {
 
   /// `Name`
   String get Name {
-    return Intl.message(
-      'Name',
-      name: 'Name',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Name', name: 'Name', desc: '', args: []);
   }
 
   /// `Room`
   String get Room {
-    return Intl.message(
-      'Room',
-      name: 'Room',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Room', name: 'Room', desc: '', args: []);
   }
 
   /// `Online`
   String get Online {
-    return Intl.message(
-      'Online',
-      name: 'Online',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Online', name: 'Online', desc: '', args: []);
   }
 
   /// `Offline`
   String get Offline {
-    return Intl.message(
-      'Offline',
-      name: 'Offline',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Offline', name: 'Offline', desc: '', args: []);
   }
 
   /// `Tips`
   String get Tips {
-    return Intl.message(
-      'Tips',
-      name: 'Tips',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Tips', name: 'Tips', desc: '', args: []);
   }
 
   /// `Make sure the app is updated to the latest version.`
@@ -601,22 +496,12 @@ class S {
 
   /// `Settings`
   String get Settings {
-    return Intl.message(
-      'Settings',
-      name: 'Settings',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Settings', name: 'Settings', desc: '', args: []);
   }
 
   /// `Update`
   String get Update {
-    return Intl.message(
-      'Update',
-      name: 'Update',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Update', name: 'Update', desc: '', args: []);
   }
 
   /// `Device details`
@@ -641,12 +526,7 @@ class S {
 
   /// `Target {temp}`
   String Target(Object temp) {
-    return Intl.message(
-      'Target $temp',
-      name: 'Target',
-      desc: '',
-      args: [temp],
-    );
+    return Intl.message('Target $temp', name: 'Target', desc: '', args: [temp]);
   }
 
   /// `Next {temp} at {time}`
@@ -661,22 +541,12 @@ class S {
 
   /// `Heating`
   String get Heating {
-    return Intl.message(
-      'Heating',
-      name: 'Heating',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Heating', name: 'Heating', desc: '', args: []);
   }
 
   /// `Off`
   String get ModeOff {
-    return Intl.message(
-      'Off',
-      name: 'ModeOff',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Off', name: 'ModeOff', desc: '', args: []);
   }
 
   /// `Antifreeze`
@@ -691,42 +561,22 @@ class S {
 
   /// `On`
   String get ModeOn {
-    return Intl.message(
-      'On',
-      name: 'ModeOn',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('On', name: 'ModeOn', desc: '', args: []);
   }
 
   /// `Daily`
   String get ModeDaily {
-    return Intl.message(
-      'Daily',
-      name: 'ModeDaily',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Daily', name: 'ModeDaily', desc: '', args: []);
   }
 
   /// `Weekly`
   String get ModeWeekly {
-    return Intl.message(
-      'Weekly',
-      name: 'ModeWeekly',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Weekly', name: 'ModeWeekly', desc: '', args: []);
   }
 
   /// `Save`
   String get Save {
-    return Intl.message(
-      'Save',
-      name: 'Save',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Save', name: 'Save', desc: '', args: []);
   }
 
   /// `Manual temperature`
@@ -741,102 +591,52 @@ class S {
 
   /// `Deleted`
   String get Deleted {
-    return Intl.message(
-      'Deleted',
-      name: 'Deleted',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Deleted', name: 'Deleted', desc: '', args: []);
   }
 
   /// `Undo`
   String get Undo {
-    return Intl.message(
-      'Undo',
-      name: 'Undo',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Undo', name: 'Undo', desc: '', args: []);
   }
 
   /// `Retry`
   String get Retry {
-    return Intl.message(
-      'Retry',
-      name: 'Retry',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Retry', name: 'Retry', desc: '', args: []);
   }
 
   /// `Mon`
   String get MonShort {
-    return Intl.message(
-      'Mon',
-      name: 'MonShort',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Mon', name: 'MonShort', desc: '', args: []);
   }
 
   /// `Tue`
   String get TueShort {
-    return Intl.message(
-      'Tue',
-      name: 'TueShort',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Tue', name: 'TueShort', desc: '', args: []);
   }
 
   /// `Wed`
   String get WedShort {
-    return Intl.message(
-      'Wed',
-      name: 'WedShort',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Wed', name: 'WedShort', desc: '', args: []);
   }
 
   /// `Thu`
   String get ThuShort {
-    return Intl.message(
-      'Thu',
-      name: 'ThuShort',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Thu', name: 'ThuShort', desc: '', args: []);
   }
 
   /// `Fri`
   String get FriShort {
-    return Intl.message(
-      'Fri',
-      name: 'FriShort',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Fri', name: 'FriShort', desc: '', args: []);
   }
 
   /// `Sat`
   String get SatShort {
-    return Intl.message(
-      'Sat',
-      name: 'SatShort',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Sat', name: 'SatShort', desc: '', args: []);
   }
 
   /// `Sun`
   String get SunShort {
-    return Intl.message(
-      'Sun',
-      name: 'SunShort',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Sun', name: 'SunShort', desc: '', args: []);
   }
 
   /// `Set temperature`
@@ -851,22 +651,12 @@ class S {
 
   /// `Choose Wi-Fi`
   String get ChooseWiFi {
-    return Intl.message(
-      'Choose Wi-Fi',
-      name: 'ChooseWiFi',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Choose Wi-Fi', name: 'ChooseWiFi', desc: '', args: []);
   }
 
   /// `Search`
   String get Search {
-    return Intl.message(
-      'Search',
-      name: 'Search',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Search', name: 'Search', desc: '', args: []);
   }
 
   /// `Choose the wifi network you want to connect your device.`
@@ -891,12 +681,7 @@ class S {
 
   /// `Connect`
   String get Connect {
-    return Intl.message(
-      'Connect',
-      name: 'Connect',
-      desc: '',
-      args: [],
-    );
+    return Intl.message('Connect', name: 'Connect', desc: '', args: []);
   }
 
   /// `Bluetooth access is needed to change Wi-Fi settings.`
@@ -982,10 +767,8 @@ class AppLocalizationDelegate extends LocalizationsDelegate<S> {
 
   @override
   bool isSupported(Locale locale) => _isSupported(locale);
-
   @override
   Future<S> load(Locale locale) => S.load(locale);
-
   @override
   bool shouldReload(AppLocalizationDelegate old) => false;
 

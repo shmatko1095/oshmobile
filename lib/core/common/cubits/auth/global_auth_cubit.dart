@@ -24,11 +24,19 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
   })  : _authService = authService,
         _sessionStorage = sessionStorage,
         _keycloakWrapper = keycloakWrapper,
-        super(const AuthInitial(revision: 0));
+        super(const AuthInitial(0));
 
   int _revision = 0;
-  void _emitAuthenticated() => emit(AuthAuthenticated(revision: ++_revision));
-  void _emitInitial() => emit(AuthInitial(revision: ++_revision));
+
+  void _emitAuthInitial() {
+    _revision++;
+    emit(AuthInitial(_revision));
+  }
+
+  void _emitAuthenticated() {
+    _revision++;
+    emit(AuthAuthenticated(_revision));
+  }
 
   Future<void> checkAuthStatus() async {
     await refreshToken();
@@ -50,33 +58,35 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
     }
 
     await _sessionStorage.clearSession();
-    _emitInitial();
+    _emitAuthInitial();
   }
 
   Future<bool> refreshToken() async {
     try {
       final currentSession = _sessionStorage.getSession();
       if (currentSession == null) {
-        _emitInitial();
+        _emitAuthInitial();
         return false;
       }
 
       final response = await _authService.refreshToken(
         refreshToken: currentSession.refreshToken,
       );
-      if (response.isSuccessful) {
-        final newSession = currentSession.copyWith(accessToken: response.body!.accessToken);
+
+      if (response.isSuccessful && response.body != null) {
+        final newSession = Session.fromJson(response.body);
         await _sessionStorage.setSession(newSession);
         OshCrashReporter.setUserId(getJwtUserData()?.email ?? getJwtUserData()!.uuid);
         _emitAuthenticated();
         return true;
       } else {
-        _emitInitial();
+        _emitAuthInitial();
         log(response.bodyString);
         return false;
       }
-    } catch (error) {
-      _emitInitial();
+    } catch (error, st) {
+      OshCrashReporter.logNonFatal(error, st, reason: 'Token refresh failed');
+      _emitAuthInitial();
       return false;
     }
   }

@@ -177,7 +177,6 @@ class DeviceSettingsPage extends StatelessWidget {
   Widget _buildError(BuildContext context, String message) {
     final theme = Theme.of(context);
 
-    // Немного гуманизируем текст.
     final isTimeout = message.toLowerCase().contains('timeout');
     final friendly = isTimeout ? 'Device seems offline or not responding.' : 'Failed to load settings.';
 
@@ -210,7 +209,7 @@ class DeviceSettingsPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () => context.read<DeviceSettingsCubit>().rebind(),
+              onPressed: () => context.read<DeviceSettingsCubit>().refresh(),
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
             ),

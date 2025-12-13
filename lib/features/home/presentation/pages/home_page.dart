@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
-import 'package:oshmobile/features/devices/details/presentation/pages/device_host_scope.dart';
+import 'package:oshmobile/core/scopes/device_scope.dart';
 import 'package:oshmobile/features/devices/no_selected_device/presentation/pages/no_selected_device_page.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/home/presentation/widgets/mqtt_activity_icon.dart';
@@ -130,7 +130,8 @@ class _HomePageState extends State<HomePage> {
                   return const NoSelectedDevicePage();
                 }
 
-                return DeviceHostScope(
+                return DeviceScope(
+                  key: ValueKey(device.id),
                   device: device,
                   onTitleChanged: _setTitleSafe,
                   onSettingsActionChanged: (cb) => _openSettingsAction = cb,

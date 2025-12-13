@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
@@ -13,16 +12,16 @@ import '../cubit/device_host_cubit.dart';
 import '../cubit/device_page_cubit.dart';
 import '../presenters/device_presenter.dart';
 
-final _sl = GetIt.instance;
-
 class DeviceHostBody extends StatelessWidget {
   final String deviceId;
+  final DevicePresenterRegistry presenters;
   final ValueChanged<String?>? onTitleChanged;
   final ValueChanged<VoidCallback?>? onSettingsActionChanged;
 
   const DeviceHostBody({
     super.key,
     required this.deviceId,
+    required this.presenters,
     required this.onTitleChanged,
     required this.onSettingsActionChanged,
   });
@@ -94,8 +93,7 @@ class DeviceHostBody extends StatelessWidget {
                         );
                       }
 
-                      final registry = _sl<DevicePresenterRegistry>();
-                      final presenter = registry.resolve(liveDevice.modelId);
+                      final presenter = presenters.resolve(liveDevice.modelId);
                       return presenter.build(context, liveDevice, config);
                     }
                 }

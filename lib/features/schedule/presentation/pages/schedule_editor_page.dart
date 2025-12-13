@@ -105,7 +105,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                 case DeviceScheduleError(:final message):
                   return _ErrorRetry(
                     message: message,
-                    onRetry: () => context.read<DeviceScheduleCubit>().rebind(),
+                    onRetry: () => context.read<DeviceScheduleCubit>().refresh(),
                   );
                 case DeviceScheduleReady():
                   final showDays = state.mode.id == CalendarMode.weekly.id;
