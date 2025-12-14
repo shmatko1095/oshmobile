@@ -44,27 +44,26 @@ class DeviceHostCubit extends Cubit<DeviceHostState> {
   }
 
   Future<void> _checkOnce() async {
-    if (isClosed) return;
+    // if (isClosed) return;
     await _homeCubit.updateDeviceList();
 
-    Device? device =
-        _homeCubit.userDevices.filter((d) => d.id == _deviceId).firstOrNull;
+    Device? device = _homeCubit.userDevices.filter((d) => d.id == _deviceId).firstOrNull;
     final isOnline = device?.connectionInfo.online == true;
 
     if (isOnline) {
       // Device is online – stop waiting and go back to normal phase.
       _timer?.cancel();
-      if (!isClosed) {
-        emit(state.copyWith(phase: DeviceHostPhase.normal));
-      }
+      // if (!isClosed) {
+      emit(state.copyWith(phase: DeviceHostPhase.normal));
+      // }
     } else {
       _checksDone++;
       if (_checksDone >= _maxChecks) {
         // Timed out – stop waiting, user will still see offline page.
         _timer?.cancel();
-        if (!isClosed) {
-          emit(state.copyWith(phase: DeviceHostPhase.normal));
-        }
+        // if (!isClosed) {
+        emit(state.copyWith(phase: DeviceHostPhase.normal));
+        // }
       }
     }
   }

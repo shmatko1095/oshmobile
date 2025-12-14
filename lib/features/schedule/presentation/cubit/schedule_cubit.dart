@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
-import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
+import 'package:oshmobile/core/common/services/mqtt_op_runner.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
+import 'package:oshmobile/core/utils/serial_executor.dart';
 import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/fetch_schedule_all.dart';
@@ -15,6 +17,12 @@ import 'package:oshmobile/features/schedule/domain/usecases/watch_schedule_strea
 part 'schedule_state.dart';
 
 /// Device-scoped schedule cubit: one instance per deviceSn.
+///
+/// Principles:
+/// - ACK/timeout handled ONLY in repository/usecase.
+/// - Cubit maintains base/draft and UI-friendly state.
+/// - Network ops serialized to avoid overlap.
+/// - Latest-wins intents while saving are stored in state (queued).
 class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   final String deviceSn;
 
@@ -24,8 +32,13 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   final WatchScheduleStream _watchSchedule;
   final MqttCommCubit _comm;
 
-  /// ACK wait timeout for each command.
-  final Duration ackTimeout;
+  late final SerialExecutor _serial = SerialExecutor();
+  late final MqttOpRunner _ops = MqttOpRunner(deviceSn: deviceSn, serial: _serial, comm: _comm);
+
+  StreamSubscription<MapEntry<String?, CalendarSnapshot>>? _snapSub;
+  bool _watchStarted = false;
+
+  static const _listEq = DeepCollectionEquality();
 
   DeviceScheduleCubit({
     required this.deviceSn,
@@ -34,7 +47,6 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     required SetScheduleMode setMode,
     required WatchScheduleStream watchSchedule,
     required MqttCommCubit comm,
-    this.ackTimeout = const Duration(seconds: 4),
   })  : _fetchAll = fetchAll,
         _saveAll = saveAll,
         _setMode = setMode,
@@ -42,230 +54,238 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
         _comm = comm,
         super(const DeviceScheduleLoading());
 
-  StreamSubscription<MapEntry<String?, CalendarSnapshot>>? _snapSub;
-  final Map<String, Timer> _pendingTimers = <String, Timer>{};
-
-  bool _watchStarted = false;
-
-  /// Public API: reload initial snapshot from device (HTTP/MQTT behind usecase).
-  Future<void> refresh() => _loadInitial();
-
-  /// Call once after creation to start watch stream (from DeviceScope).
+  /// Call once after creation to start reported stream (from DeviceScope).
   void start() {
     if (_watchStarted) return;
     _watchStarted = true;
 
     _snapSub = _watchSchedule(deviceSn).listen((entry) {
-      _onReported(entry.key, entry.value);
+      _applyReported(appliedReqId: entry.key, remote: entry.value);
     });
   }
 
-  Future<void> _loadInitial() async {
-    if (isClosed) return;
-    emit(const DeviceScheduleLoading());
+  Future<void> refresh() => _serial.run(() async {
+        final prev = state;
 
-    try {
-      final snap = await _fetchAll(deviceSn);
-      if (isClosed) return;
-      emit(DeviceScheduleReady(snap: _withSafeMode(snap)));
-    } catch (e, st) {
-      if (isClosed) return;
-      OshCrashReporter.logNonFatal(e, st, reason: "Failed to load schedule", context: {"deviceSn": deviceSn});
-      emit(DeviceScheduleError(e.toString()));
+        if (prev is! DeviceScheduleReady) {
+          emit(DeviceScheduleLoading(modeHint: prev.mode));
+        }
+
+        final snap = await _fetchAll(deviceSn);
+        if (isClosed) return;
+
+        final st = _readyOrNull();
+        if (st != null) {
+          emit(_rebaseOnNewBase(st, snap));
+        } else {
+          emit(DeviceScheduleReady(base: snap));
+        }
+      });
+
+  // ---------------------------------------------------------------------------
+  // Operations (latest wins)
+  // ---------------------------------------------------------------------------
+
+  Future<void> setMode(CalendarMode next) {
+    final st = _readyOrNull();
+    if (st == null) return Future.value();
+
+    // If saving: update draft immediately + store last intent.
+    if (st.saving) {
+      emit(st.copyWith(modeOverride: next, queued: st.queued.withMode(next), flash: null));
+      return Future.value();
     }
-  }
-
-  // ---------------- Mode API ----------------
-
-  CalendarMode getMode() => state.mode;
-
-  void setMode(CalendarMode next) {
-    final s = state;
-    if (s is! DeviceScheduleReady) return;
-    if (s.snap.mode.id == next.id) return;
 
     final reqId = newReqId();
-    final before = s.snap;
-    final desired = s.snap.copyWith(mode: next);
-
-    final q = List<PendingTxn>.from(s.pendingQueue)
-      ..add(PendingTxn(
-        reqId: reqId,
-        beforeSnap: before,
-        desiredSnap: desired,
-        deadline: DateTime.now().add(ackTimeout),
-        kind: 'mode',
-        desiredMode: next,
-      ));
-
-    emit(s.copyWith(
-      snap: desired,
-      saving: true,
-      dirty: false,
-      flash: null,
-      pendingQueue: q,
-    ));
-
-    _trackPendingReq(reqId);
-
-    unawaited(_setMode(deviceSn, next, reqId: reqId).catchError((e) {
-      _onPublishError(reqId, 'Failed to set mode: $e');
-    }));
-  }
-
-  // ---------------- Persist ----------------
-
-  Future<void> persistAll() async {
-    final s = state;
-    if (s is! DeviceScheduleReady) return;
-
-    final reqId = newReqId();
-    final before = s.snap;
-    final desired = s.snap;
-
-    final q = List<PendingTxn>.from(s.pendingQueue)
-      ..add(PendingTxn(
-        reqId: reqId,
-        beforeSnap: before,
-        desiredSnap: desired,
-        deadline: DateTime.now().add(ackTimeout),
-        kind: 'saveAll',
-      ));
-
-    emit(s.copyWith(
-      saving: true,
-      flash: null,
-      pendingQueue: q,
-    ));
-
-    _trackPendingReq(reqId);
-
-    try {
-      await _saveAll(deviceSn, desired, reqId: reqId);
-      // Wait for reported ACK to drain queue.
-    } catch (e) {
-      _onPublishError(reqId, 'Failed to save: $e');
-    }
-  }
-
-  // ---------------- Reported (ACK) ----------------
-
-  void _onReported(String? appliedReqId, CalendarSnapshot remote) {
-    if (isClosed) return;
-    final safe = _withSafeMode(remote);
-
-    final st = state;
-    if (st is! DeviceScheduleReady) {
-      emit(DeviceScheduleReady(snap: safe));
-      return;
-    }
-
-    if (st.pendingQueue.isNotEmpty) {
-      if (appliedReqId == null || appliedReqId.isEmpty) {
-        emit(st.copyWith(saving: true));
-        return;
-      }
-
-      final newQ = List<PendingTxn>.from(st.pendingQueue)..removeWhere((t) => t.reqId == appliedReqId);
-      _pendingTimers.remove(appliedReqId)?.cancel();
-      _comm.complete(appliedReqId);
-
-      if (newQ.isEmpty) {
-        emit(st.copyWith(
-          snap: safe,
-          saving: false,
-          dirty: false,
-          pendingQueue: newQ,
-        ));
-      } else {
-        emit(st.copyWith(
-          pendingQueue: newQ,
-          saving: true,
-        ));
-      }
-      return;
-    }
-
-    // No pending -> adopt normally (keep mode safe).
-    if (st.dirty || st.saving) {
-      emit(st.copyWith(snap: st.snap.copyWith(mode: safe.mode), saving: false));
-    } else {
-      emit(st.copyWith(snap: safe, dirty: false, saving: false));
-    }
-  }
-
-  // ---------------- Pending timers & errors ----------------
-
-  void _onPublishError(String reqId, String message) {
-    if (isClosed) return;
-    final st = state;
-    if (st is! DeviceScheduleReady) return;
-
-    final idx = st.pendingQueue.indexWhere((t) => t.reqId == reqId);
-    if (idx == -1) {
-      emit(st.copyWith(saving: st.pendingQueue.isNotEmpty, flash: message));
-      _clearFlashSoon();
-      return;
-    }
-
-    final failed = st.pendingQueue[idx];
-    _cancelAllPendingTimers();
-
-    for (final txn in st.pendingQueue) {
-      _comm.fail(txn.reqId, message);
-    }
-
-    OshCrashReporter.log("DeviceScheduleCubit: publish error: $message");
-    emit(st.copyWith(
-      snap: failed.beforeSnap,
-      saving: false,
-      dirty: false,
-      flash: message,
-      pendingQueue: const <PendingTxn>[],
-    ));
-    _clearFlashSoon();
-  }
-
-  void _onTimeout(String reqId) {
-    if (isClosed) return;
-    final st = state;
-    if (st is! DeviceScheduleReady) return;
-
-    final idx = st.pendingQueue.indexWhere((t) => t.reqId == reqId);
-    if (idx == -1) return;
-
-    final failed = st.pendingQueue[idx];
-    _cancelAllPendingTimers();
-
-    for (final txn in st.pendingQueue) {
-      _comm.fail(txn.reqId, 'Operation timed out');
-    }
-
-    OshCrashReporter.log("Schedule operation timed out, deviceSn: $deviceSn");
-    emit(st.copyWith(
-      snap: failed.beforeSnap,
-      saving: false,
-      dirty: false,
-      flash: 'Operation timed out',
-      pendingQueue: const <PendingTxn>[],
-    ));
-    _clearFlashSoon();
-  }
-
-  void _trackPendingReq(String reqId) {
     _comm.start(reqId: reqId, deviceSn: deviceSn);
-    _pendingTimers[reqId]?.cancel();
-    _pendingTimers[reqId] = Timer(ackTimeout, () => _onTimeout(reqId));
+
+    // Mark pending op + optimistic UI.
+    emit(st.copyWith(
+      modeOverride: next,
+      saving: true,
+      pending: SchedulePending(reqId: reqId, kind: SchedulePendingKind.mode),
+      queued: st.queued.clearMode(),
+      flash: null,
+    ));
+
+    return _ops.run(
+      reqId: reqId,
+      op: () => _setMode(deviceSn, next, reqId: reqId),
+      timeoutReason: 'Schedule mode ACK timeout',
+      errorReason: 'Failed to set schedule mode',
+      extraContext: const {},
+      timeoutCommMessage: 'Operation timed out',
+      errorCommMessage: (e) => 'Failed to set mode: $e',
+      onSuccess: () {
+        if (isClosed) return;
+        final cur = _readyOrNull();
+        if (cur == null) return;
+
+        final newBase = cur.base.copyWith(mode: next);
+        emit(_rebaseOnNewBase(cur, newBase).copyWith(saving: false, clearPending: true, flash: null));
+      },
+      onTimeout: () => _onTimeout(),
+      onError: (_) => _onFailed("Failed to set mode"),
+      onFinally: _flushQueuedIfAny,
+    );
   }
 
-  void _cancelAllPendingTimers() {
-    for (final t in _pendingTimers.values) {
-      t.cancel();
+  Future<void> saveAll() {
+    final st = _readyOrNull();
+    if (st == null) return Future.value();
+
+    // If saving: remember there was an extra save request (once).
+    if (st.saving) {
+      emit(st.copyWith(queued: st.queued.withSaveAll(), flash: null));
+      return Future.value();
     }
-    _pendingTimers.clear();
+
+    final reqId = newReqId();
+    final desired = st.snap;
+
+    _comm.start(reqId: reqId, deviceSn: deviceSn);
+
+    emit(st.copyWith(
+      saving: true,
+      pending: SchedulePending(reqId: reqId, kind: SchedulePendingKind.saveAll),
+      queued: st.queued.clearSaveAll(),
+      flash: null,
+    ));
+
+    return _ops.run(
+      reqId: reqId,
+      op: () => _saveAll(deviceSn, desired, reqId: reqId),
+      timeoutReason: 'Schedule saveAll ACK timeout',
+      errorReason: 'Failed to save schedule',
+      timeoutCommMessage: 'Operation timed out',
+      errorCommMessage: (e) => 'Failed to save schedule: $e',
+      onSuccess: () {
+        if (isClosed) return;
+        final cur = _readyOrNull();
+        if (cur == null) return;
+
+        emit(_rebaseOnNewBase(cur, desired).copyWith(saving: false, clearPending: true, flash: null));
+      },
+      onTimeout: _onTimeout,
+      onError: (_) => _onFailed("Failed to save schedule"),
+      onFinally: _flushQueuedIfAny,
+    );
   }
 
-  // ---------------- Current / Next helpers (unchanged) ----------------
+  // ---------------------------------------------------------------------------
+  // Reported stream
+  // ---------------------------------------------------------------------------
+  void _applyReported({required String? appliedReqId, required CalendarSnapshot remote}) {
+    if (isClosed) return;
+
+    final st = _readyOrNull();
+    if (st == null) {
+      emit(DeviceScheduleReady(base: remote));
+      return;
+    }
+
+    final rebased = _rebaseOnNewBase(st, remote);
+
+    final isAckForPending = appliedReqId != null && st.pending?.reqId == appliedReqId;
+    if (isAckForPending) {
+      _comm.complete(appliedReqId);
+    }
+
+    emit(rebased.copyWith(saving: isAckForPending ? false : rebased.saving, clearPending: isAckForPending));
+    if (isAckForPending) _flushQueuedIfAny();
+  }
+
+  void _flushQueuedIfAny() {
+    if (isClosed) return;
+
+    final st = _readyOrNull();
+    if (st == null) return;
+    if (st.saving) return;
+
+    final q = st.queued;
+    if (q.isEmpty) return;
+
+    // Priority: one extra save.
+    if (q.saveAll) {
+      emit(st.copyWith(queued: q.clearSaveAll()));
+      if (st.dirty) unawaited(saveAll());
+      return;
+    }
+
+    // Otherwise: last requested mode.
+    final m = q.mode;
+    if (m != null) {
+      emit(st.copyWith(queued: q.clearMode()));
+      if (m != st.base.mode) unawaited(setMode(m));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Local editing (base/draft)
+  // ---------------------------------------------------------------------------
+
+  void addPoint([SchedulePoint? p, int stepMinutes = 15]) {
+    final st = _readyOrNull();
+    if (st == null) return;
+
+    final mode = st.mode;
+    final current = List<SchedulePoint>.from(st.listFor(mode));
+    final point = p ?? _makeDefaultPoint(current, mode, stepMinutes);
+
+    current.add(point);
+    setListFor(mode, current);
+  }
+
+  void changePoint(int index, SchedulePoint p) {
+    final st = _readyOrNull();
+    if (st == null) return;
+
+    final mode = st.mode;
+    final current = List<SchedulePoint>.from(st.listFor(mode));
+    if (index < 0 || index >= current.length) return;
+
+    current[index] = p;
+    setListFor(mode, current);
+  }
+
+  void removeAt(int index) {
+    final st = _readyOrNull();
+    if (st == null) return;
+
+    final mode = st.mode;
+    final current = List<SchedulePoint>.from(st.listFor(mode));
+    if (index < 0 || index >= current.length) return;
+
+    current.removeAt(index);
+    setListFor(mode, current);
+  }
+
+  void replaceAll(List<SchedulePoint> points) {
+    final st = _readyOrNull();
+    if (st == null) return;
+    setListFor(st.mode, points);
+  }
+
+  void setListFor(CalendarMode id, List<SchedulePoint> pts) {
+    final st = _readyOrNull();
+    if (st == null) return;
+
+    final normalized = _sortedDedup(pts);
+    final nextOverrides = Map<CalendarMode, List<SchedulePoint>>.from(st.listOverrides);
+
+    final baseList = st.base.pointsFor(id);
+    if (_listEq.equals(baseList, normalized)) {
+      nextOverrides.remove(id);
+    } else {
+      nextOverrides[id] = normalized;
+    }
+
+    emit(st.copyWith(listOverrides: Map.unmodifiable(nextOverrides), flash: null));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Current / Next helpers
+  // ---------------------------------------------------------------------------
 
   SchedulePoint? currentPoint({DateTime? now}) {
     final pts = state.points;
@@ -275,218 +295,201 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   }
 
   SchedulePoint? nextPoint({DateTime? now}) {
-    final pts = state.points;
-    if (pts.isEmpty) return null;
-    now ??= DateTime.now();
-    return _nextFor(pts, now);
-  }
-
-  TimeOfDay _addMinutes(TimeOfDay t, int delta) {
-    var total = (t.hour * 60 + t.minute + delta) % 1440;
-    if (total < 0) total += 1440;
-    return TimeOfDay(hour: total ~/ 60, minute: total % 60);
-  }
-
-  bool _existsAt(List<SchedulePoint> pts, int daysMask, TimeOfDay t) {
-    return pts.any((p) => p.daysMask == daysMask && p.time.hour == t.hour && p.time.minute == t.minute);
-  }
-
-  TimeOfDay _nextFreeTime(
-    List<SchedulePoint> pts,
-    int daysMask,
-    TimeOfDay start, {
-    int stepMinutes = 15,
-  }) {
-    var t = start;
-    for (int i = 0; i < 1440; i += stepMinutes) {
-      if (!_existsAt(pts, daysMask, t)) return t;
-      t = _addMinutes(t, stepMinutes);
-    }
-    return start;
-  }
-
-  void addPoint([SchedulePoint? p, int stepMinutes = 15]) {
-    final s = state;
-    if (s is! DeviceScheduleReady) return;
-
-    final mode = s.snap.mode;
-    final current = List<SchedulePoint>.from(s.snap.lists[mode] ?? const <SchedulePoint>[]);
-
-    int daysMask;
-    TimeOfDay t;
-    double minV, maxV;
-
-    if (p == null) {
-      final now = TimeOfDay.now();
-      final roundMin = ((now.minute + 14) ~/ 15) * 15;
-      t = TimeOfDay(hour: (now.hour + (roundMin ~/ 60)) % 24, minute: roundMin % 60);
-
-      daysMask = (mode.id == CalendarMode.weekly.id)
-          ? (WeekdayMask.mon | WeekdayMask.tue | WeekdayMask.wed | WeekdayMask.thu | WeekdayMask.fri)
-          : WeekdayMask.all;
-
-      minV = 21.0;
-      maxV = 21.0;
+    if (state.mode == CalendarMode.daily || state.mode == CalendarMode.weekly) {
+      final pts = state.points;
+      if (pts.isEmpty) return null;
+      now ??= DateTime.now();
+      return _nextFor(pts, now);
     } else {
-      t = p.time;
-      daysMask = p.daysMask;
-      minV = p.min;
-      maxV = p.max;
+      return null;
     }
-
-    var candidate = _norm(SchedulePoint(time: t, daysMask: daysMask, min: minV, max: maxV));
-
-    final freeTime = _nextFreeTime(current, candidate.daysMask, candidate.time, stepMinutes: stepMinutes);
-    if (freeTime != candidate.time) {
-      candidate = candidate.copyWith(time: freeTime);
-    }
-
-    _mutateActive((list) => [...list, candidate]);
   }
 
-  void changePoint(int index, SchedulePoint p) => _mutateActive((list) {
-        if (index < 0 || index >= list.length) return list;
-        final copy = [...list];
-        copy[index] = _norm(p);
-        return copy;
+  SchedulePoint? _currentFor(List<SchedulePoint> pts, DateTime now) {
+    final curMin = now.hour * 60 + now.minute;
+
+    SchedulePoint? best;
+    var bestMin = -1;
+
+    for (final p in pts) {
+      final m = p.time.hour * 60 + p.time.minute;
+      if (m <= curMin && m > bestMin) {
+        bestMin = m;
+        best = p;
+      }
+    }
+
+    if (best == null && pts.isNotEmpty) {
+      best = pts.reduce((a, b) {
+        final am = a.time.hour * 60 + a.time.minute;
+        final bm = b.time.hour * 60 + b.time.minute;
+        return am >= bm ? a : b;
       });
+    }
 
-  void removeAt(int index) => _mutateActive((list) {
-        if (index < 0 || index >= list.length) return list;
-        final copy = [...list]..removeAt(index);
-        return copy;
-      });
-
-  void replaceAll(List<SchedulePoint> next) => _mutateActive((_) => next.map(_norm).toList());
-
-  void setListFor(CalendarMode mode, List<SchedulePoint> pts) {
-    final s = state;
-    if (s is! DeviceScheduleReady) return;
-    final lists = Map<CalendarMode, List<SchedulePoint>>.from(s.snap.lists);
-    lists[mode] = _sortedDedup(pts.map(_norm).toList());
-    emit(s.copyWith(snap: s.snap.copyWith(lists: lists), dirty: true, flash: null));
+    return best;
   }
 
-  void _mutateActive(List<SchedulePoint> Function(List<SchedulePoint>) f) {
-    final s = state;
-    if (s is! DeviceScheduleReady) return;
-    final id = s.snap.mode;
-    final lists = Map<CalendarMode, List<SchedulePoint>>.from(s.snap.lists);
-    final before = lists[id] ?? const <SchedulePoint>[];
-    final after = _sortedDedup(f(before));
-    lists[id] = after;
-    emit(s.copyWith(snap: s.snap.copyWith(lists: lists), dirty: true, flash: null));
+  SchedulePoint? _nextFor(List<SchedulePoint> pts, DateTime now) {
+    final curMin = now.hour * 60 + now.minute;
+
+    SchedulePoint? best;
+    var bestMin = 2000;
+
+    for (final p in pts) {
+      final m = p.time.hour * 60 + p.time.minute;
+      if (m > curMin && m < bestMin) {
+        bestMin = m;
+        best = p;
+      }
+    }
+
+    if (best == null && pts.isNotEmpty) {
+      best = pts.reduce((a, b) {
+        final am = a.time.hour * 60 + a.time.minute;
+        final bm = b.time.hour * 60 + b.time.minute;
+        return am <= bm ? a : b;
+      });
+    }
+
+    return best;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Rebase (base/draft)
+  // ---------------------------------------------------------------------------
+
+  DeviceScheduleReady _rebaseOnNewBase(DeviceScheduleReady st, CalendarSnapshot newBase) {
+    CalendarMode? nextModeOverride = st.modeOverride;
+    if (nextModeOverride != null && nextModeOverride == newBase.mode) {
+      nextModeOverride = null;
+    }
+
+    final nextListOverrides = <CalendarMode, List<SchedulePoint>>{};
+    st.listOverrides.forEach((mode, list) {
+      final baseList = newBase.pointsFor(mode);
+      if (!_listEq.equals(baseList, list)) {
+        nextListOverrides[mode] = list;
+      }
+    });
+
+    return st.copyWith(
+      base: newBase,
+      modeOverride: nextModeOverride,
+      removeModeOverride: nextModeOverride == null,
+      listOverrides: Map.unmodifiable(nextListOverrides),
+    );
+  }
+
+  DeviceScheduleReady? _readyOrNull() {
+    final st = state;
+    return st is DeviceScheduleReady ? st : null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Scheduling math helpers
+  // ---------------------------------------------------------------------------
+
+  SchedulePoint _makeDefaultPoint(List<SchedulePoint> current, CalendarMode mode, int stepMinutes) {
+    final now = TimeOfDay.now();
+    final t = _nextFreeTime(current, now, stepMinutes);
+
+    final last = current.isNotEmpty ? _norm(current.last) : null;
+
+    final daysMask = mode == CalendarMode.weekly ? (last?.daysMask ?? WeekdayMask.all) : WeekdayMask.all;
+    final minV = last?.min ?? 20.0;
+    final maxV = last?.max ?? 22.0;
+
+    return SchedulePoint(time: t, daysMask: daysMask, min: minV, max: maxV);
   }
 
   SchedulePoint _norm(SchedulePoint p) {
     final hh = p.time.hour.clamp(0, 23);
     final mm = p.time.minute.clamp(0, 59);
     final dm = p.daysMask & WeekdayMask.all;
+
     final lo = (p.min <= p.max) ? p.min : p.max;
     final hi = (p.max >= p.min) ? p.max : p.min;
-    return SchedulePoint(
-      time: TimeOfDay(hour: hh, minute: mm),
-      daysMask: dm,
-      min: double.parse(lo.toStringAsFixed(1)),
-      max: double.parse(hi.toStringAsFixed(1)),
-    );
+
+    return SchedulePoint(time: TimeOfDay(hour: hh, minute: mm), daysMask: dm, min: lo, max: hi);
   }
 
   List<SchedulePoint> _sortedDedup(List<SchedulePoint> pts) {
-    final map = <String, SchedulePoint>{};
-    for (final p in pts) {
-      final key = '${p.daysMask}:${p.time.hour}:${p.time.minute}';
-      map[key] = p;
-    }
-    final out = map.values.toList()
-      ..sort((a, b) {
-        final ai = _todMinutes(a.time);
-        final bi = _todMinutes(b.time);
-        if (ai != bi) return ai.compareTo(bi);
-        return a.daysMask.compareTo(b.daysMask);
-      });
-    return out;
-  }
+    final out = pts.map(_norm).toList(growable: false);
 
-  int _todMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
+    out.sort((a, b) {
+      final at = a.time.hour * 60 + a.time.minute;
+      final bt = b.time.hour * 60 + b.time.minute;
+      if (at != bt) return at.compareTo(bt);
 
-  SchedulePoint? _currentFor(List<SchedulePoint> pts, DateTime now) {
-    if (pts.isEmpty) return null;
-    final sorted = [...pts]..sort((a, b) => _todMinutes(a.time).compareTo(_todMinutes(b.time)));
-    final nowMinutes = _todMinutes(TimeOfDay(hour: now.hour, minute: now.minute));
-    final todayBit = WeekdayMask.weekdayBit(now);
+      if (a.daysMask != b.daysMask) return a.daysMask.compareTo(b.daysMask);
 
-    for (var i = sorted.length - 1; i >= 0; i--) {
-      final p = sorted[i];
-      if (!WeekdayMask.has(p.daysMask, todayBit)) continue;
-      final t = _todMinutes(p.time);
-      if (t <= nowMinutes) return p;
-    }
+      final c1 = a.min.compareTo(b.min);
+      if (c1 != 0) return c1;
 
-    var dayBit = todayBit;
-    for (var step = 0; step < 6; step++) {
-      dayBit = WeekdayMask.prevDayBit(dayBit);
-      for (var i = sorted.length - 1; i >= 0; i--) {
-        final p = sorted[i];
-        if (!WeekdayMask.has(p.daysMask, dayBit)) continue;
-        return p;
-      }
-    }
-
-    return null;
-  }
-
-  SchedulePoint? _nextFor(List<SchedulePoint> pts, DateTime now) {
-    if (pts.length <= 1) return null;
-    final sorted = [...pts]..sort((a, b) => _todMinutes(a.time).compareTo(_todMinutes(b.time)));
-    final nowMinutes = _todMinutes(TimeOfDay(hour: now.hour, minute: now.minute));
-    final todayBit = WeekdayMask.weekdayBit(now);
-
-    for (var i = 0; i < sorted.length; i++) {
-      final p = sorted[i];
-      if (!WeekdayMask.has(p.daysMask, todayBit)) continue;
-      final t = _todMinutes(p.time);
-      if (t > nowMinutes) return p;
-    }
-
-    var dayBit = todayBit;
-    for (var step = 0; step < 6; step++) {
-      dayBit = WeekdayMask.nextDayBit(dayBit);
-      for (var i = 0; i < sorted.length; i++) {
-        final p = sorted[i];
-        if (!WeekdayMask.has(p.daysMask, dayBit)) continue;
-        return p;
-      }
-    }
-
-    return null;
-  }
-
-  CalendarSnapshot _withSafeMode(CalendarSnapshot snap) {
-    final ok = CalendarMode.all.any((m) => m.id == snap.mode.id);
-    return ok ? snap : snap.copyWith(mode: CalendarMode.off);
-  }
-
-  void _clearFlashSoon() {
-    scheduleMicrotask(() {
-      if (isClosed) return;
-      final s = state;
-      if (s is DeviceScheduleReady && s.flash != null) {
-        if (isClosed) return;
-        emit(s.copyWith(flash: null));
-      }
+      return a.max.compareTo(b.max);
     });
+
+    final result = <SchedulePoint>[];
+    for (final p in out) {
+      if (result.isEmpty) {
+        result.add(p);
+        continue;
+      }
+
+      final prev = result.last;
+      final sameKey = prev.time.hour == p.time.hour && prev.time.minute == p.time.minute && prev.daysMask == p.daysMask;
+
+      if (sameKey) {
+        result[result.length - 1] = p;
+      } else {
+        result.add(p);
+      }
+    }
+
+    return List.unmodifiable(result);
+  }
+
+  TimeOfDay _nextFreeTime(List<SchedulePoint> pts, TimeOfDay start, int stepMinutes) {
+    final used = <int>{};
+    for (final p in pts) {
+      used.add(p.time.hour * 60 + p.time.minute);
+    }
+
+    final startMin = start.hour * 60 + start.minute;
+    final candidate = ((startMin + stepMinutes - 1) ~/ stepMinutes) * stepMinutes;
+
+    for (var i = 0; i < 1440 ~/ stepMinutes; i++) {
+      final m = (candidate + i * stepMinutes) % 1440;
+      if (!used.contains(m)) {
+        return TimeOfDay(hour: m ~/ 60, minute: m % 60);
+      }
+    }
+
+    return start;
+  }
+
+  void _onTimeout() {
+    if (isClosed) return;
+    final cur = _readyOrNull();
+    if (cur == null) return;
+
+    emit(cur.copyWith(saving: false, clearPending: true, flash: 'Operation timed out'));
+  }
+
+  void _onFailed(String msg) {
+    if (isClosed) return;
+    final cur = _readyOrNull();
+    if (cur == null) return;
+
+    emit(cur.copyWith(saving: false, clearPending: true, flash: msg));
   }
 
   @override
   Future<void> close() async {
-    await _snapSub?.cancel();
-    _snapSub = null;
-    _cancelAllPendingTimers();
-
-    // Remove any pending comm ops for this device when page is closed.
-    _comm.dropForDevice(deviceSn);
-
+    try {
+      await _snapSub?.cancel();
+    } catch (_) {}
     return super.close();
   }
 }

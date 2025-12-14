@@ -15,6 +15,9 @@ class MqttCommOp {
 @immutable
 class MqttCommState {
   final List<MqttCommOp> pending;
+
+  /// Last error across MQTT comm operations (used by parent UI icon).
+  /// Cleared on new start and on any successful completion.
   final String? lastError;
 
   const MqttCommState({
@@ -30,12 +33,12 @@ class MqttCommCubit extends Cubit<MqttCommState> {
 
   void start({required String reqId, required String deviceSn}) {
     final next = List<MqttCommOp>.from(state.pending)..add(MqttCommOp(reqId: reqId, deviceSn: deviceSn));
-    emit(MqttCommState(pending: next, lastError: state.lastError));
+    emit(MqttCommState(pending: next, lastError: null));
   }
 
   void complete(String reqId) {
     final next = state.pending.where((e) => e.reqId != reqId).toList(growable: false);
-    emit(MqttCommState(pending: next, lastError: state.lastError));
+    emit(MqttCommState(pending: next, lastError: null));
   }
 
   void fail(String reqId, String message) {
@@ -43,17 +46,12 @@ class MqttCommCubit extends Cubit<MqttCommState> {
     emit(MqttCommState(pending: next, lastError: message));
   }
 
-  void dropForDevice(String deviceSn) {
+  void clear() {
+    emit(MqttCommState(pending: const [], lastError: null));
+  }
+
+  void dropForDevice(String? deviceSn) {
     final next = state.pending.where((e) => e.deviceSn != deviceSn).toList(growable: false);
-    emit(MqttCommState(pending: next, lastError: state.lastError));
-  }
-
-  void reset() {
-    emit(const MqttCommState(pending: [], lastError: null));
-  }
-
-  void clearError() {
-    if (state.lastError == null) return;
-    emit(MqttCommState(pending: state.pending, lastError: null));
+    emit(MqttCommState(pending: next, lastError: null));
   }
 }

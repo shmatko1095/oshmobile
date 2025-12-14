@@ -51,7 +51,7 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
 
   @override
   Widget build(BuildContext context) {
-    final current = context.select<DeviceScheduleCubit, CalendarMode>((c) => c.getMode());
+    final current = context.select<DeviceScheduleCubit, CalendarMode>((c) => c.state.mode);
 
     // If device confirmed our optimistic choice — clear the optimistic flag post-frame.
     if (_optimistic != null && current == _optimistic) {

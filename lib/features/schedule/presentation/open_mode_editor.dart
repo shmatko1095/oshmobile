@@ -14,7 +14,7 @@ import 'package:oshmobile/generated/l10n.dart';
 class ThermostatModeNavigator {
   /// Dispatch by current CalendarMode from the cubit.
   static Future<void> openForCurrentMode(BuildContext context) async {
-    final mode = context.read<DeviceScheduleCubit>().getMode();
+    final mode = context.read<DeviceScheduleCubit>().state.mode;
 
     if (mode == CalendarMode.on) {
       return _openOn(context);
@@ -62,7 +62,7 @@ class ThermostatModeNavigator {
             ),
           ),
         ))
-        .then((_) => cubit.persistAll());
+        .then((_) => cubit.saveAll());
   }
 
   /// Open antifreeze range editor.
@@ -105,7 +105,7 @@ class ThermostatModeNavigator {
             ),
           ),
         ))
-        .then((_) => cubit.persistAll());
+        .then((_) => cubit.saveAll());
   }
 
   /// Open daily/weekly schedule editor for the given mode.
@@ -120,7 +120,7 @@ class ThermostatModeNavigator {
     await Navigator.of(context)
         .push(MaterialPageRoute(
             builder: (_) => BlocProvider.value(value: cubit, child: ScheduleEditorPage(title: title))))
-        .then((_) => cubit.persistAll());
+        .then((_) => cubit.saveAll());
   }
 
   // -------- Explicit public variants (optional API) --------

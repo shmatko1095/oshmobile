@@ -1,50 +1,56 @@
 part of 'schedule_cubit.dart';
 
-/// A single outgoing operation awaiting device ACK.
-/// We snapshot UI *before* sending and keep a timer per op.
-class PendingTxn {
-  final String reqId;
-  final CalendarSnapshot beforeSnap; // state BEFORE we sent the command
-  final CalendarSnapshot? desiredSnap; // full state we WANT (optimistic), if known
-  final DateTime deadline;
-  final String kind; // 'mode' | 'saveAll' | 'other'
-  final CalendarMode? desiredMode; // convenience for 'mode' ops
+/// Kind of in-flight operation (for debugging / analytics).
+enum SchedulePendingKind { mode, saveAll }
 
-  const PendingTxn({
+/// Metadata about a single in-flight MQTT operation.
+/// This is NOT a queue: execution queue is managed by cubit internally.
+@immutable
+class SchedulePending {
+  final String reqId;
+  final SchedulePendingKind kind;
+
+  const SchedulePending({
     required this.reqId,
-    required this.beforeSnap,
-    required this.deadline,
     required this.kind,
-    this.desiredSnap,
-    this.desiredMode,
+  });
+}
+
+/// Latest-wins "queued intents" requested while an operation is in-flight.
+/// This is a queue in the "logical intent" sense, not execution queue.
+/// - mode: last requested mode while saving
+/// - saveAll: at least one extra save request while saving
+@immutable
+class ScheduleQueued {
+  final CalendarMode? mode;
+  final bool saveAll;
+
+  const ScheduleQueued({
+    this.mode,
+    this.saveAll = false,
   });
 
-  PendingTxn copyWith({
-    String? reqId,
-    CalendarSnapshot? beforeSnap,
-    CalendarSnapshot? desiredSnap,
-    DateTime? deadline,
-    String? kind,
-    CalendarMode? desiredMode,
-  }) =>
-      PendingTxn(
-        reqId: reqId ?? this.reqId,
-        beforeSnap: beforeSnap ?? this.beforeSnap,
-        desiredSnap: desiredSnap ?? this.desiredSnap,
-        deadline: deadline ?? this.deadline,
-        kind: kind ?? this.kind,
-        desiredMode: desiredMode ?? this.desiredMode,
-      );
+  bool get isEmpty => mode == null && !saveAll;
+
+  ScheduleQueued withMode(CalendarMode m) => ScheduleQueued(mode: m, saveAll: saveAll);
+
+  ScheduleQueued withSaveAll() => ScheduleQueued(mode: mode, saveAll: true);
+
+  ScheduleQueued clearMode() => ScheduleQueued(mode: null, saveAll: saveAll);
+
+  ScheduleQueued clearSaveAll() => ScheduleQueued(mode: mode, saveAll: false);
+
+  ScheduleQueued clear() => const ScheduleQueued();
 }
 
 sealed class DeviceScheduleState {
   const DeviceScheduleState();
 
-  /// Current mode for UI (already optimistic if pending exists).
   CalendarMode get mode;
-
-  /// Points for the current active mode (already optimistic if pending exists).
   List<SchedulePoint> get points;
+
+  bool get dirty => false;
+  bool get saving => false;
 }
 
 class DeviceScheduleLoading extends DeviceScheduleState {
@@ -61,77 +67,95 @@ class DeviceScheduleLoading extends DeviceScheduleState {
 
 class DeviceScheduleError extends DeviceScheduleState {
   final String message;
+  final CalendarMode modeHint;
 
-  const DeviceScheduleError(this.message);
+  const DeviceScheduleError(this.message, {this.modeHint = CalendarMode.off});
 
   @override
-  CalendarMode get mode => CalendarMode.off;
+  CalendarMode get mode => modeHint;
 
   @override
   List<SchedulePoint> get points => const <SchedulePoint>[];
 }
 
 class DeviceScheduleReady extends DeviceScheduleState {
-  final CalendarSnapshot snap; // last confirmed (or latest we stored)
-  final bool dirty;
+  /// Confirmed snapshot from device.
+  final CalendarSnapshot base;
+
+  /// Local override for active mode (draft). Null => use base.mode.
+  final CalendarMode? modeOverride;
+
+  /// Local overrides for lists (draft). Only store modes changed locally.
+  final Map<CalendarMode, List<SchedulePoint>> listOverrides;
+
+  @override
   final bool saving;
+
+  /// One-shot UI message (snackbar).
   final String? flash;
 
-  /// Queue of pending ops waiting for ACK via reported.appliedReqId key.
-  final List<PendingTxn> pendingQueue;
+  /// In-flight operation metadata (reqId + kind).
+  final SchedulePending? pending;
+
+  /// Latest-wins queued intents requested while saving.
+  final ScheduleQueued queued;
 
   const DeviceScheduleReady({
-    required this.snap,
-    this.dirty = false,
+    required this.base,
+    this.modeOverride,
+    this.listOverrides = const {},
     this.saving = false,
     this.flash,
-    this.pendingQueue = const <PendingTxn>[],
+    this.pending,
+    this.queued = const ScheduleQueued(),
   });
 
-  /// Optimistic view for UI:
-  /// - If there are pending ops, prefer the last txn.desiredSnap;
-  /// - Else, if last txn is 'mode' and has desiredMode, overlay it on current snap;
-  /// - Else, fall back to confirmed snap.
-  CalendarSnapshot get viewSnap {
-    if (pendingQueue.isNotEmpty) {
-      for (int i = pendingQueue.length - 1; i >= 0; --i) {
-        final t = pendingQueue[i];
-        if (t.desiredSnap != null) return t.desiredSnap!;
-        if (t.kind == 'mode' && t.desiredMode != null) {
-          return snap.copyWith(mode: t.desiredMode);
-        }
-      }
-    }
-    return snap;
-  }
+  @override
+  bool get dirty => modeOverride != null || listOverrides.isNotEmpty;
 
-  /// Latest desired mode from the queue (handy for UI badges/spinners).
-  CalendarMode? get desiredModeHint {
-    for (int i = pendingQueue.length - 1; i >= 0; --i) {
-      final t = pendingQueue[i];
-      if (t.kind == 'mode' && t.desiredMode != null) return t.desiredMode;
+  /// Draft snapshot shown to UI: base + overrides.
+  CalendarSnapshot get snap {
+    final effectiveMode = modeOverride ?? base.mode;
+
+    if (listOverrides.isEmpty && modeOverride == null) {
+      return base;
     }
-    return null;
+
+    final merged = Map<CalendarMode, List<SchedulePoint>>.from(base.lists);
+    listOverrides.forEach((k, v) {
+      merged[k] = List.unmodifiable(v);
+    });
+
+    return base.copyWith(mode: effectiveMode, lists: merged);
   }
 
   @override
-  CalendarMode get mode => viewSnap.mode;
+  CalendarMode get mode => snap.mode;
 
   @override
-  List<SchedulePoint> get points => viewSnap.pointsFor(viewSnap.mode);
+  List<SchedulePoint> get points => snap.pointsFor(snap.mode);
+
+  List<SchedulePoint> listFor(CalendarMode m) => snap.pointsFor(m);
 
   DeviceScheduleReady copyWith({
-    CalendarSnapshot? snap,
-    bool? dirty,
+    CalendarSnapshot? base,
+    CalendarMode? modeOverride,
+    bool removeModeOverride = false,
+    Map<CalendarMode, List<SchedulePoint>>? listOverrides,
     bool? saving,
     String? flash, // pass null to clear
-    List<PendingTxn>? pendingQueue,
-  }) =>
-      DeviceScheduleReady(
-        snap: snap ?? this.snap,
-        dirty: dirty ?? this.dirty,
-        saving: saving ?? this.saving,
-        flash: flash,
-        pendingQueue: pendingQueue ?? this.pendingQueue,
-      );
+    SchedulePending? pending,
+    bool clearPending = false,
+    ScheduleQueued? queued,
+  }) {
+    return DeviceScheduleReady(
+      base: base ?? this.base,
+      modeOverride: removeModeOverride ? null : (modeOverride ?? this.modeOverride),
+      listOverrides: listOverrides ?? this.listOverrides,
+      saving: saving ?? this.saving,
+      flash: flash,
+      pending: clearPending ? null : (pending ?? this.pending),
+      queued: queued ?? this.queued,
+    );
+  }
 }

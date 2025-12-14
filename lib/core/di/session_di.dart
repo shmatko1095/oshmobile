@@ -229,6 +229,7 @@ class SessionDi {
         assignDevice: getIt(),
         updateDeviceUserData: getIt(),
         selectedDeviceStorage: getIt<SelectedDeviceStorage>(),
+        comm: getIt<MqttCommCubit>(),
       ),
       dispose: (c) => unawaited(c.close()),
     );

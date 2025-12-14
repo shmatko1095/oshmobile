@@ -19,7 +19,6 @@ class MqttSessionController {
     required this.mqtt,
     required this.comm,
   }) {
-    // Start connect immediately when session scope is created.
     ready = _connect();
   }
 
@@ -34,10 +33,7 @@ class MqttSessionController {
   }
 
   Future<void> dispose() async {
-    // Clear comm state FIRST (while cubit is still alive).
-    comm.reset();
-
-    // Then disconnect transport via global cubit.
+    comm.clear();
     await mqtt.disconnect();
   }
 }

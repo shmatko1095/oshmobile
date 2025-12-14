@@ -199,7 +199,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
       ),
       bottomNavigationBar: BlocBuilder<DeviceScheduleCubit, DeviceScheduleState>(
         builder: (context, state) {
-          final showDays = CalendarMode.weekly == context.read<DeviceScheduleCubit>().getMode();
+          final showDays = CalendarMode.weekly == state.mode;
           if (showDays) {
             return SafeArea(
               top: false,

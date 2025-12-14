@@ -124,7 +124,7 @@ class DeviceSettingsPage extends StatelessWidget {
 
                 final canSave = state.dirty && !state.saving;
                 return TextButton(
-                  onPressed: canSave ? () => context.read<DeviceSettingsCubit>().persist() : null,
+                  onPressed: canSave ? () => context.read<DeviceSettingsCubit>().saveAll() : null,
                   child: Text(
                     'Save', // TODO: localize
                     style: TextStyle(

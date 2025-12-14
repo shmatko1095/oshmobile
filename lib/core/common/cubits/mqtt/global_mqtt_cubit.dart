@@ -24,7 +24,7 @@ class GlobalMqttCubit extends Cubit<GlobalMqttState> {
     required String userId,
     required String token,
   }) async {
-    if (isClosed) return;
+    // if (isClosed) return;
 
     if (isConnected) {
       emit(const MqttConnected());
@@ -34,12 +34,12 @@ class GlobalMqttCubit extends Cubit<GlobalMqttState> {
     emit(const MqttConnecting());
     try {
       await _repo.connect(userId: userId, token: token);
-      if (isClosed) return;
+      // if (isClosed) return;
       emit(const MqttConnected());
     } catch (e, st) {
       // No implicit retry here (avoids double-handshake races).
       await OshCrashReporter.logNonFatal(e, st, reason: 'MQTT connect failed');
-      if (isClosed) return;
+      // if (isClosed) return;
       emit(MqttError(e.toString()));
     }
   }
@@ -49,15 +49,15 @@ class GlobalMqttCubit extends Cubit<GlobalMqttState> {
     required String userId,
     required String token,
   }) async {
-    if (isClosed) return;
+    // if (isClosed) return;
 
     try {
       await _repo.reconnect(userId: userId, token: token);
-      if (isClosed) return;
+      // if (isClosed) return;
       emit(const MqttConnected());
     } catch (e, st) {
       await OshCrashReporter.logNonFatal(e, st, reason: 'MQTT reconnect failed');
-      if (isClosed) return;
+      // if (isClosed) return;
       emit(MqttError(e.toString()));
     }
   }
@@ -69,7 +69,8 @@ class GlobalMqttCubit extends Cubit<GlobalMqttState> {
     } catch (e, st) {
       await OshCrashReporter.logNonFatal(e, st, reason: 'MQTT disconnect failed');
     } finally {
-      if (!isClosed) emit(const MqttDisconnected());
+      // if (!isClosed)
+      emit(const MqttDisconnected());
     }
   }
 

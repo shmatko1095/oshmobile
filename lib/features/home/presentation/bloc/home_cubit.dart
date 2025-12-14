@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
+import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/features/home/domain/usecases/assign_device.dart';
@@ -19,6 +20,7 @@ class HomeCubit extends Cubit<HomeState> {
   final AssignDevice _assignDevice;
   final UpdateDeviceUserData _updateDeviceUserData;
   final SelectedDeviceStorage _selectedDeviceStorage;
+  final MqttCommCubit _comm;
 
   List<Device> userDevices = [];
   String? _currentUserUuid;
@@ -30,14 +32,18 @@ class HomeCubit extends Cubit<HomeState> {
     required AssignDevice assignDevice,
     required UpdateDeviceUserData updateDeviceUserData,
     required SelectedDeviceStorage selectedDeviceStorage,
+    required MqttCommCubit comm,
   })  : _getUserDevices = getUserDevices,
         _unassignDevice = unassignDevice,
         _assignDevice = assignDevice,
         _updateDeviceUserData = updateDeviceUserData,
         _selectedDeviceStorage = selectedDeviceStorage,
+        _comm = comm,
         super(HomeInitial());
 
   void selectDevice(String deviceId) {
+    _comm.dropForDevice(state.selectedDeviceId);
+
     emit(state.copyWith(selectedDeviceId: deviceId));
     _selectedDeviceStorage.saveSelectedDevice(_userUuid, deviceId);
   }

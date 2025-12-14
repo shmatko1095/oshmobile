@@ -32,21 +32,21 @@ class DevicePageCubit extends Cubit<DevicePageState> {
   DevicePageCubit(this._getDeviceFull) : super(const DevicePageLoading());
 
   Future<void> load(String deviceId) async {
-    if (isClosed) return;
+    // if (isClosed) return;
     emit(const DevicePageLoading());
 
     try {
       final full = await _getDeviceFull(deviceId);
-      if (isClosed) return;
+      // if (isClosed) return;
 
       final cfg = DeviceConfig.fromJson(
         full.configuration['osh-config'] as Map<String, dynamic>? ?? full.configuration,
       );
 
-      if (isClosed) return;
+      // if (isClosed) return;
       emit(DevicePageReady(device: full.device, config: cfg));
     } catch (e, st) {
-      if (isClosed) return;
+      // if (isClosed) return;
       OshCrashReporter.logNonFatal(
         e,
         st,

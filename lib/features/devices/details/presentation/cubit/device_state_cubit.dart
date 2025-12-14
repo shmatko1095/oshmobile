@@ -99,7 +99,7 @@ class DeviceStateCubit extends Cubit<DeviceStateState> {
 
   /// Call once after creation (from DeviceScope).
   Future<void> start() async {
-    if (isClosed) return;
+    // if (isClosed) return;
 
     emit(state.copyWith(deviceId: deviceSn, status: DeviceLiveStatus.connecting));
 
@@ -114,7 +114,7 @@ class DeviceStateCubit extends Cubit<DeviceStateState> {
         context: {'deviceSn': deviceSn},
       ));
     }
-    if (isClosed) return;
+    // if (isClosed) return;
 
     // Subscribe (best-effort).
     try {
@@ -127,19 +127,19 @@ class DeviceStateCubit extends Cubit<DeviceStateState> {
         context: {'deviceSn': deviceSn},
       ));
     }
-    if (isClosed) return;
+    // if (isClosed) return;
 
     // Watch telemetry stream.
     await _sub?.cancel();
-    if (isClosed) return;
+    // if (isClosed) return;
 
     _sub = _watch(deviceSn).listen(
       (diff) {
-        if (isClosed) return;
+        // if (isClosed) return;
         emit(state.merge(diff));
       },
       onError: (e) {
-        if (isClosed) return;
+        // if (isClosed) return;
         OshCrashReporter.log('DeviceStateCubit: watch error: $e');
         emit(state.copyWith(status: DeviceLiveStatus.degraded));
       },

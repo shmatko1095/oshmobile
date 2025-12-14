@@ -29,167 +29,135 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
-    "AddDevice": MessageLookupByLibrary.simpleMessage("Add device"),
-    "Cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
-    "CheckYourEmail": MessageLookupByLibrary.simpleMessage("Check your email"),
-    "ChooseWiFi": MessageLookupByLibrary.simpleMessage("Choose Wi-Fi"),
-    "ChooseWifiToConnect": MessageLookupByLibrary.simpleMessage(
-      "Choose the wifi network you want to connect your device.",
-    ),
-    "Connect": MessageLookupByLibrary.simpleMessage("Connect"),
-    "ContinueWithGoogle": MessageLookupByLibrary.simpleMessage(
-      "Continue with Google",
-    ),
-    "Deleted": MessageLookupByLibrary.simpleMessage("Deleted"),
-    "DeviceDetails": MessageLookupByLibrary.simpleMessage("Device details"),
-    "DeviceEditTitle": MessageLookupByLibrary.simpleMessage(
-      "Device information",
-    ),
-    "DeviceUnlinkAlertContent1": MessageLookupByLibrary.simpleMessage(
-      "The device ",
-    ),
-    "DeviceUnlinkAlertContent2": MessageLookupByLibrary.simpleMessage(
-      " will be removed from your list. You can re-add it anytime by scanning the QR code again.",
-    ),
-    "Done": MessageLookupByLibrary.simpleMessage("Done"),
-    "DontHaveAnAccount": MessageLookupByLibrary.simpleMessage(
-      "Don\'t have an account?",
-    ),
-    "Email": MessageLookupByLibrary.simpleMessage("Email"),
-    "Failed": MessageLookupByLibrary.simpleMessage("Failed"),
-    "ForgotPassword": MessageLookupByLibrary.simpleMessage("Forgot password?"),
-    "ForgotPasswordContent": MessageLookupByLibrary.simpleMessage(
-      "Enter your email address, and we’ll send you a link to reset your password. It’s quick and secure.",
-    ),
-    "ForgotYourPassword": MessageLookupByLibrary.simpleMessage(
-      "Forgot your password",
-    ),
-    "FriShort": MessageLookupByLibrary.simpleMessage("Fri"),
-    "GoToLogin": MessageLookupByLibrary.simpleMessage("Go to Login"),
-    "Heating": MessageLookupByLibrary.simpleMessage("Heating"),
-    "InvalidEmailAddress": MessageLookupByLibrary.simpleMessage(
-      "Invalid email address",
-    ),
-    "InvalidPassword": m0,
-    "InvalidUserCredentials": MessageLookupByLibrary.simpleMessage(
-      "Invalid user credentials",
-    ),
-    "InvalidValue": MessageLookupByLibrary.simpleMessage("Invalid value"),
-    "ManualTemperature": MessageLookupByLibrary.simpleMessage(
-      "Manual temperature",
-    ),
-    "ModeAntifreeze": MessageLookupByLibrary.simpleMessage("Antifreeze"),
-    "ModeDaily": MessageLookupByLibrary.simpleMessage("Daily"),
-    "ModeOff": MessageLookupByLibrary.simpleMessage("Off"),
-    "ModeOn": MessageLookupByLibrary.simpleMessage("On"),
-    "ModeWeekly": MessageLookupByLibrary.simpleMessage("Weekly"),
-    "MonShort": MessageLookupByLibrary.simpleMessage("Mon"),
-    "Name": MessageLookupByLibrary.simpleMessage("Name"),
-    "NextAt": m1,
-    "No": MessageLookupByLibrary.simpleMessage("No"),
-    "NoDeviceSelected": MessageLookupByLibrary.simpleMessage(
-      "No device selected",
-    ),
-    "NoDevicesYet": MessageLookupByLibrary.simpleMessage("No devices yet"),
-    "NoNetworksFound": MessageLookupByLibrary.simpleMessage(
-      "No networks found",
-    ),
-    "OK": MessageLookupByLibrary.simpleMessage("OK"),
-    "Offline": MessageLookupByLibrary.simpleMessage("Offline"),
-    "Online": MessageLookupByLibrary.simpleMessage("Online"),
-    "Password": MessageLookupByLibrary.simpleMessage("Password"),
-    "PasswordConfirmation": MessageLookupByLibrary.simpleMessage(
-      "Password confirmation",
-    ),
-    "PasswordsDoNotMatch": MessageLookupByLibrary.simpleMessage(
-      "Passwords do not match",
-    ),
-    "PleaseCheckYourInbox": MessageLookupByLibrary.simpleMessage(
-      ". Please check your inbox and follow the instructions to complete your registration.",
-    ),
-    "PointCameraToQR": MessageLookupByLibrary.simpleMessage(
-      "Point the camera at the QR code",
-    ),
-    "RegistrationSuccessful": MessageLookupByLibrary.simpleMessage(
-      "Almost There!",
-    ),
-    "RegistrationSuccessfulContent": MessageLookupByLibrary.simpleMessage(
-      "The last step is to verify your email address. Please check your inbox and follow the instructions to complete your registration.",
-    ),
-    "ResetPassword": MessageLookupByLibrary.simpleMessage("Reset password"),
-    "Retry": MessageLookupByLibrary.simpleMessage("Retry"),
-    "Room": MessageLookupByLibrary.simpleMessage("Room"),
-    "SatShort": MessageLookupByLibrary.simpleMessage("Sat"),
-    "Save": MessageLookupByLibrary.simpleMessage("Save"),
-    "Search": MessageLookupByLibrary.simpleMessage("Search"),
-    "SecureCode": MessageLookupByLibrary.simpleMessage("Secure code"),
-    "SendEmail": MessageLookupByLibrary.simpleMessage("Send email"),
-    "SerialNumber": MessageLookupByLibrary.simpleMessage("Serial number"),
-    "SetTemperature": MessageLookupByLibrary.simpleMessage("Set temperature"),
-    "Settings": MessageLookupByLibrary.simpleMessage("Settings"),
-    "SignIn": MessageLookupByLibrary.simpleMessage("Sign In"),
-    "SignOut": MessageLookupByLibrary.simpleMessage("Sign Out"),
-    "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
-    "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
-    "SunShort": MessageLookupByLibrary.simpleMessage("Sun"),
-    "Target": m2,
-    "ThuShort": MessageLookupByLibrary.simpleMessage("Thu"),
-    "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
-      "Check the device\'s network connection.",
-    ),
-    "TipContactSupport": MessageLookupByLibrary.simpleMessage(
-      "Contact support and provide the Model ID and Device ID.",
-    ),
-    "TipEnsureAppUpdated": MessageLookupByLibrary.simpleMessage(
-      "Make sure the app is updated to the latest version.",
-    ),
-    "Tips": MessageLookupByLibrary.simpleMessage("Tips"),
-    "TryDemo": MessageLookupByLibrary.simpleMessage("Try Demo"),
-    "TueShort": MessageLookupByLibrary.simpleMessage("Tue"),
-    "Undo": MessageLookupByLibrary.simpleMessage("Undo"),
-    "UnknownDeviceType": MessageLookupByLibrary.simpleMessage(
-      "Unknown device type",
-    ),
-    "UnknownError": MessageLookupByLibrary.simpleMessage("Unknown error"),
-    "UnlinkDevice": MessageLookupByLibrary.simpleMessage("Unlink Device"),
-    "UnsupportedDeviceMessage": MessageLookupByLibrary.simpleMessage(
-      "This device model is not yet supported by the current version of the app. You can try refreshing the data, opening the device settings, or sending a report.",
-    ),
-    "Update": MessageLookupByLibrary.simpleMessage("Update"),
-    "UserAlreadyExist": MessageLookupByLibrary.simpleMessage(
-      "User already exist",
-    ),
-    "VerifyYourEmail": MessageLookupByLibrary.simpleMessage(
-      "Verify your email",
-    ),
-    "WeHaveSentVerificationEmailTo": MessageLookupByLibrary.simpleMessage(
-      "We have sent a verification email to ",
-    ),
-    "WedShort": MessageLookupByLibrary.simpleMessage("Wed"),
-    "Yes": MessageLookupByLibrary.simpleMessage("Yes"),
-    "YourEmailIsNotVerifiedYet": MessageLookupByLibrary.simpleMessage(
-      "Your email is not verified yet. Click the button below to resend the verification email.",
-    ),
-    "bleConnectingToDevice": MessageLookupByLibrary.simpleMessage(
-      "Connecting to device…",
-    ),
-    "deviceConnectedToWifi": MessageLookupByLibrary.simpleMessage(
-      "Device connected to Wi-Fi",
-    ),
-    "deviceOfflineSubtitle": MessageLookupByLibrary.simpleMessage(
-      "No internet connection detected.Connect to a Wi-Fi network to continue",
-    ),
-    "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
-      "Device is offline",
-    ),
-    "offlineBleNotNearbyHint": MessageLookupByLibrary.simpleMessage(
-      "Move closer to the device to set up Wi-Fi.",
-    ),
-    "offlineBlePermissionHint": MessageLookupByLibrary.simpleMessage(
-      "Bluetooth access is needed to change Wi-Fi settings.",
-    ),
-    "wifiConnectFailed": MessageLookupByLibrary.simpleMessage(
-      "Failed to connect to Wi-Fi",
-    ),
-  };
+        "AddDevice": MessageLookupByLibrary.simpleMessage("Add device"),
+        "Cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
+        "CheckYourEmail":
+            MessageLookupByLibrary.simpleMessage("Check your email"),
+        "ChooseWiFi": MessageLookupByLibrary.simpleMessage("Choose Wi-Fi"),
+        "ChooseWifiToConnect": MessageLookupByLibrary.simpleMessage(
+            "Choose the wifi network you want to connect your device."),
+        "Connect": MessageLookupByLibrary.simpleMessage("Connect"),
+        "ContinueWithGoogle":
+            MessageLookupByLibrary.simpleMessage("Continue with Google"),
+        "Deleted": MessageLookupByLibrary.simpleMessage("Deleted"),
+        "DeviceDetails": MessageLookupByLibrary.simpleMessage("Device details"),
+        "DeviceEditTitle":
+            MessageLookupByLibrary.simpleMessage("Device information"),
+        "DeviceUnlinkAlertContent1":
+            MessageLookupByLibrary.simpleMessage("The device "),
+        "DeviceUnlinkAlertContent2": MessageLookupByLibrary.simpleMessage(
+            " will be removed from your list. You can re-add it anytime by scanning the QR code again."),
+        "Done": MessageLookupByLibrary.simpleMessage("Done"),
+        "DontHaveAnAccount":
+            MessageLookupByLibrary.simpleMessage("Don\'t have an account?"),
+        "Email": MessageLookupByLibrary.simpleMessage("Email"),
+        "Failed": MessageLookupByLibrary.simpleMessage("Failed"),
+        "ForgotPassword":
+            MessageLookupByLibrary.simpleMessage("Forgot password?"),
+        "ForgotPasswordContent": MessageLookupByLibrary.simpleMessage(
+            "Enter your email address, and we’ll send you a link to reset your password. It’s quick and secure."),
+        "ForgotYourPassword":
+            MessageLookupByLibrary.simpleMessage("Forgot your password"),
+        "FriShort": MessageLookupByLibrary.simpleMessage("Fri"),
+        "GoToLogin": MessageLookupByLibrary.simpleMessage("Go to Login"),
+        "Heating": MessageLookupByLibrary.simpleMessage("Heating"),
+        "InvalidEmailAddress":
+            MessageLookupByLibrary.simpleMessage("Invalid email address"),
+        "InvalidPassword": m0,
+        "InvalidUserCredentials":
+            MessageLookupByLibrary.simpleMessage("Invalid user credentials"),
+        "InvalidValue": MessageLookupByLibrary.simpleMessage("Invalid value"),
+        "ManualTemperature":
+            MessageLookupByLibrary.simpleMessage("Manual temperature"),
+        "ModeAntifreeze": MessageLookupByLibrary.simpleMessage("Antifreeze"),
+        "ModeDaily": MessageLookupByLibrary.simpleMessage("Daily"),
+        "ModeOff": MessageLookupByLibrary.simpleMessage("Off"),
+        "ModeOn": MessageLookupByLibrary.simpleMessage("On"),
+        "ModeWeekly": MessageLookupByLibrary.simpleMessage("Weekly"),
+        "MonShort": MessageLookupByLibrary.simpleMessage("Mon"),
+        "Name": MessageLookupByLibrary.simpleMessage("Name"),
+        "NextAt": m1,
+        "No": MessageLookupByLibrary.simpleMessage("No"),
+        "NoDeviceSelected":
+            MessageLookupByLibrary.simpleMessage("No device selected"),
+        "NoDevicesYet": MessageLookupByLibrary.simpleMessage("No devices yet"),
+        "NoNetworksFound":
+            MessageLookupByLibrary.simpleMessage("No networks found"),
+        "OK": MessageLookupByLibrary.simpleMessage("OK"),
+        "Offline": MessageLookupByLibrary.simpleMessage("Offline"),
+        "Online": MessageLookupByLibrary.simpleMessage("Online"),
+        "Password": MessageLookupByLibrary.simpleMessage("Password"),
+        "PasswordConfirmation":
+            MessageLookupByLibrary.simpleMessage("Password confirmation"),
+        "PasswordsDoNotMatch":
+            MessageLookupByLibrary.simpleMessage("Passwords do not match"),
+        "PleaseCheckYourInbox": MessageLookupByLibrary.simpleMessage(
+            ". Please check your inbox and follow the instructions to complete your registration."),
+        "PointCameraToQR": MessageLookupByLibrary.simpleMessage(
+            "Point the camera at the QR code"),
+        "RegistrationSuccessful":
+            MessageLookupByLibrary.simpleMessage("Almost There!"),
+        "RegistrationSuccessfulContent": MessageLookupByLibrary.simpleMessage(
+            "The last step is to verify your email address. Please check your inbox and follow the instructions to complete your registration."),
+        "ResetPassword": MessageLookupByLibrary.simpleMessage("Reset password"),
+        "Retry": MessageLookupByLibrary.simpleMessage("Retry"),
+        "Room": MessageLookupByLibrary.simpleMessage("Room"),
+        "SatShort": MessageLookupByLibrary.simpleMessage("Sat"),
+        "Save": MessageLookupByLibrary.simpleMessage("Save"),
+        "Search": MessageLookupByLibrary.simpleMessage("Search"),
+        "SecureCode": MessageLookupByLibrary.simpleMessage("Secure code"),
+        "SendEmail": MessageLookupByLibrary.simpleMessage("Send email"),
+        "SerialNumber": MessageLookupByLibrary.simpleMessage("Serial number"),
+        "SetTemperature":
+            MessageLookupByLibrary.simpleMessage("Set temperature"),
+        "Settings": MessageLookupByLibrary.simpleMessage("Settings"),
+        "SignIn": MessageLookupByLibrary.simpleMessage("Sign In"),
+        "SignOut": MessageLookupByLibrary.simpleMessage("Sign Out"),
+        "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
+        "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
+        "SunShort": MessageLookupByLibrary.simpleMessage("Sun"),
+        "Target": m2,
+        "ThuShort": MessageLookupByLibrary.simpleMessage("Thu"),
+        "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
+            "Check the device\'s network connection."),
+        "TipContactSupport": MessageLookupByLibrary.simpleMessage(
+            "Contact support and provide the Model ID and Device ID."),
+        "TipEnsureAppUpdated": MessageLookupByLibrary.simpleMessage(
+            "Make sure the app is updated to the latest version."),
+        "Tips": MessageLookupByLibrary.simpleMessage("Tips"),
+        "TryDemo": MessageLookupByLibrary.simpleMessage("Try Demo"),
+        "TueShort": MessageLookupByLibrary.simpleMessage("Tue"),
+        "Undo": MessageLookupByLibrary.simpleMessage("Undo"),
+        "UnknownDeviceType":
+            MessageLookupByLibrary.simpleMessage("Unknown device type"),
+        "UnknownError": MessageLookupByLibrary.simpleMessage("Unknown error"),
+        "UnlinkDevice": MessageLookupByLibrary.simpleMessage("Unlink Device"),
+        "UnsupportedDeviceMessage": MessageLookupByLibrary.simpleMessage(
+            "This device model is not yet supported by the current version of the app. You can try refreshing the data, opening the device settings, or sending a report."),
+        "Update": MessageLookupByLibrary.simpleMessage("Update"),
+        "UserAlreadyExist":
+            MessageLookupByLibrary.simpleMessage("User already exist"),
+        "VerifyYourEmail":
+            MessageLookupByLibrary.simpleMessage("Verify your email"),
+        "WeHaveSentVerificationEmailTo": MessageLookupByLibrary.simpleMessage(
+            "We have sent a verification email to "),
+        "WedShort": MessageLookupByLibrary.simpleMessage("Wed"),
+        "Yes": MessageLookupByLibrary.simpleMessage("Yes"),
+        "YourEmailIsNotVerifiedYet": MessageLookupByLibrary.simpleMessage(
+            "Your email is not verified yet. Click the button below to resend the verification email."),
+        "bleConnectingToDevice":
+            MessageLookupByLibrary.simpleMessage("Connecting to device…"),
+        "deviceConnectedToWifi":
+            MessageLookupByLibrary.simpleMessage("Device connected to Wi-Fi"),
+        "deviceOfflineSubtitle": MessageLookupByLibrary.simpleMessage(
+            "No internet connection detected.Connect to a Wi-Fi network to continue"),
+        "deviceOfflineTitle":
+            MessageLookupByLibrary.simpleMessage("Device is offline"),
+        "offlineBleNotNearbyHint": MessageLookupByLibrary.simpleMessage(
+            "Move closer to the device to set up Wi-Fi."),
+        "offlineBlePermissionHint": MessageLookupByLibrary.simpleMessage(
+            "Bluetooth access is needed to change Wi-Fi settings."),
+        "wifiConnectFailed":
+            MessageLookupByLibrary.simpleMessage("Failed to connect to Wi-Fi")
+      };
 }

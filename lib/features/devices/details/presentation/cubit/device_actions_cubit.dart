@@ -21,17 +21,17 @@ class DeviceActionsCubit extends Cubit<DeviceActionsState> {
         super(const DeviceActionsState());
 
   Future<void> send<T>(Command<T> cmd, T value) async {
-    if (isClosed) return;
+    // if (isClosed) return;
     if (state.busy) return;
 
     emit(const DeviceActionsState(busy: true));
 
     try {
       await _control.send(deviceSn, cmd, value);
-      if (isClosed) return;
+      // if (isClosed) return;
       emit(const DeviceActionsState(busy: false));
     } catch (e) {
-      if (isClosed) return;
+      // if (isClosed) return;
       emit(DeviceActionsState(busy: false, lastError: e.toString()));
     }
   }

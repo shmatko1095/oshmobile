@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
-import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
+import 'package:oshmobile/core/common/services/mqtt_op_runner.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
+import 'package:oshmobile/core/utils/serial_executor.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 import 'package:oshmobile/features/settings/domain/usecases/fetch_settings_all.dart';
 import 'package:oshmobile/features/settings/domain/usecases/save_settings_all.dart';
@@ -12,6 +14,12 @@ import 'package:oshmobile/features/settings/domain/usecases/watch_settings_strea
 part 'device_settings_state.dart';
 
 /// Device-scoped settings cubit: one instance per deviceSn.
+///
+/// Principles:
+/// - ACK/timeout handled ONLY in repository/usecase.
+/// - Cubit maintains base/draft (base + overrides).
+/// - Network ops serialized to avoid overlap.
+/// - Latest-wins save intent while saving lives in state (queued).
 class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
   final String deviceSn;
 
@@ -20,12 +28,13 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
   final WatchSettingsStream _watchStream;
   final MqttCommCubit _comm;
 
-  final Duration ackTimeout;
+  late final SerialExecutor _serial = SerialExecutor();
+  late final MqttOpRunner _ops = MqttOpRunner(deviceSn: deviceSn, serial: _serial, comm: _comm);
 
   StreamSubscription<MapEntry<String?, SettingsSnapshot>>? _sub;
-  final Map<String, Timer> _pendingTimers = {};
-
   bool _watchStarted = false;
+
+  static const _eq = DeepCollectionEquality();
 
   DeviceSettingsCubit({
     required this.deviceSn,
@@ -33,7 +42,6 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
     required SaveSettingsAll saveAll,
     required WatchSettingsStream watchStream,
     required MqttCommCubit comm,
-    this.ackTimeout = const Duration(seconds: 8),
   })  : _fetchAll = fetchAll,
         _saveAll = saveAll,
         _watchStream = watchStream,
@@ -46,134 +54,186 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
     _watchStarted = true;
 
     _sub = _watchStream(deviceSn).listen((entry) {
-      _onReported(entry.key, entry.value);
+      _applyReported(appliedReqId: entry.key, remote: entry.value);
     });
   }
 
-  Future<void> refresh() => _loadInitial();
+  Future<void> refresh() => _serial.run(() async {
+        final prev = state;
+        if (prev is! DeviceSettingsReady) {
+          emit(const DeviceSettingsLoading());
+        }
 
-  Future<void> _loadInitial() async {
-    if (isClosed) return;
-    emit(const DeviceSettingsLoading());
+        final remote = await _fetchAll(deviceSn);
+        if (isClosed) return;
 
-    try {
-      final snap = await _fetchAll(deviceSn);
-      if (isClosed) return;
-      emit(DeviceSettingsReady(snapshot: snap));
-    } catch (e, st) {
-      if (isClosed) return;
-      OshCrashReporter.logNonFatal(e, st, reason: "Failed to load settings", context: {"deviceSn": deviceSn});
-      emit(DeviceSettingsError(e.toString()));
-    }
-  }
-
-  void _onReported(String? appliedReqId, SettingsSnapshot remote) {
-    if (isClosed) return;
-    final st = state;
-    if (st is! DeviceSettingsReady) {
-      emit(DeviceSettingsReady(snapshot: remote));
-      return;
-    }
-
-    if (st.pendingReqId != null &&
-        st.pendingReqId!.isNotEmpty &&
-        appliedReqId != null &&
-        appliedReqId == st.pendingReqId) {
-      _pendingTimers.remove(st.pendingReqId!)?.cancel();
-      _comm.complete(st.pendingReqId!);
-
-      emit(st.copyWith(
-        snapshot: remote,
-        dirty: false,
-        saving: false,
-        pendingReqId: null,
-      ));
-      return;
-    }
-
-    if (st.dirty || st.saving) {
-      emit(st.copyWith(snapshot: remote));
-    } else {
-      emit(st.copyWith(snapshot: remote, dirty: false, saving: false));
-    }
-  }
+        final st = _readyOrNull();
+        if (st != null) {
+          emit(_rebaseOnNewBase(st, remote));
+        } else {
+          emit(DeviceSettingsReady(base: remote));
+        }
+      });
 
   void changeValue(String fieldId, Object? value) {
-    final st = state;
-    if (st is! DeviceSettingsReady) return;
+    final st = _readyOrNull();
+    if (st == null) return;
 
-    final nextSnap = st.snapshot.copyWithValue(fieldId, value);
-    emit(st.copyWith(snapshot: nextSnap, dirty: true, flash: null));
+    final next = Map<String, Object?>.from(st.overrides);
+
+    final baseVal = _getAtPath(st.base.raw, fieldId);
+    if (_eq.equals(baseVal, value)) {
+      next.remove(fieldId);
+    } else {
+      next[fieldId] = value;
+    }
+
+    emit(st.copyWith(overrides: Map.unmodifiable(next), flash: null));
   }
 
-  Future<void> persist() async {
-    final st = state;
-    if (st is! DeviceSettingsReady) return;
-    if (!st.dirty || st.saving) return;
+  void discardLocalChanges() {
+    final st = _readyOrNull();
+    if (st == null) return;
+    emit(st.copyWith(overrides: const {}, flash: null));
+  }
+
+  Future<void> saveAll() {
+    final st = _readyOrNull();
+    if (st == null) return Future.value();
+
+    if (!st.dirty) return Future.value();
+
+    // Latest-wins: if saving, remember another save request once.
+    if (st.saving) {
+      emit(st.copyWith(queued: st.queued.withSaveAll(), flash: null));
+      return Future.value();
+    }
 
     final reqId = newReqId();
+    final desired = st.snapshot;
+
     _comm.start(reqId: reqId, deviceSn: deviceSn);
 
     emit(st.copyWith(
       saving: true,
+      pending: SettingsPending(reqId: reqId, kind: SettingsPendingKind.saveAll),
+      queued: st.queued.clearSaveAll(),
       flash: null,
-      pendingReqId: reqId,
     ));
 
-    try {
-      await _saveAll(deviceSn, st.snapshot, reqId: reqId);
-      if (isClosed) return;
-      _scheduleTimeout(reqId);
-    } catch (e, stack) {
-      OshCrashReporter.logNonFatal(e, stack, reason: "Failed to save settings", context: {"deviceSn": deviceSn});
-      _comm.fail(reqId, 'Failed to save settings: $e');
-      if (isClosed) return;
-      emit(st.copyWith(saving: false, flash: 'Failed to save settings', pendingReqId: null));
-    }
+    return _ops.run(
+      reqId: reqId,
+      op: () => _saveAll(deviceSn, desired, reqId: reqId),
+      timeoutReason: 'Settings ACK timeout',
+      errorReason: 'Failed to save settings',
+      timeoutCommMessage: 'Operation timed out',
+      errorCommMessage: (e) => 'Failed to save settings: $e',
+      onSuccess: () {
+        if (isClosed) return;
+        final cur = _readyOrNull();
+        if (cur == null) return;
+
+        emit(_rebaseOnNewBase(cur, desired).copyWith(saving: false, clearPending: true, flash: null));
+      },
+      onTimeout: () {
+        if (isClosed) return;
+        final cur = _readyOrNull();
+        if (cur == null) return;
+
+        emit(cur.copyWith(saving: false, clearPending: true, flash: 'Operation timed out'));
+      },
+      onError: (_) {
+        if (isClosed) return;
+        final cur = _readyOrNull();
+        if (cur == null) return;
+
+        emit(cur.copyWith(saving: false, clearPending: true, flash: 'Failed to save settings'));
+      },
+      onFinally: _flushQueuedIfAny,
+    );
   }
 
-  void discardLocalChanges() {
-    final st = state;
-    if (st is! DeviceSettingsReady) return;
-    emit(st.copyWith(dirty: false, flash: null));
-  }
-
-  void _scheduleTimeout(String reqId) {
-    _pendingTimers[reqId]?.cancel();
-    _pendingTimers[reqId] = Timer(ackTimeout, () => _onTimeout(reqId));
-  }
-
-  void _onTimeout(String reqId) {
+  void _applyReported({required String? appliedReqId, required SettingsSnapshot remote}) {
     if (isClosed) return;
-    final st = state;
-    if (st is! DeviceSettingsReady) return;
-    if (st.pendingReqId != reqId) return;
 
-    _pendingTimers.remove(reqId)?.cancel();
-    _comm.fail(reqId, 'Settings operation timed out');
+    final st = _readyOrNull();
+    if (st == null) {
+      emit(DeviceSettingsReady(base: remote));
+      return;
+    }
 
-    emit(st.copyWith(
-      saving: false,
-      flash: 'Settings operation timed out',
-      pendingReqId: null,
+    final rebased = _rebaseOnNewBase(st, remote);
+
+    final isAckForPending = appliedReqId != null && st.pending?.reqId == appliedReqId;
+    if (isAckForPending) {
+      _comm.complete(appliedReqId);
+    }
+
+    emit(rebased.copyWith(
+      saving: isAckForPending ? false : rebased.saving,
+      clearPending: isAckForPending,
     ));
+
+    if (isAckForPending) _flushQueuedIfAny();
   }
 
-  void _cancelAllTimers() {
-    for (final t in _pendingTimers.values) {
-      t.cancel();
+  void _flushQueuedIfAny() {
+    if (isClosed) return;
+
+    final st = _readyOrNull();
+    if (st == null) return;
+    if (st.saving) return;
+
+    final q = st.queued;
+    if (q.isEmpty) return;
+
+    if (q.saveAll) {
+      emit(st.copyWith(queued: q.clearSaveAll()));
+      if (st.dirty) unawaited(saveAll());
     }
-    _pendingTimers.clear();
+  }
+
+  DeviceSettingsReady _rebaseOnNewBase(DeviceSettingsReady st, SettingsSnapshot newBase) {
+    if (st.overrides.isEmpty) {
+      return st.copyWith(base: newBase);
+    }
+
+    final nextOverrides = <String, Object?>{};
+    st.overrides.forEach((path, value) {
+      final baseVal = _getAtPath(newBase.raw, path);
+      if (!_eq.equals(baseVal, value)) {
+        nextOverrides[path] = value;
+      }
+    });
+
+    return st.copyWith(
+      base: newBase,
+      overrides: Map.unmodifiable(nextOverrides),
+    );
+  }
+
+  DeviceSettingsReady? _readyOrNull() {
+    final st = state;
+    return st is DeviceSettingsReady ? st : null;
+  }
+
+  static Object? _getAtPath(Map<String, dynamic> root, String path) {
+    final parts = path.split('.');
+    if (parts.isEmpty) return null;
+
+    dynamic cur = root;
+    for (final p in parts) {
+      if (cur is! Map<String, dynamic>) return null;
+      cur = cur[p];
+    }
+    return cur;
   }
 
   @override
   Future<void> close() async {
-    await _sub?.cancel();
-    _sub = null;
-    _cancelAllTimers();
-
-    _comm.dropForDevice(deviceSn);
-
+    try {
+      await _sub?.cancel();
+    } catch (_) {}
     return super.close();
   }
 }
