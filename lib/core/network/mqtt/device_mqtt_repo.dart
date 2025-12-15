@@ -1,5 +1,33 @@
 import 'dart:async';
 
+import 'package:meta/meta.dart';
+
+/// Connection state as seen by the transport.
+///
+/// Keep this enum UI-agnostic: it is used by session-scoped cubits
+/// to reflect *real* connection status.
+enum DeviceMqttConnState {
+  disconnected,
+  connecting,
+  connected,
+}
+
+/// Transport connection event.
+///
+/// [error] is best-effort and may be null even for unexpected disconnects.
+@immutable
+class DeviceMqttConnEvent {
+  final DeviceMqttConnState state;
+  final Object? error;
+  final DateTime at;
+
+  DeviceMqttConnEvent({
+    required this.state,
+    this.error,
+    DateTime? at,
+  }) : at = at ?? DateTime.now();
+}
+
 /// Simple DTO for subscribeJson() stream items.
 class MqttJson {
   final String topic;
@@ -16,6 +44,11 @@ class MqttJson {
 ///   and must close controllers / clear state.
 abstract class DeviceMqttRepo {
   bool get isConnected;
+
+  /// Emits transport connection state changes.
+  ///
+  /// This stream never throws. It is safe to listen for the whole session.
+  Stream<DeviceMqttConnEvent> get connEvents;
 
   Future<void> connect({required String userId, required String token});
 

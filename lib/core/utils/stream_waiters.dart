@@ -20,7 +20,7 @@ Future<T> firstWithTimeout<T>(
   Timer? timer;
   late final StreamSubscription<T> sub;
 
-  Future<void> _cancelSub() async {
+  Future<void> cancelSub() async {
     try {
       await sub.cancel();
     } catch (_) {
@@ -32,14 +32,14 @@ Future<T> firstWithTimeout<T>(
     if (completer.isCompleted) return;
     timer?.cancel();
     completer.complete(value);
-    unawaited(_cancelSub());
+    unawaited(cancelSub());
   }
 
   void finishError(Object error, [StackTrace? st]) {
     if (completer.isCompleted) return;
     timer?.cancel();
     completer.completeError(error, st);
-    unawaited(_cancelSub());
+    unawaited(cancelSub());
   }
 
   sub = stream.listen(
@@ -72,7 +72,7 @@ Future<T> firstWhereWithTimeout<T>(
   Timer? timer;
   late final StreamSubscription<T> sub;
 
-  Future<void> _cancelSub() async {
+  Future<void> cancelSub() async {
     try {
       await sub.cancel();
     } catch (_) {
@@ -84,14 +84,14 @@ Future<T> firstWhereWithTimeout<T>(
     if (completer.isCompleted) return;
     timer?.cancel();
     completer.complete(value);
-    unawaited(_cancelSub());
+    unawaited(cancelSub());
   }
 
   void finishError(Object error, [StackTrace? st]) {
     if (completer.isCompleted) return;
     timer?.cancel();
     completer.completeError(error, st);
-    unawaited(_cancelSub());
+    unawaited(cancelSub());
   }
 
   sub = stream.listen(

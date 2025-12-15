@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
@@ -13,10 +15,34 @@ part 'global_mqtt_state.dart';
 class GlobalMqttCubit extends Cubit<GlobalMqttState> {
   final DeviceMqttRepo _repo;
 
+  late final StreamSubscription<DeviceMqttConnEvent> _connSub;
+
   GlobalMqttCubit({
     required DeviceMqttRepo mqttRepo,
   })  : _repo = mqttRepo,
-        super(const MqttDisconnected());
+        super(const MqttDisconnected()) {
+    // Keep UI state in sync with *real* transport state.
+    _connSub = _repo.connEvents.listen(_onConnEvent);
+  }
+
+  void _onConnEvent(DeviceMqttConnEvent evt) {
+    if (isClosed) return;
+
+    switch (evt.state) {
+      case DeviceMqttConnState.connecting:
+        // Don't override a user-visible error unless a new connect is happening.
+        if (state is! MqttConnecting) emit(const MqttConnecting());
+        return;
+      case DeviceMqttConnState.connected:
+        if (state is! MqttConnected) emit(const MqttConnected());
+        return;
+      case DeviceMqttConnState.disconnected:
+        // If we were connected and got dropped by OS/broker, reflect it immediately.
+        // (Errors are handled by feature cubits / MqttComm when they time out.)
+        if (state is! MqttDisconnected) emit(const MqttDisconnected());
+        return;
+    }
+  }
 
   bool get isConnected => _repo.isConnected;
 
@@ -76,6 +102,10 @@ class GlobalMqttCubit extends Cubit<GlobalMqttState> {
 
   @override
   Future<void> close() async {
+    try {
+      await _connSub.cancel();
+    } catch (_) {}
+
     await disconnect();
     return super.close();
   }

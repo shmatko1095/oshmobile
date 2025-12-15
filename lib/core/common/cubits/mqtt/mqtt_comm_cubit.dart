@@ -46,7 +46,7 @@ class MqttCommCubit extends Cubit<MqttCommState> {
     emit(MqttCommState(pending: next, lastError: message));
   }
 
-  void clear() {
+  void reset() {
     emit(MqttCommState(pending: const [], lastError: null));
   }
 

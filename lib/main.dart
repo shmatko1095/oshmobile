@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -7,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:oshmobile/core/common/cubits/app/app_lifecycle_cubit.dart';
+import 'package:oshmobile/core/common/widgets/app_lifecycle_observer.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart' as global_auth;
 import 'package:oshmobile/core/scopes/session_scope.dart';
 import 'package:oshmobile/core/logging/osh_bloc_observer.dart';
@@ -52,13 +55,27 @@ Future<void> main() async {
     runApp(
       MultiBlocProvider(
         providers: [
+          BlocProvider(create: (_) => locator<AppLifecycleCubit>()),
           BlocProvider(create: (_) => locator<global_auth.GlobalAuthCubit>()),
           BlocProvider(create: (_) => locator<AuthBloc>()),
         ],
-        child: const MyApp(),
+        child: AppLifecycleObserver(child: const MyApp()),
       ),
     );
   }, (Object error, StackTrace stack) {
+    // Mobile OS may abort sockets when app goes to background.
+    // Treat common "connection aborted" errors as non-fatal to avoid noisy crash reports.
+    if (error is SocketException) {
+      final code = error.osError?.errorCode;
+      // 103: Software caused connection abort (Linux/Android)
+      // 104: Connection reset by peer (Linux)
+      // 54:  Connection reset by peer (Darwin/iOS)
+      if (code == 103 || code == 104 || code == 54) {
+        OshCrashReporter.logNonFatal(error, stack, reason: 'Socket aborted by OS (background)');
+        return;
+      }
+    }
+
     OshCrashReporter.logFatal(error, stack, reason: 'Uncaught zone error');
   });
 }

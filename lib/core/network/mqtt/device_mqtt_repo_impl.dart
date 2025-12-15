@@ -63,6 +63,10 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
 
   final MqttServerClient _client;
 
+  // Broadcast connection events so UI/state layer can reflect *real* transport state.
+  final StreamController<DeviceMqttConnEvent> _connCtrl = StreamController<DeviceMqttConnEvent>.broadcast();
+  DeviceMqttConnState _connState = DeviceMqttConnState.disconnected;
+
   // One controller per topic filter.
   final Map<String, StreamController<MqttJson>> _jsonCtrls = {};
 
@@ -81,6 +85,9 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
 
   // A gate that completes when we are connected (used to await short publish-before-connect races).
   Completer<void> _connectedGate = Completer<void>();
+
+  @override
+  Stream<DeviceMqttConnEvent> get connEvents => _connCtrl.stream;
 
   Future<String> _buildClientId(String userId) async {
     final deviceId = await _deviceIdProvider.getDeviceId();
@@ -118,6 +125,7 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
   }
 
   Future<void> _connectInternal({required String userId, required String token}) async {
+    _emitConn(DeviceMqttConnState.connecting);
     final clientId = await _buildClientId(userId);
 
     // IMPORTANT: broker auth style must match your backend/broker config.
@@ -133,6 +141,7 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     try {
       await _client.connect();
     } catch (e, st) {
+      _emitConn(DeviceMqttConnState.disconnected, error: e);
       await OshCrashReporter.logNonFatal(
         e,
         st,
@@ -147,6 +156,7 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
 
     if (!isConnected) {
       final rc = _client.connectionStatus?.returnCode.toString();
+      _emitConn(DeviceMqttConnState.disconnected, error: StateError('MQTT connect rejected: $rc'));
       await OshCrashReporter.logNonFatal(
         'MQTT connect rejected: $rc',
         StackTrace.current,
@@ -160,6 +170,7 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     }
 
     _markConnected();
+    _emitConn(DeviceMqttConnState.connected);
     _attachUpdatesStream();
     _resubscribeAllActiveFilters();
   }
@@ -171,6 +182,7 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
       _client.disconnect();
     } catch (_) {}
     _markDisconnected();
+    _emitConn(DeviceMqttConnState.disconnected);
     await connect(userId: userId, token: token);
   }
 
@@ -187,6 +199,7 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
     } catch (_) {}
 
     _markDisconnected();
+    _emitConn(DeviceMqttConnState.disconnected);
   }
 
   @override
@@ -205,6 +218,10 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
         await c.close();
       } catch (_) {}
     }
+
+    try {
+      await _connCtrl.close();
+    } catch (_) {}
   }
 
   // ------------------- Subscriptions -------------------
@@ -426,12 +443,14 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
 
   void _onConnected() {
     _markConnected();
+    _emitConn(DeviceMqttConnState.connected);
     _attachUpdatesStream();
     _resubscribeAllActiveFilters();
   }
 
   void _onDisconnected() {
     _markDisconnected();
+    _emitConn(DeviceMqttConnState.disconnected);
     // If autoReconnect=true, mqtt_client will reconnect with the same credentials.
     // After auto reconnect, onConnected() will resubscribe filters again.
   }
@@ -448,5 +467,18 @@ class DeviceMqttRepoImpl implements DeviceMqttRepo {
   void _markDisconnected() {
     _connectedGate = Completer<void>();
     _ackSubscribed.clear();
+  }
+
+  void _emitConn(DeviceMqttConnState next, {Object? error}) {
+    // Deduplicate same-state events unless we have an error payload.
+    if (next == _connState && error == null) return;
+    _connState = next;
+
+    if (_connCtrl.isClosed) return;
+    try {
+      _connCtrl.add(DeviceMqttConnEvent(state: next, error: error));
+    } catch (_) {
+      // Never throw to the Zone from infra.
+    }
   }
 }
