@@ -49,9 +49,6 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     }
   }
 
-  // Stream waiting helpers live in core/utils/stream_waiters.dart.
-
-
   SettingsRepositoryMqtt(
     this._mqtt,
     this._topics, {
@@ -107,7 +104,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     try {
       await firstWhereWithTimeout<dynamic>(
         repStream.map((e) => e.payload),
-        (p) => _matchesReqId(p, id),
+        (p) => matchesReqId(p, id),
         timeout,
         timeoutMessage: 'Timeout waiting for settings ACK',
       );
@@ -218,23 +215,5 @@ class SettingsRepositoryMqtt implements SettingsRepository {
   SettingsSnapshot _mergePartial(String deviceSn, Map<String, dynamic> map) {
     final prev = _last[deviceSn] ?? SettingsSnapshot.empty();
     return prev.merged(map);
-  }
-
-  bool _matchesReqId(dynamic payload, String expected) {
-    if (payload == null) return false;
-    if (payload is String) return payload == expected;
-    if (payload is Map && payload['reqId']?.toString() == expected) return true;
-
-    final meta = (payload is Map) ? payload['meta'] : null;
-    if (meta is Map &&
-        (meta['lastAppliedSettingsReqId']?.toString() == expected ||
-            meta['lastAppliedReqId']?.toString() == expected)) {
-      return true;
-    }
-
-    final data = (payload is Map) ? payload['data'] : null;
-    if (data is Map && data['reqId']?.toString() == expected) return true;
-
-    return false;
   }
 }

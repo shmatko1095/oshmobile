@@ -82,7 +82,10 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
     final next = Map<String, Object?>.from(st.overrides);
 
     final baseVal = _getAtPath(st.base.raw, fieldId);
-    if (_eq.equals(baseVal, value)) {
+
+    final same = (baseVal is num && value is num) ? baseVal.toDouble() == value.toDouble() : _eq.equals(baseVal, value);
+
+    if (same) {
       next.remove(fieldId);
     } else {
       next[fieldId] = value;

@@ -116,7 +116,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     try {
       await firstWhereWithTimeout<dynamic>(
         repStream.map((e) => e.payload),
-        (p) => _matchesReqId(p, id),
+        (p) => matchesReqId(p, id),
         timeout,
         timeoutMessage: 'Timeout waiting for schedule ACK',
       );
@@ -148,7 +148,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     try {
       await firstWhereWithTimeout<dynamic>(
         repStream.map((e) => e.payload),
-        (p) => _matchesReqId(p, id),
+        (p) => matchesReqId(p, id),
         timeout,
         timeoutMessage: 'Timeout waiting for schedule ACK',
       );
@@ -209,8 +209,17 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   // ---------------- Encoding / Decoding ----------------
 
   Map<String, dynamic> _decodeMap(dynamic raw) {
-    if (raw is Map<String, dynamic>) return raw;
-    if (raw is String) return (jsonDecode(raw) as Map).cast<String, dynamic>();
+    try {
+      if (raw is Map<String, dynamic>) return raw;
+      if (raw is Map) return raw.cast<String, dynamic>();
+
+      if (raw is String) {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map) return decoded.cast<String, dynamic>();
+      }
+    } catch (_) {
+      // swallow decode errors; caller will treat as empty map
+    }
     return const <String, dynamic>{};
   }
 
@@ -355,20 +364,6 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
         return a.daysMask.compareTo(b.daysMask);
       });
     return out;
-  }
-
-  bool _matchesReqId(dynamic payload, String expected) {
-    if (payload == null) return false;
-    if (payload is String) return payload == expected;
-    if (payload is Map && payload['reqId']?.toString() == expected) return true;
-
-    final meta = (payload is Map) ? payload['meta'] : null;
-    if (meta is Map && meta['lastAppliedReqId']?.toString() == expected) return true;
-
-    final data = (payload is Map) ? payload['data'] : null;
-    if (data is Map && data['reqId']?.toString() == expected) return true;
-
-    return false;
   }
 
   int pMinutes(TimeOfDay t) => t.hour * 60 + t.minute;

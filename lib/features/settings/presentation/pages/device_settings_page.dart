@@ -251,9 +251,7 @@ class DeviceSettingsPage extends StatelessWidget {
                 child: Text(
                   group.titleKey ?? group.id,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
               // group card

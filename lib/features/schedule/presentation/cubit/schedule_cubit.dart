@@ -90,6 +90,10 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     final st = _readyOrNull();
     if (st == null) return Future.value();
 
+    // No-op if mode is already effective (prevents extra MQTT call on page open).
+    final effective = st.modeOverride ?? st.base.mode;
+    if (next == effective) return Future.value();
+
     // If saving: update draft immediately + store last intent.
     if (st.saving) {
       emit(st.copyWith(modeOverride: next, queued: st.queued.withMode(next), flash: null));
@@ -133,6 +137,9 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   Future<void> saveAll() {
     final st = _readyOrNull();
     if (st == null) return Future.value();
+
+    // Nothing to save.
+    if (!st.dirty) return Future.value();
 
     // If saving: remember there was an extra save request (once).
     if (st.saving) {
@@ -291,6 +298,10 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     final pts = state.points;
     if (pts.isEmpty) return null;
     now ??= DateTime.now();
+
+    if (state.mode == CalendarMode.weekly) {
+      return _currentForWeekly(pts, now);
+    }
     return _currentFor(pts, now);
   }
 
@@ -299,10 +310,78 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       final pts = state.points;
       if (pts.isEmpty) return null;
       now ??= DateTime.now();
+
+      if (state.mode == CalendarMode.weekly) {
+        return _nextForWeekly(pts, now);
+      }
       return _nextFor(pts, now);
     } else {
       return null;
     }
+  }
+
+  SchedulePoint? _currentForWeekly(List<SchedulePoint> pts, DateTime now) {
+    final nowMin = now.hour * 60 + now.minute;
+    final nowWeekMin = (now.weekday - 1) * 1440 + nowMin;
+
+    SchedulePoint? best;
+    var bestWeekMin = -1;
+
+    SchedulePoint? wrap;
+    var wrapWeekMin = -1;
+
+    for (final p in pts) {
+      final t = p.time.hour * 60 + p.time.minute;
+
+      for (var wd = 1; wd <= 7; wd++) {
+        if (!WeekdayMask.includes(p.daysMask, wd)) continue;
+
+        final w = (wd - 1) * 1440 + t;
+
+        if (w <= nowWeekMin && w > bestWeekMin) {
+          bestWeekMin = w;
+          best = p;
+        }
+        if (w > wrapWeekMin) {
+          wrapWeekMin = w;
+          wrap = p;
+        }
+      }
+    }
+
+    return best ?? wrap;
+  }
+
+  SchedulePoint? _nextForWeekly(List<SchedulePoint> pts, DateTime now) {
+    final nowMin = now.hour * 60 + now.minute;
+    final nowWeekMin = (now.weekday - 1) * 1440 + nowMin;
+
+    SchedulePoint? best;
+    var bestWeekMin = 1 << 30;
+
+    SchedulePoint? wrap;
+    var wrapWeekMin = 1 << 30;
+
+    for (final p in pts) {
+      final t = p.time.hour * 60 + p.time.minute;
+
+      for (var wd = 1; wd <= 7; wd++) {
+        if (!WeekdayMask.includes(p.daysMask, wd)) continue;
+
+        final w = (wd - 1) * 1440 + t;
+
+        if (w > nowWeekMin && w < bestWeekMin) {
+          bestWeekMin = w;
+          best = p;
+        }
+        if (w < wrapWeekMin) {
+          wrapWeekMin = w;
+          wrap = p;
+        }
+      }
+    }
+
+    return best ?? wrap;
   }
 
   SchedulePoint? _currentFor(List<SchedulePoint> pts, DateTime now) {
