@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
@@ -13,12 +12,27 @@ class SettingsRepositoryMqtt implements SettingsRepository {
   final SettingsTopics _topics;
   final Duration timeout;
 
+  // Snapshot watchers (UI).
   final Map<String, StreamController<MapEntry<String?, SettingsSnapshot>>> _ctrls = {};
-  final Map<String, StreamSubscription> _subs = {};
   final Map<String, int> _refs = {};
+
+  // Raw reported events for ACK waiting (no re-subscribe per operation).
+  final Map<String, StreamController<MapEntry<int, dynamic>>> _rawCtrls = {};
+  final Map<String, int> _seq = {};
+
+  // One MQTT subscription per device (shared by snapshot watchers and ACK waiters).
+  final Map<String, StreamSubscription> _subs = {};
+
+  // Last known snapshot per device to support partial merge.
   final Map<String, SettingsSnapshot> _last = {};
 
   bool _disposed = false;
+
+  SettingsRepositoryMqtt(
+    this._mqtt,
+    this._topics, {
+    this.timeout = const Duration(seconds: 6),
+  });
 
   /// Best-effort cleanup when session scope is disposed.
   /// Not part of SettingsRepository interface on purpose.
@@ -31,10 +45,13 @@ class SettingsRepositoryMqtt implements SettingsRepository {
   Future<void> _disposeAsync() async {
     final subs = _subs.values.toList(growable: false);
     final ctrls = _ctrls.values.toList(growable: false);
+    final rawCtrls = _rawCtrls.values.toList(growable: false);
 
     _subs.clear();
     _ctrls.clear();
+    _rawCtrls.clear();
     _refs.clear();
+    _seq.clear();
     _last.clear();
 
     for (final s in subs) {
@@ -47,32 +64,41 @@ class SettingsRepositoryMqtt implements SettingsRepository {
         if (!c.isClosed) await c.close();
       } catch (_) {}
     }
+    for (final c in rawCtrls) {
+      try {
+        if (!c.isClosed) await c.close();
+      } catch (_) {}
+    }
   }
 
-  SettingsRepositoryMqtt(
-    this._mqtt,
-    this._topics, {
-    this.timeout = const Duration(seconds: 6),
-  });
+  // -------------------- Public API --------------------
 
   @override
   Future<SettingsSnapshot> fetchAll(String deviceSn) async {
     if (_disposed) throw StateError('SettingsRepositoryMqtt is disposed');
 
-    final reportedTopic = _topics.reported(deviceSn);
     final getTopic = _topics.getReq(deviceSn);
 
-    final stream = _mqtt.subscribeJson(reportedTopic);
+    _ensureReportedSubscription(deviceSn);
+    final events = _reportedEvents(deviceSn);
+
+    // Cursor to avoid consuming older reported messages.
+    final startSeq = _seq[deviceSn] ?? 0;
+
+    // Attach waiter before publish to avoid race with fast device responses.
+    final waitNext = firstWhereWithTimeout<MapEntry<int, dynamic>>(
+      events,
+      (e) => e.key > startSeq,
+      timeout,
+      timeoutMessage: 'Timeout waiting for first settings reported',
+    );
 
     final reqId = newReqId();
     unawaited(_mqtt.publishJson(getTopic, {'reqId': reqId}));
 
-    final msg = await firstWithTimeout(
-      stream,
-      timeout,
-      timeoutMessage: 'Timeout waiting for first settings reported',
-    );
-    final map = _decodeMap(msg.payload);
+    final ev = await waitNext;
+
+    final map = decodeMqttMap(ev.value);
     final snap = _mergePartial(deviceSn, map);
     _last[deviceSn] = snap;
     return snap;
@@ -86,31 +112,37 @@ class SettingsRepositoryMqtt implements SettingsRepository {
   }) async {
     if (_disposed) throw StateError('SettingsRepositoryMqtt is disposed');
 
-    final reportedTopic = _topics.reported(deviceSn);
     final desiredTopic = _topics.desired(deviceSn);
-
     final id = reqId ?? newReqId();
 
-    // Полный снапшот.
+    _ensureReportedSubscription(deviceSn);
+    final events = _reportedEvents(deviceSn);
+
+    // Full snapshot payload.
     final payload = <String, dynamic>{
       'reqId': id,
       ...snapshot.toJson(),
     };
 
-    final repStream = _mqtt.subscribeJson(reportedTopic);
+    // Cursor to avoid consuming older reported messages.
+    final startSeq = _seq[deviceSn] ?? 0;
+
+    // Prefer correlation by reqId; otherwise accept "next reported" (legacy behavior).
+    final ackWait = firstWhereWithTimeout<MapEntry<int, dynamic>>(
+      events,
+      (e) => e.key > startSeq && matchesReqId(e.value, id),
+      timeout,
+      timeoutMessage: 'Timeout waiting for settings ACK',
+    );
+
     await _mqtt.publishJson(desiredTopic, payload);
 
-    // Предпочитаем корреляцию по reqId; иначе берём первый reported.
     try {
-      await firstWhereWithTimeout<dynamic>(
-        repStream.map((e) => e.payload),
-        (p) => matchesReqId(p, id),
-        timeout,
-        timeoutMessage: 'Timeout waiting for settings ACK',
-      );
+      await ackWait;
     } on TimeoutException {
-      await firstWithTimeout(
-        repStream,
+      await firstWhereWithTimeout<MapEntry<int, dynamic>>(
+        events,
+        (e) => e.key > startSeq,
         timeout,
         timeoutMessage: 'Timeout waiting for settings reported after publish',
       );
@@ -131,31 +163,24 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     ctrl = StreamController<MapEntry<String?, SettingsSnapshot>>.broadcast(
       onListen: () async {
         _refs[deviceSn] = (_refs[deviceSn] ?? 0) + 1;
-        // Уже есть активный listener и subscription – просто увеличиваем ref-count.
+
+        // Already active listeners for the same device; just increase ref-count.
         if (_refs[deviceSn]! > 1) return;
 
-        final reportedTopic = _topics.reported(deviceSn);
         final getTopic = _topics.getReq(deviceSn);
 
-        _subs[deviceSn] = _mqtt.subscribeJson(reportedTopic).listen((msg) {
-          final map = _decodeMap(msg.payload);
-          final applied = _extractAppliedReqId(map);
-          final snap = _mergePartial(deviceSn, map);
+        // Ensure shared subscription is active.
+        _ensureReportedSubscription(deviceSn);
 
-          _last[deviceSn] = snap;
-          if (!ctrl.isClosed) {
-            ctrl.add(MapEntry(applied, snap));
-          }
-        });
-
-        // Сразу просим ретейн-снапшот.
+        // Request retained snapshot right away.
         unawaited(_mqtt.publishJson(getTopic, {'reqId': newReqId()}));
       },
       onCancel: () async {
         _refs[deviceSn] = (_refs[deviceSn] ?? 1) - 1;
         if (_refs[deviceSn]! <= 0) {
           _refs.remove(deviceSn);
-          await _subs.remove(deviceSn)?.cancel();
+
+          // Do NOT cancel MQTT subscription here: it is shared with ACK waiters.
           final c = _ctrls.remove(deviceSn);
           if (c != null && !c.isClosed) {
             await c.close();
@@ -168,50 +193,57 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     return ctrl.stream;
   }
 
-  // ------------ Helpers ------------
+  // -------------------- Shared subscription + raw events --------------------
 
-  Map<String, dynamic> _decodeMap(dynamic raw) {
-    if (raw is Map<String, dynamic>) return raw;
-    if (raw is Map) return raw.cast<String, dynamic>();
-    if (raw is String && raw.isNotEmpty) {
-      try {
-        return (jsonDecode(raw) as Map).cast<String, dynamic>();
-      } catch (_) {
-        return const <String, dynamic>{};
+  /// Ensures there is exactly one MQTT subscription to the reported topic per device.
+  /// The subscription is shared and stays alive until repository dispose().
+  void _ensureReportedSubscription(String deviceSn) {
+    if (_subs.containsKey(deviceSn)) return;
+
+    final reportedTopic = _topics.reported(deviceSn);
+
+    _subs[deviceSn] = _mqtt.subscribeJson(reportedTopic).listen((msg) {
+      final nextSeq = (_seq[deviceSn] ?? 0) + 1;
+      _seq[deviceSn] = nextSeq;
+
+      // 1) Fan-out raw payload for ACK waiting.
+      final rawCtrl = _rawCtrls[deviceSn];
+      if (rawCtrl != null && !rawCtrl.isClosed) {
+        rawCtrl.add(MapEntry(nextSeq, msg.payload));
       }
-    }
-    return const <String, dynamic>{};
+
+      // 2) Decode + merge to snapshot stream (for UI watchers).
+      final map = decodeMqttMap(msg.payload);
+      final applied = extractReqIdFromMap(map);
+      final snap = _mergePartial(deviceSn, map);
+
+      _last[deviceSn] = snap;
+
+      final snapCtrl = _ctrls[deviceSn];
+      if (snapCtrl != null && !snapCtrl.isClosed) {
+        snapCtrl.add(MapEntry(applied, snap));
+      }
+    });
   }
 
-  /// Try to extract applied reqId from reported payload.
-  ///
-  /// Supported shapes:
-  /// - { "meta": { "lastAppliedSettingsReqId": "123" } }
-  /// - { "meta": { "lastAppliedReqId": "123" } }
-  /// - { "reqId": "123" }
-  /// - { "data": { "reqId": "123" } }
-  String? _extractAppliedReqId(Map<String, dynamic> map) {
-    final meta = map['meta'];
-    if (meta is Map) {
-      final mm = meta.cast<String, dynamic>();
-      final v = mm['lastAppliedSettingsReqId'] ?? mm['lastAppliedReqId'];
-      if (v != null) return v.toString();
-    }
+  /// Returns a broadcast stream of raw reported payloads with monotonic sequence numbers.
+  /// Sequence numbers allow "wait for next" semantics without re-subscribing.
+  Stream<MapEntry<int, dynamic>> _reportedEvents(String deviceSn) {
+    final existing = _rawCtrls[deviceSn];
+    if (existing != null && !existing.isClosed) return existing.stream;
 
-    final v = map['reqId'];
-    if (v != null) return v.toString();
+    final ctrl = StreamController<MapEntry<int, dynamic>>.broadcast(
+      onListen: () {
+        _ensureReportedSubscription(deviceSn);
+      },
+    );
 
-    final data = map['data'];
-    if (data is Map && data['reqId'] != null) {
-      return data['reqId'].toString();
-    }
-
-    return null;
+    _rawCtrls[deviceSn] = ctrl;
+    return ctrl.stream;
   }
 
   /// Merge a partial reported map into last known snapshot for [deviceSn].
-  ///
-  /// Для простоты: просто deep-merge поверх прошлого снапшота.
+  /// For simplicity: deep-merge on top of the previous snapshot.
   SettingsSnapshot _mergePartial(String deviceSn, Map<String, dynamic> map) {
     final prev = _last[deviceSn] ?? SettingsSnapshot.empty();
     return prev.merged(map);

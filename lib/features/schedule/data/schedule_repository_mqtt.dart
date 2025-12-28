@@ -5,7 +5,6 @@
 // Receiving still merges partials into _last[].
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
@@ -26,6 +25,10 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   final Map<String, int> _refs = {};
   final Map<String, CalendarSnapshot> _last = {};
 
+  // Reported raw events fan-out (used for ACK waiting without re-subscribing).
+  final Map<String, StreamController<MapEntry<int, dynamic>>> _rawCtrls = {};
+  final Map<String, int> _seq = {};
+
   bool _disposed = false;
 
   /// Best-effort cleanup when session scope is disposed.
@@ -39,11 +42,15 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   Future<void> _disposeAsync() async {
     final subs = _subs.values.toList(growable: false);
     final ctrls = _ctrls.values.toList(growable: false);
+    final rawCtrls = _rawCtrls.values.toList(growable: false);
 
     _subs.clear();
     _ctrls.clear();
+    _rawCtrls.clear();
+
     _refs.clear();
     _last.clear();
+    _seq.clear();
 
     for (final s in subs) {
       try {
@@ -51,6 +58,11 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
       } catch (_) {}
     }
     for (final c in ctrls) {
+      try {
+        if (!c.isClosed) await c.close();
+      } catch (_) {}
+    }
+    for (final c in rawCtrls) {
       try {
         if (!c.isClosed) await c.close();
       } catch (_) {}
@@ -65,34 +77,45 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   });
 
   @override
+  @override
   Future<CalendarSnapshot> fetchAll(String deviceId) async {
     if (_disposed) throw StateError('ScheduleRepositoryMqtt is disposed');
 
-    final reportedTopic = _topics.reported(deviceId);
     final getTopic = _topics.getReq(deviceId);
 
-    final stream = _mqtt.subscribeJson(reportedTopic);
+    _ensureReportedSubscription(deviceId);
+    final events = _reportedEvents(deviceId);
 
-    final reqId = newReqId();
-    unawaited(_mqtt.publishJson(getTopic, {'reqId': reqId}));
+    // "Cursor" to ensure we only accept events after the request start.
+    final startSeq = _seq[deviceId] ?? 0;
 
-    final msg = await firstWithTimeout(
-      stream,
+    final waitNext = firstWhereWithTimeout<MapEntry<int, dynamic>>(
+      events,
+      (e) => e.key > startSeq,
       timeout,
       timeoutMessage: 'Timeout waiting for first schedule reported',
     );
-    final map = _decodeMap(msg.payload);
+
+    // Request snapshot (device is expected to respond on reported topic).
+    unawaited(_mqtt.publishJson(getTopic, {'reqId': newReqId()}));
+
+    final ev = await waitNext;
+
+    final map = decodeMqttMap(ev.value);
     final snap = _mergePartial(deviceId, map);
     _last[deviceId] = snap;
     return snap;
   }
 
   @override
+  @override
   Future<void> saveAll(String deviceId, CalendarSnapshot snapshot, {String? reqId}) async {
     if (_disposed) throw StateError('ScheduleRepositoryMqtt is disposed');
 
-    final reportedTopic = _topics.reported(deviceId);
     final desiredTopic = _topics.desired(deviceId);
+
+    _ensureReportedSubscription(deviceId);
+    final events = _reportedEvents(deviceId);
 
     final id = reqId ?? newReqId();
 
@@ -108,21 +131,26 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     if (modeChanged) payload['mode'] = snapshot.mode.id;
     if (listsPatch.isNotEmpty) payload['lists'] = listsPatch;
 
-    // Nothing to send? still publish reqId to get ack flow (rare case)
-    final repStream = _mqtt.subscribeJson(reportedTopic);
+    // Cursor to avoid consuming older reported messages.
+    final startSeq = _seq[deviceId] ?? 0;
+
+    // Attach waiter before publish to avoid race (fast ACK).
+    final ackWait = firstWhereWithTimeout<MapEntry<int, dynamic>>(
+      events,
+      (e) => e.key > startSeq && matchesReqId(e.value, id),
+      timeout,
+      timeoutMessage: 'Timeout waiting for schedule ACK',
+    );
+
     await _mqtt.publishJson(desiredTopic, payload);
 
-    // Prefer correlation by reqId; otherwise accept first next reported.
+    // Prefer correlation by reqId; otherwise accept "next reported" (legacy behavior).
     try {
-      await firstWhereWithTimeout<dynamic>(
-        repStream.map((e) => e.payload),
-        (p) => matchesReqId(p, id),
-        timeout,
-        timeoutMessage: 'Timeout waiting for schedule ACK',
-      );
+      await ackWait;
     } on TimeoutException {
-      await firstWithTimeout(
-        repStream,
+      await firstWhereWithTimeout<MapEntry<int, dynamic>>(
+        events,
+        (e) => e.key > startSeq,
         timeout,
         timeoutMessage: 'Timeout waiting for schedule reported after publish',
       );
@@ -130,11 +158,14 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   }
 
   @override
+  @override
   Future<void> setMode(String deviceId, CalendarMode mode, {String? reqId}) async {
     if (_disposed) throw StateError('ScheduleRepositoryMqtt is disposed');
 
-    final reportedTopic = _topics.reported(deviceId);
     final desiredTopic = _topics.desired(deviceId);
+
+    _ensureReportedSubscription(deviceId);
+    final events = _reportedEvents(deviceId);
 
     final id = reqId ?? newReqId();
     final payload = {
@@ -142,19 +173,23 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
       'mode': mode.id, // only mode, no lists
     };
 
-    final repStream = _mqtt.subscribeJson(reportedTopic);
+    final startSeq = _seq[deviceId] ?? 0;
+
+    final ackWait = firstWhereWithTimeout<MapEntry<int, dynamic>>(
+      events,
+      (e) => e.key > startSeq && matchesReqId(e.value, id),
+      timeout,
+      timeoutMessage: 'Timeout waiting for schedule ACK',
+    );
+
     await _mqtt.publishJson(desiredTopic, payload);
 
     try {
-      await firstWhereWithTimeout<dynamic>(
-        repStream.map((e) => e.payload),
-        (p) => matchesReqId(p, id),
-        timeout,
-        timeoutMessage: 'Timeout waiting for schedule ACK',
-      );
+      await ackWait;
     } on TimeoutException {
-      await firstWithTimeout(
-        repStream,
+      await firstWhereWithTimeout<MapEntry<int, dynamic>>(
+        events,
+        (e) => e.key > startSeq,
         timeout,
         timeoutMessage: 'Timeout waiting for schedule reported after setMode',
       );
@@ -176,26 +211,14 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
         _refs[deviceId] = (_refs[deviceId] ?? 0) + 1;
         if (_refs[deviceId]! > 1) return;
 
-        final reportedTopic = _topics.reported(deviceId);
         final getTopic = _topics.getReq(deviceId);
-
-        _subs[deviceId] = _mqtt.subscribeJson(reportedTopic).listen((msg) {
-          final map = _decodeMap(msg.payload);
-          final applied = _extractAppliedReqId(map);
-          final snap = _mergePartial(deviceId, map);
-
-          _last[deviceId] = snap;
-          if (!ctrl.isClosed) ctrl.add(MapEntry(applied, snap));
-        });
-
-        // Ask for retained snapshot.
+        _ensureReportedSubscription(deviceId);
         unawaited(_mqtt.publishJson(getTopic, {'reqId': newReqId()}));
       },
       onCancel: () async {
         _refs[deviceId] = (_refs[deviceId] ?? 1) - 1;
         if (_refs[deviceId]! <= 0) {
           _refs.remove(deviceId);
-          await _subs.remove(deviceId)?.cancel();
           final c = _ctrls.remove(deviceId);
           if (c != null && !c.isClosed) await c.close();
         }
@@ -207,33 +230,6 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   }
 
   // ---------------- Encoding / Decoding ----------------
-
-  Map<String, dynamic> _decodeMap(dynamic raw) {
-    try {
-      if (raw is Map<String, dynamic>) return raw;
-      if (raw is Map) return raw.cast<String, dynamic>();
-
-      if (raw is String) {
-        final decoded = jsonDecode(raw);
-        if (decoded is Map) return decoded.cast<String, dynamic>();
-      }
-    } catch (_) {
-      // swallow decode errors; caller will treat as empty map
-    }
-    return const <String, dynamic>{};
-  }
-
-  String? _extractAppliedReqId(Map<String, dynamic> map) {
-    final meta = map['meta'];
-    if (meta is Map) {
-      final mm = meta.cast<String, dynamic>();
-      final v = mm['lastAppliedReqId'];
-      if (v != null) return v.toString();
-    }
-    // Fallback: some FW echoes reqId at the top level.
-    final v = map['reqId'];
-    return v?.toString();
-  }
 
   /// Merge a partial reported map into last known snapshot for [deviceId].
   /// - If 'mode' is absent => keep previous mode.
@@ -367,4 +363,50 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   }
 
   int pMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
+
+  /// Ensures there is exactly one MQTT subscription to the reported topic per device.
+  /// The subscription does not depend on UI watchers and stays alive until dispose().
+  void _ensureReportedSubscription(String deviceId) {
+    if (_subs.containsKey(deviceId)) return;
+
+    final reportedTopic = _topics.reported(deviceId);
+
+    _subs[deviceId] = _mqtt.subscribeJson(reportedTopic).listen((msg) {
+      final nextSeq = (_seq[deviceId] ?? 0) + 1;
+      _seq[deviceId] = nextSeq;
+
+      // 1) Fan-out raw payload for ACK waiters.
+      final rawCtrl = _rawCtrls[deviceId];
+      if (rawCtrl != null && !rawCtrl.isClosed) {
+        rawCtrl.add(MapEntry(nextSeq, msg.payload));
+      }
+
+      // 2) Decode + merge to snapshot stream (if someone watches snapshots).
+      final map = decodeMqttMap(msg.payload);
+      final applied = extractReqIdFromMap(map);
+      final snap = _mergePartial(deviceId, map);
+
+      _last[deviceId] = snap;
+
+      final snapCtrl = _ctrls[deviceId];
+      if (snapCtrl != null && !snapCtrl.isClosed) {
+        snapCtrl.add(MapEntry(applied, snap));
+      }
+    });
+  }
+
+  /// Returns a broadcast stream of raw reported payloads with monotonic sequence numbers.
+  /// Sequence numbers allow "wait for next" semantics without re-subscribing.
+  Stream<MapEntry<int, dynamic>> _reportedEvents(String deviceId) {
+    final existing = _rawCtrls[deviceId];
+    if (existing != null && !existing.isClosed) return existing.stream;
+
+    final ctrl = StreamController<MapEntry<int, dynamic>>.broadcast(
+      onListen: () {
+        _ensureReportedSubscription(deviceId);
+      },
+    );
+    _rawCtrls[deviceId] = ctrl;
+    return ctrl.stream;
+  }
 }

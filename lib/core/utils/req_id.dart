@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 String newReqId() => DateTime.now().millisecondsSinceEpoch.toString();
 
 /// Returns true if [payload] contains request id equal to [expected].
@@ -7,7 +9,6 @@ String newReqId() => DateTime.now().millisecondsSinceEpoch.toString();
 /// - Map: payload['data']['reqId'] == expected
 bool matchesReqId(dynamic payload, String expected) {
   if (payload == null) return false;
-
   if (payload is String) return payload == expected;
 
   if (payload is Map) {
@@ -19,4 +20,44 @@ bool matchesReqId(dynamic payload, String expected) {
   }
 
   return false;
+}
+
+/// Decodes MQTT JSON payload into a Map<String, dynamic>.
+/// Supports:
+/// - Map<String, dynamic>
+/// - Map (casted)
+/// - JSON String (decoded)
+///
+/// Returns empty map for invalid / unsupported payloads.
+Map<String, dynamic> decodeMqttMap(dynamic raw) {
+  try {
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is Map) return raw.cast<String, dynamic>();
+
+    if (raw is String && raw.isNotEmpty) {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) return decoded.cast<String, dynamic>();
+    }
+  } catch (_) {
+    // Swallow decode errors to keep streams alive.
+  }
+
+  return const <String, dynamic>{};
+}
+
+/// Extracts applied reqId from a decoded MQTT map.
+///
+/// Supported shapes:
+/// - { "reqId": "123" }
+/// - { "data": { "reqId": "123" } }
+String? extractReqIdFromMap(Map<String, dynamic> map) {
+  final v = map['reqId'];
+  if (v != null) return v.toString();
+
+  final data = map['data'];
+  if (data is Map && data['reqId'] != null) {
+    return data['reqId'].toString();
+  }
+
+  return null;
 }
