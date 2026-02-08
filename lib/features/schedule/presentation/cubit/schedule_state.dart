@@ -1,20 +1,7 @@
 part of 'schedule_cubit.dart';
 
 /// Kind of in-flight operation (for debugging / analytics).
-enum SchedulePendingKind { mode, saveAll }
-
-/// Metadata about a single in-flight MQTT operation.
-/// This is NOT a queue: execution queue is managed by cubit internally.
-@immutable
-class SchedulePending {
-  final String reqId;
-  final SchedulePendingKind kind;
-
-  const SchedulePending({
-    required this.reqId,
-    required this.kind,
-  });
-}
+enum ScheduleSavingKind { mode, saveAll }
 
 /// Latest-wins "queued intents" requested while an operation is in-flight.
 /// This is a queue in the "logical intent" sense, not execution queue.
@@ -88,14 +75,11 @@ class DeviceScheduleReady extends DeviceScheduleState {
   /// Local overrides for lists (draft). Only store modes changed locally.
   final Map<CalendarMode, List<SchedulePoint>> listOverrides;
 
-  @override
-  final bool saving;
+  /// Current in-flight operation, if any.
+  final ScheduleSavingKind? savingKind;
 
   /// One-shot UI message (snackbar).
   final String? flash;
-
-  /// In-flight operation metadata (reqId + kind).
-  final SchedulePending? pending;
 
   /// Latest-wins queued intents requested while saving.
   final ScheduleQueued queued;
@@ -104,14 +88,16 @@ class DeviceScheduleReady extends DeviceScheduleState {
     required this.base,
     this.modeOverride,
     this.listOverrides = const {},
-    this.saving = false,
+    this.savingKind,
     this.flash,
-    this.pending,
     this.queued = const ScheduleQueued(),
   });
 
   @override
   bool get dirty => modeOverride != null || listOverrides.isNotEmpty;
+
+  @override
+  bool get saving => savingKind != null;
 
   /// Draft snapshot shown to UI: base + overrides.
   CalendarSnapshot get snap {
@@ -142,19 +128,17 @@ class DeviceScheduleReady extends DeviceScheduleState {
     CalendarMode? modeOverride,
     bool removeModeOverride = false,
     Map<CalendarMode, List<SchedulePoint>>? listOverrides,
-    bool? saving,
+    ScheduleSavingKind? savingKind,
+    bool clearSavingKind = false,
     String? flash, // pass null to clear
-    SchedulePending? pending,
-    bool clearPending = false,
     ScheduleQueued? queued,
   }) {
     return DeviceScheduleReady(
       base: base ?? this.base,
       modeOverride: removeModeOverride ? null : (modeOverride ?? this.modeOverride),
       listOverrides: listOverrides ?? this.listOverrides,
-      saving: saving ?? this.saving,
+      savingKind: clearSavingKind ? null : (savingKind ?? this.savingKind),
       flash: flash,
-      pending: clearPending ? null : (pending ?? this.pending),
       queued: queued ?? this.queued,
     );
   }

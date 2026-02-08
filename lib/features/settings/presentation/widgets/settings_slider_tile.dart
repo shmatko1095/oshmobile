@@ -13,6 +13,7 @@ class SettingsSliderTile extends StatelessWidget {
   final double step;
   final String? unit;
   final ValueChanged<double> onChanged;
+  final bool showDivider;
 
   const SettingsSliderTile({
     super.key,
@@ -23,6 +24,7 @@ class SettingsSliderTile extends StatelessWidget {
     required this.step,
     required this.onChanged,
     this.unit,
+    this.showDivider = true,
   });
 
   @override
@@ -90,7 +92,7 @@ class SettingsSliderTile extends StatelessWidget {
             ],
           ),
         ),
-        const Divider(height: 1),
+        if (showDivider) const Divider(height: 1),
       ],
     );
   }

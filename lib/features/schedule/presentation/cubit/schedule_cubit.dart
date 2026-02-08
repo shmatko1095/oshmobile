@@ -21,7 +21,8 @@ part 'schedule_state.dart';
 /// Principles:
 /// - ACK/timeout handled ONLY in repository/usecase.
 /// - Cubit maintains base/draft and UI-friendly state.
-/// - Network ops serialized to avoid overlap.
+/// - Network ops are serialized by default.
+/// - Mode changes can supersede in-flight mode ops (latest-wins in repo).
 /// - Latest-wins intents while saving are stored in state (queued).
 class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   final String deviceSn;
@@ -35,7 +36,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   late final SerialExecutor _serial = SerialExecutor();
   late final MqttOpRunner _ops = MqttOpRunner(deviceSn: deviceSn, serial: _serial, comm: _comm);
 
-  StreamSubscription<MapEntry<String?, CalendarSnapshot>>? _snapSub;
+  StreamSubscription<CalendarSnapshot>? _snapSub;
   bool _watchStarted = false;
 
   static const _listEq = DeepCollectionEquality();
@@ -59,26 +60,40 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     if (_watchStarted) return;
     _watchStarted = true;
 
-    _snapSub = _watchSchedule(deviceSn).listen((entry) {
-      _applyReported(appliedReqId: entry.key, remote: entry.value);
+    _snapSub = _watchSchedule(deviceSn).listen((snap) {
+      _applyReported(remote: snap);
     });
   }
 
-  Future<void> refresh() => _serial.run(() async {
+  Future<void> refresh({bool forceGet = false}) => _serial.run(() async {
+        final shouldTrackComm = forceGet || state is! DeviceScheduleReady;
+        String? commReqId;
+        if (shouldTrackComm) {
+          commReqId = newReqId();
+          _comm.start(reqId: commReqId, deviceSn: deviceSn);
+        }
+
         final prev = state;
 
         if (prev is! DeviceScheduleReady) {
           emit(DeviceScheduleLoading(modeHint: prev.mode));
         }
 
-        final snap = await _fetchAll(deviceSn);
-        if (isClosed) return;
+        try {
+          final snap = await _fetchAll(deviceSn, forceGet: forceGet);
+          if (isClosed) return;
 
-        final st = _readyOrNull();
-        if (st != null) {
-          emit(_rebaseOnNewBase(st, snap));
-        } else {
-          emit(DeviceScheduleReady(base: snap));
+          final st = _readyOrNull();
+          if (st != null) {
+            emit(_rebaseOnNewBase(st, snap));
+          } else {
+            emit(DeviceScheduleReady(base: snap));
+          }
+
+          if (commReqId != null) _comm.complete(commReqId);
+        } catch (e) {
+          if (commReqId != null) _comm.fail(commReqId, 'Refresh failed');
+          rethrow;
         }
       });
 
@@ -94,44 +109,18 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     final effective = st.modeOverride ?? st.base.mode;
     if (next == effective) return Future.value();
 
-    // If saving: update draft immediately + store last intent.
+    // If saving: update draft immediately. If the in-flight op is a mode change,
+    // start a new mode op without waiting for the previous ACK.
     if (st.saving) {
+      if (st.savingKind == ScheduleSavingKind.mode) {
+        return _runModeOp(st, next, serialized: false);
+      }
+
       emit(st.copyWith(modeOverride: next, queued: st.queued.withMode(next), flash: null));
       return Future.value();
     }
 
-    final reqId = newReqId();
-    _comm.start(reqId: reqId, deviceSn: deviceSn);
-
-    // Mark pending op + optimistic UI.
-    emit(st.copyWith(
-      modeOverride: next,
-      saving: true,
-      pending: SchedulePending(reqId: reqId, kind: SchedulePendingKind.mode),
-      queued: st.queued.clearMode(),
-      flash: null,
-    ));
-
-    return _ops.run(
-      reqId: reqId,
-      op: () => _setMode(deviceSn, next, reqId: reqId),
-      timeoutReason: 'Schedule mode ACK timeout',
-      errorReason: 'Failed to set schedule mode',
-      extraContext: const {},
-      timeoutCommMessage: 'Operation timed out',
-      errorCommMessage: (e) => 'Failed to set mode: $e',
-      onSuccess: () {
-        if (isClosed) return;
-        final cur = _readyOrNull();
-        if (cur == null) return;
-
-        final newBase = cur.base.copyWith(mode: next);
-        emit(_rebaseOnNewBase(cur, newBase).copyWith(saving: false, clearPending: true, flash: null));
-      },
-      onTimeout: () => _onTimeout(),
-      onError: (_) => _onFailed("Failed to set mode"),
-      onFinally: _flushQueuedIfAny,
-    );
+    return _runModeOp(st, next, serialized: true);
   }
 
   Future<void> saveAll() {
@@ -153,8 +142,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     _comm.start(reqId: reqId, deviceSn: deviceSn);
 
     emit(st.copyWith(
-      saving: true,
-      pending: SchedulePending(reqId: reqId, kind: SchedulePendingKind.saveAll),
+      savingKind: ScheduleSavingKind.saveAll,
       queued: st.queued.clearSaveAll(),
       flash: null,
     ));
@@ -171,7 +159,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
         final cur = _readyOrNull();
         if (cur == null) return;
 
-        emit(_rebaseOnNewBase(cur, desired).copyWith(saving: false, clearPending: true, flash: null));
+        emit(_rebaseOnNewBase(cur, desired).copyWith(clearSavingKind: true, flash: null));
       },
       onTimeout: _onTimeout,
       onError: (_) => _onFailed("Failed to save schedule"),
@@ -182,7 +170,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
   // ---------------------------------------------------------------------------
   // Reported stream
   // ---------------------------------------------------------------------------
-  void _applyReported({required String? appliedReqId, required CalendarSnapshot remote}) {
+  void _applyReported({required CalendarSnapshot remote}) {
     if (isClosed) return;
 
     final st = _readyOrNull();
@@ -191,15 +179,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       return;
     }
 
-    final rebased = _rebaseOnNewBase(st, remote);
-
-    final isAckForPending = appliedReqId != null && st.pending?.reqId == appliedReqId;
-    if (isAckForPending) {
-      _comm.complete(appliedReqId);
-    }
-
-    emit(rebased.copyWith(saving: isAckForPending ? false : rebased.saving, clearPending: isAckForPending));
-    if (isAckForPending) _flushQueuedIfAny();
+    emit(_rebaseOnNewBase(st, remote));
   }
 
   void _flushQueuedIfAny() {
@@ -225,6 +205,40 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       emit(st.copyWith(queued: q.clearMode()));
       if (m != st.base.mode) unawaited(setMode(m));
     }
+  }
+
+  Future<void> _runModeOp(DeviceScheduleReady st, CalendarMode next, {required bool serialized}) {
+    final reqId = newReqId();
+    _comm.start(reqId: reqId, deviceSn: deviceSn);
+
+    emit(st.copyWith(
+      modeOverride: next,
+      savingKind: ScheduleSavingKind.mode,
+      queued: st.queued.clearMode(),
+      flash: null,
+    ));
+
+    final runner = serialized ? _ops.run : _ops.runUnserialized;
+    return runner(
+      reqId: reqId,
+      op: () => _setMode(deviceSn, next, reqId: reqId),
+      timeoutReason: 'Schedule mode ACK timeout',
+      errorReason: 'Failed to set schedule mode',
+      extraContext: const {},
+      timeoutCommMessage: 'Operation timed out',
+      errorCommMessage: (e) => 'Failed to set mode: $e',
+      onSuccess: () {
+        if (isClosed) return;
+        final cur = _readyOrNull();
+        if (cur == null) return;
+
+        final newBase = cur.base.copyWith(mode: next);
+        emit(_rebaseOnNewBase(cur, newBase).copyWith(clearSavingKind: true, flash: null));
+      },
+      onTimeout: _onTimeout,
+      onError: (_) => _onFailed("Failed to set mode"),
+      onFinally: _flushQueuedIfAny,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -553,7 +567,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     final cur = _readyOrNull();
     if (cur == null) return;
 
-    emit(cur.copyWith(saving: false, clearPending: true, flash: 'Operation timed out'));
+    emit(cur.copyWith(clearSavingKind: true, flash: 'Operation timed out'));
   }
 
   void _onFailed(String msg) {
@@ -561,7 +575,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     final cur = _readyOrNull();
     if (cur == null) return;
 
-    emit(cur.copyWith(saving: false, clearPending: true, flash: msg));
+    emit(cur.copyWith(clearSavingKind: true, flash: msg));
   }
 
   @override

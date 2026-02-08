@@ -6,5 +6,6 @@ class FetchScheduleAll {
 
   const FetchScheduleAll(this.repo);
 
-  Future<CalendarSnapshot> call(String deviceSn) => repo.fetchAll(deviceSn);
+  Future<CalendarSnapshot> call(String deviceSn, {bool forceGet = false}) =>
+      repo.fetchAll(deviceSn, forceGet: forceGet);
 }

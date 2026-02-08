@@ -124,7 +124,12 @@ class DeviceSettingsPage extends StatelessWidget {
 
                 final canSave = state.dirty && !state.saving;
                 return TextButton(
-                  onPressed: canSave ? () => context.read<DeviceSettingsCubit>().saveAll() : null,
+                  onPressed: canSave
+                      ? () {
+                          context.read<DeviceSettingsCubit>().saveAll();
+                          Navigator.of(context).pop();
+                        }
+                      : null,
                   child: Text(
                     'Save', // TODO: localize
                     style: TextStyle(
@@ -224,57 +229,69 @@ class DeviceSettingsPage extends StatelessWidget {
     SettingsSchema schema,
     SettingsSnapshot snapshot,
   ) {
+    final theme = Theme.of(context);
     final groups = schema.groups.toList();
     if (groups.isEmpty) {
       return const Center(child: Text('No settings groups defined.'));
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 24),
-      itemCount: groups.length,
-      itemBuilder: (ctx, index) {
-        final group = groups[index];
-        final fields = schema.fieldsInGroup(group.id).toList();
-        if (fields.isEmpty) return const SizedBox.shrink();
+    return RefreshIndicator(
+      onRefresh: () => context.read<DeviceSettingsCubit>().refresh(forceGet: true),
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+        itemCount: groups.length,
+        itemBuilder: (ctx, index) {
+          final group = groups[index];
+          final fields = schema.fieldsInGroup(group.id).toList();
+          if (fields.isEmpty) return const SizedBox.shrink();
 
-        return Padding(
-          padding: EdgeInsets.only(
-            top: index == 0 ? 8 : 16,
-            bottom: 0,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Group header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                child: Text(
-                  group.titleKey ?? group.id,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-                ),
+          return Card(
+            margin: EdgeInsets.only(top: index == 0 ? 4 : 12, bottom: 0),
+            elevation: 0,
+            color: theme.colorScheme.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: theme.dividerColor.withValues(alpha: 0.5),
               ),
-              // group card
-              Material(
-                color: Theme.of(context).colorScheme.surface,
-                child: Column(
-                  children: [
-                    for (final f in fields) _buildFieldTile(context, f, snapshot),
-                  ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Group header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                  child: Text(
+                    group.titleKey ?? group.id,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
+                for (var i = 0; i < fields.length; i++)
+                  _buildFieldTile(
+                    context,
+                    fields[i],
+                    snapshot,
+                    showDivider: i != fields.length - 1,
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildFieldTile(
     BuildContext context,
     SettingsFieldMeta meta,
-    SettingsSnapshot snapshot,
-  ) {
+    SettingsSnapshot snapshot, {
+    required bool showDivider,
+  }) {
     final cubit = context.read<DeviceSettingsCubit>();
 
     switch (meta.type) {
@@ -286,6 +303,7 @@ class DeviceSettingsPage extends StatelessWidget {
           title: meta.titleKey ?? meta.id,
           value: value,
           onChanged: (v) => cubit.changeValue(meta.id, v),
+          showDivider: showDivider,
         );
 
       case 'int':
@@ -313,6 +331,7 @@ class DeviceSettingsPage extends StatelessWidget {
               cubit.changeValue(meta.id, snapped);
             }
           },
+          showDivider: showDivider,
         );
 
       default:
@@ -322,6 +341,7 @@ class DeviceSettingsPage extends StatelessWidget {
           title: '${meta.titleKey ?? meta.id} (unsupported type: ${meta.type})',
           value: false,
           onChanged: (_) {},
+          showDivider: showDivider,
         );
     }
   }

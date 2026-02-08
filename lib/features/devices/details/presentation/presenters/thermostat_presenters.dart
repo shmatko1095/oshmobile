@@ -90,6 +90,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
 
     return Scaffold(
       body: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           if (canShowHero)
             SliverToBoxAdapter(

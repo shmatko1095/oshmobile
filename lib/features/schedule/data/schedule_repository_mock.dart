@@ -6,7 +6,7 @@ import 'package:oshmobile/features/schedule/domain/repositories/schedule_reposit
 
 class ScheduleRepositoryMock implements ScheduleRepository {
   final Map<String, CalendarSnapshot> _db = {};
-  final Map<String, StreamController<MapEntry<String?, CalendarSnapshot>>> _watchers = {};
+  final Map<String, StreamController<CalendarSnapshot>> _watchers = {};
 
   Future<void> _delay() async => Future<void>.delayed(const Duration(milliseconds: 150));
 
@@ -22,7 +22,7 @@ class ScheduleRepositoryMock implements ScheduleRepository {
       );
 
   @override
-  Future<CalendarSnapshot> fetchAll(String deviceSn) async {
+  Future<CalendarSnapshot> fetchAll(String deviceSn, {bool forceGet = false}) async {
     await _delay();
     return _db[deviceSn] ?? _empty();
   }
@@ -31,14 +31,14 @@ class ScheduleRepositoryMock implements ScheduleRepository {
   Future<void> saveAll(String deviceSn, CalendarSnapshot snapshot, {String? reqId}) async {
     await _delay();
     _db[deviceSn] = snapshot;
-    _emit(deviceSn, reqId, snapshot);
+    _emit(deviceSn, snapshot);
   }
 
   @override
-  Stream<MapEntry<String?, CalendarSnapshot>> watchSnapshot(String deviceSn) {
-    final c = _watchers.putIfAbsent(deviceSn, () => StreamController<MapEntry<String?, CalendarSnapshot>>.broadcast());
+  Stream<CalendarSnapshot> watchSnapshot(String deviceSn) {
+    final c = _watchers.putIfAbsent(deviceSn, () => StreamController<CalendarSnapshot>.broadcast());
     // Emit retained
-    scheduleMicrotask(() => _emit(deviceSn, null, _db[deviceSn] ?? _empty()));
+    scheduleMicrotask(() => _emit(deviceSn, _db[deviceSn] ?? _empty()));
     return c.stream;
   }
 
@@ -48,13 +48,13 @@ class ScheduleRepositoryMock implements ScheduleRepository {
     final cur = _db[deviceSn] ?? _empty();
     final next = cur.copyWith(mode: mode);
     _db[deviceSn] = next;
-    _emit(deviceSn, reqId, next);
+    _emit(deviceSn, next);
   }
 
-  void _emit(String deviceSn, String? reqId, CalendarSnapshot snap) {
+  void _emit(String deviceSn, CalendarSnapshot snap) {
     final c = _watchers[deviceSn];
     if (c != null && !c.isClosed) {
-      c.add(MapEntry(reqId, snap));
+      c.add(snap);
     }
   }
 }

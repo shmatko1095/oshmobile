@@ -77,9 +77,14 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
         title: Text(_title ?? _defaultTitle, overflow: TextOverflow.ellipsis),
         actions: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
-            child: MqttActivityIcon(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: BlocSelector<HomeCubit, HomeState, String?>(
+              selector: (state) => state.selectedDeviceId,
+              builder: (context, deviceId) {
+                return MqttActivityIcon(key: ValueKey(deviceId));
+              },
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.settings),

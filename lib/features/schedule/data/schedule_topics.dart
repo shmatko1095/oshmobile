@@ -1,39 +1,27 @@
-/// Topic builder dedicated to the Calendar/Schedule feature (shadow style).
-/// Firmware contract:
-/// - Publish retained snapshot to `reported(deviceId)` when asked or after apply.
-/// - Trigger a publish of retained snapshot when a message appears at `getReq(deviceId)`.
-///   The request MAY carry {"reqId": "..."} which firmware SHOULD reflect in reported payload.
-/// - Apply a desired bundle when a message appears at `desired(deviceId)`.
-///   Firmware SHOULD either reflect the request's "reqId" inside reported payload
-///   (e.g., top-level "reqId" or meta.lastAppliedReqId) or at least republish reported.
+import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
+
+/// Topic builder dedicated to the Schedule feature (JSON-RPC).
+///
+/// Firmware contract (schedule@1):
+/// - Device subscribes to `cmd(deviceId)` and handles JSON-RPC get/set/patch.
+/// - Device publishes JSON-RPC responses to `rsp(deviceId)`.
+/// - Device publishes retained state notifications to `state(deviceId)`.
 class ScheduleTopics {
-  ScheduleTopics(this.tenantId);
+  static const String domain = 'schedule';
 
-  final String tenantId;
+  ScheduleTopics(this._topics);
 
-  /// Retained JSON snapshot of calendar:
-  /// {
-  ///   "mode": "weekly",
-  ///   "lists": {
-  ///     "manual": [{"hh":0,"mm":0,"d":127,"min":21.0,"max":21.0}],
-  ///     "antifreeze": [...],
-  ///     "daily": [...],
-  ///     "weekly": [...]
-  ///   },
-  ///   // optional echo for correlation:
-  ///   "reqId": "123" | "meta": {"lastAppliedReqId":"123"}
-  /// }
-  String reported(String deviceId) => 'v1/tenants/$tenantId/devices/$deviceId/shadow/schedule/reported';
+  final DeviceMqttTopicsV1 _topics;
 
-  /// Ask device to (re)publish the retained snapshot to `reported(deviceId)`.
-  /// Payload MAY contain {"reqId": "..."} for correlation.
-  String getReq(String deviceId) => 'v1/tenants/$tenantId/devices/$deviceId/shadow/schedule/get';
+  /// JSON-RPC request topic for schedule domain.
+  String cmd(String deviceId) => _topics.cmd(deviceId, domain);
 
-  /// Set desired bundle. Firmware applies and (ideally) republishes `reported(...)`.
-  /// Payload shape:
-  /// {"reqId":"...", "mode":"weekly", "lists":{...}}
-  String desired(String deviceId) => 'v1/tenants/$tenantId/devices/$deviceId/shadow/schedule/desired';
+  /// JSON-RPC responses (shared across domains).
+  String rsp(String deviceId) => _topics.rsp(deviceId);
 
-  /// Optional convenience: a filter for the whole schedule subtree (if you need it).
-  String filterAll(String deviceId) => 'v1/tenants/$tenantId/devices/$deviceId/shadow/schedule/+';
+  /// Retained schedule state notifications.
+  String state(String deviceId) => _topics.state(deviceId, domain);
+
+  /// Non-retained schedule events (optional).
+  String evt(String deviceId) => _topics.evt(deviceId, domain);
 }

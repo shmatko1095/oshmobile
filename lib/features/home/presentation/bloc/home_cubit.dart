@@ -42,10 +42,10 @@ class HomeCubit extends Cubit<HomeState> {
         super(HomeInitial());
 
   void selectDevice(String deviceId) {
-    _comm.dropForDevice(state.selectedDeviceId);
-
+    final prevDeviceId = state.selectedDeviceId;
     emit(state.copyWith(selectedDeviceId: deviceId));
     _selectedDeviceStorage.saveSelectedDevice(_userUuid, deviceId);
+    _comm.dropForDevice(prevDeviceId);
   }
 
   Future<void> updateDeviceList() async {

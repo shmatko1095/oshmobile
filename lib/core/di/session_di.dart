@@ -27,7 +27,8 @@ import 'package:oshmobile/features/schedule/domain/usecases/fetch_schedule_all.d
 import 'package:oshmobile/features/schedule/domain/usecases/save_schedule_all.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/set_schedule_mode.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/watch_schedule_stream.dart';
-import 'package:oshmobile/features/settings/data/settings_repository_mock.dart';
+import 'package:oshmobile/features/settings/data/settings_repository_mqtt.dart';
+import 'package:oshmobile/features/settings/data/settings_topics.dart';
 import 'package:oshmobile/features/settings/domain/repositories/settings_repository.dart';
 import 'package:oshmobile/features/settings/domain/usecases/fetch_settings_all.dart';
 import 'package:oshmobile/features/settings/domain/usecases/save_settings_all.dart';
@@ -198,23 +199,20 @@ class SessionDi {
     getIt.registerLazySingleton<WatchScheduleStream>(() => WatchScheduleStream(getIt<ScheduleRepository>()));
 
     // // Settings (REAL MQTT repo is the default one).
-    // getIt.registerLazySingleton<SettingsRepository>(
-    //   () => SettingsRepositoryMqtt(getIt<DeviceMqttRepo>(), getIt<SettingsTopics>()),
-    //   dispose: (r) {
-    //     if (r is SettingsRepositoryMqtt) r.dispose();
-    //   },
-    // );
-
-    // Settings (REAL MQTT repo is the default one).
     getIt.registerLazySingleton<SettingsRepository>(
-      () => SettingsRepositoryMock(),
+      () => SettingsRepositoryMqtt(getIt<DeviceMqttRepo>(), getIt<SettingsTopics>()),
       dispose: (r) {
-        if (r is SettingsRepositoryMock) r.dispose();
+        if (r is SettingsRepositoryMqtt) r.dispose();
       },
     );
 
-    // Keep mock available in the container (requested). Not used by default.
-    getIt.registerLazySingleton<SettingsRepositoryMock>(() => SettingsRepositoryMock());
+    // Settings (REAL MQTT repo is the default one).
+    // getIt.registerLazySingleton<SettingsRepository>(
+    //   () => SettingsRepositoryMock(),
+    //   dispose: (r) {
+    //     if (r is SettingsRepositoryMock) r.dispose();
+    //   },
+    // );
 
     getIt.registerLazySingleton<FetchSettingsAll>(() => FetchSettingsAll(getIt<SettingsRepository>()));
     getIt.registerLazySingleton<SaveSettingsAll>(() => SaveSettingsAll(getIt<SettingsRepository>()));

@@ -17,6 +17,7 @@ import 'package:oshmobile/core/network/chopper_client/core/session_storage.dart'
 import 'package:oshmobile/core/network/chopper_client/osh_api_device/osh_api_device_service.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api_user/osh_api_user_service.dart';
 import 'package:oshmobile/core/network/mqtt/app_device_id_provider.dart';
+import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
 import 'package:oshmobile/core/permissions/ble_permission_service.dart';
 import 'package:oshmobile/core/secrets/app_secrets.dart';
@@ -245,8 +246,9 @@ void _initDevicesFeature() {
 
   locator
     ..registerLazySingleton<TelemetryTopics>(() => TelemetryTopics(locator<AppConfig>().devicesTenantId))
-    ..registerLazySingleton<ScheduleTopics>(() => ScheduleTopics(locator<AppConfig>().devicesTenantId))
-    ..registerLazySingleton<SettingsTopics>(() => SettingsTopics(locator<AppConfig>().devicesTenantId))
+    ..registerLazySingleton<DeviceMqttTopicsV1>(() => DeviceMqttTopicsV1(locator<AppConfig>().devicesTenantId))
+    ..registerLazySingleton<ScheduleTopics>(() => ScheduleTopics(locator<DeviceMqttTopicsV1>()))
+    ..registerLazySingleton<SettingsTopics>(() => SettingsTopics(locator<DeviceMqttTopicsV1>()))
     // Temporary device config loader (HTTP-based, safe to keep global).
     ..registerLazySingleton<GetDeviceFull>(() => GetDeviceFull(locator<DeviceRepository>()))
     // Device presenters registry (pure mapping).

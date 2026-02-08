@@ -10,11 +10,16 @@ import 'dart:async';
 ///
 /// On timeout, the underlying subscription is cancelled before completing
 /// with [TimeoutException].
+///
+/// If [cancel] completes first, the subscription is cancelled and the future
+/// completes with [cancelError] (or a generic cancellation error).
 Future<T> firstWithTimeout<T>(
   Stream<T> stream,
   Duration timeout, {
   String? timeoutMessage,
   String? doneMessage,
+  Future<void>? cancel,
+  Object? cancelError,
 }) {
   final completer = Completer<T>();
   Timer? timer;
@@ -49,6 +54,12 @@ Future<T> firstWithTimeout<T>(
     cancelOnError: false,
   );
 
+  if (cancel != null) {
+    cancel.then((_) {
+      finishError(cancelError ?? StateError('Stream wait cancelled'));
+    });
+  }
+
   timer = Timer(timeout, () {
     finishError(TimeoutException(timeoutMessage ?? 'Timeout waiting for first event', timeout));
   });
@@ -61,12 +72,17 @@ Future<T> firstWithTimeout<T>(
 ///
 /// On timeout, the underlying subscription is cancelled before completing
 /// with [TimeoutException].
+///
+/// If [cancel] completes first, the subscription is cancelled and the future
+/// completes with [cancelError] (or a generic cancellation error).
 Future<T> firstWhereWithTimeout<T>(
   Stream<T> stream,
   bool Function(T) predicate,
   Duration timeout, {
   String? timeoutMessage,
   String? doneMessage,
+  Future<void>? cancel,
+  Object? cancelError,
 }) {
   final completer = Completer<T>();
   Timer? timer;
@@ -111,6 +127,12 @@ Future<T> firstWhereWithTimeout<T>(
     onDone: () => finishError(StateError(doneMessage ?? 'Stream closed before match')),
     cancelOnError: false,
   );
+
+  if (cancel != null) {
+    cancel.then((_) {
+      finishError(cancelError ?? StateError('Stream wait cancelled'));
+    });
+  }
 
   timer = Timer(timeout, () {
     finishError(TimeoutException(timeoutMessage ?? 'Timeout waiting for match', timeout));

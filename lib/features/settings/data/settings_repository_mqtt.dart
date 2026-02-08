@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
+import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/core/utils/stream_waiters.dart';
+import 'package:oshmobile/features/settings/data/settings_jsonrpc_codec.dart';
 import 'package:oshmobile/features/settings/data/settings_topics.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 import 'package:oshmobile/features/settings/domain/repositories/settings_repository.dart';
@@ -16,14 +18,15 @@ class SettingsRepositoryMqtt implements SettingsRepository {
   final Map<String, StreamController<MapEntry<String?, SettingsSnapshot>>> _ctrls = {};
   final Map<String, int> _refs = {};
 
-  // Raw reported events for ACK waiting (no re-subscribe per operation).
-  final Map<String, StreamController<MapEntry<int, dynamic>>> _rawCtrls = {};
-  final Map<String, int> _seq = {};
+  // One MQTT subscription per device for retained state.
+  final Map<String, StreamSubscription> _stateSubs = {};
 
-  // One MQTT subscription per device (shared by snapshot watchers and ACK waiters).
-  final Map<String, StreamSubscription> _subs = {};
+  // JSON-RPC responses (/rsp) fan-out, per device.
+  final Map<String, StreamController<MapEntry<int, Map<String, dynamic>>>> _rspCtrls = {};
+  final Map<String, StreamSubscription> _rspSubs = {};
+  final Map<String, int> _rspSeq = {};
 
-  // Last known snapshot per device to support partial merge.
+  // Last known snapshot per device.
   final Map<String, SettingsSnapshot> _last = {};
 
   bool _disposed = false;
@@ -43,18 +46,25 @@ class SettingsRepositoryMqtt implements SettingsRepository {
   }
 
   Future<void> _disposeAsync() async {
-    final subs = _subs.values.toList(growable: false);
+    final stateSubs = _stateSubs.values.toList(growable: false);
+    final rspSubs = _rspSubs.values.toList(growable: false);
     final ctrls = _ctrls.values.toList(growable: false);
-    final rawCtrls = _rawCtrls.values.toList(growable: false);
+    final rspCtrls = _rspCtrls.values.toList(growable: false);
 
-    _subs.clear();
+    _stateSubs.clear();
+    _rspSubs.clear();
     _ctrls.clear();
-    _rawCtrls.clear();
+    _rspCtrls.clear();
     _refs.clear();
-    _seq.clear();
+    _rspSeq.clear();
     _last.clear();
 
-    for (final s in subs) {
+    for (final s in stateSubs) {
+      try {
+        await s.cancel();
+      } catch (_) {}
+    }
+    for (final s in rspSubs) {
       try {
         await s.cancel();
       } catch (_) {}
@@ -64,7 +74,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
         if (!c.isClosed) await c.close();
       } catch (_) {}
     }
-    for (final c in rawCtrls) {
+    for (final c in rspCtrls) {
       try {
         if (!c.isClosed) await c.close();
       } catch (_) {}
@@ -74,33 +84,39 @@ class SettingsRepositoryMqtt implements SettingsRepository {
   // -------------------- Public API --------------------
 
   @override
-  Future<SettingsSnapshot> fetchAll(String deviceSn) async {
+  Future<SettingsSnapshot> fetchAll(String deviceSn, {bool forceGet = false}) async {
     if (_disposed) throw StateError('SettingsRepositoryMqtt is disposed');
 
-    final getTopic = _topics.getReq(deviceSn);
+    if (!forceGet) {
+      final cached = _last[deviceSn];
+      if (cached != null) return cached;
 
-    _ensureReportedSubscription(deviceSn);
-    final events = _reportedEvents(deviceSn);
-
-    // Cursor to avoid consuming older reported messages.
-    final startSeq = _seq[deviceSn] ?? 0;
-
-    // Attach waiter before publish to avoid race with fast device responses.
-    final waitNext = firstWhereWithTimeout<MapEntry<int, dynamic>>(
-      events,
-      (e) => e.key > startSeq,
-      timeout,
-      timeoutMessage: 'Timeout waiting for first settings reported',
-    );
+      try {
+        final entry = await firstWithTimeout<MapEntry<String?, SettingsSnapshot>>(
+          watchSnapshot(deviceSn),
+          timeout,
+          timeoutMessage: 'Timeout waiting for settings state',
+        );
+        return entry.value;
+      } on TimeoutException {
+        // Fallback: explicit JSON-RPC get.
+      }
+    }
 
     final reqId = newReqId();
-    unawaited(_mqtt.publishJson(getTopic, {'reqId': reqId}));
+    final resp = await _request(
+      deviceSn,
+      method: SettingsJsonRpcCodec.methodGet,
+      reqId: reqId,
+      data: null,
+      timeoutMessage: 'Timeout waiting for settings get response',
+    );
 
-    final ev = await waitNext;
-
-    final map = decodeMqttMap(ev.value);
-    final snap = _mergePartial(deviceSn, map);
-    _last[deviceSn] = snap;
+    final snap = _snapshotFromResponse(resp);
+    if (snap == null) {
+      throw StateError('Invalid settings response');
+    }
+    _emitSnapshot(deviceSn, snap, appliedReqId: null);
     return snap;
   }
 
@@ -112,41 +128,19 @@ class SettingsRepositoryMqtt implements SettingsRepository {
   }) async {
     if (_disposed) throw StateError('SettingsRepositoryMqtt is disposed');
 
-    final desiredTopic = _topics.desired(deviceSn);
     final id = reqId ?? newReqId();
+    final data = SettingsJsonRpcCodec.encodeBody(snapshot);
 
-    _ensureReportedSubscription(deviceSn);
-    final events = _reportedEvents(deviceSn);
-
-    // Full snapshot payload.
-    final payload = <String, dynamic>{
-      'reqId': id,
-      ...snapshot.toJson(),
-    };
-
-    // Cursor to avoid consuming older reported messages.
-    final startSeq = _seq[deviceSn] ?? 0;
-
-    // Prefer correlation by reqId; otherwise accept "next reported" (legacy behavior).
-    final ackWait = firstWhereWithTimeout<MapEntry<int, dynamic>>(
-      events,
-      (e) => e.key > startSeq && matchesReqId(e.value, id),
-      timeout,
-      timeoutMessage: 'Timeout waiting for settings ACK',
+    final resp = await _request(
+      deviceSn,
+      method: SettingsJsonRpcCodec.methodSet,
+      reqId: id,
+      data: data,
+      timeoutMessage: 'Timeout waiting for settings save response',
     );
 
-    await _mqtt.publishJson(desiredTopic, payload);
-
-    try {
-      await ackWait;
-    } on TimeoutException {
-      await firstWhereWithTimeout<MapEntry<int, dynamic>>(
-        events,
-        (e) => e.key > startSeq,
-        timeout,
-        timeoutMessage: 'Timeout waiting for settings reported after publish',
-      );
-    }
+    final snap = _snapshotFromResponse(resp);
+    if (snap != null) _emitSnapshot(deviceSn, snap, appliedReqId: id);
   }
 
   @override
@@ -161,26 +155,22 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     late final StreamController<MapEntry<String?, SettingsSnapshot>> ctrl;
 
     ctrl = StreamController<MapEntry<String?, SettingsSnapshot>>.broadcast(
-      onListen: () async {
+      onListen: () {
         _refs[deviceSn] = (_refs[deviceSn] ?? 0) + 1;
-
-        // Already active listeners for the same device; just increase ref-count.
         if (_refs[deviceSn]! > 1) return;
 
-        final getTopic = _topics.getReq(deviceSn);
+        _ensureStateSubscription(deviceSn);
 
-        // Ensure shared subscription is active.
-        _ensureReportedSubscription(deviceSn);
-
-        // Request retained snapshot right away.
-        unawaited(_mqtt.publishJson(getTopic, {'reqId': newReqId()}));
+        final cached = _last[deviceSn];
+        if (cached != null) {
+          ctrl.add(MapEntry(null, cached));
+        }
       },
       onCancel: () async {
         _refs[deviceSn] = (_refs[deviceSn] ?? 1) - 1;
         if (_refs[deviceSn]! <= 0) {
           _refs.remove(deviceSn);
 
-          // Do NOT cancel MQTT subscription here: it is shared with ACK waiters.
           final c = _ctrls.remove(deviceSn);
           if (c != null && !c.isClosed) {
             await c.close();
@@ -193,59 +183,119 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     return ctrl.stream;
   }
 
-  // -------------------- Shared subscription + raw events --------------------
+  // -------------------- MQTT subscriptions --------------------
 
-  /// Ensures there is exactly one MQTT subscription to the reported topic per device.
-  /// The subscription is shared and stays alive until repository dispose().
-  void _ensureReportedSubscription(String deviceSn) {
-    if (_subs.containsKey(deviceSn)) return;
+  void _ensureStateSubscription(String deviceSn) {
+    if (_stateSubs.containsKey(deviceSn)) return;
 
-    final reportedTopic = _topics.reported(deviceSn);
+    final topic = _topics.state(deviceSn);
+    _stateSubs[deviceSn] = _mqtt.subscribeJson(topic).listen((msg) {
+      final notif = decodeJsonRpcNotification(msg.payload);
+      if (notif == null) return;
+      if (notif.method != SettingsJsonRpcCodec.methodState) return;
+      if (notif.meta.schema != SettingsJsonRpcCodec.schema) return;
 
-    _subs[deviceSn] = _mqtt.subscribeJson(reportedTopic).listen((msg) {
-      final nextSeq = (_seq[deviceSn] ?? 0) + 1;
-      _seq[deviceSn] = nextSeq;
+      final data = notif.data;
+      if (data == null) return;
 
-      // 1) Fan-out raw payload for ACK waiting.
-      final rawCtrl = _rawCtrls[deviceSn];
-      if (rawCtrl != null && !rawCtrl.isClosed) {
-        rawCtrl.add(MapEntry(nextSeq, msg.payload));
-      }
+      final snap = SettingsJsonRpcCodec.decodeBody(data);
+      _emitSnapshot(deviceSn, snap, appliedReqId: null);
+    });
+  }
 
-      // 2) Decode + merge to snapshot stream (for UI watchers).
-      final map = decodeMqttMap(msg.payload);
-      final applied = extractReqIdFromMap(map);
-      final snap = _mergePartial(deviceSn, map);
+  void _ensureRspSubscription(String deviceSn) {
+    if (_rspSubs.containsKey(deviceSn)) return;
 
-      _last[deviceSn] = snap;
+    final topic = _topics.rsp(deviceSn);
+    _rspSubs[deviceSn] = _mqtt.subscribeJson(topic).listen((msg) {
+      final nextSeq = (_rspSeq[deviceSn] ?? 0) + 1;
+      _rspSeq[deviceSn] = nextSeq;
 
-      final snapCtrl = _ctrls[deviceSn];
-      if (snapCtrl != null && !snapCtrl.isClosed) {
-        snapCtrl.add(MapEntry(applied, snap));
+      final ctrl = _rspCtrls[deviceSn];
+      if (ctrl != null && !ctrl.isClosed) {
+        ctrl.add(MapEntry(nextSeq, msg.payload));
       }
     });
   }
 
-  /// Returns a broadcast stream of raw reported payloads with monotonic sequence numbers.
-  /// Sequence numbers allow "wait for next" semantics without re-subscribing.
-  Stream<MapEntry<int, dynamic>> _reportedEvents(String deviceSn) {
-    final existing = _rawCtrls[deviceSn];
+  Stream<MapEntry<int, Map<String, dynamic>>> _rspEvents(String deviceSn) {
+    final existing = _rspCtrls[deviceSn];
     if (existing != null && !existing.isClosed) return existing.stream;
 
-    final ctrl = StreamController<MapEntry<int, dynamic>>.broadcast(
+    final ctrl = StreamController<MapEntry<int, Map<String, dynamic>>>.broadcast(
       onListen: () {
-        _ensureReportedSubscription(deviceSn);
+        _ensureRspSubscription(deviceSn);
       },
     );
 
-    _rawCtrls[deviceSn] = ctrl;
+    _rspCtrls[deviceSn] = ctrl;
     return ctrl.stream;
   }
 
-  /// Merge a partial reported map into last known snapshot for [deviceSn].
-  /// For simplicity: deep-merge on top of the previous snapshot.
-  SettingsSnapshot _mergePartial(String deviceSn, Map<String, dynamic> map) {
-    final prev = _last[deviceSn] ?? SettingsSnapshot.empty();
-    return prev.merged(map);
+  // -------------------- JSON-RPC helpers --------------------
+
+  void _emitSnapshot(String deviceSn, SettingsSnapshot snap, {String? appliedReqId}) {
+    _last[deviceSn] = snap;
+    final ctrl = _ctrls[deviceSn];
+    if (ctrl != null && !ctrl.isClosed) {
+      ctrl.add(MapEntry(appliedReqId, snap));
+    }
+  }
+
+  JsonRpcMeta _meta() => JsonRpcMeta(
+        schema: SettingsJsonRpcCodec.schema,
+        src: 'app',
+        ts: DateTime.now().millisecondsSinceEpoch,
+      );
+
+  Future<JsonRpcResponse> _request(
+    String deviceSn, {
+    required String method,
+    required String reqId,
+    required Map<String, dynamic>? data,
+    required String timeoutMessage,
+  }) async {
+    final cmdTopic = _topics.cmd(deviceSn);
+
+    _ensureRspSubscription(deviceSn);
+    final events = _rspEvents(deviceSn);
+
+    final startSeq = _rspSeq[deviceSn] ?? 0;
+    final waitRsp = firstWhereWithTimeout<MapEntry<int, Map<String, dynamic>>>(
+      events,
+      (e) => e.key > startSeq && e.value['id']?.toString() == reqId,
+      timeout,
+      timeoutMessage: timeoutMessage,
+    );
+
+    final payload = buildJsonRpcRequest(
+      id: reqId,
+      method: method,
+      meta: _meta(),
+      data: data,
+    );
+
+    await _mqtt.publishJson(cmdTopic, payload);
+
+    final ev = await waitRsp;
+    final resp = decodeJsonRpcResponse(ev.value);
+    if (resp == null) throw StateError('Invalid JSON-RPC response');
+
+    if (resp.error != null) {
+      throw StateError('Settings request failed: ${resp.error!.message} (code ${resp.error!.code})');
+    }
+
+    return resp;
+  }
+
+  SettingsSnapshot? _snapshotFromResponse(JsonRpcResponse resp) {
+    final data = resp.data;
+    if (data == null) return null;
+
+    if (resp.meta != null && resp.meta!.schema != SettingsJsonRpcCodec.schema) {
+      return null;
+    }
+
+    return SettingsJsonRpcCodec.decodeBody(data);
   }
 }

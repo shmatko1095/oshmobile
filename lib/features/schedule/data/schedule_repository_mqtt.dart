@@ -1,15 +1,16 @@
-// MQTT-backed ScheduleRepository using shadow pattern.
-// Partial publish:
-// - setMode() publishes only {reqId, mode}.
-// - saveAll() publishes only changed lists (and mode if changed).
-// Receiving still merges partials into _last[].
+// MQTT-backed ScheduleRepository using JSON-RPC + retained state.
+// - State is delivered via retained notifications on state/schedule.
+// - Commands use JSON-RPC requests on cmd/schedule with responses on /rsp.
 
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
+import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
+import 'package:oshmobile/core/utils/latest_wins_gate.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/core/utils/stream_waiters.dart';
+import 'package:oshmobile/core/utils/superseded_exception.dart';
+import 'package:oshmobile/features/schedule/data/schedule_jsonrpc_codec.dart';
 import 'package:oshmobile/features/schedule/data/schedule_topics.dart';
 import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
@@ -20,16 +21,30 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   final ScheduleTopics _topics;
   final Duration timeout;
 
-  final Map<String, StreamController<MapEntry<String?, CalendarSnapshot>>> _ctrls = {};
-  final Map<String, StreamSubscription> _subs = {};
+  final Map<String, StreamController<CalendarSnapshot>> _ctrls = {};
   final Map<String, int> _refs = {};
+
+  // One MQTT subscription per device for retained state.
+  final Map<String, StreamSubscription> _stateSubs = {};
+
+  // JSON-RPC responses (/rsp) fan-out, per device.
+  final Map<String, StreamController<MapEntry<int, Map<String, dynamic>>>> _rspCtrls = {};
+  final Map<String, StreamSubscription> _rspSubs = {};
+  final Map<String, int> _rspSeq = {};
+
+  // Last known snapshot per device.
   final Map<String, CalendarSnapshot> _last = {};
 
-  // Reported raw events fan-out (used for ACK waiting without re-subscribing).
-  final Map<String, StreamController<MapEntry<int, dynamic>>> _rawCtrls = {};
-  final Map<String, int> _seq = {};
+  // Latest-wins gate for mode updates.
+  final LatestWinsGate _latest = LatestWinsGate();
 
   bool _disposed = false;
+
+  ScheduleRepositoryMqtt(
+    this._mqtt,
+    this._topics, {
+    this.timeout = const Duration(seconds: 6),
+  });
 
   /// Best-effort cleanup when session scope is disposed.
   /// Not part of ScheduleRepository interface on purpose.
@@ -40,19 +55,26 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   }
 
   Future<void> _disposeAsync() async {
-    final subs = _subs.values.toList(growable: false);
+    final stateSubs = _stateSubs.values.toList(growable: false);
+    final rspSubs = _rspSubs.values.toList(growable: false);
     final ctrls = _ctrls.values.toList(growable: false);
-    final rawCtrls = _rawCtrls.values.toList(growable: false);
+    final rspCtrls = _rspCtrls.values.toList(growable: false);
 
-    _subs.clear();
+    _stateSubs.clear();
+    _rspSubs.clear();
     _ctrls.clear();
-    _rawCtrls.clear();
-
+    _rspCtrls.clear();
     _refs.clear();
+    _rspSeq.clear();
     _last.clear();
-    _seq.clear();
+    _latest.clear();
 
-    for (final s in subs) {
+    for (final s in stateSubs) {
+      try {
+        await s.cancel();
+      } catch (_) {}
+    }
+    for (final s in rspSubs) {
       try {
         await s.cancel();
       } catch (_) {}
@@ -62,158 +84,137 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
         if (!c.isClosed) await c.close();
       } catch (_) {}
     }
-    for (final c in rawCtrls) {
+    for (final c in rspCtrls) {
       try {
         if (!c.isClosed) await c.close();
       } catch (_) {}
     }
   }
 
-  // Stream waiting helpers live in core/utils/stream_waiters.dart.
-  ScheduleRepositoryMqtt(
-    this._mqtt,
-    this._topics, {
-    this.timeout = const Duration(seconds: 6),
-  });
+  // -------------------- Public API --------------------
 
   @override
-  @override
-  Future<CalendarSnapshot> fetchAll(String deviceId) async {
+  Future<CalendarSnapshot> fetchAll(String deviceId, {bool forceGet = false}) async {
     if (_disposed) throw StateError('ScheduleRepositoryMqtt is disposed');
 
-    final getTopic = _topics.getReq(deviceId);
+    if (!forceGet) {
+      final cached = _last[deviceId];
+      if (cached != null) return cached;
 
-    _ensureReportedSubscription(deviceId);
-    final events = _reportedEvents(deviceId);
+      try {
+        final snap = await firstWithTimeout<CalendarSnapshot>(
+          watchSnapshot(deviceId),
+          timeout,
+          timeoutMessage: 'Timeout waiting for schedule state',
+        );
+        return snap;
+      } on TimeoutException {
+        // Fallback: explicit JSON-RPC get.
+      }
+    }
 
-    // "Cursor" to ensure we only accept events after the request start.
-    final startSeq = _seq[deviceId] ?? 0;
-
-    final waitNext = firstWhereWithTimeout<MapEntry<int, dynamic>>(
-      events,
-      (e) => e.key > startSeq,
-      timeout,
-      timeoutMessage: 'Timeout waiting for first schedule reported',
+    final reqId = newReqId();
+    final resp = await _request(
+      deviceId,
+      method: ScheduleJsonRpcCodec.methodGet,
+      reqId: reqId,
+      data: null,
+      timeoutMessage: 'Timeout waiting for schedule get response',
     );
 
-    // Request snapshot (device is expected to respond on reported topic).
-    unawaited(_mqtt.publishJson(getTopic, {'reqId': newReqId()}));
-
-    final ev = await waitNext;
-
-    final map = decodeMqttMap(ev.value);
-    final snap = _mergePartial(deviceId, map);
-    _last[deviceId] = snap;
+    final snap = _snapshotFromResponse(resp);
+    if (snap == null) {
+      throw StateError('Invalid schedule response');
+    }
+    _emitSnapshot(deviceId, snap);
     return snap;
   }
 
   @override
-  @override
   Future<void> saveAll(String deviceId, CalendarSnapshot snapshot, {String? reqId}) async {
     if (_disposed) throw StateError('ScheduleRepositoryMqtt is disposed');
 
-    final desiredTopic = _topics.desired(deviceId);
-
-    _ensureReportedSubscription(deviceId);
-    final events = _reportedEvents(deviceId);
-
+    final prev = _last[deviceId];
     final id = reqId ?? newReqId();
 
-    // Decide: full vs partial lists
-    final hasPrev = _last.containsKey(deviceId);
-    final prev = _last[deviceId] ?? CalendarSnapshot.empty();
+    String method;
+    Map<String, dynamic> data;
 
-    final modeChanged = prev.mode.id != snapshot.mode.id;
-    final listsPatch = hasPrev ? _encodeListsPatch(prev.lists, snapshot.lists) : _encodeLists(snapshot.lists);
+    if (prev == null) {
+      method = ScheduleJsonRpcCodec.methodSet;
+      data = ScheduleJsonRpcCodec.encodeBody(snapshot);
+    } else {
+      final modeChanged = prev.mode.id != snapshot.mode.id;
+      final pointsPatch = _pointsPatch(prev.lists, snapshot.lists);
 
-    // Build payload only with changed parts
-    final payload = <String, dynamic>{'reqId': id};
-    if (modeChanged) payload['mode'] = snapshot.mode.id;
-    if (listsPatch.isNotEmpty) payload['lists'] = listsPatch;
+      if (!modeChanged && pointsPatch.isEmpty) return;
 
-    // Cursor to avoid consuming older reported messages.
-    final startSeq = _seq[deviceId] ?? 0;
-
-    // Attach waiter before publish to avoid race (fast ACK).
-    final ackWait = firstWhereWithTimeout<MapEntry<int, dynamic>>(
-      events,
-      (e) => e.key > startSeq && matchesReqId(e.value, id),
-      timeout,
-      timeoutMessage: 'Timeout waiting for schedule ACK',
-    );
-
-    await _mqtt.publishJson(desiredTopic, payload);
-
-    // Prefer correlation by reqId; otherwise accept "next reported" (legacy behavior).
-    try {
-      await ackWait;
-    } on TimeoutException {
-      await firstWhereWithTimeout<MapEntry<int, dynamic>>(
-        events,
-        (e) => e.key > startSeq,
-        timeout,
-        timeoutMessage: 'Timeout waiting for schedule reported after publish',
+      method = ScheduleJsonRpcCodec.methodPatch;
+      data = ScheduleJsonRpcCodec.encodePatch(
+        mode: modeChanged ? snapshot.mode : null,
+        points: pointsPatch.isNotEmpty ? pointsPatch : null,
       );
     }
+
+    final resp = await _request(
+      deviceId,
+      method: method,
+      reqId: id,
+      data: data,
+      timeoutMessage: 'Timeout waiting for schedule save response',
+    );
+
+    final snap = _snapshotFromResponse(resp);
+    if (snap != null) _emitSnapshot(deviceId, snap);
   }
 
-  @override
   @override
   Future<void> setMode(String deviceId, CalendarMode mode, {String? reqId}) async {
     if (_disposed) throw StateError('ScheduleRepositoryMqtt is disposed');
 
-    final desiredTopic = _topics.desired(deviceId);
-
-    _ensureReportedSubscription(deviceId);
-    final events = _reportedEvents(deviceId);
-
     final id = reqId ?? newReqId();
-    final payload = {
-      'reqId': id,
-      'mode': mode.id, // only mode, no lists
-    };
+    final data = ScheduleJsonRpcCodec.encodePatch(mode: mode);
+    final latest = _latest.start(_latestKey(deviceId, 'mode'));
 
-    final startSeq = _seq[deviceId] ?? 0;
-
-    final ackWait = firstWhereWithTimeout<MapEntry<int, dynamic>>(
-      events,
-      (e) => e.key > startSeq && matchesReqId(e.value, id),
-      timeout,
-      timeoutMessage: 'Timeout waiting for schedule ACK',
+    final resp = await _request(
+      deviceId,
+      method: ScheduleJsonRpcCodec.methodPatch,
+      reqId: id,
+      data: data,
+      timeoutMessage: 'Timeout waiting for schedule mode response',
+      cancel: latest.cancelled,
+      cancelError: const SupersededException('Schedule mode superseded'),
     );
 
-    await _mqtt.publishJson(desiredTopic, payload);
-
-    try {
-      await ackWait;
-    } on TimeoutException {
-      await firstWhereWithTimeout<MapEntry<int, dynamic>>(
-        events,
-        (e) => e.key > startSeq,
-        timeout,
-        timeoutMessage: 'Timeout waiting for schedule reported after setMode',
-      );
+    if (!_latest.isCurrent(latest)) {
+      throw const SupersededException('Schedule mode superseded');
     }
+
+    final snap = _snapshotFromResponse(resp);
+    if (snap != null) _emitSnapshot(deviceId, snap);
   }
 
   @override
-  Stream<MapEntry<String?, CalendarSnapshot>> watchSnapshot(String deviceId) {
-    if (_disposed) return Stream<MapEntry<String?, CalendarSnapshot>>.empty();
+  Stream<CalendarSnapshot> watchSnapshot(String deviceId) {
+    if (_disposed) return Stream<CalendarSnapshot>.empty();
 
     final existing = _ctrls[deviceId];
     if (existing != null && !existing.isClosed) {
       return existing.stream;
     }
 
-    late final StreamController<MapEntry<String?, CalendarSnapshot>> ctrl;
-    ctrl = StreamController<MapEntry<String?, CalendarSnapshot>>.broadcast(
-      onListen: () async {
+    late final StreamController<CalendarSnapshot> ctrl;
+    ctrl = StreamController<CalendarSnapshot>.broadcast(
+      onListen: () {
         _refs[deviceId] = (_refs[deviceId] ?? 0) + 1;
         if (_refs[deviceId]! > 1) return;
 
-        final getTopic = _topics.getReq(deviceId);
-        _ensureReportedSubscription(deviceId);
-        unawaited(_mqtt.publishJson(getTopic, {'reqId': newReqId()}));
+        _ensureStateSubscription(deviceId);
+
+        final cached = _last[deviceId];
+        if (cached != null) {
+          ctrl.add(cached);
+        }
       },
       onCancel: () async {
         _refs[deviceId] = (_refs[deviceId] ?? 1) - 1;
@@ -229,95 +230,142 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     return ctrl.stream;
   }
 
-  // ---------------- Encoding / Decoding ----------------
+  // -------------------- MQTT subscriptions --------------------
 
-  /// Merge a partial reported map into last known snapshot for [deviceId].
-  /// - If 'mode' is absent => keep previous mode.
-  /// - If 'lists' present => update only listed keys; empty arrays overwrite to [].
-  CalendarSnapshot _mergePartial(String deviceId, Map<String, dynamic> map) {
-    final prev = _last[deviceId] ?? CalendarSnapshot.empty();
+  void _ensureStateSubscription(String deviceId) {
+    if (_stateSubs.containsKey(deviceId)) return;
 
-    CalendarMode nextMode = prev.mode;
-    if (map.containsKey('mode')) {
-      final modeStr = map['mode'] as String?;
-      final found = CalendarMode.all.firstWhere(
-        (m) => m.id == modeStr,
-        orElse: () => prev.mode,
-      );
-      nextMode = found;
-    }
+    final topic = _topics.state(deviceId);
+    _stateSubs[deviceId] = _mqtt.subscribeJson(topic).listen((msg) {
+      final notif = decodeJsonRpcNotification(msg.payload);
+      if (notif == null) return;
+      if (notif.method != ScheduleJsonRpcCodec.methodState) return;
+      if (notif.meta.schema != ScheduleJsonRpcCodec.schema) return;
 
-    final mergedLists = <CalendarMode, List<SchedulePoint>>{
-      CalendarMode.off: List<SchedulePoint>.from(prev.lists[CalendarMode.off] ?? const <SchedulePoint>[]),
-      CalendarMode.on: List<SchedulePoint>.from(prev.lists[CalendarMode.on] ?? const <SchedulePoint>[]),
-      CalendarMode.antifreeze: List<SchedulePoint>.from(prev.lists[CalendarMode.antifreeze] ?? const <SchedulePoint>[]),
-      CalendarMode.daily: List<SchedulePoint>.from(prev.lists[CalendarMode.daily] ?? const <SchedulePoint>[]),
-      CalendarMode.weekly: List<SchedulePoint>.from(prev.lists[CalendarMode.weekly] ?? const <SchedulePoint>[]),
-    };
+      final data = notif.data;
+      if (data == null) return;
 
-    final listsRaw = (map['lists'] as Map?)?.cast<String, dynamic>();
-    if (listsRaw != null) {
-      void apply(CalendarMode m) {
-        if (listsRaw.containsKey(m.id)) {
-          mergedLists[m] = _sortedDedup(_decodeList(listsRaw[m.id]));
-        }
+      final snap = ScheduleJsonRpcCodec.decodeBody(data);
+      if (snap == null) return;
+
+      _emitSnapshot(deviceId, snap);
+    });
+  }
+
+  void _ensureRspSubscription(String deviceId) {
+    if (_rspSubs.containsKey(deviceId)) return;
+
+    final topic = _topics.rsp(deviceId);
+    _rspSubs[deviceId] = _mqtt.subscribeJson(topic).listen((msg) {
+      final nextSeq = (_rspSeq[deviceId] ?? 0) + 1;
+      _rspSeq[deviceId] = nextSeq;
+
+      final ctrl = _rspCtrls[deviceId];
+      if (ctrl != null && !ctrl.isClosed) {
+        ctrl.add(MapEntry(nextSeq, msg.payload));
       }
-
-      apply(CalendarMode.off);
-      apply(CalendarMode.on);
-      apply(CalendarMode.antifreeze);
-      apply(CalendarMode.daily);
-      apply(CalendarMode.weekly);
-    }
-
-    return CalendarSnapshot(mode: nextMode, lists: mergedLists);
+    });
   }
 
-  List<SchedulePoint> _decodeList(dynamic v) {
-    final list = (v as List?) ?? const [];
-    return list.whereType<Map>().map((m) {
-      final hh = (m['hh'] as num?)?.toInt() ?? 0;
-      final mm = (m['mm'] as num?)?.toInt() ?? 0;
-      final d = (m['d'] as num?)?.toInt() ?? WeekdayMask.all;
-      final a = (m['min'] as num?)?.toDouble() ?? 21.0;
-      final b = (m['max'] as num?)?.toDouble() ?? a;
-      final lo = a <= b ? a : b, hi = b >= a ? b : a;
-      return SchedulePoint(
-        time: TimeOfDay(hour: hh.clamp(0, 23), minute: mm.clamp(0, 59)),
-        daysMask: d & WeekdayMask.all,
-        min: double.parse(lo.toStringAsFixed(1)),
-        max: double.parse(hi.toStringAsFixed(1)),
+  Stream<MapEntry<int, Map<String, dynamic>>> _rspEvents(String deviceId) {
+    final existing = _rspCtrls[deviceId];
+    if (existing != null && !existing.isClosed) return existing.stream;
+
+    final ctrl = StreamController<MapEntry<int, Map<String, dynamic>>>.broadcast(
+      onListen: () {
+        _ensureRspSubscription(deviceId);
+      },
+    );
+
+    _rspCtrls[deviceId] = ctrl;
+    return ctrl.stream;
+  }
+
+  // -------------------- JSON-RPC helpers --------------------
+
+  void _emitSnapshot(String deviceId, CalendarSnapshot snap) {
+    _last[deviceId] = snap;
+    final ctrl = _ctrls[deviceId];
+    if (ctrl != null && !ctrl.isClosed) {
+      ctrl.add(snap);
+    }
+  }
+
+  JsonRpcMeta _meta() => JsonRpcMeta(
+        schema: ScheduleJsonRpcCodec.schema,
+        src: 'app',
+        ts: DateTime.now().millisecondsSinceEpoch,
       );
-    }).toList();
-  }
 
-  Map<String, dynamic> _encodeLists(Map<CalendarMode, List<SchedulePoint>> lists) {
-    final out = <String, dynamic>{};
-    for (final e in lists.entries) {
-      out[e.key.id] = e.value.map(_encodePoint).toList();
+  String _latestKey(String deviceId, String op) => '$deviceId:$op';
+
+  Future<JsonRpcResponse> _request(
+    String deviceId, {
+    required String method,
+    required String reqId,
+    required Map<String, dynamic>? data,
+    required String timeoutMessage,
+    Future<void>? cancel,
+    Object? cancelError,
+  }) async {
+    final cmdTopic = _topics.cmd(deviceId);
+
+    _ensureRspSubscription(deviceId);
+    final events = _rspEvents(deviceId);
+
+    final startSeq = _rspSeq[deviceId] ?? 0;
+    final waitRsp = firstWhereWithTimeout<MapEntry<int, Map<String, dynamic>>>(
+      events,
+      (e) => e.key > startSeq && e.value['id']?.toString() == reqId,
+      timeout,
+      timeoutMessage: timeoutMessage,
+      cancel: cancel,
+      cancelError: cancelError,
+    );
+
+    final payload = buildJsonRpcRequest(
+      id: reqId,
+      method: method,
+      meta: _meta(),
+      data: data,
+    );
+
+    await _mqtt.publishJson(cmdTopic, payload);
+
+    final ev = await waitRsp;
+    final resp = decodeJsonRpcResponse(ev.value);
+    if (resp == null) throw StateError('Invalid JSON-RPC response');
+
+    if (resp.error != null) {
+      throw StateError('Schedule request failed: ${resp.error!.message} (code ${resp.error!.code})');
     }
-    return out;
+
+    return resp;
   }
 
-  /// Build partial 'lists' object: only keys whose content differs from prev.
-  Map<String, dynamic> _encodeListsPatch(
+  CalendarSnapshot? _snapshotFromResponse(JsonRpcResponse resp) {
+    final data = resp.data;
+    if (data == null) return null;
+
+    if (resp.meta != null && resp.meta!.schema != ScheduleJsonRpcCodec.schema) {
+      return null;
+    }
+
+    return ScheduleJsonRpcCodec.decodeBody(data);
+  }
+
+  // -------------------- Diff helpers --------------------
+
+  Map<CalendarMode, List<SchedulePoint>> _pointsPatch(
     Map<CalendarMode, List<SchedulePoint>> prev,
     Map<CalendarMode, List<SchedulePoint>> next,
   ) {
-    final out = <String, dynamic>{};
-    bool diff(CalendarMode m) => !_listsEqual(prev[m] ?? const [], next[m] ?? const []);
-    void put(CalendarMode m) {
-      if (diff(m)) {
-        out[m.id] = (next[m] ?? const <SchedulePoint>[]).map(_encodePoint).toList();
-      }
+    final out = <CalendarMode, List<SchedulePoint>>{};
+    for (final m in CalendarMode.all) {
+      final a = prev[m] ?? const <SchedulePoint>[];
+      final b = next[m] ?? const <SchedulePoint>[];
+      if (!_listsEqual(a, b)) out[m] = b;
     }
-
-    put(CalendarMode.off);
-    put(CalendarMode.on);
-    put(CalendarMode.antifreeze);
-    put(CalendarMode.daily);
-    put(CalendarMode.weekly);
-
     return out;
   }
 
@@ -336,77 +384,5 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
         x.time.minute == y.time.minute &&
         x.min == y.min &&
         x.max == y.max;
-  }
-
-  Map<String, dynamic> _encodePoint(SchedulePoint p) => {
-        'hh': p.time.hour,
-        'mm': p.time.minute,
-        'd': p.daysMask,
-        'min': p.min,
-        'max': p.max,
-      };
-
-  List<SchedulePoint> _sortedDedup(List<SchedulePoint> pts) {
-    final map = <String, SchedulePoint>{};
-    for (final p in pts) {
-      final key = '${p.daysMask}:${p.time.hour}:${p.time.minute}';
-      map[key] = p; // last wins
-    }
-    final out = map.values.toList()
-      ..sort((a, b) {
-        final ai = pMinutes(a.time);
-        final bi = pMinutes(b.time);
-        if (ai != bi) return ai.compareTo(bi);
-        return a.daysMask.compareTo(b.daysMask);
-      });
-    return out;
-  }
-
-  int pMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
-
-  /// Ensures there is exactly one MQTT subscription to the reported topic per device.
-  /// The subscription does not depend on UI watchers and stays alive until dispose().
-  void _ensureReportedSubscription(String deviceId) {
-    if (_subs.containsKey(deviceId)) return;
-
-    final reportedTopic = _topics.reported(deviceId);
-
-    _subs[deviceId] = _mqtt.subscribeJson(reportedTopic).listen((msg) {
-      final nextSeq = (_seq[deviceId] ?? 0) + 1;
-      _seq[deviceId] = nextSeq;
-
-      // 1) Fan-out raw payload for ACK waiters.
-      final rawCtrl = _rawCtrls[deviceId];
-      if (rawCtrl != null && !rawCtrl.isClosed) {
-        rawCtrl.add(MapEntry(nextSeq, msg.payload));
-      }
-
-      // 2) Decode + merge to snapshot stream (if someone watches snapshots).
-      final map = decodeMqttMap(msg.payload);
-      final applied = extractReqIdFromMap(map);
-      final snap = _mergePartial(deviceId, map);
-
-      _last[deviceId] = snap;
-
-      final snapCtrl = _ctrls[deviceId];
-      if (snapCtrl != null && !snapCtrl.isClosed) {
-        snapCtrl.add(MapEntry(applied, snap));
-      }
-    });
-  }
-
-  /// Returns a broadcast stream of raw reported payloads with monotonic sequence numbers.
-  /// Sequence numbers allow "wait for next" semantics without re-subscribing.
-  Stream<MapEntry<int, dynamic>> _reportedEvents(String deviceId) {
-    final existing = _rawCtrls[deviceId];
-    if (existing != null && !existing.isClosed) return existing.stream;
-
-    final ctrl = StreamController<MapEntry<int, dynamic>>.broadcast(
-      onListen: () {
-        _ensureReportedSubscription(deviceId);
-      },
-    );
-    _rawCtrls[deviceId] = ctrl;
-    return ctrl.stream;
   }
 }

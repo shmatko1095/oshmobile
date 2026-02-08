@@ -37,11 +37,13 @@ class MqttCommCubit extends Cubit<MqttCommState> {
   }
 
   void complete(String reqId) {
+    if (!state.pending.any((e) => e.reqId == reqId)) return;
     final next = state.pending.where((e) => e.reqId != reqId).toList(growable: false);
     emit(MqttCommState(pending: next, lastError: null));
   }
 
   void fail(String reqId, String message) {
+    if (!state.pending.any((e) => e.reqId == reqId)) return;
     final next = state.pending.where((e) => e.reqId != reqId).toList(growable: false);
     emit(MqttCommState(pending: next, lastError: message));
   }

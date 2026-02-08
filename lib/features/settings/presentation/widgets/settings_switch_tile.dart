@@ -7,6 +7,7 @@ class SettingsSwitchTile extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
   final String? subtitle;
+  final bool showDivider;
 
   const SettingsSwitchTile({
     super.key,
@@ -14,6 +15,7 @@ class SettingsSwitchTile extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.subtitle,
+    this.showDivider = true,
   });
 
   @override
@@ -42,7 +44,7 @@ class SettingsSwitchTile extends StatelessWidget {
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
         ),
-        const Divider(height: 1),
+        if (showDivider) const Divider(height: 1),
       ],
     );
   }

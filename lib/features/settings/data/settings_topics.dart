@@ -1,41 +1,27 @@
-/// Topic builder dedicated to the Settings feature (shadow style).
+import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
+
+/// Topic builder dedicated to the Settings feature (JSON-RPC).
 ///
-/// Firmware contract (предложение):
-/// - Публиковать retained снапшот настроек в `reported(deviceSn)`
-///   после применения и по запросу.
-/// - Когда в `getReq(deviceSn)` прилетает сообщение, девайс репаблишит
-///   retained снапшот в `reported(deviceSn)`. Payload МОЖЕТ содержать
-///   {"reqId": "..."}.
-/// - При получении на `desired(deviceSn)` JSON с настройками девайс
-///   применяет его и (желательно) снова публикует `reported(...)`.
+/// Firmware contract (settings@1):
+/// - Device subscribes to `cmd(deviceSn)` and handles JSON-RPC get/set/patch.
+/// - Device publishes JSON-RPC responses to `rsp(deviceSn)`.
+/// - Device publishes retained state notifications to `state(deviceSn)`.
 class SettingsTopics {
-  SettingsTopics(this.tenantId);
+  static const String domain = 'settings';
 
-  final String tenantId;
+  SettingsTopics(this._topics);
 
-  /// Retained JSON snapshot of settings:
-  /// {
-  ///   "display": {...},
-  ///   "update": {...},
-  ///   "meta": {
-  ///     "lastAppliedSettingsReqId": "..."
-  ///   }
-  /// }
-  String reported(String deviceSn) => 'v1/tenants/$tenantId/devices/$deviceSn/shadow/settings/reported';
+  final DeviceMqttTopicsV1 _topics;
 
-  /// Ask device to (re)publish retained snapshot to `reported(deviceSn)`.
-  /// Payload MAY contain {"reqId": "..."} for correlation.
-  String getReq(String deviceSn) => 'v1/tenants/$tenantId/devices/$deviceSn/shadow/settings/get';
+  /// JSON-RPC request topic for settings domain.
+  String cmd(String deviceSn) => _topics.cmd(deviceSn, domain);
 
-  /// Set desired settings bundle. Firmware applies and republish reported.
-  /// Example payload:
-  /// {
-  ///   "reqId": "...",
-  ///   "display": { ... },
-  ///   "update":  { ... }
-  /// }
-  String desired(String deviceSn) => 'v1/tenants/$tenantId/devices/$deviceSn/shadow/settings/desired';
+  /// JSON-RPC responses (shared across domains).
+  String rsp(String deviceSn) => _topics.rsp(deviceSn);
 
-  /// Optional convenience: filter for the whole settings subtree.
-  String filterAll(String deviceSn) => 'v1/tenants/$tenantId/devices/$deviceSn/shadow/settings/+';
+  /// Retained settings state notifications.
+  String state(String deviceSn) => _topics.state(deviceSn, domain);
+
+  /// Non-retained settings events (optional).
+  String evt(String deviceSn) => _topics.evt(deviceSn, domain);
 }

@@ -58,20 +58,34 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
     });
   }
 
-  Future<void> refresh() => _serial.run(() async {
+  Future<void> refresh({bool forceGet = false}) => _serial.run(() async {
+        final shouldTrackComm = forceGet || state is! DeviceSettingsReady;
+        String? commReqId;
+        if (shouldTrackComm) {
+          commReqId = newReqId();
+          _comm.start(reqId: commReqId, deviceSn: deviceSn);
+        }
+
         final prev = state;
         if (prev is! DeviceSettingsReady) {
           emit(const DeviceSettingsLoading());
         }
 
-        final remote = await _fetchAll(deviceSn);
-        if (isClosed) return;
+        try {
+          final remote = await _fetchAll(deviceSn, forceGet: forceGet);
+          if (isClosed) return;
 
-        final st = _readyOrNull();
-        if (st != null) {
-          emit(_rebaseOnNewBase(st, remote));
-        } else {
-          emit(DeviceSettingsReady(base: remote));
+          final st = _readyOrNull();
+          if (st != null) {
+            emit(_rebaseOnNewBase(st, remote));
+          } else {
+            emit(DeviceSettingsReady(base: remote));
+          }
+
+          if (commReqId != null) _comm.complete(commReqId);
+        } catch (e) {
+          if (commReqId != null) _comm.fail(commReqId, 'Refresh failed');
+          rethrow;
         }
       });
 

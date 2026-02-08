@@ -11,7 +11,7 @@ import 'package:oshmobile/features/settings/domain/repositories/settings_reposit
 /// - immediately acknowledges save operations via watchSnapshot stream.
 ///
 /// It is useful while firmware does not yet support the real
-/// shadow/settings topics.
+/// settings MQTT topics.
 class SettingsRepositoryMock implements SettingsRepository {
   /// Simulated network latency. Set to Duration.zero for instant responses.
   final Duration latency;
@@ -22,7 +22,7 @@ class SettingsRepositoryMock implements SettingsRepository {
   SettingsRepositoryMock({this.latency = const Duration(milliseconds: 150)});
 
   @override
-  Future<SettingsSnapshot> fetchAll(String deviceSn) async {
+  Future<SettingsSnapshot> fetchAll(String deviceSn, {bool forceGet = false}) async {
     await Future<void>.delayed(latency);
 
     final existing = _store[deviceSn];
