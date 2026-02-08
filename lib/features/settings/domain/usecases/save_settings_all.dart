@@ -6,6 +6,5 @@ class SaveSettingsAll {
 
   const SaveSettingsAll(this.repo);
 
-  Future<void> call(String deviceSn, SettingsSnapshot snapshot, {String? reqId}) =>
-      repo.saveAll(deviceSn, snapshot, reqId: reqId);
+  Future<void> call(SettingsSnapshot snapshot, {String? reqId}) => repo.saveAll(snapshot, reqId: reqId);
 }

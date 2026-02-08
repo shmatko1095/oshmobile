@@ -12,11 +12,9 @@ class DeviceActionsState {
 /// Device-scoped: one instance per device.
 class DeviceActionsCubit extends Cubit<DeviceActionsState> {
   final ControlRepository _control;
-  final String deviceSn;
 
   DeviceActionsCubit({
     required ControlRepository control,
-    required this.deviceSn,
   })  : _control = control,
         super(const DeviceActionsState());
 
@@ -27,7 +25,7 @@ class DeviceActionsCubit extends Cubit<DeviceActionsState> {
     emit(const DeviceActionsState(busy: true));
 
     try {
-      await _control.send(deviceSn, cmd, value);
+      await _control.send(cmd, value);
       // if (isClosed) return;
       emit(const DeviceActionsState(busy: false));
     } catch (e) {

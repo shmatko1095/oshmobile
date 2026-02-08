@@ -7,19 +7,25 @@ import 'package:oshmobile/features/devices/details/domain/repositories/telemetry
 /// Telemetry repo on top of DeviceMqttRepo (JSON-only).
 /// Produces alias-keyed maps like {"state": {...}} or {"temp": 21.5}
 class MqttTelemetryRepositoryImpl implements TelemetryRepository {
-  MqttTelemetryRepositoryImpl(this._mqtt, this._topics);
+  MqttTelemetryRepositoryImpl({
+    required DeviceMqttRepo mqtt,
+    required TelemetryTopics topics,
+    required String deviceSn,
+  })  : _mqtt = mqtt,
+        _topics = topics,
+        _deviceSn = deviceSn;
 
   final DeviceMqttRepo _mqtt;
   final TelemetryTopics _topics;
+  final String _deviceSn;
 
-  // per-device broadcast + refcount + underlying stream subs
-  final Map<String, StreamController<Map<String, dynamic>>> _ctrls = {};
-  final Map<String, int> _refs = {};
-  final Map<String, List<StreamSubscription>> _subs = {};
+  StreamController<Map<String, dynamic>>? _ctrl;
+  List<StreamSubscription> _subs = [];
+  int _refs = 0;
 
   bool _disposed = false;
 
-  /// Best-effort cleanup when session scope is disposed.
+  /// Best-effort cleanup when device scope is disposed.
   /// Not part of TelemetryRepository interface on purpose.
   void dispose() {
     if (_disposed) return;
@@ -28,79 +34,89 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
   }
 
   Future<void> _disposeAsync() async {
-    final subsByDevice = _subs.values.toList(growable: false);
-    final ctrls = _ctrls.values.toList(growable: false);
+    final subs = _subs.toList(growable: false);
+    _subs = [];
 
-    _subs.clear();
-    _refs.clear();
-    _ctrls.clear();
+    final ctrl = _ctrl;
+    _ctrl = null;
+    _refs = 0;
 
-    for (final list in subsByDevice) {
-      for (final s in list) {
-        try {
-          await s.cancel();
-        } catch (_) {}
-      }
-    }
-    for (final c in ctrls) {
+    for (final s in subs) {
       try {
-        await c.close();
+        await s.cancel();
+      } catch (_) {}
+    }
+    if (ctrl != null) {
+      try {
+        await ctrl.close();
       } catch (_) {}
     }
   }
 
   @override
-  Future<void> subscribe(String deviceId) async {
+  Future<void> subscribe() async {
     if (_disposed) return;
 
-    _refs[deviceId] = (_refs[deviceId] ?? 0) + 1;
-    if (_refs[deviceId]! > 1) return; // already wired
+    _refs += 1;
+    if (_refs > 1) return;
 
-    final ctrl = _ctrls.putIfAbsent(deviceId, () => StreamController<Map<String, dynamic>>.broadcast());
-
+    final ctrl = _ensureController();
     final subs = <StreamSubscription>[];
 
     // 1) device state
     subs.add(
-      _mqtt.subscribeJson(_topics.state(deviceId)).listen((msg) {
+      _mqtt.subscribeJson(_topics.state(_deviceSn)).listen((msg) {
         ctrl.add({'state': msg.payload});
       }),
     );
 
     // 2) device telemetry/*
     subs.add(
-      _mqtt.subscribeJson(_topics.telemetryAll(deviceId)).listen((msg) {
+      _mqtt.subscribeJson(_topics.telemetryAll(_deviceSn)).listen((msg) {
         final alias = _extractAliasAfter(msg.topic, 'telemetry') ?? 'telemetry';
         ctrl.add({alias: msg.payload});
       }),
     );
 
-    _subs[deviceId] = subs;
+    _subs = subs;
   }
 
   @override
-  Future<void> unsubscribe(String deviceId) async {
+  Future<void> unsubscribe() async {
     if (_disposed) return;
 
-    final n = (_refs[deviceId] ?? 0) - 1;
-    if (n <= 0) {
-      _refs.remove(deviceId);
-      // cancel subs
-      for (final s in _subs.remove(deviceId) ?? const <StreamSubscription>[]) {
+    _refs -= 1;
+    if (_refs > 0) return;
+
+    _refs = 0;
+
+    for (final s in _subs) {
+      try {
         await s.cancel();
-      }
-      // close controller
-      await _ctrls.remove(deviceId)?.close();
-    } else {
-      _refs[deviceId] = n;
+      } catch (_) {}
+    }
+    _subs = [];
+
+    final ctrl = _ctrl;
+    _ctrl = null;
+    if (ctrl != null && !ctrl.isClosed) {
+      await ctrl.close();
     }
   }
 
   @override
-  Stream<Map<String, dynamic>> watchAliases(String deviceId) {
+  Stream<Map<String, dynamic>> watchAliases() {
     if (_disposed) return Stream<Map<String, dynamic>>.empty();
+    return _ensureController().stream;
+  }
 
-    return _ctrls.putIfAbsent(deviceId, () => StreamController<Map<String, dynamic>>.broadcast()).stream;
+  StreamController<Map<String, dynamic>> _ensureController() {
+    final existing = _ctrl;
+    if (existing != null && !existing.isClosed) return existing;
+
+    final next = StreamController<Map<String, dynamic>>.broadcast();
+    _ctrl = next;
+    return next;
   }
 
   // -------- helpers --------

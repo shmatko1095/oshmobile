@@ -105,7 +105,7 @@ class DeviceStateCubit extends Cubit<DeviceStateState> {
 
     // Enable RT stream (best-effort).
     try {
-      await _enableRt(deviceSn, interval: rtInterval);
+      await _enableRt(interval: rtInterval);
     } catch (e, st) {
       unawaited(OshCrashReporter.logNonFatal(
         e,
@@ -118,7 +118,7 @@ class DeviceStateCubit extends Cubit<DeviceStateState> {
 
     // Subscribe (best-effort).
     try {
-      await _subscribe(deviceSn);
+      await _subscribe();
     } catch (e, st) {
       unawaited(OshCrashReporter.logNonFatal(
         e,
@@ -133,7 +133,7 @@ class DeviceStateCubit extends Cubit<DeviceStateState> {
     await _sub?.cancel();
     // if (isClosed) return;
 
-    _sub = _watch(deviceSn).listen(
+    _sub = _watch().listen(
       (diff) {
         // if (isClosed) return;
         emit(state.merge(diff));
@@ -154,10 +154,10 @@ class DeviceStateCubit extends Cubit<DeviceStateState> {
 
     // Best-effort cleanup on device dispose.
     try {
-      await _disableRt(deviceSn);
+      await _disableRt();
     } catch (_) {}
     try {
-      await _unsubscribe(deviceSn);
+      await _unsubscribe();
     } catch (_) {}
 
     return super.close();

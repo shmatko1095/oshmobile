@@ -4,14 +4,21 @@ import 'package:oshmobile/features/devices/details/domain/repositories/control_r
 
 /// MQTT commands implementation using cmd/inbox + {action: alias, value: ...}.
 class MqttControlRepositoryImpl implements ControlRepository {
-  MqttControlRepositoryImpl(this._mqtt, this._tenantId);
+  MqttControlRepositoryImpl({
+    required DeviceMqttRepo mqtt,
+    required String tenantId,
+    required String deviceSn,
+  })  : _mqtt = mqtt,
+        _tenantId = tenantId,
+        _deviceSn = deviceSn;
 
   final DeviceMqttRepo _mqtt;
   final String _tenantId;
+  final String _deviceSn;
 
   @override
-  Future<void> send<T>(String deviceId, Command<T> cmd, T value, {String? corrId}) async {
-    final topic = 'v1/tenants/$_tenantId/devices/$deviceId/cmd/inbox';
+  Future<void> send<T>(Command<T> cmd, T value, {String? corrId}) async {
+    final topic = 'v1/tenants/$_tenantId/devices/$_deviceSn/cmd/inbox';
     await _mqtt.publishJson(
       topic,
       {

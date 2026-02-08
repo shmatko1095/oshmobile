@@ -14,22 +14,19 @@ import 'package:oshmobile/features/settings/domain/repositories/settings_reposit
 class SettingsRepositoryMqtt implements SettingsRepository {
   final DeviceMqttRepo _mqtt;
   final SettingsTopics _topics;
+  final String _deviceSn;
   final Duration timeout;
 
-  // Snapshot watchers (UI).
-  final Map<String, StreamController<SettingsSnapshot>> _ctrls = {};
-  final Map<String, int> _refs = {};
+  StreamController<SettingsSnapshot>? _ctrl;
+  int _refs = 0;
 
-  // One MQTT subscription per device for retained state.
-  final Map<String, StreamSubscription> _stateSubs = {};
+  StreamSubscription? _stateSub;
 
-  // JSON-RPC responses (/rsp) fan-out, per device.
-  final Map<String, StreamController<MapEntry<int, Map<String, dynamic>>>> _rspCtrls = {};
-  final Map<String, StreamSubscription> _rspSubs = {};
-  final Map<String, int> _rspSeq = {};
+  StreamController<MapEntry<int, Map<String, dynamic>>>? _rspCtrl;
+  StreamSubscription? _rspSub;
+  int _rspSeq = 0;
 
-  // Last known snapshot per device.
-  final Map<String, SettingsSnapshot> _last = {};
+  SettingsSnapshot? _last;
 
   // Latest-wins gate for save operations.
   final LatestWinsGate _latest = LatestWinsGate();
@@ -38,11 +35,12 @@ class SettingsRepositoryMqtt implements SettingsRepository {
 
   SettingsRepositoryMqtt(
     this._mqtt,
-    this._topics, {
+    this._topics,
+    this._deviceSn, {
     this.timeout = const Duration(seconds: 6),
   });
 
-  /// Best-effort cleanup when session scope is disposed.
+  /// Best-effort cleanup when device scope is disposed.
   /// Not part of SettingsRepository interface on purpose.
   void dispose() {
     if (_disposed) return;
@@ -51,38 +49,38 @@ class SettingsRepositoryMqtt implements SettingsRepository {
   }
 
   Future<void> _disposeAsync() async {
-    final stateSubs = _stateSubs.values.toList(growable: false);
-    final rspSubs = _rspSubs.values.toList(growable: false);
-    final ctrls = _ctrls.values.toList(growable: false);
-    final rspCtrls = _rspCtrls.values.toList(growable: false);
+    final stateSub = _stateSub;
+    final rspSub = _rspSub;
+    final ctrl = _ctrl;
+    final rspCtrl = _rspCtrl;
 
-    _stateSubs.clear();
-    _rspSubs.clear();
-    _ctrls.clear();
-    _rspCtrls.clear();
-    _refs.clear();
-    _rspSeq.clear();
-    _last.clear();
+    _stateSub = null;
+    _rspSub = null;
+    _ctrl = null;
+    _rspCtrl = null;
+    _refs = 0;
+    _rspSeq = 0;
+    _last = null;
     _latest.clear();
 
-    for (final s in stateSubs) {
+    if (stateSub != null) {
       try {
-        await s.cancel();
+        await stateSub.cancel();
       } catch (_) {}
     }
-    for (final s in rspSubs) {
+    if (rspSub != null) {
       try {
-        await s.cancel();
+        await rspSub.cancel();
       } catch (_) {}
     }
-    for (final c in ctrls) {
+    if (ctrl != null) {
       try {
-        if (!c.isClosed) await c.close();
+        if (!ctrl.isClosed) await ctrl.close();
       } catch (_) {}
     }
-    for (final c in rspCtrls) {
+    if (rspCtrl != null) {
       try {
-        if (!c.isClosed) await c.close();
+        if (!rspCtrl.isClosed) await rspCtrl.close();
       } catch (_) {}
     }
   }
@@ -90,16 +88,16 @@ class SettingsRepositoryMqtt implements SettingsRepository {
   // -------------------- Public API --------------------
 
   @override
-  Future<SettingsSnapshot> fetchAll(String deviceSn, {bool forceGet = false}) async {
+  Future<SettingsSnapshot> fetchAll({bool forceGet = false}) async {
     if (_disposed) throw StateError('SettingsRepositoryMqtt is disposed');
 
     if (!forceGet) {
-      final cached = _last[deviceSn];
+      final cached = _last;
       if (cached != null) return cached;
 
       try {
         final snap = await firstWithTimeout<SettingsSnapshot>(
-          watchSnapshot(deviceSn),
+          watchSnapshot(),
           timeout,
           timeoutMessage: 'Timeout waiting for settings state',
         );
@@ -111,7 +109,6 @@ class SettingsRepositoryMqtt implements SettingsRepository {
 
     final reqId = newReqId();
     final resp = await _request(
-      deviceSn,
       method: SettingsJsonRpcCodec.methodGet,
       reqId: reqId,
       data: null,
@@ -122,13 +119,12 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     if (snap == null) {
       throw StateError('Invalid settings response');
     }
-    _emitSnapshot(deviceSn, snap);
+    _emitSnapshot(snap);
     return snap;
   }
 
   @override
   Future<void> saveAll(
-    String deviceSn,
     SettingsSnapshot snapshot, {
     String? reqId,
   }) async {
@@ -137,10 +133,9 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     final id = reqId ?? newReqId();
     final data = SettingsJsonRpcCodec.encodeBody(snapshot);
 
-    final latest = _latest.start(_latestKey(deviceSn, 'save'));
+    final latest = _latest.start(_latestKey('save'));
 
     final resp = await _request(
-      deviceSn,
       method: SettingsJsonRpcCodec.methodSet,
       reqId: id,
       data: data,
@@ -154,14 +149,14 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     }
 
     final snap = _snapshotFromResponse(resp);
-    if (snap != null) _emitSnapshot(deviceSn, snap);
+    if (snap != null) _emitSnapshot(snap);
   }
 
   @override
-  Stream<SettingsSnapshot> watchSnapshot(String deviceSn) {
+  Stream<SettingsSnapshot> watchSnapshot() {
     if (_disposed) return Stream<SettingsSnapshot>.empty();
 
-    final existing = _ctrls[deviceSn];
+    final existing = _ctrl;
     if (existing != null && !existing.isClosed) {
       return existing.stream;
     }
@@ -170,22 +165,22 @@ class SettingsRepositoryMqtt implements SettingsRepository {
 
     ctrl = StreamController<SettingsSnapshot>.broadcast(
       onListen: () {
-        _refs[deviceSn] = (_refs[deviceSn] ?? 0) + 1;
-        if (_refs[deviceSn]! > 1) return;
+        _refs += 1;
+        if (_refs > 1) return;
 
-        _ensureStateSubscription(deviceSn);
+        _ensureStateSubscription();
 
-        final cached = _last[deviceSn];
+        final cached = _last;
         if (cached != null) {
           ctrl.add(cached);
         }
       },
       onCancel: () async {
-        _refs[deviceSn] = (_refs[deviceSn] ?? 1) - 1;
-        if (_refs[deviceSn]! <= 0) {
-          _refs.remove(deviceSn);
-
-          final c = _ctrls.remove(deviceSn);
+        _refs -= 1;
+        if (_refs <= 0) {
+          _refs = 0;
+          final c = _ctrl;
+          _ctrl = null;
           if (c != null && !c.isClosed) {
             await c.close();
           }
@@ -193,17 +188,17 @@ class SettingsRepositoryMqtt implements SettingsRepository {
       },
     );
 
-    _ctrls[deviceSn] = ctrl;
+    _ctrl = ctrl;
     return ctrl.stream;
   }
 
   // -------------------- MQTT subscriptions --------------------
 
-  void _ensureStateSubscription(String deviceSn) {
-    if (_stateSubs.containsKey(deviceSn)) return;
+  void _ensureStateSubscription() {
+    if (_stateSub != null) return;
 
-    final topic = _topics.state(deviceSn);
-    _stateSubs[deviceSn] = _mqtt.subscribeJson(topic).listen((msg) {
+    final topic = _topics.state(_deviceSn);
+    _stateSub = _mqtt.subscribeJson(topic).listen((msg) {
       final notif = decodeJsonRpcNotification(msg.payload);
       if (notif == null) return;
       if (notif.method != SettingsJsonRpcCodec.methodState) return;
@@ -213,44 +208,42 @@ class SettingsRepositoryMqtt implements SettingsRepository {
       if (data == null) return;
 
       final snap = SettingsJsonRpcCodec.decodeBody(data);
-      _emitSnapshot(deviceSn, snap);
+      _emitSnapshot(snap);
     });
   }
 
-  void _ensureRspSubscription(String deviceSn) {
-    if (_rspSubs.containsKey(deviceSn)) return;
+  void _ensureRspSubscription() {
+    if (_rspSub != null) return;
 
-    final topic = _topics.rsp(deviceSn);
-    _rspSubs[deviceSn] = _mqtt.subscribeJson(topic).listen((msg) {
-      final nextSeq = (_rspSeq[deviceSn] ?? 0) + 1;
-      _rspSeq[deviceSn] = nextSeq;
+    final topic = _topics.rsp(_deviceSn);
+    _rspSub = _mqtt.subscribeJson(topic).listen((msg) {
+      final nextSeq = _rspSeq + 1;
+      _rspSeq = nextSeq;
 
-      final ctrl = _rspCtrls[deviceSn];
+      final ctrl = _rspCtrl;
       if (ctrl != null && !ctrl.isClosed) {
         ctrl.add(MapEntry(nextSeq, msg.payload));
       }
     });
   }
 
-  Stream<MapEntry<int, Map<String, dynamic>>> _rspEvents(String deviceSn) {
-    final existing = _rspCtrls[deviceSn];
+  Stream<MapEntry<int, Map<String, dynamic>>> _rspEvents() {
+    final existing = _rspCtrl;
     if (existing != null && !existing.isClosed) return existing.stream;
 
     final ctrl = StreamController<MapEntry<int, Map<String, dynamic>>>.broadcast(
-      onListen: () {
-        _ensureRspSubscription(deviceSn);
-      },
+      onListen: _ensureRspSubscription,
     );
 
-    _rspCtrls[deviceSn] = ctrl;
+    _rspCtrl = ctrl;
     return ctrl.stream;
   }
 
   // -------------------- JSON-RPC helpers --------------------
 
-  void _emitSnapshot(String deviceSn, SettingsSnapshot snap) {
-    _last[deviceSn] = snap;
-    final ctrl = _ctrls[deviceSn];
+  void _emitSnapshot(SettingsSnapshot snap) {
+    _last = snap;
+    final ctrl = _ctrl;
     if (ctrl != null && !ctrl.isClosed) {
       ctrl.add(snap);
     }
@@ -262,10 +255,9 @@ class SettingsRepositoryMqtt implements SettingsRepository {
         ts: DateTime.now().millisecondsSinceEpoch,
       );
 
-  String _latestKey(String deviceSn, String op) => '$deviceSn:$op';
+  String _latestKey(String op) => op;
 
-  Future<JsonRpcResponse> _request(
-    String deviceSn, {
+  Future<JsonRpcResponse> _request({
     required String method,
     required String reqId,
     required Map<String, dynamic>? data,
@@ -273,12 +265,12 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     Future<void>? cancel,
     Object? cancelError,
   }) async {
-    final cmdTopic = _topics.cmd(deviceSn);
+    final cmdTopic = _topics.cmd(_deviceSn);
 
-    _ensureRspSubscription(deviceSn);
-    final events = _rspEvents(deviceSn);
+    _ensureRspSubscription();
+    final events = _rspEvents();
 
-    final startSeq = _rspSeq[deviceSn] ?? 0;
+    final startSeq = _rspSeq;
     final waitRsp = firstWhereWithTimeout<MapEntry<int, Map<String, dynamic>>>(
       events,
       (e) => e.key > startSeq && e.value['id']?.toString() == reqId,

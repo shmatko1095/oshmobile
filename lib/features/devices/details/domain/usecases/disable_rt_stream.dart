@@ -7,8 +7,8 @@ class DisableRtStream {
   const DisableRtStream(this.control);
 
   /// Ask device to stop RT telemetry.
-  Future<void> call(String deviceId) {
+  Future<void> call() {
     // value = true (payload can be ignored on FW side if you prefer)
-    return control.send<bool>(deviceId, DeviceCommands.disableRt, true);
+    return control.send<bool>(DeviceCommands.disableRt, true);
   }
 }

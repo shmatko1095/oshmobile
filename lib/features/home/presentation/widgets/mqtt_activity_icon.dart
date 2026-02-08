@@ -45,7 +45,7 @@ class _MqttActivityIconState extends State<MqttActivityIcon> {
     if (wasPending && !hasPending && state.lastError == null && isTransportConnected) {
       _successTimer?.cancel();
       setState(() => _showSuccess = true);
-      _successTimer = Timer(const Duration(milliseconds: 500), () {
+      _successTimer = Timer(const Duration(milliseconds: 200), () {
         if (!mounted) return;
         setState(() => _showSuccess = false);
       });
@@ -180,7 +180,7 @@ class _RotatingSyncIconState extends State<_RotatingSyncIcon> with SingleTickerP
     // Repeat rotation while this widget is in the tree.
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1),
+      duration: const Duration(milliseconds: 200),
     )..repeat();
   }
 

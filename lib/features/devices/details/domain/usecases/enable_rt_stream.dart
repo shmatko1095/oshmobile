@@ -8,8 +8,8 @@ class EnableRtStream {
   const EnableRtStream(this.control);
 
   /// Ask device to start publishing RT telemetry at [interval].
-  Future<void> call(String deviceId, {Duration interval = const Duration(seconds: 1)}) {
+  Future<void> call({Duration interval = const Duration(seconds: 1)}) {
     // value = interval in milliseconds (adjust if your FW expects seconds)
-    return control.send<int>(deviceId, DeviceCommands.enableRt, interval.inMilliseconds);
+    return control.send<int>(DeviceCommands.enableRt, interval.inMilliseconds);
   }
 }

@@ -5,5 +5,5 @@ class WatchDeviceAboutStream {
 
   const WatchDeviceAboutStream(this.repo);
 
-  Stream<Map<String, dynamic>> call(String deviceSn) => repo.watchState(deviceSn);
+  Stream<Map<String, dynamic>> call() => repo.watchState();
 }

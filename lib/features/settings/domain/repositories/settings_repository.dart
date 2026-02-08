@@ -7,12 +7,12 @@ import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart
 /// - Save full snapshot (JSON-RPC set).
 /// - Stream retained state updates from device.
 abstract class SettingsRepository {
-  /// Fetch full settings snapshot for [deviceSn].
-  Future<SettingsSnapshot> fetchAll(String deviceSn, {bool forceGet = false});
+  /// Fetch full settings snapshot.
+  Future<SettingsSnapshot> fetchAll({bool forceGet = false});
 
   /// Save full snapshot atomically (JSON-RPC).
-  Future<void> saveAll(String deviceSn, SettingsSnapshot snapshot, {String? reqId});
+  Future<void> saveAll(SettingsSnapshot snapshot, {String? reqId});
 
   /// Stream of reported updates.
-  Stream<SettingsSnapshot> watchSnapshot(String deviceSn);
+  Stream<SettingsSnapshot> watchSnapshot();
 }

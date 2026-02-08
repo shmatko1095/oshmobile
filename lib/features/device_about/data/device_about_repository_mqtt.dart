@@ -7,18 +7,24 @@ import 'package:oshmobile/features/device_about/domain/repositories/device_about
 class DeviceAboutRepositoryMqtt implements DeviceAboutRepository {
   final DeviceMqttRepo _mqtt;
   final DeviceMqttTopicsV1 _topics;
+  final String _deviceSn;
 
-  // per-device broadcast + refcount + underlying stream subs
-  final Map<String, StreamController<Map<String, dynamic>>> _ctrls = {};
-  final Map<String, int> _refs = {};
-  final Map<String, StreamSubscription> _subs = {};
-  final Map<String, Map<String, dynamic>> _last = {};
+  StreamController<Map<String, dynamic>>? _ctrl;
+  int _refs = 0;
+  StreamSubscription? _sub;
+  Map<String, dynamic>? _last;
 
   bool _disposed = false;
 
-  DeviceAboutRepositoryMqtt(this._mqtt, this._topics);
+  DeviceAboutRepositoryMqtt({
+    required DeviceMqttRepo mqtt,
+    required DeviceMqttTopicsV1 topics,
+    required String deviceSn,
+  })  : _mqtt = mqtt,
+        _topics = topics,
+        _deviceSn = deviceSn;
 
-  /// Best-effort cleanup when session scope is disposed.
+  /// Best-effort cleanup when device scope is disposed.
   /// Not part of DeviceAboutRepository interface on purpose.
   void dispose() {
     if (_disposed) return;
@@ -27,59 +33,61 @@ class DeviceAboutRepositoryMqtt implements DeviceAboutRepository {
   }
 
   Future<void> _disposeAsync() async {
-    final subs = _subs.values.toList(growable: false);
-    final ctrls = _ctrls.values.toList(growable: false);
+    final sub = _sub;
+    final ctrl = _ctrl;
 
-    _subs.clear();
-    _refs.clear();
-    _ctrls.clear();
-    _last.clear();
+    _sub = null;
+    _ctrl = null;
+    _refs = 0;
+    _last = null;
 
-    for (final s in subs) {
+    if (sub != null) {
       try {
-        await s.cancel();
+        await sub.cancel();
       } catch (_) {}
     }
-    for (final c in ctrls) {
+    if (ctrl != null) {
       try {
-        await c.close();
+        await ctrl.close();
       } catch (_) {}
     }
   }
 
   @override
-  Stream<Map<String, dynamic>> watchState(String deviceSn) {
+  Stream<Map<String, dynamic>> watchState() {
     if (_disposed) return Stream<Map<String, dynamic>>.empty();
 
-    final existing = _ctrls[deviceSn];
+    final existing = _ctrl;
     if (existing != null && !existing.isClosed) return existing.stream;
 
     late final StreamController<Map<String, dynamic>> ctrl;
     ctrl = StreamController<Map<String, dynamic>>.broadcast(
       onListen: () {
-        _refs[deviceSn] = (_refs[deviceSn] ?? 0) + 1;
-        if (_refs[deviceSn]! > 1) return;
+        _refs += 1;
+        if (_refs > 1) return;
 
-        _ensureSubscription(deviceSn);
+        _ensureSubscription();
 
-        final cached = _last[deviceSn];
+        final cached = _last;
         if (cached != null) {
           ctrl.add(cached);
         }
       },
       onCancel: () async {
-        _refs[deviceSn] = (_refs[deviceSn] ?? 1) - 1;
-        if (_refs[deviceSn]! <= 0) {
-          _refs.remove(deviceSn);
+        _refs -= 1;
+        if (_refs <= 0) {
+          _refs = 0;
 
-          final sub = _subs.remove(deviceSn);
+          final sub = _sub;
+          _sub = null;
           if (sub != null) {
             try {
               await sub.cancel();
             } catch (_) {}
           }
 
-          final c = _ctrls.remove(deviceSn);
+          final c = _ctrl;
+          _ctrl = null;
           if (c != null && !c.isClosed) {
             await c.close();
           }
@@ -87,18 +95,18 @@ class DeviceAboutRepositoryMqtt implements DeviceAboutRepository {
       },
     );
 
-    _ctrls[deviceSn] = ctrl;
+    _ctrl = ctrl;
     return ctrl.stream;
   }
 
-  void _ensureSubscription(String deviceSn) {
-    if (_subs.containsKey(deviceSn)) return;
+  void _ensureSubscription() {
+    if (_sub != null) return;
 
-    final topic = _topics.state(deviceSn, 'device');
-    _subs[deviceSn] = _mqtt.subscribeJson(topic).listen(
+    final topic = _topics.state(_deviceSn, 'device');
+    _sub = _mqtt.subscribeJson(topic).listen(
       (msg) {
-        _last[deviceSn] = msg.payload;
-        final ctrl = _ctrls[deviceSn];
+        _last = msg.payload;
+        final ctrl = _ctrl;
         if (ctrl != null && !ctrl.isClosed) {
           ctrl.add(msg.payload);
         }

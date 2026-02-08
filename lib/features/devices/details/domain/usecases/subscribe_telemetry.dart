@@ -5,5 +5,5 @@ class SubscribeTelemetry {
 
   const SubscribeTelemetry(this.repo);
 
-  Future<void> call(String deviceId) => repo.subscribe(deviceId);
+  Future<void> call() => repo.subscribe();
 }

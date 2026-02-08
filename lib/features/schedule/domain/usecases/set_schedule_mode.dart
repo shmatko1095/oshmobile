@@ -6,5 +6,5 @@ class SetScheduleMode {
 
   const SetScheduleMode(this.repo);
 
-  Future<void> call(String deviceSn, CalendarMode mode, {String? reqId}) => repo.setMode(deviceSn, mode, reqId: reqId);
+  Future<void> call(CalendarMode mode, {String? reqId}) => repo.setMode(mode, reqId: reqId);
 }

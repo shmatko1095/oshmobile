@@ -6,6 +6,5 @@ class FetchSettingsAll {
 
   const FetchSettingsAll(this.repo);
 
-  Future<SettingsSnapshot> call(String deviceSn, {bool forceGet = false}) =>
-      repo.fetchAll(deviceSn, forceGet: forceGet);
+  Future<SettingsSnapshot> call({bool forceGet = false}) => repo.fetchAll(forceGet: forceGet);
 }

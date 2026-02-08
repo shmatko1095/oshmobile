@@ -7,34 +7,31 @@ import 'package:oshmobile/features/settings/domain/repositories/settings_reposit
 ///
 /// This class:
 /// - does NOT communicate over MQTT;
-/// - keeps settings per deviceSn in a local Map;
+/// - keeps settings in memory;
 /// - immediately acknowledges save operations via watchSnapshot stream.
-///
-/// It is useful while firmware does not yet support the real
-/// settings MQTT topics.
 class SettingsRepositoryMock implements SettingsRepository {
   /// Simulated network latency. Set to Duration.zero for instant responses.
   final Duration latency;
 
-  final Map<String, SettingsSnapshot> _store = {};
-  final Map<String, StreamController<SettingsSnapshot>> _controllers = {};
+  SettingsSnapshot? _snapshot;
+  StreamController<SettingsSnapshot>? _controller;
 
   SettingsRepositoryMock({this.latency = const Duration(milliseconds: 150)});
 
   @override
-  Future<SettingsSnapshot> fetchAll(String deviceSn, {bool forceGet = false}) async {
+  Future<SettingsSnapshot> fetchAll({bool forceGet = false}) async {
     await Future<void>.delayed(latency);
 
-    final existing = _store[deviceSn];
+    final existing = _snapshot;
     if (existing != null) {
       return existing;
     }
 
-    final initial = _initialSnapshotFor(deviceSn);
-    _store[deviceSn] = initial;
+    final initial = _initialSnapshot();
+    _snapshot = initial;
 
     // Also push initial snapshot to watchers, if any.
-    final ctrl = _controllers[deviceSn];
+    final ctrl = _controller;
     if (ctrl != null && !ctrl.isClosed) {
       ctrl.add(initial);
     }
@@ -44,23 +41,22 @@ class SettingsRepositoryMock implements SettingsRepository {
 
   @override
   Future<void> saveAll(
-    String deviceSn,
     SettingsSnapshot snapshot, {
     String? reqId,
   }) async {
     await Future<void>.delayed(latency);
 
-    _store[deviceSn] = snapshot;
+    _snapshot = snapshot;
 
-    final ctrl = _controllers[deviceSn];
+    final ctrl = _controller;
     if (ctrl != null && !ctrl.isClosed) {
       ctrl.add(snapshot);
     }
   }
 
   @override
-  Stream<SettingsSnapshot> watchSnapshot(String deviceSn) {
-    final existing = _controllers[deviceSn];
+  Stream<SettingsSnapshot> watchSnapshot() {
+    final existing = _controller;
     if (existing != null && !existing.isClosed) {
       return existing.stream;
     }
@@ -71,33 +67,17 @@ class SettingsRepositoryMock implements SettingsRepository {
     ctrl = StreamController<SettingsSnapshot>.broadcast(
       onListen: () {
         // On first listener, ensure we have an initial snapshot and emit it.
-        final snap = _store[deviceSn] ?? _initialSnapshotFor(deviceSn);
-        _store[deviceSn] = snap;
+        final snap = _snapshot ?? _initialSnapshot();
+        _snapshot = snap;
         ctrl.add(snap);
       },
     );
 
-    _controllers[deviceSn] = ctrl;
+    _controller = ctrl;
     return ctrl.stream;
   }
 
-  /// Returns initial mock snapshot for a given device.
-  ///
-  /// For now all devices share the same defaults:
-  /// {
-  ///   "display": {
-  ///     "activeBrightness": 100,
-  ///     "idleBrightness": 10,
-  ///     "idleTime": 30,
-  ///     "dimOnIdle": true
-  ///   },
-  ///   "update": {
-  ///     "autoUpdateEnabled": false,
-  ///     "updateAtMidnight": false,
-  ///     "checkIntervalMin": 60
-  ///   }
-  /// }
-  SettingsSnapshot _initialSnapshotFor(String deviceSn) {
+  SettingsSnapshot _initialSnapshot() {
     final json = <String, dynamic>{
       'display': {
         'activeBrightness': 100,
@@ -117,9 +97,10 @@ class SettingsRepositoryMock implements SettingsRepository {
 
   /// Dispose all controllers. Useful in tests.
   Future<void> dispose() async {
-    for (final c in _controllers.values) {
-      await c.close();
+    final ctrl = _controller;
+    if (ctrl != null) {
+      await ctrl.close();
     }
-    _controllers.clear();
+    _controller = null;
   }
 }

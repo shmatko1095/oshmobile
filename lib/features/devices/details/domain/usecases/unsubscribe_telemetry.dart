@@ -5,5 +5,5 @@ class UnsubscribeTelemetry {
 
   const UnsubscribeTelemetry(this.repo);
 
-  Future<void> call(String deviceId) => repo.unsubscribe(deviceId);
+  Future<void> call() => repo.unsubscribe();
 }

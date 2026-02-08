@@ -19,21 +19,19 @@ import 'package:oshmobile/features/schedule/domain/repositories/schedule_reposit
 class ScheduleRepositoryMqtt implements ScheduleRepository {
   final DeviceMqttRepo _mqtt;
   final ScheduleTopics _topics;
+  final String _deviceSn;
   final Duration timeout;
 
-  final Map<String, StreamController<CalendarSnapshot>> _ctrls = {};
-  final Map<String, int> _refs = {};
+  StreamController<CalendarSnapshot>? _ctrl;
+  int _refs = 0;
 
-  // One MQTT subscription per device for retained state.
-  final Map<String, StreamSubscription> _stateSubs = {};
+  StreamSubscription? _stateSub;
 
-  // JSON-RPC responses (/rsp) fan-out, per device.
-  final Map<String, StreamController<MapEntry<int, Map<String, dynamic>>>> _rspCtrls = {};
-  final Map<String, StreamSubscription> _rspSubs = {};
-  final Map<String, int> _rspSeq = {};
+  StreamController<MapEntry<int, Map<String, dynamic>>>? _rspCtrl;
+  StreamSubscription? _rspSub;
+  int _rspSeq = 0;
 
-  // Last known snapshot per device.
-  final Map<String, CalendarSnapshot> _last = {};
+  CalendarSnapshot? _last;
 
   // Latest-wins gate for mode updates.
   final LatestWinsGate _latest = LatestWinsGate();
@@ -42,11 +40,12 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
 
   ScheduleRepositoryMqtt(
     this._mqtt,
-    this._topics, {
+    this._topics,
+    this._deviceSn, {
     this.timeout = const Duration(seconds: 6),
   });
 
-  /// Best-effort cleanup when session scope is disposed.
+  /// Best-effort cleanup when device scope is disposed.
   /// Not part of ScheduleRepository interface on purpose.
   void dispose() {
     if (_disposed) return;
@@ -55,38 +54,38 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   }
 
   Future<void> _disposeAsync() async {
-    final stateSubs = _stateSubs.values.toList(growable: false);
-    final rspSubs = _rspSubs.values.toList(growable: false);
-    final ctrls = _ctrls.values.toList(growable: false);
-    final rspCtrls = _rspCtrls.values.toList(growable: false);
+    final stateSub = _stateSub;
+    final rspSub = _rspSub;
+    final ctrl = _ctrl;
+    final rspCtrl = _rspCtrl;
 
-    _stateSubs.clear();
-    _rspSubs.clear();
-    _ctrls.clear();
-    _rspCtrls.clear();
-    _refs.clear();
-    _rspSeq.clear();
-    _last.clear();
+    _stateSub = null;
+    _rspSub = null;
+    _ctrl = null;
+    _rspCtrl = null;
+    _refs = 0;
+    _rspSeq = 0;
+    _last = null;
     _latest.clear();
 
-    for (final s in stateSubs) {
+    if (stateSub != null) {
       try {
-        await s.cancel();
+        await stateSub.cancel();
       } catch (_) {}
     }
-    for (final s in rspSubs) {
+    if (rspSub != null) {
       try {
-        await s.cancel();
+        await rspSub.cancel();
       } catch (_) {}
     }
-    for (final c in ctrls) {
+    if (ctrl != null) {
       try {
-        if (!c.isClosed) await c.close();
+        if (!ctrl.isClosed) await ctrl.close();
       } catch (_) {}
     }
-    for (final c in rspCtrls) {
+    if (rspCtrl != null) {
       try {
-        if (!c.isClosed) await c.close();
+        if (!rspCtrl.isClosed) await rspCtrl.close();
       } catch (_) {}
     }
   }
@@ -94,16 +93,16 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   // -------------------- Public API --------------------
 
   @override
-  Future<CalendarSnapshot> fetchAll(String deviceId, {bool forceGet = false}) async {
+  Future<CalendarSnapshot> fetchAll({bool forceGet = false}) async {
     if (_disposed) throw StateError('ScheduleRepositoryMqtt is disposed');
 
     if (!forceGet) {
-      final cached = _last[deviceId];
+      final cached = _last;
       if (cached != null) return cached;
 
       try {
         final snap = await firstWithTimeout<CalendarSnapshot>(
-          watchSnapshot(deviceId),
+          watchSnapshot(),
           timeout,
           timeoutMessage: 'Timeout waiting for schedule state',
         );
@@ -115,7 +114,6 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
 
     final reqId = newReqId();
     final resp = await _request(
-      deviceId,
       method: ScheduleJsonRpcCodec.methodGet,
       reqId: reqId,
       data: null,
@@ -126,15 +124,15 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     if (snap == null) {
       throw StateError('Invalid schedule response');
     }
-    _emitSnapshot(deviceId, snap);
+    _emitSnapshot(snap);
     return snap;
   }
 
   @override
-  Future<void> saveAll(String deviceId, CalendarSnapshot snapshot, {String? reqId}) async {
+  Future<void> saveAll(CalendarSnapshot snapshot, {String? reqId}) async {
     if (_disposed) throw StateError('ScheduleRepositoryMqtt is disposed');
 
-    final prev = _last[deviceId];
+    final prev = _last;
     final id = reqId ?? newReqId();
 
     String method;
@@ -157,7 +155,6 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     }
 
     final resp = await _request(
-      deviceId,
       method: method,
       reqId: id,
       data: data,
@@ -165,19 +162,18 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     );
 
     final snap = _snapshotFromResponse(resp);
-    if (snap != null) _emitSnapshot(deviceId, snap);
+    if (snap != null) _emitSnapshot(snap);
   }
 
   @override
-  Future<void> setMode(String deviceId, CalendarMode mode, {String? reqId}) async {
+  Future<void> setMode(CalendarMode mode, {String? reqId}) async {
     if (_disposed) throw StateError('ScheduleRepositoryMqtt is disposed');
 
     final id = reqId ?? newReqId();
     final data = ScheduleJsonRpcCodec.encodePatch(mode: mode);
-    final latest = _latest.start(_latestKey(deviceId, 'mode'));
+    final latest = _latest.start(_latestKey('mode'));
 
     final resp = await _request(
-      deviceId,
       method: ScheduleJsonRpcCodec.methodPatch,
       reqId: id,
       data: data,
@@ -191,14 +187,14 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     }
 
     final snap = _snapshotFromResponse(resp);
-    if (snap != null) _emitSnapshot(deviceId, snap);
+    if (snap != null) _emitSnapshot(snap);
   }
 
   @override
-  Stream<CalendarSnapshot> watchSnapshot(String deviceId) {
+  Stream<CalendarSnapshot> watchSnapshot() {
     if (_disposed) return Stream<CalendarSnapshot>.empty();
 
-    final existing = _ctrls[deviceId];
+    final existing = _ctrl;
     if (existing != null && !existing.isClosed) {
       return existing.stream;
     }
@@ -206,37 +202,38 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     late final StreamController<CalendarSnapshot> ctrl;
     ctrl = StreamController<CalendarSnapshot>.broadcast(
       onListen: () {
-        _refs[deviceId] = (_refs[deviceId] ?? 0) + 1;
-        if (_refs[deviceId]! > 1) return;
+        _refs += 1;
+        if (_refs > 1) return;
 
-        _ensureStateSubscription(deviceId);
+        _ensureStateSubscription();
 
-        final cached = _last[deviceId];
+        final cached = _last;
         if (cached != null) {
           ctrl.add(cached);
         }
       },
       onCancel: () async {
-        _refs[deviceId] = (_refs[deviceId] ?? 1) - 1;
-        if (_refs[deviceId]! <= 0) {
-          _refs.remove(deviceId);
-          final c = _ctrls.remove(deviceId);
+        _refs -= 1;
+        if (_refs <= 0) {
+          _refs = 0;
+          final c = _ctrl;
+          _ctrl = null;
           if (c != null && !c.isClosed) await c.close();
         }
       },
     );
 
-    _ctrls[deviceId] = ctrl;
+    _ctrl = ctrl;
     return ctrl.stream;
   }
 
   // -------------------- MQTT subscriptions --------------------
 
-  void _ensureStateSubscription(String deviceId) {
-    if (_stateSubs.containsKey(deviceId)) return;
+  void _ensureStateSubscription() {
+    if (_stateSub != null) return;
 
-    final topic = _topics.state(deviceId);
-    _stateSubs[deviceId] = _mqtt.subscribeJson(topic).listen((msg) {
+    final topic = _topics.state(_deviceSn);
+    _stateSub = _mqtt.subscribeJson(topic).listen((msg) {
       final notif = decodeJsonRpcNotification(msg.payload);
       if (notif == null) return;
       if (notif.method != ScheduleJsonRpcCodec.methodState) return;
@@ -248,44 +245,42 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
       final snap = ScheduleJsonRpcCodec.decodeBody(data);
       if (snap == null) return;
 
-      _emitSnapshot(deviceId, snap);
+      _emitSnapshot(snap);
     });
   }
 
-  void _ensureRspSubscription(String deviceId) {
-    if (_rspSubs.containsKey(deviceId)) return;
+  void _ensureRspSubscription() {
+    if (_rspSub != null) return;
 
-    final topic = _topics.rsp(deviceId);
-    _rspSubs[deviceId] = _mqtt.subscribeJson(topic).listen((msg) {
-      final nextSeq = (_rspSeq[deviceId] ?? 0) + 1;
-      _rspSeq[deviceId] = nextSeq;
+    final topic = _topics.rsp(_deviceSn);
+    _rspSub = _mqtt.subscribeJson(topic).listen((msg) {
+      final nextSeq = _rspSeq + 1;
+      _rspSeq = nextSeq;
 
-      final ctrl = _rspCtrls[deviceId];
+      final ctrl = _rspCtrl;
       if (ctrl != null && !ctrl.isClosed) {
         ctrl.add(MapEntry(nextSeq, msg.payload));
       }
     });
   }
 
-  Stream<MapEntry<int, Map<String, dynamic>>> _rspEvents(String deviceId) {
-    final existing = _rspCtrls[deviceId];
+  Stream<MapEntry<int, Map<String, dynamic>>> _rspEvents() {
+    final existing = _rspCtrl;
     if (existing != null && !existing.isClosed) return existing.stream;
 
     final ctrl = StreamController<MapEntry<int, Map<String, dynamic>>>.broadcast(
-      onListen: () {
-        _ensureRspSubscription(deviceId);
-      },
+      onListen: _ensureRspSubscription,
     );
 
-    _rspCtrls[deviceId] = ctrl;
+    _rspCtrl = ctrl;
     return ctrl.stream;
   }
 
   // -------------------- JSON-RPC helpers --------------------
 
-  void _emitSnapshot(String deviceId, CalendarSnapshot snap) {
-    _last[deviceId] = snap;
-    final ctrl = _ctrls[deviceId];
+  void _emitSnapshot(CalendarSnapshot snap) {
+    _last = snap;
+    final ctrl = _ctrl;
     if (ctrl != null && !ctrl.isClosed) {
       ctrl.add(snap);
     }
@@ -297,10 +292,9 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
         ts: DateTime.now().millisecondsSinceEpoch,
       );
 
-  String _latestKey(String deviceId, String op) => '$deviceId:$op';
+  String _latestKey(String op) => op;
 
-  Future<JsonRpcResponse> _request(
-    String deviceId, {
+  Future<JsonRpcResponse> _request({
     required String method,
     required String reqId,
     required Map<String, dynamic>? data,
@@ -308,12 +302,12 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     Future<void>? cancel,
     Object? cancelError,
   }) async {
-    final cmdTopic = _topics.cmd(deviceId);
+    final cmdTopic = _topics.cmd(_deviceSn);
 
-    _ensureRspSubscription(deviceId);
-    final events = _rspEvents(deviceId);
+    _ensureRspSubscription();
+    final events = _rspEvents();
 
-    final startSeq = _rspSeq[deviceId] ?? 0;
+    final startSeq = _rspSeq;
     final waitRsp = firstWhereWithTimeout<MapEntry<int, Map<String, dynamic>>>(
       events,
       (e) => e.key > startSeq && e.value['id']?.toString() == reqId,

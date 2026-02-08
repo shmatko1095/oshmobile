@@ -6,5 +6,5 @@ class WatchScheduleStream {
 
   const WatchScheduleStream(this.repo);
 
-  Stream<CalendarSnapshot> call(String deviceSn) => repo.watchSnapshot(deviceSn);
+  Stream<CalendarSnapshot> call() => repo.watchSnapshot();
 }

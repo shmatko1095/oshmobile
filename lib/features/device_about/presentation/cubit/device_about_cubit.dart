@@ -7,13 +7,11 @@ part 'device_about_state.dart';
 
 class DeviceAboutCubit extends Cubit<DeviceAboutState> {
   final WatchDeviceAboutStream _watch;
-  final String deviceSn;
 
   StreamSubscription<Map<String, dynamic>>? _sub;
 
   DeviceAboutCubit({
     required WatchDeviceAboutStream watch,
-    required this.deviceSn,
   })  : _watch = watch,
         super(const DeviceAboutLoading());
 
@@ -21,7 +19,7 @@ class DeviceAboutCubit extends Cubit<DeviceAboutState> {
     if (isClosed) return;
 
     _sub?.cancel();
-    _sub = _watch(deviceSn).listen(
+    _sub = _watch().listen(
       (data) {
         emit(DeviceAboutReady(data: data, receivedAt: DateTime.now()));
       },

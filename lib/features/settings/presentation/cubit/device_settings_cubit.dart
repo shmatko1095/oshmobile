@@ -53,7 +53,7 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
     if (_watchStarted) return;
     _watchStarted = true;
 
-    _sub = _watchStream(deviceSn).listen((snap) {
+    _sub = _watchStream().listen((snap) {
       _applyReported(remote: snap);
     });
   }
@@ -72,7 +72,7 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
         }
 
         try {
-          final remote = await _fetchAll(deviceSn, forceGet: forceGet);
+          final remote = await _fetchAll(forceGet: forceGet);
           if (isClosed) return;
 
           final st = _readyOrNull();
@@ -139,7 +139,7 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
 
     return _ops.run(
       reqId: reqId,
-      op: () => _saveAll(deviceSn, desired, reqId: reqId),
+      op: () => _saveAll(desired, reqId: reqId),
       timeoutReason: 'Settings ACK timeout',
       errorReason: 'Failed to save settings',
       timeoutCommMessage: 'Operation timed out',

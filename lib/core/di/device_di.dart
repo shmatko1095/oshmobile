@@ -3,10 +3,19 @@ import 'dart:async';
 import 'package:get_it/get_it.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
+import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
+import 'package:oshmobile/core/utils/app_config.dart';
+import 'package:oshmobile/features/device_about/data/device_about_repository_mqtt.dart';
+import 'package:oshmobile/features/device_about/domain/repositories/device_about_repository.dart';
 import 'package:oshmobile/features/device_about/domain/usecases/watch_device_about_stream.dart';
 import 'package:oshmobile/features/device_about/presentation/cubit/device_about_cubit.dart';
+import 'package:oshmobile/features/devices/details/data/mqtt_control_repository.dart';
+import 'package:oshmobile/features/devices/details/data/mqtt_telemetry_repository.dart';
+import 'package:oshmobile/features/devices/details/data/telemetry_topics.dart';
 import 'package:oshmobile/features/devices/details/domain/queries/get_device_full.dart';
 import 'package:oshmobile/features/devices/details/domain/repositories/control_repository.dart';
+import 'package:oshmobile/features/devices/details/domain/repositories/telemetry_repository.dart';
 import 'package:oshmobile/features/devices/details/domain/usecases/disable_rt_stream.dart';
 import 'package:oshmobile/features/devices/details/domain/usecases/enable_rt_stream.dart';
 import 'package:oshmobile/features/devices/details/domain/usecases/subscribe_telemetry.dart';
@@ -17,11 +26,17 @@ import 'package:oshmobile/features/devices/details/presentation/cubit/device_hos
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
+import 'package:oshmobile/features/schedule/data/schedule_repository_mqtt.dart';
+import 'package:oshmobile/features/schedule/data/schedule_topics.dart';
+import 'package:oshmobile/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/fetch_schedule_all.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/save_schedule_all.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/set_schedule_mode.dart';
 import 'package:oshmobile/features/schedule/domain/usecases/watch_schedule_stream.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
+import 'package:oshmobile/features/settings/data/settings_repository_mqtt.dart';
+import 'package:oshmobile/features/settings/data/settings_topics.dart';
+import 'package:oshmobile/features/settings/domain/repositories/settings_repository.dart';
 import 'package:oshmobile/features/settings/domain/usecases/fetch_settings_all.dart';
 import 'package:oshmobile/features/settings/domain/usecases/save_settings_all.dart';
 import 'package:oshmobile/features/settings/domain/usecases/watch_settings_stream.dart';
@@ -97,6 +112,70 @@ class DeviceDi {
 
     getIt.registerSingleton<DeviceContext>(ctx);
 
+    // ------------ Device-scoped MQTT repositories & usecases ------------
+
+    // Device control (commands + RT mode).
+    getIt.registerLazySingleton<ControlRepository>(
+      () => MqttControlRepositoryImpl(
+        mqtt: getIt<DeviceMqttRepo>(),
+        tenantId: getIt<AppConfig>().devicesTenantId,
+        deviceSn: ctx.deviceSn,
+      ),
+    );
+    getIt.registerLazySingleton<EnableRtStream>(() => EnableRtStream(getIt<ControlRepository>()));
+    getIt.registerLazySingleton<DisableRtStream>(() => DisableRtStream(getIt<ControlRepository>()));
+
+    // Telemetry/state.
+    getIt.registerLazySingleton<TelemetryRepository>(
+      () => MqttTelemetryRepositoryImpl(
+        mqtt: getIt<DeviceMqttRepo>(),
+        topics: getIt<TelemetryTopics>(),
+        deviceSn: ctx.deviceSn,
+      ),
+      dispose: (r) {
+        if (r is MqttTelemetryRepositoryImpl) r.dispose();
+      },
+    );
+    getIt.registerLazySingleton<SubscribeTelemetry>(() => SubscribeTelemetry(getIt<TelemetryRepository>()));
+    getIt.registerLazySingleton<UnsubscribeTelemetry>(() => UnsubscribeTelemetry(getIt<TelemetryRepository>()));
+    getIt.registerLazySingleton<WatchTelemetry>(() => WatchTelemetry(getIt<TelemetryRepository>()));
+
+    // Schedule.
+    getIt.registerLazySingleton<ScheduleRepository>(
+      () => ScheduleRepositoryMqtt(getIt<DeviceMqttRepo>(), getIt<ScheduleTopics>(), ctx.deviceSn),
+      dispose: (r) {
+        if (r is ScheduleRepositoryMqtt) r.dispose();
+      },
+    );
+    getIt.registerLazySingleton<FetchScheduleAll>(() => FetchScheduleAll(getIt<ScheduleRepository>()));
+    getIt.registerLazySingleton<SaveScheduleAll>(() => SaveScheduleAll(getIt<ScheduleRepository>()));
+    getIt.registerLazySingleton<SetScheduleMode>(() => SetScheduleMode(getIt<ScheduleRepository>()));
+    getIt.registerLazySingleton<WatchScheduleStream>(() => WatchScheduleStream(getIt<ScheduleRepository>()));
+
+    // Settings.
+    getIt.registerLazySingleton<SettingsRepository>(
+      () => SettingsRepositoryMqtt(getIt<DeviceMqttRepo>(), getIt<SettingsTopics>(), ctx.deviceSn),
+      dispose: (r) {
+        if (r is SettingsRepositoryMqtt) r.dispose();
+      },
+    );
+    getIt.registerLazySingleton<FetchSettingsAll>(() => FetchSettingsAll(getIt<SettingsRepository>()));
+    getIt.registerLazySingleton<SaveSettingsAll>(() => SaveSettingsAll(getIt<SettingsRepository>()));
+    getIt.registerLazySingleton<WatchSettingsStream>(() => WatchSettingsStream(getIt<SettingsRepository>()));
+
+    // Device about (raw device state).
+    getIt.registerLazySingleton<DeviceAboutRepository>(
+      () => DeviceAboutRepositoryMqtt(
+        mqtt: getIt<DeviceMqttRepo>(),
+        topics: getIt<DeviceMqttTopicsV1>(),
+        deviceSn: ctx.deviceSn,
+      ),
+      dispose: (r) {
+        if (r is DeviceAboutRepositoryMqtt) r.dispose();
+      },
+    );
+    getIt.registerLazySingleton<WatchDeviceAboutStream>(() => WatchDeviceAboutStream(getIt<DeviceAboutRepository>()));
+
     // ------------ Device-scoped cubits ------------
 
     getIt.registerLazySingleton<DeviceHostCubit>(
@@ -130,7 +209,6 @@ class DeviceDi {
     getIt.registerLazySingleton<DeviceActionsCubit>(
       () => DeviceActionsCubit(
         control: getIt<ControlRepository>(),
-        deviceSn: ctx.deviceSn,
       ),
       dispose: (c) => unawaited(c.close()),
     );
@@ -164,7 +242,6 @@ class DeviceDi {
     getIt.registerLazySingleton<DeviceAboutCubit>(
       () => DeviceAboutCubit(
         watch: getIt<WatchDeviceAboutStream>(),
-        deviceSn: ctx.deviceSn,
       ),
       dispose: (c) => unawaited(c.close()),
     );

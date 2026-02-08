@@ -5,8 +5,8 @@ import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/domain/repositories/schedule_repository.dart';
 
 class ScheduleRepositoryMock implements ScheduleRepository {
-  final Map<String, CalendarSnapshot> _db = {};
-  final Map<String, StreamController<CalendarSnapshot>> _watchers = {};
+  CalendarSnapshot? _snap;
+  final StreamController<CalendarSnapshot> _watcher = StreamController<CalendarSnapshot>.broadcast();
 
   Future<void> _delay() async => Future<void>.delayed(const Duration(milliseconds: 150));
 
@@ -21,40 +21,39 @@ class ScheduleRepositoryMock implements ScheduleRepository {
         },
       );
 
+  CalendarSnapshot _current() => _snap ??= _empty();
+
   @override
-  Future<CalendarSnapshot> fetchAll(String deviceSn, {bool forceGet = false}) async {
+  Future<CalendarSnapshot> fetchAll({bool forceGet = false}) async {
     await _delay();
-    return _db[deviceSn] ?? _empty();
+    return _current();
   }
 
   @override
-  Future<void> saveAll(String deviceSn, CalendarSnapshot snapshot, {String? reqId}) async {
+  Future<void> saveAll(CalendarSnapshot snapshot, {String? reqId}) async {
     await _delay();
-    _db[deviceSn] = snapshot;
-    _emit(deviceSn, snapshot);
+    _snap = snapshot;
+    _emit(snapshot);
   }
 
   @override
-  Stream<CalendarSnapshot> watchSnapshot(String deviceSn) {
-    final c = _watchers.putIfAbsent(deviceSn, () => StreamController<CalendarSnapshot>.broadcast());
+  Stream<CalendarSnapshot> watchSnapshot() {
     // Emit retained
-    scheduleMicrotask(() => _emit(deviceSn, _db[deviceSn] ?? _empty()));
-    return c.stream;
+    scheduleMicrotask(() => _emit(_current()));
+    return _watcher.stream;
   }
 
   @override
-  Future<void> setMode(String deviceSn, CalendarMode mode, {String? reqId}) async {
+  Future<void> setMode(CalendarMode mode, {String? reqId}) async {
     await _delay();
-    final cur = _db[deviceSn] ?? _empty();
-    final next = cur.copyWith(mode: mode);
-    _db[deviceSn] = next;
-    _emit(deviceSn, next);
+    final next = _current().copyWith(mode: mode);
+    _snap = next;
+    _emit(next);
   }
 
-  void _emit(String deviceSn, CalendarSnapshot snap) {
-    final c = _watchers[deviceSn];
-    if (c != null && !c.isClosed) {
-      c.add(snap);
+  void _emit(CalendarSnapshot snap) {
+    if (!_watcher.isClosed) {
+      _watcher.add(snap);
     }
   }
 }

@@ -60,7 +60,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     if (_watchStarted) return;
     _watchStarted = true;
 
-    _snapSub = _watchSchedule(deviceSn).listen((snap) {
+    _snapSub = _watchSchedule().listen((snap) {
       _applyReported(remote: snap);
     });
   }
@@ -80,7 +80,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
         }
 
         try {
-          final snap = await _fetchAll(deviceSn, forceGet: forceGet);
+          final snap = await _fetchAll(forceGet: forceGet);
           if (isClosed) return;
 
           final st = _readyOrNull();
@@ -149,7 +149,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
 
     return _ops.run(
       reqId: reqId,
-      op: () => _saveAll(deviceSn, desired, reqId: reqId),
+      op: () => _saveAll(desired, reqId: reqId),
       timeoutReason: 'Schedule saveAll ACK timeout',
       errorReason: 'Failed to save schedule',
       timeoutCommMessage: 'Operation timed out',
@@ -221,7 +221,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     final runner = serialized ? _ops.run : _ops.runUnserialized;
     return runner(
       reqId: reqId,
-      op: () => _setMode(deviceSn, next, reqId: reqId),
+      op: () => _setMode(next, reqId: reqId),
       timeoutReason: 'Schedule mode ACK timeout',
       errorReason: 'Failed to set schedule mode',
       extraContext: const {},
