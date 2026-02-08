@@ -49,7 +49,6 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     }
   }
 
-
   @override
   Future<void> subscribe(String deviceId) async {
     if (_disposed) return;
@@ -72,14 +71,6 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     subs.add(
       _mqtt.subscribeJson(_topics.telemetryAll(deviceId)).listen((msg) {
         final alias = _extractAliasAfter(msg.topic, 'telemetry') ?? 'telemetry';
-        ctrl.add({alias: msg.payload});
-      }),
-    );
-
-    // 3) optional service/device/telemetry/{deviceId}/*
-    subs.add(
-      _mqtt.subscribeJson(_topics.serviceAll(deviceId)).listen((msg) {
-        final alias = _extractAliasAfter(msg.topic, deviceId) ?? 'telemetry';
         ctrl.add({alias: msg.payload});
       }),
     );

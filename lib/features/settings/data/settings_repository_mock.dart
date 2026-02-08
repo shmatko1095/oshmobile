@@ -17,7 +17,7 @@ class SettingsRepositoryMock implements SettingsRepository {
   final Duration latency;
 
   final Map<String, SettingsSnapshot> _store = {};
-  final Map<String, StreamController<MapEntry<String?, SettingsSnapshot>>> _controllers = {};
+  final Map<String, StreamController<SettingsSnapshot>> _controllers = {};
 
   SettingsRepositoryMock({this.latency = const Duration(milliseconds: 150)});
 
@@ -36,7 +36,7 @@ class SettingsRepositoryMock implements SettingsRepository {
     // Also push initial snapshot to watchers, if any.
     final ctrl = _controllers[deviceSn];
     if (ctrl != null && !ctrl.isClosed) {
-      ctrl.add(MapEntry<String?, SettingsSnapshot>(null, initial));
+      ctrl.add(initial);
     }
 
     return initial;
@@ -54,27 +54,26 @@ class SettingsRepositoryMock implements SettingsRepository {
 
     final ctrl = _controllers[deviceSn];
     if (ctrl != null && !ctrl.isClosed) {
-      // Emit updated snapshot with applied reqId to simulate ACK.
-      ctrl.add(MapEntry<String?, SettingsSnapshot>(reqId, snapshot));
+      ctrl.add(snapshot);
     }
   }
 
   @override
-  Stream<MapEntry<String?, SettingsSnapshot>> watchSnapshot(String deviceSn) {
+  Stream<SettingsSnapshot> watchSnapshot(String deviceSn) {
     final existing = _controllers[deviceSn];
     if (existing != null && !existing.isClosed) {
       return existing.stream;
     }
 
     // Declare first, assign later so we can safely use it in onListen.
-    late final StreamController<MapEntry<String?, SettingsSnapshot>> ctrl;
+    late final StreamController<SettingsSnapshot> ctrl;
 
-    ctrl = StreamController<MapEntry<String?, SettingsSnapshot>>.broadcast(
+    ctrl = StreamController<SettingsSnapshot>.broadcast(
       onListen: () {
         // On first listener, ensure we have an initial snapshot and emit it.
         final snap = _store[deviceSn] ?? _initialSnapshotFor(deviceSn);
         _store[deviceSn] = snap;
-        ctrl.add(MapEntry<String?, SettingsSnapshot>(null, snap));
+        ctrl.add(snap);
       },
     );
 

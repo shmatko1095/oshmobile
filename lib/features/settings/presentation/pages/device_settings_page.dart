@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
+import 'package:oshmobile/features/device_about/presentation/cubit/device_about_cubit.dart';
+import 'package:oshmobile/features/device_about/presentation/pages/device_about_page.dart';
 import 'package:oshmobile/features/devices/details/presentation/models/osh_config.dart';
 import 'package:oshmobile/features/devices/details/presentation/models/settings_schema.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
@@ -172,7 +174,7 @@ class DeviceSettingsPage extends StatelessWidget {
           case DeviceSettingsError(:final message):
             return _buildError(context, message);
           case DeviceSettingsReady(:final snapshot):
-            return _buildSettingsList(context, schema, snapshot);
+            return _buildSettingsList(context, schema, snapshot, device);
         }
       },
     );
@@ -228,20 +230,23 @@ class DeviceSettingsPage extends StatelessWidget {
     BuildContext context,
     SettingsSchema schema,
     SettingsSnapshot snapshot,
+    Device device,
   ) {
     final theme = Theme.of(context);
     final groups = schema.groups.toList();
-    if (groups.isEmpty) {
-      return const Center(child: Text('No settings groups defined.'));
-    }
+    final itemCount = groups.length + 1; // extra About card
 
     return RefreshIndicator(
       onRefresh: () => context.read<DeviceSettingsCubit>().refresh(forceGet: true),
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-        itemCount: groups.length,
+        itemCount: itemCount,
         itemBuilder: (ctx, index) {
+          if (index == groups.length) {
+            return _buildAboutCard(context, theme, device);
+          }
+
           final group = groups[index];
           final fields = schema.fieldsInGroup(group.id).toList();
           if (fields.isEmpty) return const SizedBox.shrink();
@@ -279,6 +284,35 @@ class DeviceSettingsPage extends StatelessWidget {
                     showDivider: i != fields.length - 1,
                   ),
               ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildAboutCard(BuildContext context, ThemeData theme, Device device) {
+    return Card(
+      margin: const EdgeInsets.only(top: 12, bottom: 0),
+      elevation: 0,
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.dividerColor.withValues(alpha: 0.5),
+        ),
+      ),
+      child: ListTile(
+        title: const Text('About'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () {
+          final aboutCubit = context.read<DeviceAboutCubit>();
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => BlocProvider.value(
+                value: aboutCubit,
+                child: DeviceAboutPage(deviceSn: device.sn),
+              ),
             ),
           );
         },

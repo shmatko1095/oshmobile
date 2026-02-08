@@ -31,7 +31,7 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
   late final SerialExecutor _serial = SerialExecutor();
   late final MqttOpRunner _ops = MqttOpRunner(deviceSn: deviceSn, serial: _serial, comm: _comm);
 
-  StreamSubscription<MapEntry<String?, SettingsSnapshot>>? _sub;
+  StreamSubscription<SettingsSnapshot>? _sub;
   bool _watchStarted = false;
 
   static const _eq = DeepCollectionEquality();
@@ -53,8 +53,8 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
     if (_watchStarted) return;
     _watchStarted = true;
 
-    _sub = _watchStream(deviceSn).listen((entry) {
-      _applyReported(appliedReqId: entry.key, remote: entry.value);
+    _sub = _watchStream(deviceSn).listen((snap) {
+      _applyReported(remote: snap);
     });
   }
 
@@ -133,7 +133,6 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
 
     emit(st.copyWith(
       saving: true,
-      pending: SettingsPending(reqId: reqId, kind: SettingsPendingKind.saveAll),
       queued: st.queued.clearSaveAll(),
       flash: null,
     ));
@@ -150,27 +149,27 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
         final cur = _readyOrNull();
         if (cur == null) return;
 
-        emit(_rebaseOnNewBase(cur, desired).copyWith(saving: false, clearPending: true, flash: null));
+        emit(_rebaseOnNewBase(cur, desired).copyWith(saving: false, flash: null));
       },
       onTimeout: () {
         if (isClosed) return;
         final cur = _readyOrNull();
         if (cur == null) return;
 
-        emit(cur.copyWith(saving: false, clearPending: true, flash: 'Operation timed out'));
+        emit(cur.copyWith(saving: false, flash: 'Operation timed out'));
       },
       onError: (_) {
         if (isClosed) return;
         final cur = _readyOrNull();
         if (cur == null) return;
 
-        emit(cur.copyWith(saving: false, clearPending: true, flash: 'Failed to save settings'));
+        emit(cur.copyWith(saving: false, flash: 'Failed to save settings'));
       },
       onFinally: _flushQueuedIfAny,
     );
   }
 
-  void _applyReported({required String? appliedReqId, required SettingsSnapshot remote}) {
+  void _applyReported({required SettingsSnapshot remote}) {
     if (isClosed) return;
 
     final st = _readyOrNull();
@@ -179,19 +178,7 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
       return;
     }
 
-    final rebased = _rebaseOnNewBase(st, remote);
-
-    final isAckForPending = appliedReqId != null && st.pending?.reqId == appliedReqId;
-    if (isAckForPending) {
-      _comm.complete(appliedReqId);
-    }
-
-    emit(rebased.copyWith(
-      saving: isAckForPending ? false : rebased.saving,
-      clearPending: isAckForPending,
-    ));
-
-    if (isAckForPending) _flushQueuedIfAny();
+    emit(_rebaseOnNewBase(st, remote));
   }
 
   void _flushQueuedIfAny() {

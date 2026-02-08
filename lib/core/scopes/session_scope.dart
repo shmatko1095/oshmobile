@@ -54,6 +54,7 @@ class _SessionScopeState extends State<SessionScope> {
 
   // Track last token to avoid reconnect loops on the same creds.
   String? _lastToken;
+  AppLifecycleState _lastLifecycle = AppLifecycleState.resumed;
 
   @override
   void initState() {
@@ -111,6 +112,7 @@ class _SessionScopeState extends State<SessionScope> {
     if (!_ready) return;
 
     final s = life.state;
+    _lastLifecycle = s;
 
     if (s == AppLifecycleState.paused || s == AppLifecycleState.inactive || s == AppLifecycleState.detached) {
       unawaited(_safeDisconnect());
@@ -133,11 +135,36 @@ class _SessionScopeState extends State<SessionScope> {
   /// mqtt_client may still report "connected" even though the socket is dead.
   Future<void> _safeResume() async {
     _resumeInFlight ??= () async {
+      // Ensure any in-flight disconnect completes first.
+      if (_disconnectInFlight != null) {
+        try {
+          await _disconnectInFlight;
+        } catch (_) {}
+      }
+
       final creds = _readAuthCredsOrFallback();
       if (creds == null) return;
 
-      // Force handshake. This bypasses "isConnected" stale state.
-      await _mqtt.updateCredentials(userId: creds.$1, token: creds.$2);
+      final delays = <Duration>[
+        Duration.zero,
+        const Duration(seconds: 1),
+        const Duration(seconds: 2),
+        const Duration(seconds: 4),
+      ];
+
+      for (final delay in delays) {
+        if (!mounted || _lastLifecycle != AppLifecycleState.resumed) return;
+        if (delay > Duration.zero) {
+          await Future.delayed(delay);
+        }
+        if (!mounted || _lastLifecycle != AppLifecycleState.resumed) return;
+        if (_mqtt.isConnected) return;
+
+        // Force handshake. This bypasses "isConnected" stale state.
+        await _mqtt.updateCredentials(userId: creds.$1, token: creds.$2);
+
+        if (_mqtt.isConnected) return;
+      }
     }()
         .whenComplete(() {
       _resumeInFlight = null;

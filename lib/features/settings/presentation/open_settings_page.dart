@@ -5,6 +5,7 @@ import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
+import 'package:oshmobile/features/device_about/presentation/cubit/device_about_cubit.dart';
 import 'package:oshmobile/features/settings/presentation/cubit/device_settings_cubit.dart';
 import 'package:oshmobile/features/settings/presentation/pages/device_settings_page.dart';
 
@@ -13,12 +14,14 @@ class DeviceSettingsNavigator {
     if (!hostContext.mounted) return;
 
     DeviceSettingsCubit settingsCubit;
+    DeviceAboutCubit aboutCubit;
     try {
       settingsCubit = hostContext.read<DeviceSettingsCubit>();
+      aboutCubit = hostContext.read<DeviceAboutCubit>();
     } catch (_) {
       SnackBarUtils.showFail(
         context: hostContext,
-        content: 'Settings cubit is not available in the widget tree.',
+        content: 'Settings/about cubit is not available in the widget tree.',
       );
       return;
     }
@@ -45,8 +48,11 @@ class DeviceSettingsNavigator {
 
     Navigator.of(hostContext).push(
       MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: settingsCubit,
+        builder: (_) => MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: settingsCubit),
+            BlocProvider.value(value: aboutCubit),
+          ],
           child: DeviceSettingsPage(
             device: device,
             config: config,

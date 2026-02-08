@@ -7,7 +7,11 @@ import 'package:oshmobile/core/common/services/mqtt_session_controller.dart';
 import 'package:oshmobile/core/network/mqtt/app_device_id_provider.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo_impl.dart';
+import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/utils/app_config.dart';
+import 'package:oshmobile/features/device_about/data/device_about_repository_mqtt.dart';
+import 'package:oshmobile/features/device_about/domain/repositories/device_about_repository.dart';
+import 'package:oshmobile/features/device_about/domain/usecases/watch_device_about_stream.dart';
 import 'package:oshmobile/features/devices/details/data/mqtt_control_repository.dart';
 import 'package:oshmobile/features/devices/details/data/mqtt_telemetry_repository.dart';
 import 'package:oshmobile/features/devices/details/data/telemetry_topics.dart';
@@ -217,6 +221,15 @@ class SessionDi {
     getIt.registerLazySingleton<FetchSettingsAll>(() => FetchSettingsAll(getIt<SettingsRepository>()));
     getIt.registerLazySingleton<SaveSettingsAll>(() => SaveSettingsAll(getIt<SettingsRepository>()));
     getIt.registerLazySingleton<WatchSettingsStream>(() => WatchSettingsStream(getIt<SettingsRepository>()));
+
+    // Device about (raw device state).
+    getIt.registerLazySingleton<DeviceAboutRepository>(
+      () => DeviceAboutRepositoryMqtt(getIt<DeviceMqttRepo>(), getIt<DeviceMqttTopicsV1>()),
+      dispose: (r) {
+        if (r is DeviceAboutRepositoryMqtt) r.dispose();
+      },
+    );
+    getIt.registerLazySingleton<WatchDeviceAboutStream>(() => WatchDeviceAboutStream(getIt<DeviceAboutRepository>()));
 
     // ---------- HomeCubit must be session-scoped ----------
     getIt.registerLazySingleton<HomeCubit>(

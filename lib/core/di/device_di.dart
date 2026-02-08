@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:get_it/get_it.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/features/device_about/domain/usecases/watch_device_about_stream.dart';
+import 'package:oshmobile/features/device_about/presentation/cubit/device_about_cubit.dart';
 import 'package:oshmobile/features/devices/details/domain/queries/get_device_full.dart';
 import 'package:oshmobile/features/devices/details/domain/repositories/control_repository.dart';
 import 'package:oshmobile/features/devices/details/domain/usecases/disable_rt_stream.dart';
@@ -154,6 +156,15 @@ class DeviceDi {
         saveAll: getIt<SaveSettingsAll>(),
         watchStream: getIt<WatchSettingsStream>(),
         comm: getIt<MqttCommCubit>(),
+      ),
+      dispose: (c) => unawaited(c.close()),
+    );
+
+    // Device about (raw device state).
+    getIt.registerLazySingleton<DeviceAboutCubit>(
+      () => DeviceAboutCubit(
+        watch: getIt<WatchDeviceAboutStream>(),
+        deviceSn: ctx.deviceSn,
       ),
       dispose: (c) => unawaited(c.close()),
     );

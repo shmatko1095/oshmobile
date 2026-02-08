@@ -6,5 +6,5 @@ class WatchSettingsStream {
 
   const WatchSettingsStream(this.repo);
 
-  Stream<MapEntry<String?, SettingsSnapshot>> call(String deviceSn) => repo.watchSnapshot(deviceSn);
+  Stream<SettingsSnapshot> call(String deviceSn) => repo.watchSnapshot(deviceSn);
 }

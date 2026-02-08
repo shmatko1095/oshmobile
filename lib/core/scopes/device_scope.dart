@@ -13,6 +13,7 @@ import 'package:oshmobile/features/devices/details/presentation/cubit/device_pag
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/pages/device_host_body.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_presenter.dart';
+import 'package:oshmobile/features/device_about/presentation/cubit/device_about_cubit.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 import 'package:oshmobile/features/settings/presentation/cubit/device_settings_cubit.dart';
 
@@ -54,6 +55,7 @@ class _DeviceScopeState extends State<DeviceScope> {
   late final DeviceActionsCubit _actions;
   late final DeviceScheduleCubit _schedule;
   late final DeviceSettingsCubit _settings;
+  late final DeviceAboutCubit _about;
 
   late final DevicePresenterRegistry _presenters;
 
@@ -87,6 +89,7 @@ class _DeviceScopeState extends State<DeviceScope> {
       _actions = sl<DeviceActionsCubit>();
       _schedule = sl<DeviceScheduleCubit>();
       _settings = sl<DeviceSettingsCubit>();
+      _about = sl<DeviceAboutCubit>();
       _presenters = sl<DevicePresenterRegistry>();
 
       // 3) Start background flows.
@@ -136,6 +139,7 @@ class _DeviceScopeState extends State<DeviceScope> {
         BlocProvider.value(value: _actions),
         BlocProvider.value(value: _schedule),
         BlocProvider.value(value: _settings),
+        BlocProvider.value(value: _about),
       ],
       child: DeviceHostBody(
         deviceId: _ctx.deviceId,

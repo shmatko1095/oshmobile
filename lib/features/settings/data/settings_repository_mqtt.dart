@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
+import 'package:oshmobile/core/utils/latest_wins_gate.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/core/utils/stream_waiters.dart';
+import 'package:oshmobile/core/utils/superseded_exception.dart';
 import 'package:oshmobile/features/settings/data/settings_jsonrpc_codec.dart';
 import 'package:oshmobile/features/settings/data/settings_topics.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
@@ -15,7 +17,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
   final Duration timeout;
 
   // Snapshot watchers (UI).
-  final Map<String, StreamController<MapEntry<String?, SettingsSnapshot>>> _ctrls = {};
+  final Map<String, StreamController<SettingsSnapshot>> _ctrls = {};
   final Map<String, int> _refs = {};
 
   // One MQTT subscription per device for retained state.
@@ -28,6 +30,9 @@ class SettingsRepositoryMqtt implements SettingsRepository {
 
   // Last known snapshot per device.
   final Map<String, SettingsSnapshot> _last = {};
+
+  // Latest-wins gate for save operations.
+  final LatestWinsGate _latest = LatestWinsGate();
 
   bool _disposed = false;
 
@@ -58,6 +63,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     _refs.clear();
     _rspSeq.clear();
     _last.clear();
+    _latest.clear();
 
     for (final s in stateSubs) {
       try {
@@ -92,12 +98,12 @@ class SettingsRepositoryMqtt implements SettingsRepository {
       if (cached != null) return cached;
 
       try {
-        final entry = await firstWithTimeout<MapEntry<String?, SettingsSnapshot>>(
+        final snap = await firstWithTimeout<SettingsSnapshot>(
           watchSnapshot(deviceSn),
           timeout,
           timeoutMessage: 'Timeout waiting for settings state',
         );
-        return entry.value;
+        return snap;
       } on TimeoutException {
         // Fallback: explicit JSON-RPC get.
       }
@@ -116,7 +122,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     if (snap == null) {
       throw StateError('Invalid settings response');
     }
-    _emitSnapshot(deviceSn, snap, appliedReqId: null);
+    _emitSnapshot(deviceSn, snap);
     return snap;
   }
 
@@ -131,30 +137,38 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     final id = reqId ?? newReqId();
     final data = SettingsJsonRpcCodec.encodeBody(snapshot);
 
+    final latest = _latest.start(_latestKey(deviceSn, 'save'));
+
     final resp = await _request(
       deviceSn,
       method: SettingsJsonRpcCodec.methodSet,
       reqId: id,
       data: data,
       timeoutMessage: 'Timeout waiting for settings save response',
+      cancel: latest.cancelled,
+      cancelError: const SupersededException('Settings save superseded'),
     );
 
+    if (!_latest.isCurrent(latest)) {
+      throw const SupersededException('Settings save superseded');
+    }
+
     final snap = _snapshotFromResponse(resp);
-    if (snap != null) _emitSnapshot(deviceSn, snap, appliedReqId: id);
+    if (snap != null) _emitSnapshot(deviceSn, snap);
   }
 
   @override
-  Stream<MapEntry<String?, SettingsSnapshot>> watchSnapshot(String deviceSn) {
-    if (_disposed) return Stream<MapEntry<String?, SettingsSnapshot>>.empty();
+  Stream<SettingsSnapshot> watchSnapshot(String deviceSn) {
+    if (_disposed) return Stream<SettingsSnapshot>.empty();
 
     final existing = _ctrls[deviceSn];
     if (existing != null && !existing.isClosed) {
       return existing.stream;
     }
 
-    late final StreamController<MapEntry<String?, SettingsSnapshot>> ctrl;
+    late final StreamController<SettingsSnapshot> ctrl;
 
-    ctrl = StreamController<MapEntry<String?, SettingsSnapshot>>.broadcast(
+    ctrl = StreamController<SettingsSnapshot>.broadcast(
       onListen: () {
         _refs[deviceSn] = (_refs[deviceSn] ?? 0) + 1;
         if (_refs[deviceSn]! > 1) return;
@@ -163,7 +177,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
 
         final cached = _last[deviceSn];
         if (cached != null) {
-          ctrl.add(MapEntry(null, cached));
+          ctrl.add(cached);
         }
       },
       onCancel: () async {
@@ -199,7 +213,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
       if (data == null) return;
 
       final snap = SettingsJsonRpcCodec.decodeBody(data);
-      _emitSnapshot(deviceSn, snap, appliedReqId: null);
+      _emitSnapshot(deviceSn, snap);
     });
   }
 
@@ -234,11 +248,11 @@ class SettingsRepositoryMqtt implements SettingsRepository {
 
   // -------------------- JSON-RPC helpers --------------------
 
-  void _emitSnapshot(String deviceSn, SettingsSnapshot snap, {String? appliedReqId}) {
+  void _emitSnapshot(String deviceSn, SettingsSnapshot snap) {
     _last[deviceSn] = snap;
     final ctrl = _ctrls[deviceSn];
     if (ctrl != null && !ctrl.isClosed) {
-      ctrl.add(MapEntry(appliedReqId, snap));
+      ctrl.add(snap);
     }
   }
 
@@ -248,12 +262,16 @@ class SettingsRepositoryMqtt implements SettingsRepository {
         ts: DateTime.now().millisecondsSinceEpoch,
       );
 
+  String _latestKey(String deviceSn, String op) => '$deviceSn:$op';
+
   Future<JsonRpcResponse> _request(
     String deviceSn, {
     required String method,
     required String reqId,
     required Map<String, dynamic>? data,
     required String timeoutMessage,
+    Future<void>? cancel,
+    Object? cancelError,
   }) async {
     final cmdTopic = _topics.cmd(deviceSn);
 
@@ -266,6 +284,8 @@ class SettingsRepositoryMqtt implements SettingsRepository {
       (e) => e.key > startSeq && e.value['id']?.toString() == reqId,
       timeout,
       timeoutMessage: timeoutMessage,
+      cancel: cancel,
+      cancelError: cancelError,
     );
 
     final payload = buildJsonRpcRequest(
