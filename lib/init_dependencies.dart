@@ -7,8 +7,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:keycloak_wrapper/keycloak_wrapper.dart';
-import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/cubits/app/app_lifecycle_cubit.dart';
+import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/core/api_authenticator.dart';
@@ -245,8 +245,8 @@ void _initDevicesFeature() {
   // MQTT-based repos/usecases must be session-scoped (see SessionDi).
 
   locator
-    ..registerLazySingleton<TelemetryTopics>(() => TelemetryTopics(locator<AppConfig>().devicesTenantId))
     ..registerLazySingleton<DeviceMqttTopicsV1>(() => DeviceMqttTopicsV1(locator<AppConfig>().devicesTenantId))
+    ..registerLazySingleton<TelemetryTopics>(() => TelemetryTopics(locator<DeviceMqttTopicsV1>()))
     ..registerLazySingleton<ScheduleTopics>(() => ScheduleTopics(locator<DeviceMqttTopicsV1>()))
     ..registerLazySingleton<SettingsTopics>(() => SettingsTopics(locator<DeviceMqttTopicsV1>()))
     // Temporary device config loader (HTTP-based, safe to keep global).

@@ -1,11 +1,12 @@
 import 'dart:async';
 
-import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
+import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/features/device_about/domain/repositories/device_about_repository.dart';
+import 'package:oshmobile/features/device_state/data/device_state_jsonrpc_codec.dart';
 
 class DeviceAboutRepositoryMqtt implements DeviceAboutRepository {
-  final DeviceMqttRepo _mqtt;
+  final JsonRpcClient _jrpc;
   final DeviceMqttTopicsV1 _topics;
   final String _deviceSn;
 
@@ -17,10 +18,10 @@ class DeviceAboutRepositoryMqtt implements DeviceAboutRepository {
   bool _disposed = false;
 
   DeviceAboutRepositoryMqtt({
-    required DeviceMqttRepo mqtt,
+    required JsonRpcClient jrpc,
     required DeviceMqttTopicsV1 topics,
     required String deviceSn,
-  })  : _mqtt = mqtt,
+  })  : _jrpc = jrpc,
         _topics = topics,
         _deviceSn = deviceSn;
 
@@ -103,12 +104,21 @@ class DeviceAboutRepositoryMqtt implements DeviceAboutRepository {
     if (_sub != null) return;
 
     final topic = _topics.state(_deviceSn, 'device');
-    _sub = _mqtt.subscribeJson(topic).listen(
-      (msg) {
-        _last = msg.payload;
+    _sub = _jrpc
+        .notifications(
+      topic,
+      method: DeviceStateJsonRpcCodec.methodState,
+      schema: DeviceStateJsonRpcCodec.schema,
+    )
+        .listen(
+      (notif) {
+        final data = notif.data;
+        if (data == null) return;
+
+        _last = data;
         final ctrl = _ctrl;
         if (ctrl != null && !ctrl.isClosed) {
-          ctrl.add(msg.payload);
+          ctrl.add(data);
         }
       },
       cancelOnError: false,

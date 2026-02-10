@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
@@ -14,13 +13,13 @@ class LoadFactorCard extends StatelessWidget {
   });
 
   /// Prefer this if your backend provides “duty” directly (0..1 or 0..100).
-  final Signal? percentBind;
+  final String? percentBind;
 
   /// Or provide hours the heater was ON in last 24h.
-  final Signal? hoursBind;
+  final String? hoursBind;
 
   /// Or provide seconds the heater was ON in last 24h.
-  final Signal? secondsBind;
+  final String? secondsBind;
 
   double? _computePercent(DeviceStateCubit c) {
     if (percentBind != null) {

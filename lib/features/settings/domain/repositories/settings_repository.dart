@@ -13,6 +13,9 @@ abstract class SettingsRepository {
   /// Save full snapshot atomically (JSON-RPC).
   Future<void> saveAll(SettingsSnapshot snapshot, {String? reqId});
 
+  /// Patch selected settings fields (JSON-RPC).
+  Future<void> patch(Map<String, dynamic> patch, {String? reqId});
+
   /// Stream of reported updates.
   Stream<SettingsSnapshot> watchSnapshot();
 }

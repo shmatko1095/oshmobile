@@ -18,7 +18,7 @@ class Telemetry {
     required this.runTimeStat,
   });
 
-  /// Alias name you can use for Signal Telemetry('telemetry')
+  /// Alias name used for telemetry bundle in the state map.
   static const alias = 'telemetry';
 
   Telemetry copyWith({

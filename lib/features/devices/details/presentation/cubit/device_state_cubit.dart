@@ -2,9 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
-import 'package:oshmobile/core/network/mqtt/signal_command.dart';
-import 'package:oshmobile/features/devices/details/domain/usecases/disable_rt_stream.dart';
-import 'package:oshmobile/features/devices/details/domain/usecases/enable_rt_stream.dart';
 import 'package:oshmobile/features/devices/details/domain/usecases/subscribe_telemetry.dart';
 import 'package:oshmobile/features/devices/details/domain/usecases/unsubscribe_telemetry.dart';
 import 'package:oshmobile/features/devices/details/domain/usecases/watch_telemetry.dart';
@@ -26,10 +23,10 @@ class DeviceStateState {
 
   factory DeviceStateState.initial() => const DeviceStateState(data: {});
 
-  dynamic getDynamic(Signal<dynamic> s) => data[s.alias];
+  dynamic getDynamic(String key) => data[key];
 
-  T? get<T>(Signal<T> s) {
-    final v = data[s.alias];
+  T? get<T>(String key) {
+    final v = data[key];
     return v is T ? v : null;
   }
 
@@ -74,11 +71,7 @@ class DeviceStateCubit extends Cubit<DeviceStateState> {
   final SubscribeTelemetry _subscribe;
   final UnsubscribeTelemetry _unsubscribe;
   final WatchTelemetry _watch;
-  final EnableRtStream _enableRt;
-  final DisableRtStream _disableRt;
-
   final String deviceSn;
-  final Duration rtInterval;
 
   StreamSubscription<Map<String, dynamic>>? _sub;
 
@@ -87,14 +80,9 @@ class DeviceStateCubit extends Cubit<DeviceStateState> {
     required SubscribeTelemetry subscribe,
     required UnsubscribeTelemetry unsubscribe,
     required WatchTelemetry watch,
-    required EnableRtStream enableRt,
-    required DisableRtStream disableRt,
-    this.rtInterval = const Duration(seconds: 1),
   })  : _subscribe = subscribe,
         _unsubscribe = unsubscribe,
         _watch = watch,
-        _enableRt = enableRt,
-        _disableRt = disableRt,
         super(DeviceStateState.initial());
 
   /// Call once after creation (from DeviceScope).
@@ -102,19 +90,6 @@ class DeviceStateCubit extends Cubit<DeviceStateState> {
     // if (isClosed) return;
 
     emit(state.copyWith(deviceId: deviceSn, status: DeviceLiveStatus.connecting));
-
-    // Enable RT stream (best-effort).
-    try {
-      await _enableRt(interval: rtInterval);
-    } catch (e, st) {
-      unawaited(OshCrashReporter.logNonFatal(
-        e,
-        st,
-        reason: 'Failed to enable RT stream',
-        context: {'deviceSn': deviceSn},
-      ));
-    }
-    // if (isClosed) return;
 
     // Subscribe (best-effort).
     try {
@@ -153,9 +128,6 @@ class DeviceStateCubit extends Cubit<DeviceStateState> {
     _sub = null;
 
     // Best-effort cleanup on device dispose.
-    try {
-      await _disableRt();
-    } catch (_) {}
     try {
       await _unsubscribe();
     } catch (_) {}

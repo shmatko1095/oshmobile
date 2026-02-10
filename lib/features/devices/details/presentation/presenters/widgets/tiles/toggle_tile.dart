@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 
 class ToggleTile extends StatelessWidget {
   final String title;
-  final Signal bind;
-  final void Function(BuildContext, bool) onChanged;
+  final String bind;
+  final void Function(BuildContext, bool)? onChanged;
 
   const ToggleTile({
     super.key,
@@ -18,6 +17,7 @@ class ToggleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool value = (context.select<DeviceStateCubit, dynamic>((c) => c.state.get(bind)) as bool?) ?? false;
+    final bool enabled = onChanged != null;
 
     return Card(
       color: Colors.transparent,
@@ -26,7 +26,7 @@ class ToggleTile extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => onChanged(context, !value),
+        onTap: enabled ? () => onChanged!(context, !value) : null,
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
@@ -65,7 +65,7 @@ class ToggleTile extends StatelessWidget {
               // switch
               Switch(
                 value: value,
-                onChanged: (v) => onChanged(context, v),
+                onChanged: enabled ? (v) => onChanged!(context, v) : null,
                 activeThumbColor: Colors.white,
                 activeTrackColor: Colors.white.withValues(alpha: 0.35),
                 inactiveThumbColor: Colors.white70,

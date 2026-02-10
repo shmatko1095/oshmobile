@@ -1,10 +1,23 @@
+import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
+
 class TelemetryTopics {
-  TelemetryTopics(this.tenantId);
+  static const String domain = 'telemetry';
+  static const String sensorsDomain = 'sensors';
+  static const String deviceDomain = 'device';
 
-  final String tenantId;
+  TelemetryTopics(this._topics);
 
-  String state(String deviceId) => 'v1/tenants/$tenantId/devices/$deviceId/state';
+  final DeviceMqttTopicsV1 _topics;
 
-  /// All telemetry under device (alias after `telemetry/`).
-  String telemetryAll(String deviceId) => 'v1/tenants/$tenantId/devices/$deviceId/telemetry/#';
+  String cmd(String deviceId) => _topics.cmd(deviceId, domain);
+
+  String rsp(String deviceId) => _topics.rsp(deviceId);
+
+  String stateTelemetry(String deviceId) => _topics.state(deviceId, domain);
+
+  String stateSensors(String deviceId) => _topics.state(deviceId, sensorsDomain);
+
+  String stateDevice(String deviceId) => _topics.state(deviceId, deviceDomain);
+
+  String evtTelemetry(String deviceId) => _topics.evt(deviceId, domain);
 }

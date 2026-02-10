@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/network/mqtt/signal_command.dart';
-import 'package:oshmobile/features/devices/details/domain/models/telemetry.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -18,8 +16,8 @@ class TemperatureMinimalPanel extends StatelessWidget {
     this.borderRadius = 20,
   });
 
-  final Signal currentBind;
-  final Signal? heaterEnabledBind;
+  final String currentBind;
+  final String? heaterEnabledBind;
 
   final String unit;
   final double? height;
@@ -59,8 +57,7 @@ class TemperatureMinimalPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
 
-    final num? current = context
-        .select<DeviceStateCubit, num?>((c) => _asNum(Telemetry.maybeFrom(c.state.getDynamic(currentBind))?.chipTemp));
+    final num? current = context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.getDynamic(currentBind)));
     final num? target = context
         .select<DeviceScheduleCubit, num?>((c) => c.currentPoint() != null ? _asNum(c.currentPoint()!.max) : null);
     final num? nextVal =

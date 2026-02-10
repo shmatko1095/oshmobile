@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 
 class DeltaTCard extends StatelessWidget {
@@ -12,8 +11,8 @@ class DeltaTCard extends StatelessWidget {
     this.title = 'ΔT (out − in)',
   });
 
-  final Signal inletBind;
-  final Signal outletBind;
+  final String inletBind;
+  final String outletBind;
   final String unit;
   final String title;
 

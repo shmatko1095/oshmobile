@@ -5,23 +5,18 @@ import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
-import 'package:oshmobile/core/utils/app_config.dart';
+import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/features/device_about/data/device_about_repository_mqtt.dart';
 import 'package:oshmobile/features/device_about/domain/repositories/device_about_repository.dart';
 import 'package:oshmobile/features/device_about/domain/usecases/watch_device_about_stream.dart';
 import 'package:oshmobile/features/device_about/presentation/cubit/device_about_cubit.dart';
-import 'package:oshmobile/features/devices/details/data/mqtt_control_repository.dart';
 import 'package:oshmobile/features/devices/details/data/mqtt_telemetry_repository.dart';
 import 'package:oshmobile/features/devices/details/data/telemetry_topics.dart';
 import 'package:oshmobile/features/devices/details/domain/queries/get_device_full.dart';
-import 'package:oshmobile/features/devices/details/domain/repositories/control_repository.dart';
 import 'package:oshmobile/features/devices/details/domain/repositories/telemetry_repository.dart';
-import 'package:oshmobile/features/devices/details/domain/usecases/disable_rt_stream.dart';
-import 'package:oshmobile/features/devices/details/domain/usecases/enable_rt_stream.dart';
 import 'package:oshmobile/features/devices/details/domain/usecases/subscribe_telemetry.dart';
 import 'package:oshmobile/features/devices/details/domain/usecases/unsubscribe_telemetry.dart';
 import 'package:oshmobile/features/devices/details/domain/usecases/watch_telemetry.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_actions_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_host_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
@@ -114,21 +109,19 @@ class DeviceDi {
 
     // ------------ Device-scoped MQTT repositories & usecases ------------
 
-    // Device control (commands + RT mode).
-    getIt.registerLazySingleton<ControlRepository>(
-      () => MqttControlRepositoryImpl(
+    // Shared JSON-RPC client (rsp subscription).
+    getIt.registerLazySingleton<JsonRpcClient>(
+      () => JsonRpcClient(
         mqtt: getIt<DeviceMqttRepo>(),
-        tenantId: getIt<AppConfig>().devicesTenantId,
-        deviceSn: ctx.deviceSn,
+        rspTopic: getIt<DeviceMqttTopicsV1>().rsp(ctx.deviceSn),
       ),
+      dispose: (c) => c.dispose(),
     );
-    getIt.registerLazySingleton<EnableRtStream>(() => EnableRtStream(getIt<ControlRepository>()));
-    getIt.registerLazySingleton<DisableRtStream>(() => DisableRtStream(getIt<ControlRepository>()));
 
     // Telemetry/state.
     getIt.registerLazySingleton<TelemetryRepository>(
       () => MqttTelemetryRepositoryImpl(
-        mqtt: getIt<DeviceMqttRepo>(),
+        jrpc: getIt<JsonRpcClient>(),
         topics: getIt<TelemetryTopics>(),
         deviceSn: ctx.deviceSn,
       ),
@@ -142,7 +135,7 @@ class DeviceDi {
 
     // Schedule.
     getIt.registerLazySingleton<ScheduleRepository>(
-      () => ScheduleRepositoryMqtt(getIt<DeviceMqttRepo>(), getIt<ScheduleTopics>(), ctx.deviceSn),
+      () => ScheduleRepositoryMqtt(getIt<JsonRpcClient>(), getIt<ScheduleTopics>(), ctx.deviceSn),
       dispose: (r) {
         if (r is ScheduleRepositoryMqtt) r.dispose();
       },
@@ -154,7 +147,7 @@ class DeviceDi {
 
     // Settings.
     getIt.registerLazySingleton<SettingsRepository>(
-      () => SettingsRepositoryMqtt(getIt<DeviceMqttRepo>(), getIt<SettingsTopics>(), ctx.deviceSn),
+      () => SettingsRepositoryMqtt(getIt<JsonRpcClient>(), getIt<SettingsTopics>(), ctx.deviceSn),
       dispose: (r) {
         if (r is SettingsRepositoryMqtt) r.dispose();
       },
@@ -166,7 +159,7 @@ class DeviceDi {
     // Device about (raw device state).
     getIt.registerLazySingleton<DeviceAboutRepository>(
       () => DeviceAboutRepositoryMqtt(
-        mqtt: getIt<DeviceMqttRepo>(),
+        jrpc: getIt<JsonRpcClient>(),
         topics: getIt<DeviceMqttTopicsV1>(),
         deviceSn: ctx.deviceSn,
       ),
@@ -199,16 +192,6 @@ class DeviceDi {
         subscribe: getIt<SubscribeTelemetry>(),
         unsubscribe: getIt<UnsubscribeTelemetry>(),
         watch: getIt<WatchTelemetry>(),
-        enableRt: getIt<EnableRtStream>(),
-        disableRt: getIt<DisableRtStream>(),
-      ),
-      dispose: (c) => unawaited(c.close()),
-    );
-
-    // Commands.
-    getIt.registerLazySingleton<DeviceActionsCubit>(
-      () => DeviceActionsCubit(
-        control: getIt<ControlRepository>(),
       ),
       dispose: (c) => unawaited(c.close()),
     );

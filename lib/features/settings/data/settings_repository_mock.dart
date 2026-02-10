@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:oshmobile/features/settings/data/settings_jsonrpc_codec.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 import 'package:oshmobile/features/settings/domain/repositories/settings_repository.dart';
 
@@ -55,6 +56,21 @@ class SettingsRepositoryMock implements SettingsRepository {
   }
 
   @override
+  Future<void> patch(Map<String, dynamic> patch, {String? reqId}) async {
+    await Future<void>.delayed(latency);
+
+    final data = SettingsJsonRpcCodec.encodePatch(patch);
+    final current = _snapshot ?? _initialSnapshot();
+    final next = current.merged(data);
+    _snapshot = next;
+
+    final ctrl = _controller;
+    if (ctrl != null && !ctrl.isClosed) {
+      ctrl.add(next);
+    }
+  }
+
+  @override
   Stream<SettingsSnapshot> watchSnapshot() {
     final existing = _controller;
     if (existing != null && !existing.isClosed) {
@@ -89,6 +105,10 @@ class SettingsRepositoryMock implements SettingsRepository {
         'autoUpdateEnabled': false,
         'updateAtMidnight': false,
         'checkIntervalMin': 60,
+      },
+      'time': {
+        'auto': true,
+        'timeZone': 0,
       },
     };
 

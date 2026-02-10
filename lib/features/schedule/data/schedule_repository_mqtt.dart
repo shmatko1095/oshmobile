@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
+import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/utils/latest_wins_gate.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
@@ -17,7 +17,7 @@ import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/domain/repositories/schedule_repository.dart';
 
 class ScheduleRepositoryMqtt implements ScheduleRepository {
-  final DeviceMqttRepo _mqtt;
+  final JsonRpcClient _jrpc;
   final ScheduleTopics _topics;
   final String _deviceSn;
   final Duration timeout;
@@ -27,10 +27,6 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
 
   StreamSubscription? _stateSub;
 
-  StreamController<MapEntry<int, Map<String, dynamic>>>? _rspCtrl;
-  StreamSubscription? _rspSub;
-  int _rspSeq = 0;
-
   CalendarSnapshot? _last;
 
   // Latest-wins gate for mode updates.
@@ -39,7 +35,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   bool _disposed = false;
 
   ScheduleRepositoryMqtt(
-    this._mqtt,
+    this._jrpc,
     this._topics,
     this._deviceSn, {
     this.timeout = const Duration(seconds: 6),
@@ -55,16 +51,11 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
 
   Future<void> _disposeAsync() async {
     final stateSub = _stateSub;
-    final rspSub = _rspSub;
     final ctrl = _ctrl;
-    final rspCtrl = _rspCtrl;
 
     _stateSub = null;
-    _rspSub = null;
     _ctrl = null;
-    _rspCtrl = null;
     _refs = 0;
-    _rspSeq = 0;
     _last = null;
     _latest.clear();
 
@@ -73,19 +64,9 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
         await stateSub.cancel();
       } catch (_) {}
     }
-    if (rspSub != null) {
-      try {
-        await rspSub.cancel();
-      } catch (_) {}
-    }
     if (ctrl != null) {
       try {
         if (!ctrl.isClosed) await ctrl.close();
-      } catch (_) {}
-    }
-    if (rspCtrl != null) {
-      try {
-        if (!rspCtrl.isClosed) await rspCtrl.close();
       } catch (_) {}
     }
   }
@@ -233,12 +214,13 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     if (_stateSub != null) return;
 
     final topic = _topics.state(_deviceSn);
-    _stateSub = _mqtt.subscribeJson(topic).listen((msg) {
-      final notif = decodeJsonRpcNotification(msg.payload);
-      if (notif == null) return;
-      if (notif.method != ScheduleJsonRpcCodec.methodState) return;
-      if (notif.meta.schema != ScheduleJsonRpcCodec.schema) return;
-
+    _stateSub = _jrpc
+        .notifications(
+          topic,
+          method: ScheduleJsonRpcCodec.methodState,
+          schema: ScheduleJsonRpcCodec.schema,
+        )
+        .listen((notif) {
       final data = notif.data;
       if (data == null) return;
 
@@ -247,33 +229,6 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
 
       _emitSnapshot(snap);
     });
-  }
-
-  void _ensureRspSubscription() {
-    if (_rspSub != null) return;
-
-    final topic = _topics.rsp(_deviceSn);
-    _rspSub = _mqtt.subscribeJson(topic).listen((msg) {
-      final nextSeq = _rspSeq + 1;
-      _rspSeq = nextSeq;
-
-      final ctrl = _rspCtrl;
-      if (ctrl != null && !ctrl.isClosed) {
-        ctrl.add(MapEntry(nextSeq, msg.payload));
-      }
-    });
-  }
-
-  Stream<MapEntry<int, Map<String, dynamic>>> _rspEvents() {
-    final existing = _rspCtrl;
-    if (existing != null && !existing.isClosed) return existing.stream;
-
-    final ctrl = StreamController<MapEntry<int, Map<String, dynamic>>>.broadcast(
-      onListen: _ensureRspSubscription,
-    );
-
-    _rspCtrl = ctrl;
-    return ctrl.stream;
   }
 
   // -------------------- JSON-RPC helpers --------------------
@@ -302,39 +257,18 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     Future<void>? cancel,
     Object? cancelError,
   }) async {
-    final cmdTopic = _topics.cmd(_deviceSn);
-
-    _ensureRspSubscription();
-    final events = _rspEvents();
-
-    final startSeq = _rspSeq;
-    final waitRsp = firstWhereWithTimeout<MapEntry<int, Map<String, dynamic>>>(
-      events,
-      (e) => e.key > startSeq && e.value['id']?.toString() == reqId,
-      timeout,
+    return _jrpc.request(
+      cmdTopic: _topics.cmd(_deviceSn),
+      method: method,
+      meta: _meta(),
+      reqId: reqId,
+      data: data,
+      domain: ScheduleJsonRpcCodec.domain,
+      timeout: timeout,
       timeoutMessage: timeoutMessage,
       cancel: cancel,
       cancelError: cancelError,
     );
-
-    final payload = buildJsonRpcRequest(
-      id: reqId,
-      method: method,
-      meta: _meta(),
-      data: data,
-    );
-
-    await _mqtt.publishJson(cmdTopic, payload);
-
-    final ev = await waitRsp;
-    final resp = decodeJsonRpcResponse(ev.value);
-    if (resp == null) throw StateError('Invalid JSON-RPC response');
-
-    if (resp.error != null) {
-      throw StateError('Schedule request failed: ${resp.error!.message} (code ${resp.error!.code})');
-    }
-
-    return resp;
   }
 
   CalendarSnapshot? _snapshotFromResponse(JsonRpcResponse resp) {

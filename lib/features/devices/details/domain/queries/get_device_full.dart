@@ -38,12 +38,7 @@ class GetDeviceFull {
           'capabilities': [
             'sensor.humidity',
             'sensor.temperature',
-            'setting.target_temperature',
-            'switch.heating',
-            'sensor.power',
             'stats.heating_duty_24h',
-            'sensor.water_inlet_temp',
-            'sensor.water_outlet_temp',
 
             // Settings-related capabilities (optional, just for semantics).
             'settings.display',

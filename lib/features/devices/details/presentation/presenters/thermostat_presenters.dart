@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
-import 'package:oshmobile/core/network/mqtt/profiles/thermostat/thermostat_commands.dart';
 import 'package:oshmobile/core/network/mqtt/profiles/thermostat/thermostat_signals.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_mode_bar.dart';
@@ -14,7 +12,6 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/widge
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/value_card.dart';
 import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
 
-import '../cubit/device_actions_cubit.dart';
 import '../models/osh_config.dart';
 import 'device_presenter.dart';
 
@@ -45,7 +42,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
         builder: () => ToggleTile(
             bind: ThermostatSignals.settingSwitchHeatingState,
             title: 'Heating',
-            onChanged: (ctx, v) => ctx.read<DeviceActionsCubit>().send(ThermostatCommands.switchHeatingSet, v)),
+            onChanged: null),
       ),
       _Tile(id: 'powerNow', cap: 'sensor.power', builder: () => const PowerCard(bind: ThermostatSignals.sensorPower)),
       _Tile(
@@ -108,9 +105,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
             SliverToBoxAdapter(
               child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                  child: ThermostatModeBar(
-                    bind: ThermostatSignals.settingClimateMode,
-                  )),
+                  child: const ThermostatModeBar()),
             ),
           SliverPadding(
             padding: const EdgeInsets.all(12),

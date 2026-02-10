@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
@@ -8,7 +7,7 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/widge
 class InletTempCard extends StatelessWidget {
   const InletTempCard({super.key, required this.bind, this.title = 'Inlet temperature', this.unit = '°C'});
 
-  final Signal bind; // e.g. 'sensor.water_inlet_temp'
+  final String bind; // e.g. 'sensor.water_inlet_temp'
   final String title;
   final String unit;
 

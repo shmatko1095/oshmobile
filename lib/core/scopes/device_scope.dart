@@ -3,17 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/di/device_context.dart';
 import 'package:oshmobile/core/di/device_di.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_actions_cubit.dart';
+import 'package:oshmobile/features/device_about/presentation/cubit/device_about_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_host_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/pages/device_host_body.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_presenter.dart';
-import 'package:oshmobile/features/device_about/presentation/cubit/device_about_cubit.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 import 'package:oshmobile/features/settings/presentation/cubit/device_settings_cubit.dart';
 
@@ -52,7 +50,6 @@ class _DeviceScopeState extends State<DeviceScope> {
   late final DeviceHostCubit _host;
   late final DevicePageCubit _page;
   late final DeviceStateCubit _state;
-  late final DeviceActionsCubit _actions;
   late final DeviceScheduleCubit _schedule;
   late final DeviceSettingsCubit _settings;
   late final DeviceAboutCubit _about;
@@ -86,7 +83,6 @@ class _DeviceScopeState extends State<DeviceScope> {
       _host = sl<DeviceHostCubit>();
       _page = sl<DevicePageCubit>();
       _state = sl<DeviceStateCubit>();
-      _actions = sl<DeviceActionsCubit>();
       _schedule = sl<DeviceScheduleCubit>();
       _settings = sl<DeviceSettingsCubit>();
       _about = sl<DeviceAboutCubit>();
@@ -136,7 +132,6 @@ class _DeviceScopeState extends State<DeviceScope> {
         BlocProvider.value(value: _host),
         BlocProvider.value(value: _page),
         BlocProvider.value(value: _state),
-        BlocProvider.value(value: _actions),
         BlocProvider.value(value: _schedule),
         BlocProvider.value(value: _settings),
         BlocProvider.value(value: _about),

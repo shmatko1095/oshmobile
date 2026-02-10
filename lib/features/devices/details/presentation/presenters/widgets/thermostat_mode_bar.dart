@@ -3,25 +3,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/network/mqtt/signal_command.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 import 'package:oshmobile/features/schedule/presentation/utils.dart';
 
 /// Bottom-nav-like bar to show and switch thermostat modes with optimistic UI.
 /// Modes: off, antifreeze, manual, daily, weekly.
-/// - Reads current mode from [bind] via DeviceStateCubit (e.g. 'climate.mode').
-/// - Sends [command] via DeviceActionsCubit {'mode': id}.
+/// - Reads current mode from DeviceScheduleCubit.
 /// - Optimistic selection is highlighted immediately; cleared on confirmation or timeout.
 class ThermostatModeBar extends StatefulWidget {
   const ThermostatModeBar({
     super.key,
-    required this.bind,
     this.visibleModes,
     this.optimisticTimeout = const Duration(seconds: 5),
   });
 
-  final Signal bind;
   final List<CalendarMode>? visibleModes;
   final Duration optimisticTimeout;
 
