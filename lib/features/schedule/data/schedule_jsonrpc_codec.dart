@@ -22,8 +22,11 @@ class ScheduleJsonRpcCodec {
   static String methodOf(String op) => '$domain.$op';
 
   static String get methodState => methodOf('state');
+
   static String get methodGet => methodOf('get');
+
   static String get methodSet => methodOf('set');
+
   static String get methodPatch => methodOf('patch');
 
   static CalendarSnapshot? decodeBody(Map<String, dynamic> data) {
@@ -85,32 +88,18 @@ class ScheduleJsonRpcCodec {
       if (item is! Map) continue;
 
       final temp = (item['temp'] as num?)?.toDouble();
-      final tempMin = (item['temp_min'] as num?)?.toDouble();
-      final tempMax = (item['temp_max'] as num?)?.toDouble();
 
       final hh = (item['hh'] as num?)?.toInt() ?? 0;
       final mm = (item['mm'] as num?)?.toInt() ?? 0;
       final mask = (item['mask'] as num?)?.toInt() ?? WeekdayMask.all;
 
-      double? lo;
-      double? hi;
-
-      if (tempMin != null || tempMax != null) {
-        lo = tempMin ?? tempMax;
-        hi = tempMax ?? tempMin;
-      } else if (temp != null) {
-        lo = temp;
-        hi = temp;
-      }
-
-      if (lo == null || hi == null) continue;
+      if (temp == null) continue;
 
       out.add(
         SchedulePoint(
           time: TimeOfDay(hour: hh.clamp(0, 23), minute: mm.clamp(0, 59)),
           daysMask: mask & WeekdayMask.all,
-          min: double.parse(lo.toStringAsFixed(1)),
-          max: double.parse(hi.toStringAsFixed(1)),
+          temp: double.parse(temp.toStringAsFixed(1)),
         ),
       );
     }
@@ -126,6 +115,7 @@ class ScheduleJsonRpcCodec {
   }
 
   static List<Map<String, dynamic>> _encodePointsList(CalendarMode mode, List<SchedulePoint> points) {
+    //@Todo: antifreeze should contain two points, otherwise it's not supported.
     if (mode == CalendarMode.antifreeze && points.length == 1) {
       final p = points.first;
       if (p.min != p.max) {
@@ -143,18 +133,7 @@ class ScheduleJsonRpcCodec {
 
   static Map<String, dynamic> _encodePoint(SchedulePoint p) {
     // schedule@1 uses a single `temp` value per point.
-    final lo = (p.min <= p.max) ? p.min : p.max;
-    final hi = (p.max >= p.min) ? p.max : p.min;
-    if (lo == hi) {
-      return _encodePointWithTemp(p, lo);
-    }
-    return <String, dynamic>{
-      'temp_min': double.parse(lo.toStringAsFixed(1)),
-      'temp_max': double.parse(hi.toStringAsFixed(1)),
-      'hh': p.time.hour,
-      'mm': p.time.minute,
-      'mask': p.daysMask & WeekdayMask.all,
-    };
+    return _encodePointWithTemp(p, p.temp);
   }
 
   static Map<String, dynamic> _encodePointWithTemp(SchedulePoint p, double temp) {
@@ -191,7 +170,7 @@ class ScheduleJsonRpcCodec {
     final sameTime = a.time.hour == b.time.hour && a.time.minute == b.time.minute && a.daysMask == b.daysMask;
     if (!sameTime) return pts;
 
-    if (a.isRange || b.isRange) return pts;
+    // if (a.isRange || b.isRange) return pts;
 
     final lo = (a.min <= b.min) ? a.min : b.min;
     final hi = (a.max >= b.max) ? a.max : b.max;

@@ -4,8 +4,8 @@
 
 import 'dart:async';
 
-import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
+import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/utils/latest_wins_gate.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/core/utils/stream_waiters.dart';
@@ -216,10 +216,10 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     final topic = _topics.state(_deviceSn);
     _stateSub = _jrpc
         .notifications(
-          topic,
-          method: ScheduleJsonRpcCodec.methodState,
-          schema: ScheduleJsonRpcCodec.schema,
-        )
+      topic,
+      method: ScheduleJsonRpcCodec.methodState,
+      schema: ScheduleJsonRpcCodec.schema,
+    )
         .listen((notif) {
       final data = notif.data;
       if (data == null) return;
@@ -307,10 +307,6 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   }
 
   bool _pointEquals(SchedulePoint x, SchedulePoint y) {
-    return x.daysMask == y.daysMask &&
-        x.time.hour == y.time.hour &&
-        x.time.minute == y.time.minute &&
-        x.min == y.min &&
-        x.max == y.max;
+    return x.daysMask == y.daysMask && x.time.hour == y.time.hour && x.time.minute == y.time.minute && x.temp == y.temp;
   }
 }

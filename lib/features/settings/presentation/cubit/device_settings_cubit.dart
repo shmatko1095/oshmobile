@@ -85,7 +85,15 @@ class DeviceSettingsCubit extends Cubit<DeviceSettingsState> {
           if (commReqId != null) _comm.complete(commReqId);
         } catch (e) {
           if (commReqId != null) _comm.fail(commReqId, 'Refresh failed');
-          rethrow;
+          if (isClosed) return;
+
+          final msg = e is TimeoutException ? (e.message ?? 'Timeout') : e.toString();
+
+          if (prev is DeviceSettingsReady) {
+            emit(prev.copyWith(flash: msg));
+          } else {
+            emit(DeviceSettingsError(msg));
+          }
         }
       });
 

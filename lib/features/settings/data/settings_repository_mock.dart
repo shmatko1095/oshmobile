@@ -100,6 +100,7 @@ class SettingsRepositoryMock implements SettingsRepository {
         'idleBrightness': 10,
         'idleTime': 30,
         'dimOnIdle': true,
+        'language': 'en',
       },
       'update': {
         'autoUpdateEnabled': false,

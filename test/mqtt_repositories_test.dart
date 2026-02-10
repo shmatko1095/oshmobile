@@ -119,6 +119,7 @@ Map<String, dynamic> _settingsPayload() => {
         'idleBrightness': 10,
         'idleTime': 30,
         'dimOnIdle': true,
+        'language': 'en',
       },
       'update': {
         'autoUpdateEnabled': false,

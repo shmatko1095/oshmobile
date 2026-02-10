@@ -180,7 +180,7 @@ class _RotatingSyncIconState extends State<_RotatingSyncIcon> with SingleTickerP
     // Repeat rotation while this widget is in the tree.
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 1000),
     )..repeat();
   }
 

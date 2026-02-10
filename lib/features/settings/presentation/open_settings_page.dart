@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -45,6 +47,9 @@ class DeviceSettingsNavigator {
       );
       return;
     }
+
+    // Ensure settings are actively fetched when opening the screen.
+    unawaited(settingsCubit.refresh(forceGet: true));
 
     Navigator.of(hostContext).push(
       MaterialPageRoute(

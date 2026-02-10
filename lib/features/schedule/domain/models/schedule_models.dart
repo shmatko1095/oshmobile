@@ -65,28 +65,22 @@ class WeekdayMask {
 class SchedulePoint {
   final TimeOfDay time; // start time of this setpoint/range
   final int daysMask; // which days it applies to
-  final double min; // min target (antifreeze lower bound or setpoint)
-  final double max; // max target (antifreeze upper bound or setpoint)
+  final double temp; // min target (antifreeze lower bound or setpoint)
 
   const SchedulePoint({
     required this.time,
     required this.daysMask,
-    required this.min,
-    required this.max,
+    required this.temp,
   });
-
-  bool get isRange => min < max;
 
   SchedulePoint copyWith({
     TimeOfDay? time,
     int? daysMask,
-    double? min,
-    double? max,
+    double? temp,
   }) =>
       SchedulePoint(
         time: time ?? this.time,
         daysMask: daysMask ?? this.daysMask,
-        min: min ?? this.min,
-        max: max ?? this.max,
+        temp: temp ?? this.temp,
       );
 }

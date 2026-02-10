@@ -39,7 +39,7 @@ bool validateSettingsPatchPayload(Map<String, dynamic> data) {
 }
 
 bool _validateDisplay(Map<String, dynamic> data, {required bool requireAll}) {
-  const allowed = {'activeBrightness', 'idleBrightness', 'idleTime', 'dimOnIdle'};
+  const allowed = {'activeBrightness', 'idleBrightness', 'idleTime', 'dimOnIdle', 'language'};
   if (!_hasOnlyKeys(data, allowed)) return false;
   if (requireAll && !_hasRequiredKeys(data, allowed)) return false;
 
@@ -58,6 +58,12 @@ bool _validateDisplay(Map<String, dynamic> data, {required bool requireAll}) {
   if (data.containsKey('dimOnIdle')) {
     final v = data['dimOnIdle'];
     if (v is! bool) return false;
+  }
+  if (data.containsKey('language')) {
+    final v = data['language'];
+    if (v is! String) return false;
+    final ok = RegExp(r'^[a-z0-9_]{2,7}$').hasMatch(v);
+    if (!ok) return false;
   }
 
   return true;
