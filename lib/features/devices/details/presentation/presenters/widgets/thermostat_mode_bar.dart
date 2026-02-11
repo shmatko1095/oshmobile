@@ -8,7 +8,7 @@ import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.da
 import 'package:oshmobile/features/schedule/presentation/utils.dart';
 
 /// Bottom-nav-like bar to show and switch thermostat modes with optimistic UI.
-/// Modes: off, antifreeze, manual, daily, weekly.
+/// Modes: off, range, manual, daily, weekly.
 /// - Reads current mode from DeviceScheduleCubit.
 /// - Optimistic selection is highlighted immediately; cleared on confirmation or timeout.
 class ThermostatModeBar extends StatefulWidget {
@@ -113,8 +113,8 @@ class _ModeItem extends StatelessWidget {
     switch (mode) {
       case CalendarMode.off:
         return Icons.power_settings_new;
-      case CalendarMode.antifreeze:
-        return Icons.ac_unit;
+      case CalendarMode.range:
+        return Icons.unfold_more;
       case CalendarMode.on:
         return Icons.touch_app;
       case CalendarMode.daily:

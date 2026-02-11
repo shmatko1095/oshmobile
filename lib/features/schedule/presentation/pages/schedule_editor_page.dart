@@ -120,7 +120,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                       final p = items[i].value;
 
                       return Dismissible(
-                        key: ValueKey('sp_${idx}_${p.time.hour}_${p.time.minute}_${p.min}_${p.max}_${p.daysMask}'),
+                        key: ValueKey('sp_${idx}_${p.time.hour}_${p.time.minute}_${p.temp}_${p.daysMask}'),
                         direction: DismissDirection.endToStart,
                         background: const SizedBox.shrink(),
                         secondaryBackground: Container(
@@ -135,8 +135,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                         onDismissed: (_) => context.read<DeviceScheduleCubit>().removeAt(idx),
                         child: _ScheduleTile(
                           timeText: _fmtTime(p.time),
-                          valueText:
-                              p.min == p.max ? '${_fmtTemp(p.min)}°C' : '${_fmtTemp(p.min)}–${_fmtTemp(p.max)}°C',
+                          valueText: '${_fmtTemp(p.temp)}°C',
                           daysMask: p.daysMask,
                           showDays: showDays,
 
@@ -149,18 +148,15 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                           },
 
                           // fine range edits (still available on the right)
-                          onDecMin: () {
-                            final next = (p.min - 0.5).clamp(5.0, 35.0);
-                            final newMin = double.parse(next.toStringAsFixed(1));
-                            final newMax = (p.min == p.max) ? newMin : p.max.clamp(newMin, 35.0);
-                            context.read<DeviceScheduleCubit>().changePoint(idx, p.copyWith(min: newMin, max: newMax));
+                          onDecTemp: () {
+                            final next = (p.temp - 0.5).clamp(5.0, 35.0);
+                            final newTemp = double.parse(next.toStringAsFixed(1));
+                            context.read<DeviceScheduleCubit>().changePoint(idx, p.copyWith(temp: newTemp));
                           },
-                          onIncMax: () {
-                            final base = p.max + 0.5;
-                            final next = base.clamp(5.0, 35.0);
-                            final newMax = double.parse(next.toStringAsFixed(1));
-                            final newMin = (p.min == p.max) ? newMax : p.min.clamp(5.0, newMax);
-                            context.read<DeviceScheduleCubit>().changePoint(idx, p.copyWith(min: newMin, max: newMax));
+                          onIncTemp: () {
+                            final next = (p.temp + 0.5).clamp(5.0, 35.0);
+                            final newTemp = double.parse(next.toStringAsFixed(1));
+                            context.read<DeviceScheduleCubit>().changePoint(idx, p.copyWith(temp: newTemp));
                           },
 
                           onToggleDay: (d) {
@@ -174,10 +170,10 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                               CupertinoPageRoute(
                                 builder: (_) => ManualTemperaturePage(
                                   title: S.of(context).SetTemperature,
-                                  initial: p.max,
+                                  initial: p.temp,
                                   onSave: (v) {
                                     final vv = double.parse(v.toStringAsFixed(1));
-                                    context.read<DeviceScheduleCubit>().changePoint(idx, p.copyWith(min: vv, max: vv));
+                                    context.read<DeviceScheduleCubit>().changePoint(idx, p.copyWith(temp: vv));
                                   },
                                 ),
                               ),
@@ -279,8 +275,8 @@ class _ScheduleTile extends StatelessWidget {
     required this.daysMask,
     required this.showDays,
     required this.onTapTime,
-    required this.onDecMin,
-    required this.onIncMax,
+    required this.onDecTemp,
+    required this.onIncTemp,
     required this.onToggleDay,
     required this.onTapValue,
   });
@@ -291,8 +287,8 @@ class _ScheduleTile extends StatelessWidget {
   final bool showDays;
 
   final VoidCallback onTapTime;
-  final VoidCallback onDecMin;
-  final VoidCallback onIncMax;
+  final VoidCallback onDecTemp;
+  final VoidCallback onIncTemp;
   final void Function(int dayBit) onToggleDay;
   final VoidCallback onTapValue;
 
@@ -332,8 +328,8 @@ class _ScheduleTile extends StatelessWidget {
                   alignment: Alignment.centerRight,
                   child: _TempRangeStepper(
                     valueText: valueText,
-                    onDecMin: onDecMin,
-                    onIncMax: onIncMax,
+                    onDecTemp: onDecTemp,
+                    onIncTemp: onIncTemp,
                     onTapValue: onTapValue,
                   ),
                 );
@@ -375,14 +371,14 @@ class _ScheduleTile extends StatelessWidget {
 class _TempRangeStepper extends StatelessWidget {
   const _TempRangeStepper({
     required this.valueText,
-    required this.onDecMin,
-    required this.onIncMax,
+    required this.onDecTemp,
+    required this.onIncTemp,
     required this.onTapValue,
   });
 
   final String valueText;
-  final VoidCallback onDecMin;
-  final VoidCallback onIncMax;
+  final VoidCallback onDecTemp;
+  final VoidCallback onIncTemp;
   final VoidCallback onTapValue;
 
   static const _coolBlue = Color(0xFF40C4FF); // LightBlue A200
@@ -412,9 +408,9 @@ class _TempRangeStepper extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        _IconBtn(icon: Icons.keyboard_arrow_down, onTap: onDecMin, color: _coolBlue),
+        _IconBtn(icon: Icons.keyboard_arrow_down, onTap: onDecTemp, color: _coolBlue),
         const SizedBox(width: 4),
-        _IconBtn(icon: Icons.keyboard_arrow_up, onTap: onIncMax, color: _warmRed),
+        _IconBtn(icon: Icons.keyboard_arrow_up, onTap: onIncTemp, color: _warmRed),
       ],
     );
   }

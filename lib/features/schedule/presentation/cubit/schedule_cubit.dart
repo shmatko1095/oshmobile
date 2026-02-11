@@ -312,6 +312,21 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     emit(st.copyWith(listOverrides: Map.unmodifiable(nextOverrides), flash: null));
   }
 
+  void setRange(ScheduleRange range) {
+    final st = _readyOrNull();
+    if (st == null) return;
+
+    final normalized = range.normalized();
+    final baseRange = st.base.range;
+
+    if (normalized == baseRange) {
+      emit(st.copyWith(clearRangeOverride: true, flash: null));
+      return;
+    }
+
+    emit(st.copyWith(rangeOverride: normalized, flash: null));
+  }
+
   // ---------------------------------------------------------------------------
   // Current / Next helpers
   // ---------------------------------------------------------------------------
@@ -466,6 +481,11 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       nextModeOverride = null;
     }
 
+    ScheduleRange? nextRangeOverride = st.rangeOverride;
+    if (nextRangeOverride != null && nextRangeOverride == newBase.range) {
+      nextRangeOverride = null;
+    }
+
     final nextListOverrides = <CalendarMode, List<SchedulePoint>>{};
     st.listOverrides.forEach((mode, list) {
       final baseList = newBase.pointsFor(mode);
@@ -478,6 +498,8 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
       base: newBase,
       modeOverride: nextModeOverride,
       removeModeOverride: nextModeOverride == null,
+      rangeOverride: nextRangeOverride,
+      clearRangeOverride: nextRangeOverride == null,
       listOverrides: Map.unmodifiable(nextListOverrides),
     );
   }
@@ -498,21 +520,16 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
     final last = current.isNotEmpty ? _norm(current.last) : null;
 
     final daysMask = mode == CalendarMode.weekly ? (last?.daysMask ?? WeekdayMask.all) : WeekdayMask.all;
-    final minV = last?.min ?? 20.0;
-    final maxV = last?.max ?? 22.0;
+    final temp = last?.temp ?? 21.0;
 
-    return SchedulePoint(time: t, daysMask: daysMask, min: minV, max: maxV);
+    return SchedulePoint(time: t, daysMask: daysMask, temp: temp);
   }
 
   SchedulePoint _norm(SchedulePoint p) {
     final hh = p.time.hour.clamp(0, 23);
     final mm = p.time.minute.clamp(0, 59);
     final dm = p.daysMask & WeekdayMask.all;
-
-    final lo = (p.min <= p.max) ? p.min : p.max;
-    final hi = (p.max >= p.min) ? p.max : p.min;
-
-    return SchedulePoint(time: TimeOfDay(hour: hh, minute: mm), daysMask: dm, min: lo, max: hi);
+    return SchedulePoint(time: TimeOfDay(hour: hh, minute: mm), daysMask: dm, temp: p.temp);
   }
 
   List<SchedulePoint> _sortedDedup(List<SchedulePoint> pts) {
@@ -525,10 +542,7 @@ class DeviceScheduleCubit extends Cubit<DeviceScheduleState> {
 
       if (a.daysMask != b.daysMask) return a.daysMask.compareTo(b.daysMask);
 
-      final c1 = a.min.compareTo(b.min);
-      if (c1 != 0) return c1;
-
-      return a.max.compareTo(b.max);
+      return a.temp.compareTo(b.temp);
     });
 
     final result = <SchedulePoint>[];

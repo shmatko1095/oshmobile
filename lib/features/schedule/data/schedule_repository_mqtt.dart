@@ -125,13 +125,15 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     } else {
       final modeChanged = prev.mode.id != snapshot.mode.id;
       final pointsPatch = _pointsPatch(prev.lists, snapshot.lists);
+      final rangeChanged = prev.range != snapshot.range;
 
-      if (!modeChanged && pointsPatch.isEmpty) return;
+      if (!modeChanged && pointsPatch.isEmpty && !rangeChanged) return;
 
       method = ScheduleJsonRpcCodec.methodPatch;
       data = ScheduleJsonRpcCodec.encodePatch(
         mode: modeChanged ? snapshot.mode : null,
         points: pointsPatch.isNotEmpty ? pointsPatch : null,
+        range: rangeChanged ? snapshot.range : null,
       );
     }
 
@@ -289,7 +291,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     Map<CalendarMode, List<SchedulePoint>> next,
   ) {
     final out = <CalendarMode, List<SchedulePoint>>{};
-    for (final m in CalendarMode.all) {
+    for (final m in CalendarMode.listModes) {
       final a = prev[m] ?? const <SchedulePoint>[];
       final b = next[m] ?? const <SchedulePoint>[];
       if (!_listsEqual(a, b)) out[m] = b;

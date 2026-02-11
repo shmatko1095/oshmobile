@@ -15,11 +15,15 @@ class CalendarMode {
 
   static const on = CalendarMode('on');
   static const off = CalendarMode('off');
-  static const antifreeze = CalendarMode('antifreeze');
   static const daily = CalendarMode('daily');
   static const weekly = CalendarMode('weekly');
+  static const range = CalendarMode('range');
 
-  static const all = [off, antifreeze, on, daily, weekly];
+  /// All UI-visible modes (order matters for the mode selector).
+  static const all = [off, range, on, daily, weekly];
+
+  /// Modes that have point arrays in schedule.points.
+  static const listModes = [off, on, daily, weekly];
 }
 
 /// Bit masks for weekdays. Use any mapping you already have if different.
@@ -65,7 +69,7 @@ class WeekdayMask {
 class SchedulePoint {
   final TimeOfDay time; // start time of this setpoint/range
   final int daysMask; // which days it applies to
-  final double temp; // min target (antifreeze lower bound or setpoint)
+  final double temp; // target temperature
 
   const SchedulePoint({
     required this.time,
@@ -83,4 +87,32 @@ class SchedulePoint {
         daysMask: daysMask ?? this.daysMask,
         temp: temp ?? this.temp,
       );
+}
+
+class ScheduleRange {
+  static const double defaultMin = 15.0;
+  static const double defaultMax = 18.5;
+
+  final double min;
+  final double max;
+
+  const ScheduleRange({
+    required this.min,
+    required this.max,
+  });
+
+  const ScheduleRange.defaults()
+      : min = defaultMin,
+        max = defaultMax;
+
+  ScheduleRange normalized() {
+    if (min <= max) return this;
+    return ScheduleRange(min: max, max: min);
+  }
+
+  @override
+  bool operator ==(Object other) => other is ScheduleRange && other.min == min && other.max == max;
+
+  @override
+  int get hashCode => Object.hash(min, max);
 }

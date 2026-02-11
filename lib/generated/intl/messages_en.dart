@@ -78,10 +78,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "ManualTemperature": MessageLookupByLibrary.simpleMessage(
       "Manual temperature",
     ),
-    "ModeAntifreeze": MessageLookupByLibrary.simpleMessage("Antifreeze"),
     "ModeDaily": MessageLookupByLibrary.simpleMessage("Daily"),
     "ModeOff": MessageLookupByLibrary.simpleMessage("Off"),
     "ModeOn": MessageLookupByLibrary.simpleMessage("On"),
+    "ModeRange": MessageLookupByLibrary.simpleMessage("Range"),
     "ModeWeekly": MessageLookupByLibrary.simpleMessage("Weekly"),
     "MonShort": MessageLookupByLibrary.simpleMessage("Mon"),
     "Name": MessageLookupByLibrary.simpleMessage("Name"),

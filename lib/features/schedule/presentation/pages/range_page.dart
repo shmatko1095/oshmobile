@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
-class AntifreezeRangePage extends StatefulWidget {
-  const AntifreezeRangePage({
+class ScheduleRangePage extends StatefulWidget {
+  const ScheduleRangePage({
     super.key,
     required this.initialMin,
     required this.initialMax,
     required this.onSave,
     required this.title,
-    this.min = 0.0,
-    this.max = 20.0,
+    this.min = 5.0,
+    this.max = 35.0,
     this.step = 0.5,
     this.unit = '°C',
   });
@@ -23,10 +23,10 @@ class AntifreezeRangePage extends StatefulWidget {
   final String title, unit;
 
   @override
-  State<AntifreezeRangePage> createState() => _AntifreezeRangePageState();
+  State<ScheduleRangePage> createState() => _ScheduleRangePageState();
 }
 
-class _AntifreezeRangePageState extends State<AntifreezeRangePage> {
+class _ScheduleRangePageState extends State<ScheduleRangePage> {
   late final List<double> _values;
   late int _iMin, _iMax;
 

@@ -15,10 +15,10 @@ class ScheduleRepositoryMock implements ScheduleRepository {
         lists: {
           CalendarMode.off: const [],
           CalendarMode.on: const [],
-          CalendarMode.antifreeze: const [],
           CalendarMode.daily: const [],
           CalendarMode.weekly: const [],
         },
+        range: const ScheduleRange.defaults(),
       );
 
   CalendarSnapshot _current() => _snap ??= _empty();

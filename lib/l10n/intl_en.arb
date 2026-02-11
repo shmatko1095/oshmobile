@@ -62,7 +62,7 @@
   "NextAt": "Next {temp} at {time}",
   "Heating": "Heating",
   "ModeOff": "Off",
-  "ModeAntifreeze": "Antifreeze",
+  "ModeRange": "Range",
   "ModeOn": "On",
   "ModeDaily": "Daily",
   "ModeWeekly": "Weekly",

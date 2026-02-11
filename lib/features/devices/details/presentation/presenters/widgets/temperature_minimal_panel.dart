@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
+import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
@@ -58,18 +59,33 @@ class TemperatureMinimalPanel extends StatelessWidget {
     final s = S.of(context);
 
     final num? current = context.select<DeviceStateCubit, num?>((c) => _asNum(c.state.getDynamic(currentBind)));
-    final num? target = context
-        .select<DeviceScheduleCubit, num?>((c) => c.currentPoint() != null ? _asNum(c.currentPoint()!.max) : null);
-    final num? nextVal =
-        context.select<DeviceScheduleCubit, num?>((c) => c.nextPoint() != null ? _asNum(c.nextPoint()!.max) : null);
-    final TimeOfDay? rawNextTime = context.select<DeviceScheduleCubit, TimeOfDay?>((c) => c.nextPoint()?.time);
+    final bool isRangeMode = context.select<DeviceScheduleCubit, bool>((c) => c.state.mode == CalendarMode.range);
+    final ScheduleRange? range = context.select<DeviceScheduleCubit, ScheduleRange?>((c) {
+      final st = c.state;
+      return st is DeviceScheduleReady ? st.range : null;
+    });
+
+    final num? target = isRangeMode
+        ? null
+        : context.select<DeviceScheduleCubit, num?>(
+            (c) => c.currentPoint() != null ? _asNum(c.currentPoint()!.temp) : null,
+          );
+    final num? nextVal = isRangeMode
+        ? null
+        : context.select<DeviceScheduleCubit, num?>(
+            (c) => c.nextPoint() != null ? _asNum(c.nextPoint()!.temp) : null,
+          );
+    final TimeOfDay? rawNextTime =
+        isRangeMode ? null : context.select<DeviceScheduleCubit, TimeOfDay?>((c) => c.nextPoint()?.time);
 
     final bool heaterOn = heaterEnabledBind != null
         ? context.select<DeviceStateCubit, bool>((c) => _asBool(c.state.get(heaterEnabledBind!)))
         : false;
 
     final String centerText = _fmtNum(current);
-    final String topLine = s.Target(_fmtNum(target)) + unit;
+    final String topLine = (isRangeMode && range != null)
+        ? s.Target('${_fmtNum(range.min)}–${_fmtNum(range.max)}$unit')
+        : s.Target(_fmtNum(target)) + unit;
     final String? nextTimeStr = _fmtTimeOfDay(rawNextTime);
     final String? bottomLine =
         (nextVal != null && nextTimeStr != null) ? s.NextAt('${_fmtNum(nextVal)}$unit', nextTimeStr) : null;

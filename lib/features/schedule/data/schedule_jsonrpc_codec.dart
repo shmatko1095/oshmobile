@@ -6,13 +6,13 @@ import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 ///
 /// Body shape:
 /// {
-///   "mode": "off" | "on" | "daily" | "weekly" | "antifreeze",
+///   "mode": "off" | "on" | "daily" | "weekly" | "range",
 ///   "points": {
-///     "off":  [ {"temp": 5.0,  "hh": 0, "mm": 0, "mask": 127} | {"temp_min":4.5,"temp_max":5.0,...}, ... ],
-///     "on":   [ {"temp": 21.0, "hh": 6, "mm": 0, "mask": 127} | {"temp_min":20.5,"temp_max":21.0,...}, ... ],
+///     "off":  [ {"temp": 5.0,  "hh": 0, "mm": 0, "mask": 127}, ... ],
+///     "on":   [ {"temp": 21.0, "hh": 6, "mm": 0, "mask": 127}, ... ],
 ///     "daily": [ ... ],
 ///     "weekly": [ ... ],
-///     "antifreeze": [ ... ]
+///     "range": { "min": 15.0, "max": 18.5 }
 ///   }
 /// }
 class ScheduleJsonRpcCodec {
@@ -39,35 +39,38 @@ class ScheduleJsonRpcCodec {
     final mode = _parseMode(modeStr) ?? CalendarMode.off;
     final lists = <CalendarMode, List<SchedulePoint>>{};
 
-    for (final m in CalendarMode.all) {
+    for (final m in CalendarMode.listModes) {
       final rawList = pointsRaw[m.id];
       final decodedRaw = _decodePoints(rawList);
-      if (m == CalendarMode.antifreeze) {
-        final normalized = _normalizeAntifreeze(decodedRaw);
-        lists[m] = _sortedDedup(normalized);
-      } else {
-        lists[m] = _sortedDedup(decodedRaw);
-      }
+      lists[m] = _sortedDedup(decodedRaw);
     }
 
-    return CalendarSnapshot(mode: mode, lists: lists);
+    final range = _decodeRange(pointsRaw['range']);
+    if (range == null && pointsRaw.containsKey('range')) return null;
+
+    return CalendarSnapshot(mode: mode, range: range, lists: lists);
   }
 
   static Map<String, dynamic> encodeBody(CalendarSnapshot snapshot) {
     return <String, dynamic>{
       'mode': snapshot.mode.id,
-      'points': _encodePoints(snapshot.lists),
+      'points': _encodePoints(snapshot.lists, range: snapshot.range, includeAllListModes: true),
     };
   }
 
   static Map<String, dynamic> encodePatch({
     CalendarMode? mode,
     Map<CalendarMode, List<SchedulePoint>>? points,
+    ScheduleRange? range,
   }) {
     final out = <String, dynamic>{};
     if (mode != null) out['mode'] = mode.id;
-    if (points != null && points.isNotEmpty) {
-      out['points'] = _encodePoints(points);
+    if ((points != null && points.isNotEmpty) || range != null) {
+      out['points'] = _encodePoints(
+        points ?? const {},
+        range: range,
+        includeAllListModes: false,
+      );
     }
     return out;
   }
@@ -106,39 +109,35 @@ class ScheduleJsonRpcCodec {
     return out;
   }
 
-  static Map<String, dynamic> _encodePoints(Map<CalendarMode, List<SchedulePoint>> lists) {
+  static Map<String, dynamic> _encodePoints(
+    Map<CalendarMode, List<SchedulePoint>> lists, {
+    ScheduleRange? range,
+    required bool includeAllListModes,
+  }) {
     final out = <String, dynamic>{};
-    for (final entry in lists.entries) {
-      out[entry.key.id] = _encodePointsList(entry.key, entry.value);
+    if (includeAllListModes) {
+      for (final m in CalendarMode.listModes) {
+        final pts = lists[m] ?? const <SchedulePoint>[];
+        out[m.id] = _encodePointsList(pts);
+      }
+    } else {
+      for (final entry in lists.entries) {
+        out[entry.key.id] = _encodePointsList(entry.value);
+      }
+    }
+    if (range != null) {
+      out['range'] = _encodeRange(range);
     }
     return out;
   }
 
-  static List<Map<String, dynamic>> _encodePointsList(CalendarMode mode, List<SchedulePoint> points) {
-    //@Todo: antifreeze should contain two points, otherwise it's not supported.
-    if (mode == CalendarMode.antifreeze && points.length == 1) {
-      final p = points.first;
-      if (p.min != p.max) {
-        final lo = (p.min <= p.max) ? p.min : p.max;
-        final hi = (p.max >= p.min) ? p.max : p.min;
-        return [
-          _encodePointWithTemp(p, lo),
-          _encodePointWithTemp(p, hi),
-        ];
-      }
-    }
-
+  static List<Map<String, dynamic>> _encodePointsList(List<SchedulePoint> points) {
     return points.map(_encodePoint).toList(growable: false);
   }
 
   static Map<String, dynamic> _encodePoint(SchedulePoint p) {
-    // schedule@1 uses a single `temp` value per point.
-    return _encodePointWithTemp(p, p.temp);
-  }
-
-  static Map<String, dynamic> _encodePointWithTemp(SchedulePoint p, double temp) {
     return <String, dynamic>{
-      'temp': double.parse(temp.toStringAsFixed(1)),
+      'temp': double.parse(p.temp.toStringAsFixed(1)),
       'hh': p.time.hour,
       'mm': p.time.minute,
       'mask': p.daysMask & WeekdayMask.all,
@@ -162,25 +161,20 @@ class ScheduleJsonRpcCodec {
     return out;
   }
 
-  static List<SchedulePoint> _normalizeAntifreeze(List<SchedulePoint> pts) {
-    if (pts.length != 2) return pts;
+  static ScheduleRange? _decodeRange(dynamic raw) {
+    if (raw == null) return const ScheduleRange.defaults();
+    if (raw is! Map) return null;
+    final minV = (raw['min'] as num?)?.toDouble();
+    final maxV = (raw['max'] as num?)?.toDouble();
+    if (minV == null || maxV == null) return null;
+    return ScheduleRange(min: minV, max: maxV).normalized();
+  }
 
-    final a = pts[0];
-    final b = pts[1];
-    final sameTime = a.time.hour == b.time.hour && a.time.minute == b.time.minute && a.daysMask == b.daysMask;
-    if (!sameTime) return pts;
-
-    // if (a.isRange || b.isRange) return pts;
-
-    final lo = (a.min <= b.min) ? a.min : b.min;
-    final hi = (a.max >= b.max) ? a.max : b.max;
-    return [
-      SchedulePoint(
-        time: a.time,
-        daysMask: a.daysMask,
-        min: double.parse(lo.toStringAsFixed(1)),
-        max: double.parse(hi.toStringAsFixed(1)),
-      ),
-    ];
+  static Map<String, dynamic> _encodeRange(ScheduleRange range) {
+    final normalized = range.normalized();
+    return <String, dynamic>{
+      'min': double.parse(normalized.min.toStringAsFixed(1)),
+      'max': double.parse(normalized.max.toStringAsFixed(1)),
+    };
   }
 }

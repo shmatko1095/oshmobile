@@ -75,6 +75,9 @@ class DeviceScheduleReady extends DeviceScheduleState {
   /// Local overrides for lists (draft). Only store modes changed locally.
   final Map<CalendarMode, List<SchedulePoint>> listOverrides;
 
+  /// Local override for range (draft). Null => use base.range.
+  final ScheduleRange? rangeOverride;
+
   /// Current in-flight operation, if any.
   final ScheduleSavingKind? savingKind;
 
@@ -88,22 +91,25 @@ class DeviceScheduleReady extends DeviceScheduleState {
     required this.base,
     this.modeOverride,
     this.listOverrides = const {},
+    this.rangeOverride,
     this.savingKind,
     this.flash,
     this.queued = const ScheduleQueued(),
   });
 
   @override
-  bool get dirty => modeOverride != null || listOverrides.isNotEmpty;
+  bool get dirty => modeOverride != null || listOverrides.isNotEmpty || rangeOverride != null;
 
   @override
   bool get saving => savingKind != null;
+
+  ScheduleRange get range => rangeOverride ?? base.range;
 
   /// Draft snapshot shown to UI: base + overrides.
   CalendarSnapshot get snap {
     final effectiveMode = modeOverride ?? base.mode;
 
-    if (listOverrides.isEmpty && modeOverride == null) {
+    if (listOverrides.isEmpty && modeOverride == null && rangeOverride == null) {
       return base;
     }
 
@@ -112,7 +118,7 @@ class DeviceScheduleReady extends DeviceScheduleState {
       merged[k] = List.unmodifiable(v);
     });
 
-    return base.copyWith(mode: effectiveMode, lists: merged);
+    return base.copyWith(mode: effectiveMode, lists: merged, range: range);
   }
 
   @override
@@ -128,6 +134,8 @@ class DeviceScheduleReady extends DeviceScheduleState {
     CalendarMode? modeOverride,
     bool removeModeOverride = false,
     Map<CalendarMode, List<SchedulePoint>>? listOverrides,
+    ScheduleRange? rangeOverride,
+    bool clearRangeOverride = false,
     ScheduleSavingKind? savingKind,
     bool clearSavingKind = false,
     String? flash, // pass null to clear
@@ -137,6 +145,7 @@ class DeviceScheduleReady extends DeviceScheduleState {
       base: base ?? this.base,
       modeOverride: removeModeOverride ? null : (modeOverride ?? this.modeOverride),
       listOverrides: listOverrides ?? this.listOverrides,
+      rangeOverride: clearRangeOverride ? null : (rangeOverride ?? this.rangeOverride),
       savingKind: clearSavingKind ? null : (savingKind ?? this.savingKind),
       flash: flash,
       queued: queued ?? this.queued,

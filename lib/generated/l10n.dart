@@ -549,14 +549,9 @@ class S {
     return Intl.message('Off', name: 'ModeOff', desc: '', args: []);
   }
 
-  /// `Antifreeze`
-  String get ModeAntifreeze {
-    return Intl.message(
-      'Antifreeze',
-      name: 'ModeAntifreeze',
-      desc: '',
-      args: [],
-    );
+  /// `Range`
+  String get ModeRange {
+    return Intl.message('Range', name: 'ModeRange', desc: '', args: []);
   }
 
   /// `On`
