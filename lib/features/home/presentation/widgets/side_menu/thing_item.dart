@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/theme/text_styles.dart';
-import 'package:oshmobile/core/utils/ui_utils.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/home/presentation/pages/rename_device_page.dart';
 import 'package:oshmobile/features/home/presentation/pages/unassign_device_dialog.dart';
@@ -41,7 +41,7 @@ class ThingItem extends StatelessWidget {
   }
 
   Widget _getIcon() {
-    Color color = online ? AppPalette.onlineIndicatorColor : Colors.grey;
+    Color color = online ? AppPalette.accentSuccess : AppPalette.textMuted;
     // switch (type) {
     //   case OshConfiguration.heaterType:
     //     return Icon(Icons.thermostat, color: color);
@@ -67,7 +67,7 @@ class ThingItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dismissible(
       confirmDismiss: (_) async => _confirmUnassign(context),
-      key: GlobalKey(),
+      key: ValueKey('drawer_device_$id'),
       //Key("thing_item_$sn")
       onDismissed: (dir) => context.read<HomeCubit>().unassignDevice(id),
       direction: DismissDirection.endToStart,
@@ -78,28 +78,37 @@ class ThingItem extends StatelessWidget {
 
   Widget _buildDismissBackground() {
     return Container(
-      color: Colors.red.withValues(alpha: 0.6),
+      color: AppPalette.destructiveBg,
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: const Icon(
         Icons.delete,
-        color: Colors.white,
+        color: AppPalette.destructiveFg,
       ),
     );
   }
 
   Widget _buildDeviceButton(BuildContext context) {
-    return Card(
-      color: isDarkUi(context) ? AppPalette.backgroundColorLight.withValues(alpha: 0.05) : null,
-      child: ListTile(
-        onTap: () => _onDeviceSelected(context),
-        onLongPress: () => _onDeviceRename(context),
-        leading: _getIcon(),
-        title: Text(
-          name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: AppSolidCard(
+        padding: EdgeInsets.zero,
+        backgroundColor: AppPalette.surface,
+        child: ListTile(
+          onTap: () => _onDeviceSelected(context),
+          onLongPress: () => _onDeviceRename(context),
+          leading: _getIcon(),
+          title: Text(
+            name,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle:
+              room.isEmpty ? null : Text(room, style: TextStyles.contentStyle),
+          trailing: const Icon(
+            Icons.chevron_right_rounded,
+            color: AppPalette.textMuted,
+          ),
         ),
-        subtitle: room.isEmpty ? null : Text(room, style: TextStyles.contentStyle),
       ),
     );
   }

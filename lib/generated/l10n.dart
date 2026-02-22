@@ -748,6 +748,91 @@ class S {
       args: [],
     );
   }
+
+  /// `About`
+  String get About {
+    return Intl.message('About', name: 'About', desc: '', args: []);
+  }
+
+  /// `Discard`
+  String get Discard {
+    return Intl.message('Discard', name: 'Discard', desc: '', args: []);
+  }
+
+  /// `Unsaved changes`
+  String get UnsavedChanges {
+    return Intl.message(
+      'Unsaved changes',
+      name: 'UnsavedChanges',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `You have unsaved changes. Do you want to discard them and leave this page?`
+  String get UnsavedChangesDiscardPrompt {
+    return Intl.message(
+      'You have unsaved changes. Do you want to discard them and leave this page?',
+      name: 'UnsavedChangesDiscardPrompt',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This device does not expose any settings yet.`
+  String get DeviceNoSettingsYet {
+    return Intl.message(
+      'This device does not expose any settings yet.',
+      name: 'DeviceNoSettingsYet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Device seems offline or not responding.`
+  String get DeviceOfflineOrNotResponding {
+    return Intl.message(
+      'Device seems offline or not responding.',
+      name: 'DeviceOfflineOrNotResponding',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failed to load settings.`
+  String get FailedToLoadSettings {
+    return Intl.message(
+      'Failed to load settings.',
+      name: 'FailedToLoadSettings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No data yet`
+  String get NoDataYet {
+    return Intl.message('No data yet', name: 'NoDataYet', desc: '', args: []);
+  }
+
+  /// `Empty payload`
+  String get EmptyPayload {
+    return Intl.message(
+      'Empty payload',
+      name: 'EmptyPayload',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Last update: {time}`
+  String LastUpdateAt(Object time) {
+    return Intl.message(
+      'Last update: $time',
+      name: 'LastUpdateAt',
+      desc: '',
+      args: [time],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

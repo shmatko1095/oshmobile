@@ -90,5 +90,20 @@
   "deviceOfflineSubtitle": "No internet connection detected.Connect to a Wi-Fi network to continue",
   "bleConnectingToDevice": "Connecting to device…",
   "deviceConnectedToWifi": "Device connected to Wi-Fi",
-  "wifiConnectFailed": "Failed to connect to Wi-Fi"
+  "wifiConnectFailed": "Failed to connect to Wi-Fi",
+  "About": "About",
+  "Discard": "Discard",
+  "UnsavedChanges": "Unsaved changes",
+  "UnsavedChangesDiscardPrompt": "You have unsaved changes. Do you want to discard them and leave this page?",
+  "DeviceNoSettingsYet": "This device does not expose any settings yet.",
+  "DeviceOfflineOrNotResponding": "Device seems offline or not responding.",
+  "FailedToLoadSettings": "Failed to load settings.",
+  "NoDataYet": "No data yet",
+  "EmptyPayload": "Empty payload",
+  "LastUpdateAt": "Last update: {time}",
+  "@LastUpdateAt": {
+    "placeholders": {
+      "time": {}
+    }
+  }
 }

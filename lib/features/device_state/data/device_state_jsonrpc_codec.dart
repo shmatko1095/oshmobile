@@ -1,8 +1,12 @@
-class DeviceStateJsonRpcCodec {
-  static const String schema = 'device_state@1';
-  static const String domain = 'device';
+import 'package:oshmobile/core/contracts/osh_contracts.dart';
 
-  static String methodOf(String op) => '$domain.$op';
+class DeviceStateJsonRpcCodec {
+  static final _contract = OshContracts.current.deviceState;
+
+  static String get schema => _contract.schema;
+  static String get domain => _contract.methodDomain;
+
+  static String methodOf(String op) => _contract.method(op);
 
   static String get methodState => methodOf('state');
 

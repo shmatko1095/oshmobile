@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
+import 'package:oshmobile/core/network/mqtt/protocol/v1/device_state_models.dart';
 import 'package:oshmobile/features/device_about/domain/repositories/device_about_repository.dart';
 import 'package:oshmobile/features/device_state/data/device_state_jsonrpc_codec.dart';
 
@@ -103,7 +104,7 @@ class DeviceAboutRepositoryMqtt implements DeviceAboutRepository {
   void _ensureSubscription() {
     if (_sub != null) return;
 
-    final topic = _topics.state(_deviceSn, 'device');
+    final topic = _topics.state(_deviceSn, DeviceStateJsonRpcCodec.domain);
     _sub = _jrpc
         .notifications(
       topic,
@@ -115,10 +116,13 @@ class DeviceAboutRepositoryMqtt implements DeviceAboutRepository {
         final data = notif.data;
         if (data == null) return;
 
-        _last = data;
+        final parsed = DeviceStatePayload.tryParse(data);
+        if (parsed == null) return;
+
+        _last = parsed.raw;
         final ctrl = _ctrl;
         if (ctrl != null && !ctrl.isClosed) {
-          ctrl.add(data);
+          ctrl.add(parsed.raw);
         }
       },
       cancelOnError: false,

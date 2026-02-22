@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:oshmobile/core/contracts/osh_contracts.dart';
 import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 
@@ -16,10 +17,12 @@ import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 ///   }
 /// }
 class ScheduleJsonRpcCodec {
-  static const String schema = 'schedule@1';
-  static const String domain = 'schedule';
+  static final _contract = OshContracts.current.schedule;
 
-  static String methodOf(String op) => '$domain.$op';
+  static String get schema => _contract.schema;
+  static String get domain => _contract.methodDomain;
+
+  static String methodOf(String op) => _contract.method(op);
 
   static String get methodState => methodOf('state');
 
@@ -54,7 +57,8 @@ class ScheduleJsonRpcCodec {
   static Map<String, dynamic> encodeBody(CalendarSnapshot snapshot) {
     return <String, dynamic>{
       'mode': snapshot.mode.id,
-      'points': _encodePoints(snapshot.lists, range: snapshot.range, includeAllListModes: true),
+      'points': _encodePoints(snapshot.lists,
+          range: snapshot.range, includeAllListModes: true),
     };
   }
 
@@ -131,7 +135,8 @@ class ScheduleJsonRpcCodec {
     return out;
   }
 
-  static List<Map<String, dynamic>> _encodePointsList(List<SchedulePoint> points) {
+  static List<Map<String, dynamic>> _encodePointsList(
+      List<SchedulePoint> points) {
     return points.map(_encodePoint).toList(growable: false);
   }
 

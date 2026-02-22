@@ -1,11 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/theme/text_styles.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class SignUpSuccessPage extends StatelessWidget {
-  static CupertinoPageRoute route() => CupertinoPageRoute(builder: (context) => const SignUpSuccessPage());
+  static CupertinoPageRoute route() =>
+      CupertinoPageRoute(builder: (context) => const SignUpSuccessPage());
 
   const SignUpSuccessPage({super.key});
 
@@ -21,7 +23,7 @@ class SignUpSuccessPage extends StatelessWidget {
             children: [
               Icon(
                 CupertinoIcons.mail,
-                color: CupertinoColors.activeBlue,
+                color: AppPalette.accentPrimary,
                 size: 80.0,
               ),
               const SizedBox(height: 50),
@@ -39,7 +41,8 @@ class SignUpSuccessPage extends StatelessWidget {
               const SizedBox(height: 50),
               CustomElevatedButton(
                 buttonText: S.of(context).GoToLogin,
-                onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                onPressed: () =>
+                    Navigator.of(context).popUntil((route) => route.isFirst),
               ),
             ],
           ),

@@ -1,4 +1,5 @@
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
+import 'package:oshmobile/features/settings/data/settings_jsonrpc_codec.dart';
 
 /// Topic builder dedicated to the Settings feature (JSON-RPC).
 ///
@@ -7,7 +8,7 @@ import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 /// - Device publishes JSON-RPC responses to `rsp(deviceSn)`.
 /// - Device publishes retained state notifications to `state(deviceSn)`.
 class SettingsTopics {
-  static const String domain = 'settings';
+  static String get domain => SettingsJsonRpcCodec.domain;
 
   SettingsTopics(this._topics);
 

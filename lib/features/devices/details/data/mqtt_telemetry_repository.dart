@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:oshmobile/core/contracts/osh_contracts.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
@@ -9,10 +10,12 @@ import 'package:oshmobile/features/devices/details/domain/repositories/telemetry
 import 'package:oshmobile/features/sensors/data/sensors_jsonrpc_codec.dart';
 
 class TelemetryJsonRpcCodec {
-  static const String schema = 'telemetry@1';
-  static const String domain = 'telemetry';
+  static final _contract = OshContracts.current.telemetry;
 
-  static String methodOf(String op) => '$domain.$op';
+  static String get schema => _contract.schema;
+  static String get domain => _contract.methodDomain;
+
+  static String methodOf(String op) => _contract.method(op);
 
   static String get methodState => methodOf('state');
   static String get methodGet => methodOf('get');
@@ -86,7 +89,6 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
         await ctrl.close();
       } catch (_) {}
     }
-
   }
 
   @override
@@ -103,7 +105,8 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
 
     final data = resp.data;
     if (data == null) throw StateError('Invalid telemetry response');
-    if (resp.meta != null && resp.meta!.schema != TelemetryJsonRpcCodec.schema) {
+    if (resp.meta != null &&
+        resp.meta!.schema != TelemetryJsonRpcCodec.schema) {
       throw StateError('Invalid telemetry schema: ${resp.meta!.schema}');
     }
 
@@ -152,10 +155,10 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     subs.add(
       _jrpc
           .notifications(
-            _topics.stateSensors(_deviceSn),
-            method: SensorsJsonRpcCodec.methodState,
-            schema: SensorsJsonRpcCodec.schema,
-          )
+        _topics.stateSensors(_deviceSn),
+        method: SensorsJsonRpcCodec.methodState,
+        schema: SensorsJsonRpcCodec.schema,
+      )
           .listen((notif) {
         final data = notif.data;
         if (data == null) return;
@@ -171,10 +174,10 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     subs.add(
       _jrpc
           .notifications(
-            _topics.stateTelemetry(_deviceSn),
-            method: TelemetryJsonRpcCodec.methodState,
-            schema: TelemetryJsonRpcCodec.schema,
-          )
+        _topics.stateTelemetry(_deviceSn),
+        method: TelemetryJsonRpcCodec.methodState,
+        schema: TelemetryJsonRpcCodec.schema,
+      )
           .listen((notif) {
         final data = notif.data;
         if (data == null) return;
@@ -290,7 +293,8 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
 
       final data = resp.data;
       if (data == null) return;
-      if (resp.meta != null && resp.meta!.schema != TelemetryJsonRpcCodec.schema) return;
+      if (resp.meta != null &&
+          resp.meta!.schema != TelemetryJsonRpcCodec.schema) return;
 
       final parsed = TelemetryState.fromJson(data);
       if (parsed == null) return;
@@ -333,6 +337,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
         transport: '',
         removable: false,
         kind: 'generic',
+        tempCalibration: 0.0,
       ),
     );
 
@@ -349,16 +354,20 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     out['sensor.temperature'] = (refTelemetry != null && refTelemetry.tempValid)
         ? refTelemetry.temp
         : null;
-    out['sensor.humidity'] = (refTelemetry != null && refTelemetry.humidityValid)
-        ? refTelemetry.humidity
-        : null;
+    out['sensor.humidity'] =
+        (refTelemetry != null && refTelemetry.humidityValid)
+            ? refTelemetry.humidity
+            : null;
 
     return out;
   }
 
-  Map<String, dynamic> _diffAliases(Map<String, dynamic> prev, Map<String, dynamic> next) {
+  Map<String, dynamic> _diffAliases(
+      Map<String, dynamic> prev, Map<String, dynamic> next) {
     final diff = <String, dynamic>{};
-    final keys = <String>{}..addAll(prev.keys)..addAll(next.keys);
+    final keys = <String>{}
+      ..addAll(prev.keys)
+      ..addAll(next.keys);
     for (final key in keys) {
       final prevVal = prev[key];
       final hasNext = next.containsKey(key);

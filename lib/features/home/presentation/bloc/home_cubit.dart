@@ -51,12 +51,14 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> updateDeviceList() async {
     final userId = _userUuid;
 
-    final bool userChanged = _currentUserUuid != null && _currentUserUuid != userId;
+    final bool userChanged =
+        _currentUserUuid != null && _currentUserUuid != userId;
     _currentUserUuid = userId;
 
     final savedSelected = _selectedDeviceStorage.loadSelectedDevice(userId);
 
-    final bool hasSelectedInState = !userChanged && state is HomeReady && state.selectedDeviceId != null;
+    final bool hasSelectedInState =
+        !userChanged && state is HomeReady && state.selectedDeviceId != null;
 
     if (hasSelectedInState) {
       emit(HomeRefreshing(selectedDeviceId: state.selectedDeviceId));
@@ -68,12 +70,14 @@ class HomeCubit extends Cubit<HomeState> {
 
     result.fold(
       (l) {
-        OshCrashReporter.log("Failed to updateDeviceList, user: $userId device: $savedSelected");
+        OshCrashReporter.log(
+            "Failed to updateDeviceList, user: $userId device: $savedSelected");
         emit(HomeFailed(l.message, selectedDeviceId: savedSelected));
       },
       (devices) {
         _updateDeviceList(devices);
-        final stillExists = savedSelected != null && devices.any((d) => d.id == savedSelected);
+        final stillExists =
+            savedSelected != null && devices.any((d) => d.id == savedSelected);
         final selectedId = stillExists ? savedSelected : null;
 
         if (!stillExists && savedSelected != null) {
@@ -86,17 +90,33 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> unassignDevice(String deviceId) async {
-    emit(HomeLoading(selectedDeviceId: state.selectedDeviceId));
+    final prevDevices = List<Device>.from(userDevices);
+    final prevSelected = state.selectedDeviceId;
+
+    userDevices =
+        userDevices.where((d) => d.id != deviceId).toList(growable: false);
+    final nextSelected = prevSelected == deviceId ? null : prevSelected;
+    emit(state.copyWith(selectedDeviceId: nextSelected));
+
+    emit(HomeLoading(selectedDeviceId: nextSelected));
     final result = await _unassignDevice(UnassignDeviceParams(
       userId: _userUuid,
       deviceId: deviceId,
     ));
     result.fold(
       (l) {
-        OshCrashReporter.log("Failed to unassignDevice, user: $_userUuid device: $deviceId");
-        emit(HomeFailed(l.message ?? "", selectedDeviceId: state.selectedDeviceId));
+        userDevices = prevDevices;
+        OshCrashReporter.log(
+            "Failed to unassignDevice, user: $_userUuid device: $deviceId");
+        emit(HomeFailed(l.message ?? "", selectedDeviceId: prevSelected));
       },
-      (r) => updateDeviceList(),
+      (r) {
+        if (prevSelected == deviceId) {
+          _selectedDeviceStorage.clearSelectedDevice(_userUuid);
+          _comm.dropForDevice(deviceId);
+        }
+        updateDeviceList();
+      },
     );
   }
 
@@ -109,7 +129,8 @@ class HomeCubit extends Cubit<HomeState> {
     ));
     result.fold(
       (l) {
-        OshCrashReporter.log("Failed to assignDevice, user: $_userUuid device: $sn");
+        OshCrashReporter.log(
+            "Failed to assignDevice, user: $_userUuid device: $sn");
         emit(HomeAssignFailed(selectedDeviceId: state.selectedDeviceId));
       },
       (r) {
@@ -132,11 +153,14 @@ class HomeCubit extends Cubit<HomeState> {
     ));
     result.fold(
       (l) {
-        OshCrashReporter.log("Failed to updateDeviceUserData, user: $_userUuid device: $deviceId");
-        emit(HomeUpdateDeviceUserDataFailed(selectedDeviceId: state.selectedDeviceId));
+        OshCrashReporter.log(
+            "Failed to updateDeviceUserData, user: $_userUuid device: $deviceId");
+        emit(HomeUpdateDeviceUserDataFailed(
+            selectedDeviceId: state.selectedDeviceId));
       },
       (r) {
-        emit(HomeUpdateDeviceUserDataDone(selectedDeviceId: state.selectedDeviceId));
+        emit(HomeUpdateDeviceUserDataDone(
+            selectedDeviceId: state.selectedDeviceId));
         updateDeviceList();
       },
     );

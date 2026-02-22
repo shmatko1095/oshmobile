@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class UnassignDeviceDialog extends StatelessWidget {
@@ -18,7 +19,7 @@ class UnassignDeviceDialog extends StatelessWidget {
     color: CupertinoColors.systemGrey,
   );
   static final TextStyle _deviceNameStyle = TextStyle(
-    color: CupertinoColors.activeBlue.withValues(alpha: 0.8),
+    color: AppPalette.accentPrimary.withValues(alpha: 0.9),
     fontWeight: FontWeight.w600,
   );
 
@@ -29,7 +30,8 @@ class UnassignDeviceDialog extends StatelessWidget {
         children: [
           Icon(
             CupertinoIcons.delete,
-            color: CupertinoColors.extraLightBackgroundGray.withValues(alpha: 0.8),
+            color:
+                CupertinoColors.extraLightBackgroundGray.withValues(alpha: 0.8),
             size: 60.0,
           ),
           const SizedBox(height: 10),

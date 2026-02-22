@@ -29,7 +29,7 @@ class DeviceFormField extends StatelessWidget {
         errorMessage: S.of(context).InvalidValue,
       ),
       decoration: InputDecoration(
-        focusColor: AppPalette.greyColor,
+        focusColor: AppPalette.textMuted,
         hintText: _hintText,
         labelText: _labelText,
         errorText: _errorText,

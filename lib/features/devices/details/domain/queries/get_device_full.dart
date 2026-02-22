@@ -15,11 +15,12 @@ class GetDeviceFull {
 
   GetDeviceFull(this.deviceRepository);
 
-  Future<({Device device, Map<String, dynamic> configuration, String modelId})> call(
+  Future<({Device device, Map<String, dynamic> configuration, String modelId})>
+      call(
     String deviceId,
   ) async {
-    final Either<Failure, Device> res =
-        await deviceRepository.get(deviceId: deviceId); // TODO: should be modelRepository
+    final Either<Failure, Device> res = await deviceRepository.get(
+        deviceId: deviceId); // TODO: should be modelRepository
 
     return await res.fold(
       (f) => Future.error(f.message ?? 'Failed to load device'),
@@ -43,6 +44,7 @@ class GetDeviceFull {
             // Settings-related capabilities (optional, just for semantics).
             'settings.display',
             'settings.update',
+            'settings.time',
           ],
           'ui_hints': {
             // Dashboard layout (already used by DeviceConfig).
@@ -65,6 +67,7 @@ class GetDeviceFull {
                     'display.idleBrightness',
                     'display.idleTime',
                     'display.dimOnIdle',
+                    'display.language',
                   ],
                 },
                 {
@@ -76,14 +79,23 @@ class GetDeviceFull {
                     'update.checkIntervalMin',
                   ],
                 },
+                {
+                  'id': 'time',
+                  'title': 'Date & time',
+                  'order': [
+                    'time.auto',
+                    'time.timeZone',
+                  ],
+                },
               ],
               'fields': {
                 // DISPLAY GROUP
                 'display.activeBrightness': {
                   'group': 'display',
-                  'type': 'int', // "int" | "double" | "bool" | "string" | "enum"
+                  'type':
+                      'int', // "int" | "double" | "bool" | "string" | "enum"
                   'widget': 'slider', // "slider" | "switch" | "text" | "select"
-                  'min': 0,
+                  'min': 10,
                   'max': 100,
                   'step': 1,
                   'unit': '%',
@@ -94,7 +106,7 @@ class GetDeviceFull {
                   'group': 'display',
                   'type': 'int',
                   'widget': 'slider',
-                  'min': 0,
+                  'min': 10,
                   'max': 100,
                   'step': 1,
                   'unit': '%',
@@ -105,9 +117,9 @@ class GetDeviceFull {
                   'group': 'display',
                   'type': 'int',
                   'widget': 'slider',
-                  'min': 5,
+                  'min': 0,
                   'max': 60,
-                  'step': 5,
+                  'step': 1,
                   'unit': 's',
                   'default': 30,
                   'title': 'Idle timeout',
@@ -118,6 +130,14 @@ class GetDeviceFull {
                   'widget': 'switch',
                   'default': true,
                   'title': 'Dim on idle',
+                },
+                'display.language': {
+                  'group': 'display',
+                  'type': 'enum',
+                  'widget': 'select',
+                  'enumValues': ['en', 'uk'],
+                  'default': 'en',
+                  'title': 'Language',
                 },
 
                 // UPDATE GROUP
@@ -135,17 +155,36 @@ class GetDeviceFull {
                   'default': false,
                   'title': 'Update at midnight',
                 },
-                // 'update.checkIntervalMin': {
-                //   'group': 'update',
-                //   'type': 'int',
-                //   'widget': 'slider',
-                //   'min': 15,
-                //   'max': 720,
-                //   'step': 15,
-                //   'unit': 'min',
-                //   'default': 60,
-                //   'title': 'Check interval',
-                // },
+                'update.checkIntervalMin': {
+                  'group': 'update',
+                  'type': 'int',
+                  'widget': 'slider',
+                  'min': 1,
+                  'max': 1440,
+                  'step': 1,
+                  'unit': 'min',
+                  'default': 60,
+                  'title': 'Check interval',
+                },
+
+                // TIME GROUP
+                'time.auto': {
+                  'group': 'time',
+                  'type': 'bool',
+                  'widget': 'switch',
+                  'default': true,
+                  'title': 'Automatic time',
+                },
+                'time.timeZone': {
+                  'group': 'time',
+                  'type': 'int',
+                  'widget': 'slider',
+                  'min': -12,
+                  'max': 12,
+                  'step': 1,
+                  'default': 0,
+                  'title': 'Time zone',
+                },
               },
             },
           },

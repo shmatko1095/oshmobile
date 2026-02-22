@@ -1,7 +1,8 @@
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
+import 'package:oshmobile/features/sensors/data/sensors_jsonrpc_codec.dart';
 
 class SensorsTopics {
-  static const String domain = 'sensors';
+  static String get domain => SensorsJsonRpcCodec.domain;
 
   SensorsTopics(this._topics);
 

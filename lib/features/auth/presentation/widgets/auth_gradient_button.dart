@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:oshmobile/core/theme/app_palette.dart';
+import 'package:oshmobile/core/common/widgets/app_button.dart';
 
 class AuthGradientButton extends StatelessWidget {
   final String buttonText;
@@ -13,29 +13,9 @@ class AuthGradientButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            AppPalette.gradient1,
-            AppPalette.gradient3,
-          ],
-          begin: Alignment.bottomLeft,
-          end: Alignment.topRight,
-        ),
-        borderRadius: BorderRadius.circular(7),
-      ),
-      child: TextButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          fixedSize: const Size(double.maxFinite, 55),
-          backgroundColor: AppPalette.transparentColor,
-        ),
-        child: Text(
-          buttonText,
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-        ),
-      ),
+    return AppButton(
+      text: buttonText,
+      onPressed: onPressed,
     );
   }
 }

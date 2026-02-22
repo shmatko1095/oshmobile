@@ -23,12 +23,15 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m0(length) =>
       "Password must be at least ${length} characters long";
 
-  static String m1(temp, time) => "Next ${temp} at ${time}";
+  static String m1(time) => "Last update: ${time}";
 
-  static String m2(temp) => "Target ${temp}";
+  static String m2(temp, time) => "Next ${temp} at ${time}";
+
+  static String m3(temp) => "Target ${temp}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+    "About": MessageLookupByLibrary.simpleMessage("About"),
     "AddDevice": MessageLookupByLibrary.simpleMessage("Add device"),
     "Cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
     "CheckYourEmail": MessageLookupByLibrary.simpleMessage("Check your email"),
@@ -45,18 +48,29 @@ class MessageLookup extends MessageLookupByLibrary {
     "DeviceEditTitle": MessageLookupByLibrary.simpleMessage(
       "Device information",
     ),
+    "DeviceNoSettingsYet": MessageLookupByLibrary.simpleMessage(
+      "This device does not expose any settings yet.",
+    ),
+    "DeviceOfflineOrNotResponding": MessageLookupByLibrary.simpleMessage(
+      "Device seems offline or not responding.",
+    ),
     "DeviceUnlinkAlertContent1": MessageLookupByLibrary.simpleMessage(
       "The device ",
     ),
     "DeviceUnlinkAlertContent2": MessageLookupByLibrary.simpleMessage(
       " will be removed from your list. You can re-add it anytime by scanning the QR code again.",
     ),
+    "Discard": MessageLookupByLibrary.simpleMessage("Discard"),
     "Done": MessageLookupByLibrary.simpleMessage("Done"),
     "DontHaveAnAccount": MessageLookupByLibrary.simpleMessage(
       "Don\'t have an account?",
     ),
     "Email": MessageLookupByLibrary.simpleMessage("Email"),
+    "EmptyPayload": MessageLookupByLibrary.simpleMessage("Empty payload"),
     "Failed": MessageLookupByLibrary.simpleMessage("Failed"),
+    "FailedToLoadSettings": MessageLookupByLibrary.simpleMessage(
+      "Failed to load settings.",
+    ),
     "ForgotPassword": MessageLookupByLibrary.simpleMessage("Forgot password?"),
     "ForgotPasswordContent": MessageLookupByLibrary.simpleMessage(
       "Enter your email address, and we’ll send you a link to reset your password. It’s quick and secure.",
@@ -75,6 +89,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Invalid user credentials",
     ),
     "InvalidValue": MessageLookupByLibrary.simpleMessage("Invalid value"),
+    "LastUpdateAt": m1,
     "ManualTemperature": MessageLookupByLibrary.simpleMessage(
       "Manual temperature",
     ),
@@ -85,8 +100,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "ModeWeekly": MessageLookupByLibrary.simpleMessage("Weekly"),
     "MonShort": MessageLookupByLibrary.simpleMessage("Mon"),
     "Name": MessageLookupByLibrary.simpleMessage("Name"),
-    "NextAt": m1,
+    "NextAt": m2,
     "No": MessageLookupByLibrary.simpleMessage("No"),
+    "NoDataYet": MessageLookupByLibrary.simpleMessage("No data yet"),
     "NoDeviceSelected": MessageLookupByLibrary.simpleMessage(
       "No device selected",
     ),
@@ -132,7 +148,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
     "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
     "SunShort": MessageLookupByLibrary.simpleMessage("Sun"),
-    "Target": m2,
+    "Target": m3,
     "ThuShort": MessageLookupByLibrary.simpleMessage("Thu"),
     "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
       "Check the device\'s network connection.",
@@ -152,6 +168,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "UnknownError": MessageLookupByLibrary.simpleMessage("Unknown error"),
     "UnlinkDevice": MessageLookupByLibrary.simpleMessage("Unlink Device"),
+    "UnsavedChanges": MessageLookupByLibrary.simpleMessage("Unsaved changes"),
+    "UnsavedChangesDiscardPrompt": MessageLookupByLibrary.simpleMessage(
+      "You have unsaved changes. Do you want to discard them and leave this page?",
+    ),
     "UnsupportedDeviceMessage": MessageLookupByLibrary.simpleMessage(
       "This device model is not yet supported by the current version of the app. You can try refreshing the data, opening the device settings, or sending a report.",
     ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/features/device_about/presentation/cubit/device_about_cubit.dart';
+import 'package:oshmobile/generated/l10n.dart';
 
 class DeviceAboutPage extends StatefulWidget {
   final String deviceSn;
@@ -36,7 +37,7 @@ class _DeviceAboutPageState extends State<DeviceAboutPage> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('About'),
+        title: Text(S.of(context).About),
       ),
       body: BlocBuilder<DeviceAboutCubit, DeviceAboutState>(
         builder: (context, state) {
@@ -56,7 +57,7 @@ class _DeviceAboutPageState extends State<DeviceAboutPage> {
               ),
               Expanded(
                 child: payload == null
-                    ? const Center(child: Text('No data yet'))
+                    ? Center(child: Text(S.of(context).NoDataYet))
                     : _FlatList(data: payload),
               ),
             ],
@@ -93,17 +94,20 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final receivedAt = state is DeviceAboutReady ? (state as DeviceAboutReady).receivedAt : null;
+    final receivedAt = state is DeviceAboutReady
+        ? (state as DeviceAboutReady).receivedAt
+        : null;
 
     String? subtitle;
     if (receivedAt != null) {
       final hh = receivedAt.hour.toString().padLeft(2, '0');
       final mm = receivedAt.minute.toString().padLeft(2, '0');
       final ss = receivedAt.second.toString().padLeft(2, '0');
-      subtitle = 'Last update: $hh:$mm:$ss';
+      subtitle = S.of(context).LastUpdateAt('$hh:$mm:$ss');
     }
 
-    final error = state is DeviceAboutError ? (state as DeviceAboutError).message : null;
+    final error =
+        state is DeviceAboutError ? (state as DeviceAboutError).message : null;
 
     return Container(
       width: double.infinity,
@@ -157,7 +161,7 @@ class _FlatList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (data.isEmpty) {
-      return const Center(child: Text('Empty payload'));
+      return Center(child: Text(S.of(context).EmptyPayload));
     }
 
     final rows = _flatten(data, depth: 0);
@@ -218,9 +222,11 @@ class _FlatRow {
 
   const _FlatRow._(this.keyText, this.valueText, this.depth, this.isHeader);
 
-  factory _FlatRow.header(String key, int depth) => _FlatRow._(key, null, depth, true);
+  factory _FlatRow.header(String key, int depth) =>
+      _FlatRow._(key, null, depth, true);
 
-  factory _FlatRow.value(String key, String value, int depth) => _FlatRow._(key, value, depth, false);
+  factory _FlatRow.value(String key, String value, int depth) =>
+      _FlatRow._(key, value, depth, false);
 }
 
 class _FlatRowWidget extends StatelessWidget {
@@ -254,7 +260,8 @@ class _FlatRowWidget extends StatelessWidget {
             flex: 3,
             child: Text(
               row.keyText,
-              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
           const SizedBox(width: 12),
@@ -263,7 +270,8 @@ class _FlatRowWidget extends StatelessWidget {
             child: SelectableText(
               row.valueText ?? '',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
+                color:
+                    theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
               ),
             ),
           ),

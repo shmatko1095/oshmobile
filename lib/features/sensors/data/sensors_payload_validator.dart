@@ -2,7 +2,8 @@ import 'package:oshmobile/core/network/mqtt/protocol/v1/json_utils.dart';
 
 bool validateSensorsSetPayload(Map<String, dynamic> data) {
   const allowedTop = {'items'};
-  if (!hasOnlyKeys(data, allowedTop) || !hasRequiredKeys(data, allowedTop)) return false;
+  if (!hasOnlyKeys(data, allowedTop) || !hasRequiredKeys(data, allowedTop))
+    return false;
 
   final itemsRaw = data['items'];
   if (itemsRaw is! List) return false;
@@ -26,7 +27,13 @@ bool validateSensorsSetPayload(Map<String, dynamic> data) {
 }
 
 bool validateSensorsPatchPayload(Map<String, dynamic> data) {
-  const allowedTop = {'rename', 'set_ref', 'remove', 'pairing'};
+  const allowedTop = {
+    'rename',
+    'set_ref',
+    'set_temp_calibration',
+    'remove',
+    'pairing'
+  };
   if (!hasOnlyKeys(data, allowedTop)) return false;
 
   int present = 0;
@@ -62,6 +69,23 @@ bool validateSensorsPatchPayload(Map<String, dynamic> data) {
     return true;
   }
 
+  if (data.containsKey('set_temp_calibration')) {
+    final raw = data['set_temp_calibration'];
+    if (raw is! Map) return false;
+    final m = raw.cast<String, dynamic>();
+    const allowed = {'id', 'value'};
+    const required = {'id', 'value'};
+    if (!hasOnlyKeys(m, allowed) || !hasRequiredKeys(m, required)) return false;
+
+    final id = asString(m['id']);
+    final valueRaw = asNum(m['value'])?.toDouble();
+    if (id == null || valueRaw == null) return false;
+    if (!validStringLength(id, min: 1, max: 31)) return false;
+    if (valueRaw < -10 || valueRaw > 10) return false;
+    if (!_isMultipleOfHalf(valueRaw)) return false;
+    return true;
+  }
+
   if (data.containsKey('remove')) {
     final raw = data['remove'];
     if (raw is! Map) return false;
@@ -82,4 +106,9 @@ bool validateSensorsPatchPayload(Map<String, dynamic> data) {
   }
 
   return false;
+}
+
+bool _isMultipleOfHalf(double value) {
+  final scaled = value * 2;
+  return (scaled - scaled.round()).abs() < 1e-9;
 }

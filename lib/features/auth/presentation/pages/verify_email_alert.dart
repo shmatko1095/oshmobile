@@ -18,7 +18,8 @@ class VerifyEmailDialog extends StatefulWidget {
   State<VerifyEmailDialog> createState() => _VerifyEmailDialogState();
 }
 
-class _VerifyEmailDialogState extends State<VerifyEmailDialog> with SingleTickerProviderStateMixin {
+class _VerifyEmailDialogState extends State<VerifyEmailDialog>
+    with SingleTickerProviderStateMixin {
   final TextStyle _titleStyle = const TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w600,
@@ -29,7 +30,7 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog> with SingleTicker
   );
   final TextStyle _emailStyle = const TextStyle(
     fontWeight: FontWeight.bold,
-    color: CupertinoColors.activeBlue,
+    color: AppPalette.accentPrimary,
   );
 
   bool isEmailSent = false;
@@ -67,15 +68,21 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog> with SingleTicker
               return ScaleTransition(scale: animation, child: child);
             },
             child: Icon(
-              isEmailSent ? CupertinoIcons.check_mark_circled : CupertinoIcons.mail,
+              isEmailSent
+                  ? CupertinoIcons.check_mark_circled
+                  : CupertinoIcons.mail,
               key: ValueKey<bool>(isEmailSent),
-              color: isEmailSent ? CupertinoColors.systemGreen : CupertinoColors.activeBlue,
+              color: isEmailSent
+                  ? CupertinoColors.systemGreen
+                  : AppPalette.accentPrimary,
               size: 60.0,
             ),
           ),
           const SizedBox(height: 10),
           Text(
-            isEmailSent ? S.of(context).CheckYourEmail : S.of(context).VerifyYourEmail,
+            isEmailSent
+                ? S.of(context).CheckYourEmail
+                : S.of(context).VerifyYourEmail,
             style: _titleStyle,
           ),
         ],
@@ -85,7 +92,9 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog> with SingleTicker
           const SizedBox(height: 10),
           Text.rich(
             TextSpan(
-              text: isEmailSent ? S.of(context).WeHaveSentVerificationEmailTo : S.of(context).YourEmailIsNotVerifiedYet,
+              text: isEmailSent
+                  ? S.of(context).WeHaveSentVerificationEmailTo
+                  : S.of(context).YourEmailIsNotVerifiedYet,
               style: _contentStyle,
               children: isEmailSent
                   ? [
@@ -109,7 +118,7 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog> with SingleTicker
             onPressed: () => _sendEmail(widget.email),
             child: Text(
               S.of(context).SendEmail,
-              style: TextStyle(color: CupertinoColors.activeBlue),
+              style: const TextStyle(color: AppPalette.accentPrimary),
             ),
           ),
         CupertinoDialogAction(
@@ -117,8 +126,8 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog> with SingleTicker
           child: Text(
             isEmailSent ? S.of(context).OK : S.of(context).Cancel,
             style: isEmailSent
-                ? TextStyle(color: CupertinoColors.activeBlue)
-                : TextStyle(color: CupertinoColors.systemRed),
+                ? const TextStyle(color: AppPalette.accentPrimary)
+                : const TextStyle(color: CupertinoColors.systemRed),
           ),
         ),
       ],

@@ -6,6 +6,7 @@ import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_errors.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/device_state_models.dart';
+import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/features/devices/details/data/mqtt_telemetry_repository.dart';
 import 'package:oshmobile/features/devices/details/data/telemetry_topics.dart';
 import 'package:oshmobile/features/settings/data/settings_jsonrpc_codec.dart';
@@ -37,7 +38,8 @@ class FakeDeviceMqttRepo implements DeviceMqttRepo {
   @override
   bool isConnected = true;
 
-  final StreamController<DeviceMqttConnEvent> _connCtrl = StreamController<DeviceMqttConnEvent>.broadcast();
+  final StreamController<DeviceMqttConnEvent> _connCtrl =
+      StreamController<DeviceMqttConnEvent>.broadcast();
   final List<_Published> published = [];
   final List<_Sub> _subs = [];
 
@@ -50,7 +52,8 @@ class FakeDeviceMqttRepo implements DeviceMqttRepo {
   }
 
   @override
-  Future<void> reconnect({required String userId, required String token}) async {
+  Future<void> reconnect(
+      {required String userId, required String token}) async {
     isConnected = true;
   }
 
@@ -75,8 +78,10 @@ class FakeDeviceMqttRepo implements DeviceMqttRepo {
   }
 
   @override
-  Future<void> publishJson(String topic, Map<String, dynamic> payload, {int qos = 1, bool retain = false}) async {
-    published.add(_Published(topic: topic, payload: payload, qos: qos, retain: retain));
+  Future<void> publishJson(String topic, Map<String, dynamic> payload,
+      {int qos = 1, bool retain = false}) async {
+    published.add(
+        _Published(topic: topic, payload: payload, qos: qos, retain: retain));
   }
 
   void emit(String topic, Map<String, dynamic> payload) {
@@ -137,7 +142,8 @@ void main() {
     final mqtt = FakeDeviceMqttRepo();
     final topics = SettingsTopics(DeviceMqttTopicsV1('tenant-x'));
     final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
-    final repo = SettingsRepositoryMqtt(jrpc, topics, 'device-1', timeout: const Duration(milliseconds: 200));
+    final repo = SettingsRepositoryMqtt(jrpc, topics, 'device-1',
+        timeout: const Duration(milliseconds: 200));
 
     final snap = SettingsSnapshot.fromJson(_settingsPayload());
     final op = repo.saveAll(snap, reqId: 'req-1');
@@ -179,11 +185,59 @@ void main() {
     expect(mqtt.published, isEmpty);
   });
 
+  test('SensorsRepositoryMqtt builds set_temp_calibration patch request',
+      () async {
+    final mqtt = FakeDeviceMqttRepo();
+    final topics = SensorsTopics(DeviceMqttTopicsV1('tenant-x'));
+    final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
+    final repo = SensorsRepositoryMqtt(jrpc, topics, 'device-1',
+        timeout: const Duration(milliseconds: 200));
+
+    final op = repo.patch(
+      const SensorsPatchSetTempCalibration(id: 'air', value: 1.5),
+      reqId: 'req-sensors-patch',
+    );
+
+    await Future<void>.delayed(Duration.zero);
+    expect(mqtt.published, hasLength(1));
+    final pub = mqtt.published.single;
+    expect(pub.topic, topics.cmd('device-1'));
+    expect(pub.payload['jsonrpc'], '2.0');
+    expect(pub.payload['id'], 'req-sensors-patch');
+    expect(pub.payload['method'], SensorsJsonRpcCodec.methodPatch);
+
+    final params = pub.payload['params'] as Map<String, dynamic>;
+    expect((params['meta'] as Map)['schema'], SensorsJsonRpcCodec.schema);
+    expect(
+      params['data'],
+      {
+        'set_temp_calibration': {
+          'id': 'air',
+          'value': 1.5,
+        },
+      },
+    );
+
+    mqtt.emit(
+      topics.rsp('device-1'),
+      {
+        'jsonrpc': '2.0',
+        'id': 'req-sensors-patch',
+        'result': {
+          'meta': {'schema': SensorsJsonRpcCodec.schema},
+        },
+      },
+    );
+
+    await op;
+  });
+
   test('SensorsRepositoryMqtt parses sensors.state notification', () async {
     final mqtt = FakeDeviceMqttRepo();
     final topics = SensorsTopics(DeviceMqttTopicsV1('tenant-x'));
     final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
-    final repo = SensorsRepositoryMqtt(jrpc, topics, 'device-1', timeout: const Duration(milliseconds: 200));
+    final repo = SensorsRepositoryMqtt(jrpc, topics, 'device-1',
+        timeout: const Duration(milliseconds: 200));
 
     final future = repo.watchState().first;
 
@@ -193,7 +247,11 @@ void main() {
         'jsonrpc': '2.0',
         'method': SensorsJsonRpcCodec.methodState,
         'params': {
-          'meta': {'schema': SensorsJsonRpcCodec.schema, 'src': 'device', 'ts': 1},
+          'meta': {
+            'schema': SensorsJsonRpcCodec.schema,
+            'src': 'device',
+            'ts': 1
+          },
           'data': {
             'pairing': {
               'enabled': false,
@@ -209,6 +267,7 @@ void main() {
                 'transport': 'wired',
                 'removable': false,
                 'kind': 'air',
+                'temp_calibration': 0.0,
               },
               {
                 'id': 'floor',
@@ -217,6 +276,7 @@ void main() {
                 'transport': 'wired',
                 'removable': false,
                 'kind': 'floor',
+                'temp_calibration': -0.5,
               },
             ],
           }
@@ -227,18 +287,22 @@ void main() {
     final snap = await future;
     expect(snap.items.length, 2);
     expect(snap.items.first.ref, true);
+    expect(snap.items.first.tempCalibration, 0.0);
   });
 
   test('TelemetryRepository joins sensors + telemetry by id', () async {
     final mqtt = FakeDeviceMqttRepo();
     final topics = TelemetryTopics(DeviceMqttTopicsV1('tenant-x'));
     final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
-    final repo = MqttTelemetryRepositoryImpl(jrpc: jrpc, topics: topics, deviceSn: 'device-1');
+    final repo = MqttTelemetryRepositoryImpl(
+        jrpc: jrpc, topics: topics, deviceSn: 'device-1');
 
     await repo.subscribe();
 
     final future = repo.watchAliases().firstWhere(
-          (diff) => diff['sensor.temperature'] != null && diff['sensor.humidity'] != null,
+          (diff) =>
+              diff['sensor.temperature'] != null &&
+              diff['sensor.humidity'] != null,
         );
 
     mqtt.emit(
@@ -247,7 +311,11 @@ void main() {
         'jsonrpc': '2.0',
         'method': SensorsJsonRpcCodec.methodState,
         'params': {
-          'meta': {'schema': SensorsJsonRpcCodec.schema, 'src': 'device', 'ts': 1},
+          'meta': {
+            'schema': SensorsJsonRpcCodec.schema,
+            'src': 'device',
+            'ts': 1
+          },
           'data': {
             'pairing': {
               'enabled': false,
@@ -263,6 +331,7 @@ void main() {
                 'transport': 'wired',
                 'removable': false,
                 'kind': 'air',
+                'temp_calibration': 0.0,
               },
               {
                 'id': 'floor',
@@ -271,6 +340,7 @@ void main() {
                 'transport': 'wired',
                 'removable': false,
                 'kind': 'floor',
+                'temp_calibration': -0.5,
               },
             ],
           }
@@ -284,7 +354,11 @@ void main() {
         'jsonrpc': '2.0',
         'method': TelemetryJsonRpcCodec.methodState,
         'params': {
-          'meta': {'schema': TelemetryJsonRpcCodec.schema, 'src': 'device', 'ts': 2},
+          'meta': {
+            'schema': TelemetryJsonRpcCodec.schema,
+            'src': 'device',
+            'ts': 2
+          },
           'data': {
             'climate_sensors': [
               {
@@ -332,7 +406,10 @@ void main() {
       {
         'jsonrpc': '2.0',
         'id': 'req-telemetry-set',
-        'error': {'code': JsonRpcErrorCodes.notAllowed, 'message': 'Method not allowed'}
+        'error': {
+          'code': JsonRpcErrorCodes.notAllowed,
+          'message': 'Method not allowed'
+        }
       },
     );
 
@@ -396,7 +473,8 @@ void main() {
     final mqtt = FakeDeviceMqttRepo();
     final topics = DeviceStateTopics(DeviceMqttTopicsV1('tenant-x'));
     final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
-    final repo = DeviceStateRepositoryMqtt(jrpc, topics, 'device-1', timeout: const Duration(milliseconds: 200));
+    final repo = DeviceStateRepositoryMqtt(jrpc, topics, 'device-1',
+        timeout: const Duration(milliseconds: 200));
 
     final future = repo.watchState().first;
 
@@ -406,7 +484,11 @@ void main() {
         'jsonrpc': '2.0',
         'method': DeviceStateJsonRpcCodec.methodState,
         'params': {
-          'meta': {'schema': DeviceStateJsonRpcCodec.schema, 'src': 'device', 'ts': 1},
+          'meta': {
+            'schema': DeviceStateJsonRpcCodec.schema,
+            'src': 'device',
+            'ts': 1
+          },
           'data': {
             'Uptime': '0 days 0 hours 1 min 0 sec',
             'Relay cycles': 2,

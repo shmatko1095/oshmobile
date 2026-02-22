@@ -1,4 +1,5 @@
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
+import 'package:oshmobile/features/schedule/data/schedule_jsonrpc_codec.dart';
 
 /// Topic builder dedicated to the Schedule feature (JSON-RPC).
 ///
@@ -7,7 +8,7 @@ import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 /// - Device publishes JSON-RPC responses to `rsp(deviceId)`.
 /// - Device publishes retained state notifications to `state(deviceId)`.
 class ScheduleTopics {
-  static const String domain = 'schedule';
+  static String get domain => ScheduleJsonRpcCodec.domain;
 
   ScheduleTopics(this._topics);
 

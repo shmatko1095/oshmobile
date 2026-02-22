@@ -1,7 +1,8 @@
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
+import 'package:oshmobile/features/device_state/data/device_state_jsonrpc_codec.dart';
 
 class DeviceStateTopics {
-  static const String domain = 'device';
+  static String get domain => DeviceStateJsonRpcCodec.domain;
 
   DeviceStateTopics(this._topics);
 

@@ -16,15 +16,15 @@ class NoSelectedDevicePage extends StatelessWidget {
             Icon(
               Icons.question_mark,
               size: 150.0,
-              color: AppPalette.blue.withValues(alpha: 0.1),
+              color: AppPalette.textMuted.withValues(alpha: 0.18),
             ),
             const SizedBox(height: 20),
             Text(
               S.of(context).NoDeviceSelected,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
-                color: Colors.grey.shade700,
+                color: AppPalette.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),

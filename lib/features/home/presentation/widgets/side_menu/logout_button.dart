@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
+import 'package:oshmobile/core/common/widgets/app_card.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class LogoutButton extends StatelessWidget {
@@ -8,10 +10,20 @@ class LogoutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.power_settings_new, color: Colors.red),
-      title: Text(S.of(context).SignOut),
-      onTap: () => context.read<GlobalAuthCubit>().signedOut(),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: AppSolidCard(
+        padding: EdgeInsets.zero,
+        backgroundColor: AppPalette.surface,
+        child: ListTile(
+          leading: const Icon(
+            Icons.power_settings_new,
+            color: AppPalette.destructiveFg,
+          ),
+          title: Text(S.of(context).SignOut),
+          onTap: () => context.read<GlobalAuthCubit>().signedOut(),
+        ),
+      ),
     );
   }
 }

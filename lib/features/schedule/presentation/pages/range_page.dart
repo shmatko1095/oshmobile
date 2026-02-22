@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class ScheduleRangePage extends StatefulWidget {
@@ -40,7 +41,8 @@ class _ScheduleRangePageState extends State<ScheduleRangePage> {
   void initState() {
     super.initState();
     _values = [
-      for (double v = widget.min; v <= widget.max + 1e-6; v += widget.step) double.parse(v.toStringAsFixed(1)),
+      for (double v = widget.min; v <= widget.max + 1e-6; v += widget.step)
+        double.parse(v.toStringAsFixed(1)),
     ];
 
     _iMin = _closestIndex(widget.initialMin);
@@ -146,7 +148,8 @@ class _ScheduleRangePageState extends State<ScheduleRangePage> {
                       onChanged: _setMinIndex,
                     ),
                   ),
-                  const VerticalDivider(width: 1, thickness: 0.5, color: Colors.white24),
+                  const VerticalDivider(
+                      width: 1, thickness: 0.5, color: AppPalette.borderSoft),
                   Expanded(
                     child: _PickerColumn(
                       label: 'Max',
@@ -176,15 +179,18 @@ class _ScheduleRangePageState extends State<ScheduleRangePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: AppPalette.glass,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white24),
+        border: Border.all(color: AppPalette.borderSoft),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-          Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+          Text(label,
+              style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          Text(value,
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w800)),
         ],
       ),
     );
@@ -216,14 +222,18 @@ class _PickerColumn extends StatelessWidget {
             diameterRatio: 1.5,
             magnification: 1.1,
             scrollController: controller,
-            selectionOverlay: const CupertinoPickerDefaultSelectionOverlay(background: Colors.transparent),
+            selectionOverlay: const CupertinoPickerDefaultSelectionOverlay(
+                background: Colors.transparent),
             onSelectedItemChanged: onChanged,
             children: [
               for (final v in values)
                 Center(
                   child: Text(
                     v.toStringAsFixed(1),
-                    style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
             ],

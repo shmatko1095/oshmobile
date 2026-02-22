@@ -18,7 +18,8 @@ class WifiListStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final networks = context.select((BleProvisioningCubit cubit) => cubit.state.networks);
+    final networks =
+        context.select((BleProvisioningCubit cubit) => cubit.state.networks);
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -91,16 +92,16 @@ class _WifiTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final tileColor = isDark ? AppPalette.cardDark : Colors.white;
-    final textColor = isDark ? Colors.white : Colors.black;
-    final iconColor = isDark ? Colors.white70 : Colors.black54;
+    final tileColor = isDark ? AppPalette.surface : Colors.white;
+    final textColor = isDark ? AppPalette.textPrimary : Colors.black;
+    final iconColor = isDark ? AppPalette.textSecondary : Colors.black54;
 
     return Material(
       color: tileColor,
       clipBehavior: Clip.hardEdge,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: isDark ? BorderSide(color: Colors.white10) : BorderSide.none,
+        borderRadius: BorderRadius.circular(AppPalette.radiusMd),
+        side: BorderSide.none,
       ),
       child: ListTile(
         title: Text(

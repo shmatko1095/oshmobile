@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/device_about/presentation/cubit/device_about_cubit.dart';
 import 'package:oshmobile/features/device_about/presentation/pages/device_about_page.dart';
@@ -12,6 +13,7 @@ import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart
 import 'package:oshmobile/features/settings/presentation/cubit/device_settings_cubit.dart';
 import 'package:oshmobile/features/settings/presentation/widgets/settings_slider_tile.dart';
 import 'package:oshmobile/features/settings/presentation/widgets/settings_switch_tile.dart';
+import 'package:oshmobile/generated/l10n.dart';
 
 /// Page that renders editable device settings based on DeviceConfig.settings.
 ///
@@ -50,18 +52,20 @@ class DeviceSettingsPage extends StatelessWidget {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('Unsaved changes'),
-          content: const Text(
-            'You have unsaved changes. Do you want to discard them and leave this page?',
+          title: Text(S.of(context).UnsavedChanges),
+          content: Text(
+            S.of(context).UnsavedChangesDiscardPrompt,
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(ctx).pop(_DiscardDialogResult.cancel),
-              child: const Text('Cancel'),
+              onPressed: () =>
+                  Navigator.of(ctx).pop(_DiscardDialogResult.cancel),
+              child: Text(S.of(context).Cancel),
             ),
             TextButton(
-              onPressed: () => Navigator.of(ctx).pop(_DiscardDialogResult.discard),
-              child: const Text('Discard'),
+              onPressed: () =>
+                  Navigator.of(ctx).pop(_DiscardDialogResult.discard),
+              child: Text(S.of(context).Discard),
             ),
           ],
         );
@@ -81,8 +85,15 @@ class DeviceSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final schema = config.settings;
 
-    return WillPopScope(
-      onWillPop: () => _onWillPop(context),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldPop = await _onWillPop(context);
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
@@ -95,13 +106,14 @@ class DeviceSettingsPage extends StatelessWidget {
             },
           ),
           title: Text(
-            'Settings', // TODO: localize
+            S.of(context).Settings,
             overflow: TextOverflow.ellipsis,
           ),
           actions: [
             BlocBuilder<DeviceSettingsCubit, DeviceSettingsState>(
               buildWhen: (prev, next) {
-                if (prev is! DeviceSettingsReady || next is! DeviceSettingsReady) {
+                if (prev is! DeviceSettingsReady ||
+                    next is! DeviceSettingsReady) {
                   return prev.runtimeType != next.runtimeType;
                 }
                 return prev.dirty != next.dirty || prev.saving != next.saving;
@@ -133,9 +145,11 @@ class DeviceSettingsPage extends StatelessWidget {
                         }
                       : null,
                   child: Text(
-                    'Save', // TODO: localize
+                    S.of(context).Save,
                     style: TextStyle(
-                      color: canSave ? Theme.of(context).colorScheme.primary : Theme.of(context).disabledColor,
+                      color: canSave
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).disabledColor,
                     ),
                   ),
                 );
@@ -161,8 +175,8 @@ class DeviceSettingsPage extends StatelessWidget {
 
   Widget _buildBody(BuildContext context, SettingsSchema? schema) {
     if (schema == null) {
-      return const Center(
-        child: Text('This device does not expose any settings yet.'),
+      return Center(
+        child: Text(S.of(context).DeviceNoSettingsYet),
       );
     }
 
@@ -185,7 +199,9 @@ class DeviceSettingsPage extends StatelessWidget {
     final theme = Theme.of(context);
 
     final isTimeout = message.toLowerCase().contains('timeout');
-    final friendly = isTimeout ? 'Device seems offline or not responding.' : 'Failed to load settings.';
+    final friendly = isTimeout
+        ? S.of(context).DeviceOfflineOrNotResponding
+        : S.of(context).FailedToLoadSettings;
 
     return Center(
       child: Padding(
@@ -218,7 +234,7 @@ class DeviceSettingsPage extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: () => context.read<DeviceSettingsCubit>().refresh(),
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(S.of(context).Retry),
             ),
           ],
         ),
@@ -237,7 +253,8 @@ class DeviceSettingsPage extends StatelessWidget {
     final itemCount = groups.length + 1; // extra About card
 
     return RefreshIndicator(
-      onRefresh: () => context.read<DeviceSettingsCubit>().refresh(forceGet: true),
+      onRefresh: () =>
+          context.read<DeviceSettingsCubit>().refresh(forceGet: true),
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
@@ -253,13 +270,8 @@ class DeviceSettingsPage extends StatelessWidget {
 
           return Card(
             margin: EdgeInsets.only(top: index == 0 ? 4 : 12, bottom: 0),
-            elevation: 0,
-            color: theme.colorScheme.surface,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: theme.dividerColor.withValues(alpha: 0.5),
-              ),
+              borderRadius: BorderRadius.circular(AppPalette.radiusXl),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,16 +306,11 @@ class DeviceSettingsPage extends StatelessWidget {
   Widget _buildAboutCard(BuildContext context, ThemeData theme, Device device) {
     return Card(
       margin: const EdgeInsets.only(top: 12, bottom: 0),
-      elevation: 0,
-      color: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: theme.dividerColor.withValues(alpha: 0.5),
-        ),
+        borderRadius: BorderRadius.circular(AppPalette.radiusXl),
       ),
       child: ListTile(
-        title: const Text('About'),
+        title: Text(S.of(context).About),
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
           final aboutCubit = context.read<DeviceAboutCubit>();
@@ -330,8 +337,8 @@ class DeviceSettingsPage extends StatelessWidget {
 
     switch (meta.type) {
       case 'bool':
-        final value =
-            snapshot.getValue<bool>(meta.id) ?? (meta.defaultValue is bool ? meta.defaultValue as bool : false);
+        final value = snapshot.getValue<bool>(meta.id) ??
+            (meta.defaultValue is bool ? meta.defaultValue as bool : false);
 
         return SettingsSwitchTile(
           title: meta.titleKey ?? meta.id,
@@ -346,7 +353,8 @@ class DeviceSettingsPage extends StatelessWidget {
         final max = (meta.max ?? 100).toDouble();
         final step = (meta.step ?? 1).toDouble().abs();
 
-        final raw = snapshot.getValue<num>(meta.id) ?? (meta.defaultValue is num ? meta.defaultValue as num : min);
+        final raw = snapshot.getValue<num>(meta.id) ??
+            (meta.defaultValue is num ? meta.defaultValue as num : min);
         final value = raw.toDouble();
 
         return SettingsSliderTile(

@@ -69,11 +69,13 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
 
     final data = resp.data;
     if (data == null) throw StateError('Invalid device state response');
-    if (resp.meta != null && resp.meta!.schema != DeviceStateJsonRpcCodec.schema) {
+    if (resp.meta != null &&
+        resp.meta!.schema != DeviceStateJsonRpcCodec.schema) {
       throw StateError('Invalid device state schema: ${resp.meta!.schema}');
     }
 
-    final parsed = DeviceStatePayload.fromJson(data);
+    final parsed = DeviceStatePayload.tryParse(data);
+    if (parsed == null) throw StateError('Invalid device state payload');
     _emitSnapshot(parsed);
     return parsed;
   }
@@ -141,15 +143,16 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
     final topic = _topics.state(_deviceSn);
     _stateSub = _jrpc
         .notifications(
-          topic,
-          method: DeviceStateJsonRpcCodec.methodState,
-          schema: DeviceStateJsonRpcCodec.schema,
-        )
+      topic,
+      method: DeviceStateJsonRpcCodec.methodState,
+      schema: DeviceStateJsonRpcCodec.schema,
+    )
         .listen((notif) {
       final data = notif.data;
       if (data == null) return;
 
-      final snap = DeviceStatePayload.fromJson(data);
+      final snap = DeviceStatePayload.tryParse(data);
+      if (snap == null) return;
       _emitSnapshot(snap);
     });
   }

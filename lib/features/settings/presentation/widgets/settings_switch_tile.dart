@@ -25,6 +25,9 @@ class SettingsSwitchTile extends StatelessWidget {
     return Column(
       children: [
         ListTile(
+          dense: true,
+          visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
+          minVerticalPadding: subtitle != null ? 4 : 2,
           title: Text(
             title,
             style: theme.textTheme.bodyLarge,
@@ -33,16 +36,21 @@ class SettingsSwitchTile extends StatelessWidget {
               ? Text(
                   subtitle!,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                    color: theme.textTheme.bodySmall?.color
+                        ?.withValues(alpha: 0.7),
                   ),
                 )
               : null,
-          trailing: Switch.adaptive(
-            value: value,
-            onChanged: onChanged,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          trailing: Transform.scale(
+            scale: 0.9,
+            child: Switch.adaptive(
+              value: value,
+              onChanged: onChanged,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
         ),
         if (showDivider) const Divider(height: 1),
       ],

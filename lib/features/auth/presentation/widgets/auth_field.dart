@@ -40,7 +40,7 @@ class _AuthFieldState extends State<AuthField> {
       controller: widget.controller,
       validator: widget.validator,
       decoration: InputDecoration(
-        focusColor: AppPalette.greyColor,
+        focusColor: AppPalette.textMuted,
         hintText: widget.hintText,
         labelText: widget.labelText,
         errorText: widget.errorText,
@@ -51,7 +51,9 @@ class _AuthFieldState extends State<AuthField> {
                 }),
                 icon: Icon(
                   widget.obscureIcon,
-                  color: _isObscure ? AppPalette.obscureIconColor : AppPalette.nonObscureIconColor,
+                  color: _isObscure
+                      ? AppPalette.obscureIconColor
+                      : AppPalette.nonObscureIconColor,
                 ),
               )
             : null,

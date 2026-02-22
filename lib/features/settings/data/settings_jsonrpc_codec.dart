@@ -1,3 +1,4 @@
+import 'package:oshmobile/core/contracts/osh_contracts.dart';
 import 'package:oshmobile/features/settings/data/settings_payload_validator.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 
@@ -10,10 +11,12 @@ import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart
 ///   ...
 /// }
 class SettingsJsonRpcCodec {
-  static const String schema = 'settings@1';
-  static const String domain = 'settings';
+  static final _contract = OshContracts.current.settings;
 
-  static String methodOf(String op) => '$domain.$op';
+  static String get schema => _contract.schema;
+  static String get domain => _contract.methodDomain;
+
+  static String methodOf(String op) => _contract.method(op);
 
   static String get methodState => methodOf('state');
   static String get methodChanged => methodOf('changed');

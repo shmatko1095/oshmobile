@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/common/widgets/app_card.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 import 'package:oshmobile/features/schedule/presentation/utils.dart';
@@ -47,7 +49,8 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
 
   @override
   Widget build(BuildContext context) {
-    final current = context.select<DeviceScheduleCubit, CalendarMode>((c) => c.state.mode);
+    final current =
+        context.select<DeviceScheduleCubit, CalendarMode>((c) => c.state.mode);
 
     // If device confirmed our optimistic choice — clear the optimistic flag post-frame.
     if (_optimistic != null && current == _optimistic) {
@@ -55,42 +58,40 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
         if (!mounted) return;
         _revertTimer?.cancel();
         _revertTimer = null;
-        _optimistic = null; // no visible change; safe without setState in post-frame
+        _optimistic =
+            null; // no visible change; safe without setState in post-frame
       });
     }
 
     final modes = widget.visibleModes == null
         ? CalendarMode.all
-        : CalendarMode.all.where((m) => widget.visibleModes!.contains(m)).toList();
+        : CalendarMode.all
+            .where((m) => widget.visibleModes!.contains(m))
+            .toList();
 
     // Effective (what UI highlights): prefer optimistic if present.
     CalendarMode? effective = _optimistic ?? current;
 
-    return Card(
-      color: Colors.white.withValues(alpha: 0.06),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: Row(
-          children: [
-            for (final mode in modes) ...[
-              Expanded(
-                child: _ModeItem(
-                  mode: mode,
-                  selected: effective == mode,
-                  pending: _optimistic == mode && current != mode,
-                  onTap: () {
-                    if (effective == mode) return;
-                    _startOptimistic(mode);
-                    context.read<DeviceScheduleCubit>().setMode(mode);
-                  },
-                ),
+    return AppGlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      child: Row(
+        children: [
+          for (final mode in modes) ...[
+            Expanded(
+              child: _ModeItem(
+                mode: mode,
+                selected: effective == mode,
+                pending: _optimistic == mode && current != mode,
+                onTap: () {
+                  if (effective == mode) return;
+                  _startOptimistic(mode);
+                  context.read<DeviceScheduleCubit>().setMode(mode);
+                },
               ),
-              if (mode != modes.last) const SizedBox(width: 6),
-            ],
+            ),
+            if (mode != modes.last) const SizedBox(width: 6),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -128,10 +129,13 @@ class _ModeItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Colors tuned for glassy/dark background
-    final Color fg = selected ? Colors.white : Colors.white70;
-    final Color bg = selected ? Colors.white.withValues(alpha: 0.14) : Colors.transparent;
-    final Color bd = selected ? Colors.white.withValues(alpha: 0.22) : Colors.white.withValues(alpha: 0.08);
+    final Color fg = selected ? Colors.white : AppPalette.textSecondary;
+    final Color bg = selected
+        ? AppPalette.accentPrimary.withValues(alpha: 0.22)
+        : Colors.transparent;
+    final Color bd = selected
+        ? AppPalette.accentPrimary.withValues(alpha: 0.4)
+        : Colors.transparent;
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
@@ -163,7 +167,7 @@ class _ModeItem extends StatelessWidget {
             const SizedBox(height: 8),
             // Active underline indicator
             AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
+              duration: AppPalette.motionBase,
               curve: Curves.easeInOut,
               height: 2,
               width: selected ? 22 : 0,

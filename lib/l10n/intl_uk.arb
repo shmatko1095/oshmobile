@@ -1,1 +1,17 @@
-{}
+{
+  "About": "Про пристрій",
+  "Discard": "Скасувати зміни",
+  "UnsavedChanges": "Незбережені зміни",
+  "UnsavedChangesDiscardPrompt": "У вас є незбережені зміни. Скасувати їх і вийти зі сторінки?",
+  "DeviceNoSettingsYet": "Цей пристрій поки що не має доступних налаштувань.",
+  "DeviceOfflineOrNotResponding": "Схоже, пристрій офлайн або не відповідає.",
+  "FailedToLoadSettings": "Не вдалося завантажити налаштування.",
+  "NoDataYet": "Дані ще не надійшли",
+  "EmptyPayload": "Порожні дані",
+  "LastUpdateAt": "Останнє оновлення: {time}",
+  "@LastUpdateAt": {
+    "placeholders": {
+      "time": {}
+    }
+  }
+}

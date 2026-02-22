@@ -20,6 +20,27 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'uk';
 
+  static String m1(time) => "Останнє оновлення: ${time}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
-  static Map<String, Function> _notInlinedMessages(_) => <String, Function>{};
+  static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+    "About": MessageLookupByLibrary.simpleMessage("Про пристрій"),
+    "DeviceNoSettingsYet": MessageLookupByLibrary.simpleMessage(
+      "Цей пристрій поки що не має доступних налаштувань.",
+    ),
+    "DeviceOfflineOrNotResponding": MessageLookupByLibrary.simpleMessage(
+      "Схоже, пристрій офлайн або не відповідає.",
+    ),
+    "Discard": MessageLookupByLibrary.simpleMessage("Скасувати зміни"),
+    "EmptyPayload": MessageLookupByLibrary.simpleMessage("Порожні дані"),
+    "FailedToLoadSettings": MessageLookupByLibrary.simpleMessage(
+      "Не вдалося завантажити налаштування.",
+    ),
+    "LastUpdateAt": m1,
+    "NoDataYet": MessageLookupByLibrary.simpleMessage("Дані ще не надійшли"),
+    "UnsavedChanges": MessageLookupByLibrary.simpleMessage("Незбережені зміни"),
+    "UnsavedChangesDiscardPrompt": MessageLookupByLibrary.simpleMessage(
+      "У вас є незбережені зміни. Скасувати їх і вийти зі сторінки?",
+    ),
+  };
 }
