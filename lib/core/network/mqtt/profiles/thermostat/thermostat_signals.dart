@@ -1,6 +1,7 @@
 // Example capability set (extend as needed).
 abstract class ThermostatSignals {
   static const String telemetrySignal = 'sensor.temperature';
+  static const String climateSensors = 'sensors.climate';
 
   static const String sensorCurrentAirTemperature = 'sensor.temperature';
   static const String sensorHumidity = 'sensor.humidity';

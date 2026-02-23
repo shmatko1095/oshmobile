@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:oshmobile/core/contracts/osh_contracts.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
@@ -54,6 +55,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
   Map<String, dynamic> _lastAliases = {};
 
   bool _disposed = false;
+  static const DeepCollectionEquality _deepEq = DeepCollectionEquality();
 
   /// Best-effort cleanup when device scope is disposed.
   /// Not part of TelemetryRepository interface on purpose.
@@ -294,7 +296,9 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
       final data = resp.data;
       if (data == null) return;
       if (resp.meta != null &&
-          resp.meta!.schema != TelemetryJsonRpcCodec.schema) return;
+          resp.meta!.schema != TelemetryJsonRpcCodec.schema) {
+        return;
+      }
 
       final parsed = TelemetryState.fromJson(data);
       if (parsed == null) return;
@@ -328,7 +332,33 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     out['switch.heating.state'] = telemetry?.heaterEnabled;
     out['stats.heating_duty_24h'] = telemetry?.loadFactor;
 
-    final refMeta = _sensors?.items.firstWhere(
+    final sensors = _sensors?.items ?? const <SensorMeta>[];
+    final telemetryById = <String, ClimateSensorTelemetry>{
+      for (final item
+          in telemetry?.climateSensors ?? const <ClimateSensorTelemetry>[])
+        item.id: item,
+    };
+
+    final climateCards = <Map<String, dynamic>>[];
+    for (final meta in sensors) {
+      final t = telemetryById[meta.id];
+      final tempValid = t?.tempValid ?? false;
+      final humidityValid = t?.humidityValid ?? false;
+
+      climateCards.add({
+        'id': meta.id,
+        'name': meta.name,
+        'kind': meta.kind,
+        'ref': meta.ref,
+        'temp_valid': tempValid,
+        'humidity_valid': humidityValid,
+        if (tempValid) 'temp': t?.temp,
+        if (humidityValid) 'humidity': t?.humidity,
+      });
+    }
+    out['sensors.climate'] = climateCards;
+
+    final refMeta = sensors.firstWhere(
       (e) => e.ref,
       orElse: () => const SensorMeta(
         id: '',
@@ -342,7 +372,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     );
 
     ClimateSensorTelemetry? refTelemetry;
-    if (telemetry != null && refMeta != null && refMeta.id.isNotEmpty) {
+    if (telemetry != null && refMeta.id.isNotEmpty) {
       for (final item in telemetry.climateSensors) {
         if (item.id == refMeta.id) {
           refTelemetry = item;
@@ -372,7 +402,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
       final prevVal = prev[key];
       final hasNext = next.containsKey(key);
       final nextVal = hasNext ? next[key] : null;
-      if (prevVal != nextVal) {
+      if (!_deepEq.equals(prevVal, nextVal)) {
         diff[key] = nextVal;
       }
     }

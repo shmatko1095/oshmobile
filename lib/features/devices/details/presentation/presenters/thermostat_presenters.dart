@@ -4,12 +4,11 @@ import 'package:oshmobile/core/network/mqtt/profiles/thermostat/thermostat_signa
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_mode_bar.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/delta_temp_card.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/heating_status_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/inlet_temp_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/load_factor_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/outlet_temp_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/power_card.dart';
-import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/toggle_tile.dart';
-import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/value_card.dart';
 import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
 
 import '../models/osh_config.dart';
@@ -21,10 +20,6 @@ class ThermostatBasicPresenter implements DevicePresenter {
   @override
   Widget build(BuildContext context, Device device, DeviceConfig cfg) {
     final tiles = <_Tile>[
-      _Tile(
-          id: 'currentHumidity',
-          cap: 'sensor.humidity',
-          builder: () => ValueCard(bind: ThermostatSignals.sensorHumidity, title: 'Humidity', suffix: '%')),
       // _Tile(
       //     id: 'targetTemp',
       //     cap: 'setting.target_temperature',
@@ -38,28 +33,36 @@ class ThermostatBasicPresenter implements DevicePresenter {
       //         )),
       _Tile(
         id: 'heatingToggle',
-        cap: 'switch.heating',
-        builder: () => ToggleTile(
-            bind: ThermostatSignals.settingSwitchHeatingState,
-            title: 'Heating',
-            onChanged: null),
+        cap: null,
+        builder: () => const HeatingStatusCard(
+          bind: ThermostatSignals.settingSwitchHeatingState,
+          title: 'Heating',
+        ),
       ),
-      _Tile(id: 'powerNow', cap: 'sensor.power', builder: () => const PowerCard(bind: ThermostatSignals.sensorPower)),
       _Tile(
-          id: 'loadFactor24h',
-          cap: 'stats.heating_duty_24h',
-          builder: () => const LoadFactorCard(percentBind: ThermostatSignals.statsPower)),
+          id: 'powerNow',
+          cap: 'sensor.power',
+          builder: () => const PowerCard(bind: ThermostatSignals.sensorPower)),
+      _Tile(
+        id: 'loadFactor24h',
+        cap: 'stats.heating_duty_24h',
+        builder: () =>
+            const LoadFactorKpiCard(percentBind: ThermostatSignals.statsPower),
+      ),
       _Tile(
           id: 'inletTemp',
           cap: 'sensor.water_inlet_temp',
-          builder: () => const InletTempCard(bind: ThermostatSignals.sensorWaterInletTemp)),
+          builder: () => const InletTempCard(
+              bind: ThermostatSignals.sensorWaterInletTemp)),
       _Tile(
           id: 'outletTemp',
           cap: 'sensor.water_outlet_temp',
-          builder: () => const OutletTempCard(bind: ThermostatSignals.sensorWaterOutletTemp)),
+          builder: () => const OutletTempCard(
+              bind: ThermostatSignals.sensorWaterOutletTemp)),
     ];
 
-    if (cfg.has('sensor.water_inlet_temp') && cfg.has('sensor.water_outlet_temp')) {
+    if (cfg.has('sensor.water_inlet_temp') &&
+        cfg.has('sensor.water_outlet_temp')) {
       tiles.add(
         _Tile(
           id: 'deltaT',
@@ -72,18 +75,22 @@ class ThermostatBasicPresenter implements DevicePresenter {
       );
     }
 
-    var show = tiles.where((t) => cfg.has(t.cap) && cfg.visible(t.id)).toList();
+    var show = tiles
+        .where((t) => (t.cap == null || cfg.has(t.cap!)) && cfg.visible(t.id))
+        .toList();
     if (cfg.order.isNotEmpty) {
       show.sort((a, b) {
         int ia = cfg.order.indexOf(a.id);
         if (ia == -1) ia = 1 << 30;
+
         int ib = cfg.order.indexOf(b.id);
         if (ib == -1) ib = 1 << 30;
         return ia.compareTo(ib);
       });
     }
 
-    final canShowHero = cfg.has('sensor.temperature') || cfg.has('setting.target_temperature');
+    final canShowHero =
+        cfg.has('sensor.temperature') || cfg.has('setting.target_temperature');
 
     return Scaffold(
       body: CustomScrollView(
@@ -92,30 +99,34 @@ class ThermostatBasicPresenter implements DevicePresenter {
           if (canShowHero)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                padding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
                 child: TemperatureMinimalPanel(
-                    currentBind: ThermostatSignals.telemetrySignal,
-                    heaterEnabledBind: ThermostatSignals.settingSwitchHeatingState,
-                    unit: '°C',
-                    height: MediaQuery.sizeOf(context).height * 0.38,
-                    onTap: () => ThermostatModeNavigator.openForCurrentMode(context)),
+                  currentBind: ThermostatSignals.telemetrySignal,
+                  sensorsBind: ThermostatSignals.climateSensors,
+                  unit: '°C',
+                  height: MediaQuery.sizeOf(context).height * 0.38,
+                  onTap: () =>
+                      ThermostatModeNavigator.openForCurrentMode(context),
+                ),
               ),
             ),
           if (canShowHero)
             SliverToBoxAdapter(
               child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
                   child: const ThermostatModeBar()),
             ),
           SliverPadding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
             sliver: SliverGrid(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.1,
               ),
-              delegate: SliverChildListDelegate([for (final t in show) t.builder()]),
+              delegate:
+                  SliverChildListDelegate([for (final t in show) t.builder()]),
             ),
           ),
         ],
@@ -125,7 +136,8 @@ class ThermostatBasicPresenter implements DevicePresenter {
 }
 
 class _Tile {
-  final String id, cap;
+  final String id;
+  final String? cap;
   final Widget Function() builder;
 
   const _Tile({required this.id, required this.cap, required this.builder});

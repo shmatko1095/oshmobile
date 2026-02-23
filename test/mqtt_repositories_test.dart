@@ -385,6 +385,9 @@ void main() {
     final diff = await future;
     expect(diff['sensor.temperature'], 22.6);
     expect(diff['sensor.humidity'], 44.2);
+    final sensors = diff['sensors.climate'] as List<dynamic>?;
+    expect(sensors, isNotNull);
+    expect(sensors, isNotEmpty);
   });
 
   test('TelemetryRepository maps NotAllowed error', () async {

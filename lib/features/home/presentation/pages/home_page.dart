@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/core/scopes/device_scope.dart';
@@ -11,7 +12,8 @@ import 'package:oshmobile/features/home/presentation/widgets/mqtt_activity_icon.
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/side_menu.dart';
 
 class HomePage extends StatefulWidget {
-  static MaterialPageRoute route() => MaterialPageRoute(builder: (_) => const HomePage());
+  static MaterialPageRoute route() =>
+      MaterialPageRoute(builder: (_) => const HomePage());
 
   const HomePage({super.key});
 
@@ -38,7 +40,8 @@ class _HomePageState extends State<HomePage> {
     if (_title == next) return;
 
     final phase = SchedulerBinding.instance.schedulerPhase;
-    if (phase == SchedulerPhase.persistentCallbacks || phase == SchedulerPhase.transientCallbacks) {
+    if (phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.transientCallbacks) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() => _title = next);
       });
@@ -52,22 +55,34 @@ class _HomePageState extends State<HomePage> {
     final state = homeCubit.state;
     final selectedId = state.selectedDeviceId;
     if (selectedId == null) {
-      SnackBarUtils.showFail(context: context, content: 'Select a device first.');
+      SnackBarUtils.showFail(
+          context: context, content: 'Select a device first.');
       return;
     }
 
     final device = homeCubit.getDeviceById(selectedId);
     if (device == null) {
-      SnackBarUtils.showFail(context: context, content: 'Selected device not found.');
+      SnackBarUtils.showFail(
+          context: context, content: 'Selected device not found.');
       return;
     }
 
     if (_openSettingsAction == null) {
-      SnackBarUtils.showFail(context: context, content: 'Device view is not ready yet.');
+      SnackBarUtils.showFail(
+          context: context, content: 'Device view is not ready yet.');
       return;
     }
 
     _openSettingsAction!.call();
+  }
+
+  String _resolveDeviceTitle(Device device) {
+    String take(String v) => v.trim();
+    final alias = take(device.userData.alias);
+    if (alias.isNotEmpty) return alias;
+    final sn = take(device.sn);
+    if (sn.isNotEmpty) return sn;
+    return _defaultTitle;
   }
 
   @override
@@ -135,6 +150,7 @@ class _HomePageState extends State<HomePage> {
                   return const NoSelectedDevicePage();
                 }
 
+                _setTitleSafe(_resolveDeviceTitle(device));
                 return DeviceScope(
                   key: ValueKey(device.id),
                   device: device,
