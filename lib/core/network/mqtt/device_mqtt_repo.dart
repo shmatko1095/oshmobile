@@ -60,5 +60,12 @@ abstract class DeviceMqttRepo {
 
   Stream<MqttJson> subscribeJson(String topicFilter, {int qos = 1});
 
-  Future<void> publishJson(String topic, Map<String, dynamic> payload, {int qos = 1, bool retain = false});
+  /// Returns `true` when message was handed to MQTT client, `false` when
+  /// publishing was skipped/failed (e.g. disconnected transport).
+  Future<bool> publishJson(
+    String topic,
+    Map<String, dynamic> payload, {
+    int qos = 1,
+    bool retain = false,
+  });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
 class DeltaTCard extends StatelessWidget {
   const DeltaTCard({
@@ -24,23 +25,31 @@ class DeltaTCard extends StatelessWidget {
 
   String _fmtNum(num? v, {int decimalsIfNeeded = 1}) {
     if (v == null) return '—';
-    return (v % 1 == 0) ? v.toStringAsFixed(0) : v.toStringAsFixed(decimalsIfNeeded);
+    return (v % 1 == 0)
+        ? v.toStringAsFixed(0)
+        : v.toStringAsFixed(decimalsIfNeeded);
   }
 
   @override
   Widget build(BuildContext context) {
-    final data = context.select<DeviceStateCubit, ({num? inT, num? outT, num? dT})>((c) {
-      final inT = _asNum(c.state.get(inletBind));
-      final outT = _asNum(c.state.get(outletBind));
-      final dT = (inT != null && outT != null) ? (outT - inT) : null;
-      return (inT: inT, outT: outT, dT: dT);
-    });
+    final data =
+        context.select<DeviceSnapshotCubit, ({num? inT, num? outT, num? dT})>(
+      (c) {
+        final telemetry = c.state.telemetry.data ?? const {};
+        final inT = _asNum(readBind(telemetry, inletBind));
+        final outT = _asNum(readBind(telemetry, outletBind));
+        final dT = (inT != null && outT != null) ? (outT - inT) : null;
+        return (inT: inT, outT: outT, dT: dT);
+      },
+    );
 
     final String dtTxt = '${_fmtNum(data.dT)}$unit';
     final String inlet = '${_fmtNum(data.inT)}$unit';
     final String outlet = '${_fmtNum(data.outT)}$unit';
 
-    final Color accent = (data.dT == null) ? Colors.white : (data.dT! >= 0 ? Colors.orangeAccent : Colors.cyanAccent);
+    final Color accent = (data.dT == null)
+        ? Colors.white
+        : (data.dT! >= 0 ? Colors.orangeAccent : Colors.cyanAccent);
 
     return LayoutBuilder(
       builder: (context, c) {
@@ -51,7 +60,8 @@ class DeltaTCard extends StatelessWidget {
           color: Colors.transparent,
           elevation: 0,
           margin: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Ink(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -72,7 +82,8 @@ class DeltaTCard extends StatelessWidget {
                         maxLines: 1,
                         softWrap: false,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            color: Colors.white70, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -82,7 +93,8 @@ class DeltaTCard extends StatelessWidget {
                 // big ΔT value
                 AnimatedDefaultTextStyle(
                   duration: const Duration(milliseconds: 200),
-                  style: TextStyle(color: accent, fontSize: 22, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                      color: accent, fontSize: 22, fontWeight: FontWeight.w800),
                   child: Text(dtTxt),
                 ),
 
@@ -96,10 +108,12 @@ class DeltaTCard extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.call_received, size: 14, color: Colors.white54),
+                        const Icon(Icons.call_received,
+                            size: 14, color: Colors.white54),
                         const SizedBox(width: 4),
                         ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: c.maxWidth / 2 - 24),
+                          constraints:
+                              BoxConstraints(maxWidth: c.maxWidth / 2 - 24),
                           child: Text(
                             'In: $inlet',
                             maxLines: 1,
@@ -113,10 +127,12 @@ class DeltaTCard extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.call_made, size: 14, color: Colors.white54),
+                        const Icon(Icons.call_made,
+                            size: 14, color: Colors.white54),
                         const SizedBox(width: 4),
                         ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: c.maxWidth / 2 - 24),
+                          constraints:
+                              BoxConstraints(maxWidth: c.maxWidth / 2 - 24),
                           child: Text(
                             'Out: $outlet',
                             maxLines: 1,

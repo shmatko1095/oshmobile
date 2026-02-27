@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
 class HeatingStatusCard extends StatelessWidget {
   const HeatingStatusCard({
@@ -23,8 +24,8 @@ class HeatingStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isHeating = context.select<DeviceStateCubit, bool>(
-      (c) => _asBool(c.state.getDynamic(bind)),
+    final isHeating = context.select<DeviceSnapshotCubit, bool>(
+      (c) => _asBool(readBind(c.state.telemetry.data ?? const {}, bind)),
     );
 
     final borderColor = isHeating

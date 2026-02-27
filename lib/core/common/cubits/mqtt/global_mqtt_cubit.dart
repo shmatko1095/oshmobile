@@ -25,6 +25,11 @@ class GlobalMqttCubit extends Cubit<GlobalMqttState> {
     _connSub = _repo.connEvents.listen(_onConnEvent);
   }
 
+  void _emitIfOpen(GlobalMqttState next) {
+    if (isClosed) return;
+    emit(next);
+  }
+
   void _onConnEvent(DeviceMqttConnEvent evt) {
     if (isClosed) return;
 
@@ -50,23 +55,21 @@ class GlobalMqttCubit extends Cubit<GlobalMqttState> {
     required String userId,
     required String token,
   }) async {
-    // if (isClosed) return;
+    if (isClosed) return;
 
     if (isConnected) {
-      emit(const MqttConnected());
+      _emitIfOpen(const MqttConnected());
       return;
     }
 
-    emit(const MqttConnecting());
+    _emitIfOpen(const MqttConnecting());
     try {
       await _repo.connect(userId: userId, token: token);
-      // if (isClosed) return;
-      emit(const MqttConnected());
+      _emitIfOpen(const MqttConnected());
     } catch (e, st) {
       // No implicit retry here (avoids double-handshake races).
       await OshCrashReporter.logNonFatal(e, st, reason: 'MQTT connect failed');
-      // if (isClosed) return;
-      emit(MqttError(e.toString()));
+      _emitIfOpen(MqttError(e.toString()));
     }
   }
 
@@ -75,16 +78,15 @@ class GlobalMqttCubit extends Cubit<GlobalMqttState> {
     required String userId,
     required String token,
   }) async {
-    // if (isClosed) return;
+    if (isClosed) return;
 
     try {
       await _repo.reconnect(userId: userId, token: token);
-      // if (isClosed) return;
-      emit(const MqttConnected());
+      _emitIfOpen(const MqttConnected());
     } catch (e, st) {
-      await OshCrashReporter.logNonFatal(e, st, reason: 'MQTT reconnect failed');
-      // if (isClosed) return;
-      emit(MqttError(e.toString()));
+      await OshCrashReporter.logNonFatal(e, st,
+          reason: 'MQTT reconnect failed');
+      _emitIfOpen(MqttError(e.toString()));
     }
   }
 
@@ -93,10 +95,10 @@ class GlobalMqttCubit extends Cubit<GlobalMqttState> {
     try {
       await _repo.disconnect();
     } catch (e, st) {
-      await OshCrashReporter.logNonFatal(e, st, reason: 'MQTT disconnect failed');
+      await OshCrashReporter.logNonFatal(e, st,
+          reason: 'MQTT disconnect failed');
     } finally {
-      // if (!isClosed)
-      emit(const MqttDisconnected());
+      _emitIfOpen(const MqttDisconnected());
     }
   }
 

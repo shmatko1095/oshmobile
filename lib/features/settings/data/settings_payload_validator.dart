@@ -1,25 +1,36 @@
 bool validateSettingsSetPayload(Map<String, dynamic> data) {
-  const allowedTop = {'display', 'update', 'time'};
+  const allowedTop = {'display', 'update', 'time', 'control'};
   if (!_hasOnlyKeys(data, allowedTop)) return false;
 
   final displayRaw = data['display'];
   final updateRaw = data['update'];
   final timeRaw = data['time'];
+  final controlRaw = data['control'];
   if (displayRaw is! Map || updateRaw is! Map || timeRaw is! Map) return false;
+  if (controlRaw != null && controlRaw is! Map) return false;
 
-  return _validateDisplay(displayRaw.cast<String, dynamic>(),
+  final ok = _validateDisplay(displayRaw.cast<String, dynamic>(),
           requireAll: true) &&
       _validateUpdate(updateRaw.cast<String, dynamic>(), requireAll: true) &&
       _validateTime(timeRaw.cast<String, dynamic>(), requireAll: true);
+  if (!ok) return false;
+
+  if (controlRaw != null &&
+      !_validateControl(controlRaw.cast<String, dynamic>(), requireAll: true)) {
+    return false;
+  }
+
+  return true;
 }
 
 bool validateSettingsPatchPayload(Map<String, dynamic> data) {
-  const allowedTop = {'display', 'update', 'time'};
+  const allowedTop = {'display', 'update', 'time', 'control'};
   if (!_hasOnlyKeys(data, allowedTop)) return false;
 
   final displayRaw = data['display'];
   final updateRaw = data['update'];
   final timeRaw = data['time'];
+  final controlRaw = data['control'];
 
   if (displayRaw != null) {
     if (displayRaw is! Map) return false;
@@ -37,6 +48,12 @@ bool validateSettingsPatchPayload(Map<String, dynamic> data) {
     if (timeRaw is! Map) return false;
     if (!_validateTime(timeRaw.cast<String, dynamic>(), requireAll: false))
       return false;
+  }
+
+  if (controlRaw != null) {
+    if (controlRaw is! Map) return false;
+    if (!_validateControl(controlRaw.cast<String, dynamic>(),
+        requireAll: false)) return false;
   }
 
   return true;
@@ -128,6 +145,38 @@ bool _validateTime(Map<String, dynamic> data, {required bool requireAll}) {
   return true;
 }
 
+bool _validateControl(Map<String, dynamic> data, {required bool requireAll}) {
+  const allowed = {
+    'model',
+    'maxFloorTemp',
+    'maxFloorTempLimitEnabled',
+    'maxFloorTempFailSafe',
+  };
+  const required = {'model'};
+  if (!_hasOnlyKeys(data, allowed)) return false;
+  if (requireAll && !_hasRequiredKeys(data, required)) return false;
+
+  if (data.containsKey('model')) {
+    final v = data['model'];
+    if (v is! String) return false;
+    if (v != 'tpi' && v != 'r2c') return false;
+  }
+  if (data.containsKey('maxFloorTemp')) {
+    final v = _asNum(data['maxFloorTemp']);
+    if (v == null || v < 10 || v > 50) return false;
+  }
+  if (data.containsKey('maxFloorTempLimitEnabled')) {
+    final v = data['maxFloorTempLimitEnabled'];
+    if (v is! bool) return false;
+  }
+  if (data.containsKey('maxFloorTempFailSafe')) {
+    final v = data['maxFloorTempFailSafe'];
+    if (v is! bool) return false;
+  }
+
+  return true;
+}
+
 bool _hasOnlyKeys(Map<String, dynamic> map, Set<String> allowed) {
   for (final key in map.keys) {
     if (!allowed.contains(key)) return false;
@@ -148,5 +197,10 @@ int? _asIntStrict(dynamic v) {
     if (v % 1 != 0) return null;
     return v.toInt();
   }
+  return null;
+}
+
+num? _asNum(dynamic v) {
+  if (v is num) return v;
   return null;
 }

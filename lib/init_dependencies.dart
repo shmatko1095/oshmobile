@@ -63,6 +63,7 @@ import 'package:oshmobile/features/home/domain/usecases/update_device_user_data.
 import 'package:oshmobile/features/home/utils/selected_device_storage.dart';
 import 'package:oshmobile/features/schedule/data/schedule_topics.dart';
 import 'package:oshmobile/features/settings/data/settings_topics.dart';
+import 'package:oshmobile/features/sensors/data/sensors_topics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final locator = GetIt.instance;
@@ -96,7 +97,8 @@ Future<void> _initCore() async {
 
   // InternetConnectionChecker
   locator.registerFactory(
-    () => InternetConnection.createInstance(checkInterval: const Duration(seconds: 1)),
+    () => InternetConnection.createInstance(
+        checkInterval: const Duration(seconds: 1)),
   );
   locator.registerFactory<InternetConnectionChecker>(
     () => InternetConnectionCheckerImpl(internetConnection: locator()),
@@ -132,7 +134,8 @@ Future<void> _initKeycloakWrapper() async {
         return;
       }
 
-      debugPrint('⚠️ Detected corrupted storage via onError. Starting recovery...');
+      debugPrint(
+          '⚠️ Detected corrupted storage via onError. Starting recovery...');
       isRetrying = true;
 
       try {
@@ -142,7 +145,8 @@ Future<void> _initKeycloakWrapper() async {
         await keycloakWrapper.initialize();
         debugPrint('✅ Keycloak recovered successfully inside onError.');
       } catch (e, st) {
-        OshCrashReporter.logFatal(e, st, reason: "Failed to initialize Keycloak");
+        OshCrashReporter.logFatal(e, st,
+            reason: "Failed to initialize Keycloak");
         debugPrint('❌ Recovery threw an exception: $e');
       }
     }
@@ -159,12 +163,13 @@ Future<void> _initKeycloakWrapper() async {
 
 void _initHomeFeature() {
   locator
-    ..registerFactory<UserRemoteDataSource>(() => UserRemoteDataSourceImpl(apiUserService: locator<ApiUserService>()))
+    ..registerFactory<UserRemoteDataSource>(() =>
+        UserRemoteDataSourceImpl(apiUserService: locator<ApiUserService>()))
     ..registerFactory<UserRepository>(
       () => UserRepositoryImpl(dataSource: locator<UserRemoteDataSource>()),
     )
-    ..registerFactory<DeviceRemoteDataSource>(
-        () => DeviceRemoteDataSourceImpl(apiDeviceService: locator<ApiDeviceService>()))
+    ..registerFactory<DeviceRemoteDataSource>(() => DeviceRemoteDataSourceImpl(
+        apiDeviceService: locator<ApiDeviceService>()))
     ..registerFactory<DeviceRepository>(
       () => DeviceRepositoryImpl(dataSource: locator<DeviceRemoteDataSource>()),
     )
@@ -245,12 +250,19 @@ void _initDevicesFeature() {
   // MQTT-based repos/usecases must be session-scoped (see SessionDi).
 
   locator
-    ..registerLazySingleton<DeviceMqttTopicsV1>(() => DeviceMqttTopicsV1(locator<AppConfig>().devicesTenantId))
-    ..registerLazySingleton<TelemetryTopics>(() => TelemetryTopics(locator<DeviceMqttTopicsV1>()))
-    ..registerLazySingleton<ScheduleTopics>(() => ScheduleTopics(locator<DeviceMqttTopicsV1>()))
-    ..registerLazySingleton<SettingsTopics>(() => SettingsTopics(locator<DeviceMqttTopicsV1>()))
+    ..registerLazySingleton<DeviceMqttTopicsV1>(
+        () => DeviceMqttTopicsV1(locator<AppConfig>().devicesTenantId))
+    ..registerLazySingleton<TelemetryTopics>(
+        () => TelemetryTopics(locator<DeviceMqttTopicsV1>()))
+    ..registerLazySingleton<ScheduleTopics>(
+        () => ScheduleTopics(locator<DeviceMqttTopicsV1>()))
+    ..registerLazySingleton<SettingsTopics>(
+        () => SettingsTopics(locator<DeviceMqttTopicsV1>()))
+    ..registerLazySingleton<SensorsTopics>(
+        () => SensorsTopics(locator<DeviceMqttTopicsV1>()))
     // Temporary device config loader (HTTP-based, safe to keep global).
-    ..registerLazySingleton<GetDeviceFull>(() => GetDeviceFull(locator<DeviceRepository>()))
+    ..registerLazySingleton<GetDeviceFull>(
+        () => GetDeviceFull(locator<DeviceRepository>()))
     // Device presenters registry (pure mapping).
     ..registerSingleton<DevicePresenterRegistry>(const DevicePresenterRegistry({
       '8c5ea780-3d0d-4886-9334-2b4e781dd51c': ThermostatBasicPresenter(),
@@ -335,7 +347,11 @@ Future<void> _initWebClient() async {
   final chopperClient = ChopperClient(
     converter: const JsonConverter(),
     authenticator: locator<ApiAuthenticator>(),
-    services: [locator<AuthService>(), locator<ApiUserService>(), locator<ApiDeviceService>()],
+    services: [
+      locator<AuthService>(),
+      locator<ApiUserService>(),
+      locator<ApiDeviceService>()
+    ],
     interceptors: [
       AuthInterceptor(globalAuthCubit: locator<GlobalAuthCubit>()),
       const HeadersInterceptor({
@@ -354,5 +370,6 @@ Future<void> _initWebClient() async {
 }
 
 Future<void> _initMqttClient() async {
-  locator.registerLazySingleton<AppDeviceIdProvider>(() => AppDeviceIdProvider());
+  locator
+      .registerLazySingleton<AppDeviceIdProvider>(() => AppDeviceIdProvider());
 }

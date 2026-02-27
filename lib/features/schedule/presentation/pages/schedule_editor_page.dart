@@ -5,7 +5,9 @@ import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
-import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
+import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/features/schedule/presentation/pages/manual_temperature_page.dart';
 import 'package:oshmobile/features/schedule/presentation/utils.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -94,129 +96,131 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final facade = context.read<DeviceFacade>();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title, overflow: TextOverflow.ellipsis),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: BlocListener<DeviceScheduleCubit, DeviceScheduleState>(
-        listenWhen: (_, s) => s is DeviceScheduleReady && s.flash != null,
-        listener: (context, s) {
-          final msg = (s as DeviceScheduleReady).flash!;
+      body: BlocListener<DeviceSnapshotCubit, DeviceSnapshot>(
+        listenWhen: (prev, next) {
+          return prev.schedule.error != next.schedule.error &&
+              next.schedule.error != null;
+        },
+        listener: (context, snap) {
+          final msg = snap.schedule.error!;
           SnackBarUtils.showFail(context: context, content: msg);
         },
         child: SafeArea(
-          child: BlocBuilder<DeviceScheduleCubit, DeviceScheduleState>(
-            builder: (context, state) {
-              switch (state) {
-                case DeviceScheduleLoading():
-                  return const Loader();
-                case DeviceScheduleError(:final message):
-                  return _ErrorRetry(
-                    message: message,
-                    onRetry: () =>
-                        context.read<DeviceScheduleCubit>().refresh(),
-                  );
-                case DeviceScheduleReady():
-                  final showDays = state.mode.id == CalendarMode.weekly.id;
-                  final items = state.points
-                      .asMap()
-                      .entries
-                      .where((e) => _passesFilter(e.value.daysMask))
-                      .toList();
+          child: BlocBuilder<DeviceSnapshotCubit, DeviceSnapshot>(
+            builder: (context, snap) {
+              final scheduleSlice = snap.schedule;
+              final status = scheduleSlice.status;
 
-                  return ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
-                    itemCount: items.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, i) {
-                      final idx = items[i].key;
-                      final p = items[i].value;
-
-                      return Dismissible(
-                        key: ValueKey(
-                            'sp_${idx}_${p.time.hour}_${p.time.minute}_${p.temp}_${p.daysMask}'),
-                        direction: DismissDirection.endToStart,
-                        background: const SizedBox.shrink(),
-                        secondaryBackground: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: AppPalette.destructiveBg,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(Icons.delete,
-                              color: AppPalette.destructiveFg),
-                        ),
-                        onDismissed: (_) =>
-                            context.read<DeviceScheduleCubit>().removeAt(idx),
-                        child: _ScheduleTile(
-                          timeText: _fmtTime(p.time),
-                          valueText: '${_fmtTemp(p.temp)}°C',
-                          daysMask: p.daysMask,
-                          showDays: showDays,
-
-                          // time picker
-                          onTapTime: () async {
-                            final scheduleCubit =
-                                context.read<DeviceScheduleCubit>();
-                            final picked = await _showWheelTimePicker(context,
-                                initial: p.time, minuteInterval: 1);
-                            if (!mounted) return;
-                            if (picked != null) {
-                              scheduleCubit.changePoint(
-                                  idx, p.copyWith(time: picked));
-                            }
-                          },
-
-                          // fine range edits (still available on the right)
-                          onDecTemp: () {
-                            final next = (p.temp - 0.5).clamp(5.0, 35.0);
-                            final newTemp =
-                                double.parse(next.toStringAsFixed(1));
-                            context
-                                .read<DeviceScheduleCubit>()
-                                .changePoint(idx, p.copyWith(temp: newTemp));
-                          },
-                          onIncTemp: () {
-                            final next = (p.temp + 0.5).clamp(5.0, 35.0);
-                            final newTemp =
-                                double.parse(next.toStringAsFixed(1));
-                            context
-                                .read<DeviceScheduleCubit>()
-                                .changePoint(idx, p.copyWith(temp: newTemp));
-                          },
-
-                          onToggleDay: (d) {
-                            if (!showDays) return;
-                            final newMask = WeekdayMask.toggle(p.daysMask, d);
-                            context.read<DeviceScheduleCubit>().changePoint(
-                                idx, p.copyWith(daysMask: newMask));
-                          },
-
-                          onTapValue: () {
-                            Navigator.of(context).push(
-                              CupertinoPageRoute(
-                                builder: (_) => ManualTemperaturePage(
-                                  title: S.of(context).SetTemperature,
-                                  initial: p.temp,
-                                  onSave: (v) {
-                                    final vv =
-                                        double.parse(v.toStringAsFixed(1));
-                                    context
-                                        .read<DeviceScheduleCubit>()
-                                        .changePoint(idx, p.copyWith(temp: vv));
-                                  },
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  );
+              if (status == DeviceSliceStatus.idle ||
+                  status == DeviceSliceStatus.loading) {
+                return const Loader();
               }
+
+              final schedule = scheduleSlice.data;
+              if (status == DeviceSliceStatus.error && schedule == null) {
+                return _ErrorRetry(
+                  message: scheduleSlice.error ?? 'Failed to load schedule',
+                  onRetry: () => facade.schedule.get(force: true),
+                );
+              }
+              if (schedule == null) return const Loader();
+
+              final showDays = schedule.mode.id == CalendarMode.weekly.id;
+              final items = schedule
+                  .pointsFor(schedule.mode)
+                  .asMap()
+                  .entries
+                  .where((e) => _passesFilter(e.value.daysMask))
+                  .toList();
+
+              return ListView.separated(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
+                itemCount: items.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (context, i) {
+                  final idx = items[i].key;
+                  final p = items[i].value;
+
+                  return Dismissible(
+                    key: ValueKey(
+                        'sp_${idx}_${p.time.hour}_${p.time.minute}_${p.temp}_${p.daysMask}'),
+                    direction: DismissDirection.endToStart,
+                    background: const SizedBox.shrink(),
+                    secondaryBackground: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppPalette.destructiveBg,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(Icons.delete,
+                          color: AppPalette.destructiveFg),
+                    ),
+                    onDismissed: (_) => facade.schedule.removePoint(idx),
+                    child: _ScheduleTile(
+                      timeText: _fmtTime(p.time),
+                      valueText: '${_fmtTemp(p.temp)}°C',
+                      daysMask: p.daysMask,
+                      showDays: showDays,
+                      onTapTime: () async {
+                        final picked = await _showWheelTimePicker(
+                          context,
+                          initial: p.time,
+                          minuteInterval: 1,
+                        );
+                        if (!mounted || picked == null) return;
+                        facade.schedule
+                            .patchPoint(idx, p.copyWith(time: picked));
+                      },
+                      onDecTemp: () {
+                        final next = (p.temp - 0.5).clamp(5.0, 35.0);
+                        final newTemp = double.parse(next.toStringAsFixed(1));
+                        facade.schedule
+                            .patchPoint(idx, p.copyWith(temp: newTemp));
+                      },
+                      onIncTemp: () {
+                        final next = (p.temp + 0.5).clamp(5.0, 35.0);
+                        final newTemp = double.parse(next.toStringAsFixed(1));
+                        facade.schedule
+                            .patchPoint(idx, p.copyWith(temp: newTemp));
+                      },
+                      onToggleDay: (d) {
+                        if (!showDays) return;
+                        final newMask = WeekdayMask.toggle(p.daysMask, d);
+                        facade.schedule.patchPoint(
+                          idx,
+                          p.copyWith(daysMask: newMask),
+                        );
+                      },
+                      onTapValue: () {
+                        Navigator.of(context).push(
+                          CupertinoPageRoute(
+                            builder: (_) => ManualTemperaturePage(
+                              title: S.of(context).SetTemperature,
+                              initial: p.temp,
+                              onSave: (v) {
+                                final vv = double.parse(v.toStringAsFixed(1));
+                                facade.schedule.patchPoint(
+                                  idx,
+                                  p.copyWith(temp: vv),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              );
             },
           ),
         ),
@@ -224,25 +228,23 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(right: 6, bottom: 10),
-        child: _AddPointFab(
-            onPressed: () => context.read<DeviceScheduleCubit>().addPoint()),
+        child: _AddPointFab(onPressed: () => facade.schedule.addPoint()),
       ),
-      bottomNavigationBar:
-          BlocBuilder<DeviceScheduleCubit, DeviceScheduleState>(
-        builder: (context, state) {
-          final showDays = CalendarMode.weekly == state.mode;
-          if (showDays) {
-            return SafeArea(
-              top: false,
-              child: _WeekdayFilterBar(
-                mask: _filterMask,
-                onToggle: (d) => setState(
-                    () => _filterMask = WeekdayMask.toggle(_filterMask, d)),
-              ),
-            );
-          } else {
+      bottomNavigationBar: BlocBuilder<DeviceSnapshotCubit, DeviceSnapshot>(
+        builder: (context, snap) {
+          final mode = snap.schedule.data?.mode ?? CalendarMode.off;
+          if (mode != CalendarMode.weekly) {
             return const SizedBox.shrink();
           }
+
+          return SafeArea(
+            top: false,
+            child: _WeekdayFilterBar(
+              mask: _filterMask,
+              onToggle: (d) => setState(
+                  () => _filterMask = WeekdayMask.toggle(_filterMask, d)),
+            ),
+          );
         },
       ),
     );

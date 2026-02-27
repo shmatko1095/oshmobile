@@ -3,59 +3,45 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
+import 'package:oshmobile/app/device_session/scopes/device_route_scope.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
-import 'package:oshmobile/features/device_about/presentation/cubit/device_about_cubit.dart';
 import 'package:oshmobile/features/device_about/presentation/pages/device_about_page.dart';
-import 'package:oshmobile/features/devices/details/presentation/models/osh_config.dart';
-import 'package:oshmobile/features/devices/details/presentation/models/settings_schema.dart';
+import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
-import 'package:oshmobile/features/settings/presentation/cubit/device_settings_cubit.dart';
+import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema.dart';
 import 'package:oshmobile/features/settings/presentation/widgets/settings_slider_tile.dart';
 import 'package:oshmobile/features/settings/presentation/widgets/settings_switch_tile.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
-/// Page that renders editable device settings based on DeviceConfig.settings.
-///
-/// Assumptions:
-/// - DeviceSettingsCubit is already provided above this widget.
-/// - [config.settings] describes how to render each field.
-/// - Actual values come from SettingsSnapshot inside the cubit.
 class DeviceSettingsPage extends StatelessWidget {
   final Device device;
-  final DeviceConfig config;
+  final SettingsUiSchema schema;
 
   const DeviceSettingsPage({
     super.key,
     required this.device,
-    required this.config,
+    required this.schema,
   });
 
-  /// Handle system back / app bar back with "unsaved changes" dialog.
+  DeviceSlice<SettingsSnapshot> _settingsSlice(BuildContext context) =>
+      context.read<DeviceSnapshotCubit>().state.settings;
+
   Future<bool> _onWillPop(BuildContext context) async {
-    final cubit = context.read<DeviceSettingsCubit>();
-    final state = cubit.state;
+    final slice = _settingsSlice(context);
 
-    if (state is! DeviceSettingsReady) {
-      // Loading / error states – просто уходим.
+    if (!slice.dirty || slice.status == DeviceSliceStatus.saving) {
       return true;
     }
 
-    if (!state.dirty || state.saving) {
-      // Нет локальных изменений или как раз сохраняем – уходим без вопросов.
-      // (Сохранение всё равно завершится в фоне, кубит живёт в DeviceHostBody.)
-      return true;
-    }
-
-    // Есть несохранённые изменения – спрашиваем пользователя.
     final result = await showDialog<_DiscardDialogResult>(
       context: context,
       builder: (ctx) {
         return AlertDialog(
           title: Text(S.of(context).UnsavedChanges),
-          content: Text(
-            S.of(context).UnsavedChangesDiscardPrompt,
-          ),
+          content: Text(S.of(context).UnsavedChangesDiscardPrompt),
           actions: [
             TextButton(
               onPressed: () =>
@@ -72,18 +58,19 @@ class DeviceSettingsPage extends StatelessWidget {
       },
     );
 
+    if (!context.mounted) return false;
+
     if (result == _DiscardDialogResult.discard) {
-      cubit.discardLocalChanges();
+      context.read<DeviceFacade>().settings.discardLocalChanges();
       return true;
     }
 
-    // Cancel or null (backdrop tap) – остаёмся на странице.
     return false;
   }
 
   @override
   Widget build(BuildContext context) {
-    final schema = config.settings;
+    final facade = context.read<DeviceFacade>();
 
     return PopScope(
       canPop: false,
@@ -110,20 +97,19 @@ class DeviceSettingsPage extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           actions: [
-            BlocBuilder<DeviceSettingsCubit, DeviceSettingsState>(
+            BlocBuilder<DeviceSnapshotCubit, DeviceSnapshot>(
               buildWhen: (prev, next) {
-                if (prev is! DeviceSettingsReady ||
-                    next is! DeviceSettingsReady) {
-                  return prev.runtimeType != next.runtimeType;
-                }
-                return prev.dirty != next.dirty || prev.saving != next.saving;
+                return prev.settings.status != next.settings.status ||
+                    prev.settings.dirty != next.settings.dirty;
               },
-              builder: (context, state) {
-                if (state is! DeviceSettingsReady) {
+              builder: (context, snap) {
+                final slice = snap.settings;
+                if (slice.status == DeviceSliceStatus.loading ||
+                    slice.status == DeviceSliceStatus.idle) {
                   return const SizedBox.shrink();
                 }
 
-                if (state.saving) {
+                if (slice.status == DeviceSliceStatus.saving) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Center(
@@ -136,12 +122,14 @@ class DeviceSettingsPage extends StatelessWidget {
                   );
                 }
 
-                final canSave = state.dirty && !state.saving;
+                final canSave = slice.dirty;
                 return TextButton(
                   onPressed: canSave
-                      ? () {
-                          context.read<DeviceSettingsCubit>().saveAll();
-                          Navigator.of(context).pop();
+                      ? () async {
+                          await facade.settings.save();
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                          }
                         }
                       : null,
                   child: Text(
@@ -157,44 +145,63 @@ class DeviceSettingsPage extends StatelessWidget {
             ),
           ],
         ),
-        body: BlocListener<DeviceSettingsCubit, DeviceSettingsState>(
-          listenWhen: (_, s) => s is DeviceSettingsReady && s.flash != null,
-          listener: (context, s) {
-            final msg = (s as DeviceSettingsReady).flash!;
-            // Сейчас flash используется только для ошибок (таймаут/ошибка сохранения),
-            // поэтому показываем через showFail.
-            SnackBarUtils.showFail(context: context, content: msg);
+        body: BlocListener<DeviceSnapshotCubit, DeviceSnapshot>(
+          listenWhen: (prev, next) {
+            return prev.settings.error != next.settings.error &&
+                next.settings.error != null;
+          },
+          listener: (context, snap) {
+            final msg = snap.settings.error;
+            if (msg != null) {
+              SnackBarUtils.showFail(context: context, content: msg);
+            }
           },
           child: SafeArea(
-            child: _buildBody(context, schema),
+            child: _buildBody(context),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context, SettingsSchema? schema) {
-    if (schema == null) {
+  Widget _buildBody(BuildContext context) {
+    if (schema.fieldsByPath.isEmpty) {
       return Center(
         child: Text(S.of(context).DeviceNoSettingsYet),
       );
     }
 
-    return BlocBuilder<DeviceSettingsCubit, DeviceSettingsState>(
-      builder: (context, state) {
-        switch (state) {
-          case DeviceSettingsLoading():
+    return BlocBuilder<DeviceSnapshotCubit, DeviceSnapshot>(
+      buildWhen: (prev, next) => prev.settings != next.settings,
+      builder: (context, snap) {
+        final slice = snap.settings;
+
+        switch (slice.status) {
+          case DeviceSliceStatus.idle:
+          case DeviceSliceStatus.loading:
             return const Loader();
-          case DeviceSettingsError(:final message):
-            return _buildError(context, message);
-          case DeviceSettingsReady(:final snapshot):
-            return _buildSettingsList(context, schema, snapshot, device);
+          case DeviceSliceStatus.error:
+            if (slice.data == null) {
+              return _buildError(context, slice.error ?? 'Unknown error');
+            }
+            return _buildSettingsList(
+              context,
+              schema,
+              slice.data!,
+              device,
+            );
+          case DeviceSliceStatus.ready:
+          case DeviceSliceStatus.saving:
+            final data = slice.data;
+            if (data == null) {
+              return _buildError(context, 'Settings state is empty');
+            }
+            return _buildSettingsList(context, schema, data, device);
         }
       },
     );
   }
 
-  /// Friendly error UI with "Retry" button.
   Widget _buildError(BuildContext context, String message) {
     final theme = Theme.of(context);
 
@@ -232,7 +239,8 @@ class DeviceSettingsPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () => context.read<DeviceSettingsCubit>().refresh(),
+              onPressed: () =>
+                  context.read<DeviceFacade>().settings.get(force: true),
               icon: const Icon(Icons.refresh),
               label: Text(S.of(context).Retry),
             ),
@@ -244,17 +252,16 @@ class DeviceSettingsPage extends StatelessWidget {
 
   Widget _buildSettingsList(
     BuildContext context,
-    SettingsSchema schema,
+    SettingsUiSchema schema,
     SettingsSnapshot snapshot,
     Device device,
   ) {
     final theme = Theme.of(context);
-    final groups = schema.groups.toList();
-    final itemCount = groups.length + 1; // extra About card
+    final groups = schema.groups.toList(growable: false);
+    final itemCount = groups.length + 1;
 
     return RefreshIndicator(
-      onRefresh: () =>
-          context.read<DeviceSettingsCubit>().refresh(forceGet: true),
+      onRefresh: () => context.read<DeviceFacade>().settings.get(force: true),
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
@@ -265,7 +272,7 @@ class DeviceSettingsPage extends StatelessWidget {
           }
 
           final group = groups[index];
-          final fields = schema.fieldsInGroup(group.id).toList();
+          final fields = schema.fieldsInGroup(group.id).toList(growable: false);
           if (fields.isEmpty) return const SizedBox.shrink();
 
           return Card(
@@ -276,7 +283,6 @@ class DeviceSettingsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Group header
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
                   child: Text(
@@ -304,6 +310,8 @@ class DeviceSettingsPage extends StatelessWidget {
   }
 
   Widget _buildAboutCard(BuildContext context, ThemeData theme, Device device) {
+    final facade = context.read<DeviceFacade>();
+    final snapshotCubit = context.read<DeviceSnapshotCubit>();
     return Card(
       margin: const EdgeInsets.only(top: 12, bottom: 0),
       shape: RoundedRectangleBorder(
@@ -313,11 +321,11 @@ class DeviceSettingsPage extends StatelessWidget {
         title: Text(S.of(context).About),
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
-          final aboutCubit = context.read<DeviceAboutCubit>();
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => BlocProvider.value(
-                value: aboutCubit,
+              builder: (_) => DeviceRouteScope.provide(
+                facade: facade,
+                snapshotCubit: snapshotCubit,
                 child: DeviceAboutPage(deviceSn: device.sn),
               ),
             ),
@@ -329,63 +337,151 @@ class DeviceSettingsPage extends StatelessWidget {
 
   Widget _buildFieldTile(
     BuildContext context,
-    SettingsFieldMeta meta,
+    SettingsUiField field,
     SettingsSnapshot snapshot, {
     required bool showDivider,
   }) {
-    final cubit = context.read<DeviceSettingsCubit>();
+    final facade = context.read<DeviceFacade>();
+    final title = (field.titleKey == null || field.titleKey!.trim().isEmpty)
+        ? field.path
+        : field.titleKey!.trim();
 
-    switch (meta.type) {
-      case 'bool':
-        final value = snapshot.getValue<bool>(meta.id) ??
-            (meta.defaultValue is bool ? meta.defaultValue as bool : false);
-
+    switch (field.widget) {
+      case SettingsUiWidget.toggle:
+        final value = snapshot.getValue<bool>(field.path) ?? false;
         return SettingsSwitchTile(
-          title: meta.titleKey ?? meta.id,
+          title: title,
           value: value,
-          onChanged: (v) => cubit.changeValue(meta.id, v),
+          onChanged: field.writable
+              ? (v) => facade.settings.patch(field.path, v)
+              : (_) {},
           showDivider: showDivider,
         );
 
-      case 'int':
-      case 'double':
-        final min = (meta.min ?? 0).toDouble();
-        final max = (meta.max ?? 100).toDouble();
-        final step = (meta.step ?? 1).toDouble().abs();
-
-        final raw = snapshot.getValue<num>(meta.id) ??
-            (meta.defaultValue is num ? meta.defaultValue as num : min);
+      case SettingsUiWidget.slider:
+        final raw = snapshot.getValue<num>(field.path) ?? field.min ?? 0;
         final value = raw.toDouble();
+        final min = (field.min ?? 0).toDouble();
+        final max = (field.max ?? (min + 100)).toDouble();
+        final step = (field.step ?? 1).toDouble().abs();
 
         return SettingsSliderTile(
-          title: meta.titleKey ?? meta.id,
+          title: title,
           value: value,
           min: min,
           max: max > min ? max : min + 1,
           step: step > 0 ? step : 1,
-          unit: meta.unit,
-          onChanged: (newVal) {
-            // Snap to step
-            final snapped = _snapToStep(min, max, step, newVal);
-            if (meta.type == 'int') {
-              cubit.changeValue(meta.id, snapped.round());
-            } else {
-              cubit.changeValue(meta.id, snapped);
-            }
-          },
+          unit: field.unit,
+          onChanged: field.writable
+              ? (newVal) {
+                  final snapped = _snapToStep(min, max, step, newVal);
+                  if (field.type == SettingsUiFieldType.integer) {
+                    facade.settings.patch(field.path, snapped.round());
+                  } else {
+                    facade.settings.patch(field.path, snapped);
+                  }
+                }
+              : (_) {},
           showDivider: showDivider,
         );
 
-      default:
-        // Fallback для пока не поддерживаемых типов (string, enum etc.).
-        // Можно потом заменить на нормальные контролы.
-        return SettingsSwitchTile(
-          title: '${meta.titleKey ?? meta.id} (unsupported type: ${meta.type})',
-          value: false,
-          onChanged: (_) {},
+      case SettingsUiWidget.select:
+        final options = field.enumValues ?? const <String>[];
+        return _buildSelectTile(
+          context,
+          title: title,
+          options: options,
+          value: snapshot.getValue<Object?>(field.path)?.toString(),
+          showDivider: showDivider,
+          onChanged: field.writable
+              ? (v) => facade.settings.patch(field.path, v)
+              : null,
+        );
+
+      case SettingsUiWidget.text:
+        final value = snapshot.getValue<Object?>(field.path);
+        return _buildReadonlyTile(
+          title: title,
+          value: value?.toString(),
+          showDivider: showDivider,
+        );
+
+      case SettingsUiWidget.unsupported:
+        return _buildReadonlyTile(
+          title: title,
+          value: 'Unsupported',
           showDivider: showDivider,
         );
     }
+  }
+
+  Widget _buildSelectTile(
+    BuildContext context, {
+    required String title,
+    required List<String> options,
+    required String? value,
+    required bool showDivider,
+    required ValueChanged<String>? onChanged,
+  }) {
+    final theme = Theme.of(context);
+    final safeOptions = options.isEmpty ? const <String>['-'] : options;
+    final safeValue = safeOptions.contains(value) ? value : safeOptions.first;
+
+    return Column(
+      children: [
+        ListTile(
+          dense: true,
+          visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
+          minVerticalPadding: 2,
+          title: Text(title, style: theme.textTheme.bodyLarge),
+          trailing: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: safeValue,
+              items: safeOptions
+                  .map(
+                    (opt) => DropdownMenuItem<String>(
+                      value: opt,
+                      child: Text(opt),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: (v) {
+                if (v == null ||
+                    onChanged == null ||
+                    safeOptions.first == '-') {
+                  return;
+                }
+                onChanged(v);
+              },
+            ),
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+        ),
+        if (showDivider) const Divider(height: 1),
+      ],
+    );
+  }
+
+  Widget _buildReadonlyTile({
+    required String title,
+    required String? value,
+    required bool showDivider,
+  }) {
+    return Column(
+      children: [
+        ListTile(
+          dense: true,
+          visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
+          minVerticalPadding: 2,
+          title: Text(title),
+          subtitle: value == null ? null : Text(value),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+        ),
+        if (showDivider) const Divider(height: 1),
+      ],
+    );
   }
 
   double _snapToStep(double min, double max, double step, double value) {

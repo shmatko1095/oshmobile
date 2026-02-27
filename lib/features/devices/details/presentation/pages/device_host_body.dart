@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -6,10 +5,9 @@ import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_host_state.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_offline_page.dart';
+import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
-import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 import 'package:oshmobile/features/settings/presentation/open_settings_page.dart';
-import 'package:oshmobile/features/settings/presentation/cubit/device_settings_cubit.dart';
 
 import '../cubit/device_host_cubit.dart';
 import '../cubit/device_page_cubit.dart';
@@ -48,10 +46,9 @@ class DeviceHostBody extends StatelessWidget {
   }
 
   Future<void> _refreshAll(BuildContext context) async {
-    final futures = <Future<void>>[];
-    futures.add(context.read<DeviceScheduleCubit>().refresh(forceGet: true));
-    futures.add(context.read<DeviceSettingsCubit>().refresh(forceGet: true));
-    await Future.wait(futures.map((f) => f.catchError((_) {})));
+    try {
+      await context.read<DeviceFacade>().refreshAll(forceGet: true);
+    } catch (_) {}
   }
 
   @override
@@ -69,13 +66,24 @@ class DeviceHostBody extends StatelessWidget {
     return Builder(
       builder: (innerCtx) {
         if (onSettingsActionChanged != null) {
-          onSettingsActionChanged!(() => DeviceSettingsNavigator.openFromHost(innerCtx, liveDevice));
+          onSettingsActionChanged!(
+              () => DeviceSettingsNavigator.openFromHost(innerCtx, liveDevice));
         }
 
         return BlocBuilder<DeviceHostCubit, DeviceHostState>(
           builder: (context, hostState) {
             if (hostState.isWaitingOnline) {
               return const Loader();
+            }
+
+            // For offline devices show offline screen immediately.
+            if (!liveDevice.connectionInfo.online) {
+              return DeviceOfflinePage(
+                device: liveDevice,
+                onWifiProvisioningSuccess: () {
+                  context.read<DeviceHostCubit>().onWifiProvisioningSuccess();
+                },
+              );
             }
 
             return BlocConsumer<DevicePageCubit, DevicePageState>(
@@ -94,15 +102,6 @@ class DeviceHostBody extends StatelessWidget {
 
                   case DevicePageReady(:final config):
                     {
-                      if (!liveDevice.connectionInfo.online) {
-                        return DeviceOfflinePage(
-                          device: liveDevice,
-                          onWifiProvisioningSuccess: () {
-                            context.read<DeviceHostCubit>().onWifiProvisioningSuccess();
-                          },
-                        );
-                      }
-
                       final presenter = presenters.resolve(liveDevice.modelId);
                       return RefreshIndicator(
                         onRefresh: () => _refreshAll(context),

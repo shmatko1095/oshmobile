@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
 class ValueCard extends StatelessWidget {
@@ -26,8 +26,8 @@ class ValueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dynamic raw = context.select<DeviceStateCubit, dynamic>(
-      (c) => c.state.get(bind),
+    final dynamic raw = context.select<DeviceSnapshotCubit, dynamic>(
+      (c) => readBind(c.state.telemetry.data ?? const {}, bind),
     );
     final String valueText = _fmt(raw);
     final String full =

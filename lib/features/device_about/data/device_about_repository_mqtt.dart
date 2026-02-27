@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/device_state_models.dart';
+import 'package:oshmobile/features/device_about/data/device_about_jsonrpc_codec.dart';
 import 'package:oshmobile/features/device_about/domain/repositories/device_about_repository.dart';
-import 'package:oshmobile/features/device_state/data/device_state_jsonrpc_codec.dart';
 
 class DeviceAboutRepositoryMqtt implements DeviceAboutRepository {
   final JsonRpcClient _jrpc;
@@ -104,12 +104,12 @@ class DeviceAboutRepositoryMqtt implements DeviceAboutRepository {
   void _ensureSubscription() {
     if (_sub != null) return;
 
-    final topic = _topics.state(_deviceSn, DeviceStateJsonRpcCodec.domain);
+    final topic = _topics.state(_deviceSn, DeviceAboutJsonRpcCodec.domain);
     _sub = _jrpc
         .notifications(
       topic,
-      method: DeviceStateJsonRpcCodec.methodState,
-      schema: DeviceStateJsonRpcCodec.schema,
+      method: DeviceAboutJsonRpcCodec.methodState,
+      schema: DeviceAboutJsonRpcCodec.schema,
     )
         .listen(
       (notif) {

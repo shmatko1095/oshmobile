@@ -12,7 +12,10 @@ import 'package:oshmobile/core/utils/stream_waiters.dart';
 /// - Correlates responses by `id`.
 class JsonRpcClient {
   JsonRpcClient(
-      {required DeviceMqttRepo mqtt, required String rspTopic, this.defaultTimeout = const Duration(seconds: 6), d})
+      {required DeviceMqttRepo mqtt,
+      required String rspTopic,
+      this.defaultTimeout = const Duration(seconds: 6),
+      d})
       : _mqtt = mqtt,
         _rspTopic = rspTopic;
 
@@ -105,7 +108,10 @@ class JsonRpcClient {
       data: data,
     );
 
-    await _mqtt.publishJson(cmdTopic, payload);
+    final sent = await _mqtt.publishJson(cmdTopic, payload);
+    if (!sent) {
+      throw StateError('MQTT transport is disconnected, request was not sent');
+    }
 
     final ev = await waitRsp;
     final resp = decodeJsonRpcResponse(ev.value);
@@ -137,7 +143,8 @@ class JsonRpcClient {
     final existing = _rspCtrl;
     if (existing != null && !existing.isClosed) return existing.stream;
 
-    final ctrl = StreamController<MapEntry<int, Map<String, dynamic>>>.broadcast(
+    final ctrl =
+        StreamController<MapEntry<int, Map<String, dynamic>>>.broadcast(
       onListen: _ensureRspSubscription,
     );
 
