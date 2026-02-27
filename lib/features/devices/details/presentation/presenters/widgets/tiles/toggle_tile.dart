@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
 class ToggleTile extends StatelessWidget {
@@ -18,10 +18,11 @@ class ToggleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool value =
-        (context.select<DeviceStateCubit, dynamic>((c) => c.state.get(bind))
-                as bool?) ??
-            false;
+    final value = context.select<DeviceSnapshotCubit, bool>(
+      (c) =>
+          (readBind(c.state.telemetry.data ?? const {}, bind) as bool?) ??
+          false,
+    );
     final bool enabled = onChanged != null;
 
     return GlassStatCard(

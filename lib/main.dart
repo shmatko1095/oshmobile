@@ -10,8 +10,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:oshmobile/core/common/cubits/app/app_lifecycle_cubit.dart';
 import 'package:oshmobile/core/common/widgets/app_lifecycle_observer.dart';
-import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart' as global_auth;
-import 'package:oshmobile/core/scopes/session_scope.dart';
+import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart'
+    as global_auth;
+import 'package:oshmobile/app/session/scopes/session_scope.dart';
 import 'package:oshmobile/core/logging/osh_bloc_observer.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/theme/theme.dart';
@@ -71,7 +72,8 @@ Future<void> main() async {
       // 104: Connection reset by peer (Linux)
       // 54:  Connection reset by peer (Darwin/iOS)
       if (code == 103 || code == 104 || code == 54) {
-        OshCrashReporter.logNonFatal(error, stack, reason: 'Socket aborted by OS (background)');
+        OshCrashReporter.logNonFatal(error, stack,
+            reason: 'Socket aborted by OS (background)');
         return;
       }
     }
@@ -105,7 +107,8 @@ class _MyAppState extends State<MyApp> {
 
     if (next is global_auth.AuthAuthenticated) {
       final userKey = auth.getJwtUserData()?.uuid;
-      final shouldStartNewSession = !_inSession || (userKey != null && userKey != _sessionUserKey);
+      final shouldStartNewSession =
+          !_inSession || (userKey != null && userKey != _sessionUserKey);
       if (shouldStartNewSession) {
         setState(() {
           _inSession = true;
@@ -127,7 +130,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<global_auth.GlobalAuthCubit, global_auth.GlobalAuthState>(
+    return BlocListener<global_auth.GlobalAuthCubit,
+        global_auth.GlobalAuthState>(
       listener: (context, state) => _handleAuthTransition(state),
       child: MaterialApp(
         key: ValueKey('nav_$_sessionEpoch'),
@@ -151,7 +155,10 @@ class _MyAppState extends State<MyApp> {
 
           final userId = authCubit.getJwtUserData()?.uuid;
           final token = authCubit.getAccessToken();
-          if (userId == null || token == null || userId.isEmpty || token.isEmpty) {
+          if (userId == null ||
+              token == null ||
+              userId.isEmpty ||
+              token.isEmpty) {
             return nav;
           }
 
@@ -162,8 +169,11 @@ class _MyAppState extends State<MyApp> {
             child: nav,
           );
         },
-        home: BlocBuilder<global_auth.GlobalAuthCubit, global_auth.GlobalAuthState>(
-          builder: (_, state) => (state is global_auth.AuthAuthenticated) ? const HomePage() : const SignInPage(),
+        home: BlocBuilder<global_auth.GlobalAuthCubit,
+            global_auth.GlobalAuthState>(
+          builder: (_, state) => (state is global_auth.AuthAuthenticated)
+              ? const HomePage()
+              : const SignInPage(),
         ),
       ),
     );

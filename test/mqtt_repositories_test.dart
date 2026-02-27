@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
+import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_errors.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/device_state_models.dart';
@@ -78,10 +79,12 @@ class FakeDeviceMqttRepo implements DeviceMqttRepo {
   }
 
   @override
-  Future<void> publishJson(String topic, Map<String, dynamic> payload,
+  Future<bool> publishJson(String topic, Map<String, dynamic> payload,
       {int qos = 1, bool retain = false}) async {
+    if (!isConnected) return false;
     published.add(
         _Published(topic: topic, payload: payload, qos: qos, retain: retain));
+    return true;
   }
 
   void emit(String topic, Map<String, dynamic> payload) {
@@ -183,6 +186,24 @@ void main() {
 
     await expectLater(repo.patch({'unknown': 1}), throwsFormatException);
     expect(mqtt.published, isEmpty);
+  });
+
+  test('JsonRpcClient request fails fast when transport is disconnected',
+      () async {
+    final mqtt = FakeDeviceMqttRepo()..isConnected = false;
+    final topics = SettingsTopics(DeviceMqttTopicsV1('tenant-x'));
+    final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
+
+    await expectLater(
+      jrpc.request(
+        cmdTopic: topics.cmd('device-1'),
+        method: SettingsJsonRpcCodec.methodGet,
+        meta: const JsonRpcMeta(schema: 'settings@1', src: 'app', ts: 1),
+        reqId: 'req-disconnected',
+        data: null,
+      ),
+      throwsA(isA<StateError>()),
+    );
   });
 
   test('SensorsRepositoryMqtt builds set_temp_calibration patch request',
@@ -505,5 +526,18 @@ void main() {
     final snap = await future;
     expect(snap, isA<DeviceStatePayload>());
     expect(snap.raw['Chip temp'], 40.0);
+  });
+
+  test('DeviceStatePayload tolerates extra fields in payload', () {
+    final parsed = DeviceStatePayload.tryParse({
+      'Uptime': '1d',
+      'Relay cycles': 42,
+      'Chip temp': 55.2,
+      'PCB temp': 49.8,
+      'fw': '1.2.3',
+    });
+
+    expect(parsed, isNotNull);
+    expect(parsed!.raw['fw'], '1.2.3');
   });
 }

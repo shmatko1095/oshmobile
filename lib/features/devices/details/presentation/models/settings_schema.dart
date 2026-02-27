@@ -64,6 +64,22 @@ class SettingsFieldMeta {
       enumLabelKeys: (json['enumLabels'] as List?)?.cast<String>(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'group': groupId,
+      'type': type,
+      'widget': widget,
+      if (min != null) 'min': min,
+      if (max != null) 'max': max,
+      if (step != null) 'step': step,
+      if (defaultValue != null) 'default': defaultValue,
+      if (unit != null) 'unit': unit,
+      if (titleKey != null) 'title': titleKey,
+      if (enumValues != null) 'enumValues': enumValues,
+      if (enumLabelKeys != null) 'enumLabels': enumLabelKeys,
+    };
+  }
 }
 
 /// Meta-information about a group/section in Settings screen.
@@ -87,6 +103,14 @@ class SettingsGroupMeta {
       order: (json['order'] as List? ?? const <String>[]).cast<String>(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+      if (titleKey != null) 'title': titleKey,
+      'order': order,
+    };
+  }
 }
 
 /// Full schema: groups + fields.
@@ -107,12 +131,14 @@ class SettingsSchema {
         .map((m) => SettingsGroupMeta.fromJson(m.cast<String, dynamic>()))
         .toList();
 
-    final fieldsMapRaw = (json['fields'] as Map? ?? const <String, dynamic>{}).cast<String, dynamic>();
+    final fieldsMapRaw = (json['fields'] as Map? ?? const <String, dynamic>{})
+        .cast<String, dynamic>();
 
     final fieldsById = <String, SettingsFieldMeta>{};
     fieldsMapRaw.forEach((fieldId, value) {
       if (value is Map) {
-        fieldsById[fieldId] = SettingsFieldMeta.fromJson(fieldId, value.cast<String, dynamic>());
+        fieldsById[fieldId] =
+            SettingsFieldMeta.fromJson(fieldId, value.cast<String, dynamic>());
       }
     });
 
@@ -141,5 +167,13 @@ class SettingsSchema {
       final f = fieldsById[fid];
       if (f != null) yield f;
     }
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'groups':
+          groupsById.values.map((g) => g.toJson()).toList(growable: false),
+      'fields': fieldsById.map((id, meta) => MapEntry(id, meta.toJson())),
+    };
   }
 }

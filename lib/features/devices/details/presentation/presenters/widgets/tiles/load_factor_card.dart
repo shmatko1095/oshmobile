@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
 class LoadFactorKpiCard extends StatelessWidget {
@@ -17,20 +17,20 @@ class LoadFactorKpiCard extends StatelessWidget {
   final String? hoursBind;
   final String? secondsBind;
 
-  double? _computePercent(DeviceStateCubit c) {
+  double? _computePercent(Map<String, dynamic> telemetry) {
     if (percentBind != null) {
-      final p = asNum(c.state.get(percentBind!));
+      final p = asNum(readBind(telemetry, percentBind!));
       if (p == null) return null;
       final v = p > 1 ? (p / 100.0) : p.toDouble();
       return v.clamp(0.0, 1.0);
     }
     if (hoursBind != null) {
-      final h = asNum(c.state.get(hoursBind!));
+      final h = asNum(readBind(telemetry, hoursBind!));
       if (h == null) return null;
       return (h / 24.0).clamp(0.0, 1.0).toDouble();
     }
     if (secondsBind != null) {
-      final s = asNum(c.state.get(secondsBind!));
+      final s = asNum(readBind(telemetry, secondsBind!));
       if (s == null) return null;
       return (s / (24 * 3600)).clamp(0.0, 1.0).toDouble();
     }
@@ -39,8 +39,8 @@ class LoadFactorKpiCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.select<DeviceStateCubit, double?>(
-      (c) => _computePercent(c),
+    final p = context.select<DeviceSnapshotCubit, double?>(
+      (c) => _computePercent(c.state.telemetry.data ?? const {}),
     );
     final percentInt = p == null ? null : (p * 100).round();
     final percentTxt = percentInt == null ? '—' : '$percentInt%';

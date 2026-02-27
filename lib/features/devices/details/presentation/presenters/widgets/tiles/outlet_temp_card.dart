@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
 class OutletTempCard extends StatelessWidget {
@@ -17,7 +17,9 @@ class OutletTempCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final v = context.select<DeviceStateCubit, num?>((c) => asNum(c.state.get(bind)));
+    final v = context.select<DeviceSnapshotCubit, num?>(
+      (c) => asNum(readBind(c.state.telemetry.data ?? const {}, bind)),
+    );
     return GlassStatCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -25,12 +27,15 @@ class OutletTempCard extends StatelessWidget {
           Row(children: const [
             Icon(Icons.opacity, size: 16, color: Colors.white70),
             SizedBox(width: 6),
-            Text('Outlet temperature', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
+            Text('Outlet temperature',
+                style: TextStyle(
+                    color: Colors.white70, fontWeight: FontWeight.w600)),
           ]),
           const SizedBox(height: 8),
           Text(
             '${fmtNum(v)}$unit',
-            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+            style: const TextStyle(
+                color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
           ),
         ],
       ),

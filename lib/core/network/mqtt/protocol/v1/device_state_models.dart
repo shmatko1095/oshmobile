@@ -13,11 +13,9 @@ class DeviceStatePayload {
   }
 
   static DeviceStatePayload? tryParse(Map<String, dynamic> json) {
-    const allowed = {'Uptime', 'Relay cycles', 'Chip temp', 'PCB temp'};
     const required = {'Uptime', 'Relay cycles', 'Chip temp', 'PCB temp'};
 
-    if (!_hasOnlyKeys(json, allowed) || !_hasRequiredKeys(json, required))
-      return null;
+    if (!_hasRequiredKeys(json, required)) return null;
 
     final uptime = json['Uptime'];
     final relayCycles = _asFiniteNum(json['Relay cycles']);
@@ -35,13 +33,6 @@ class DeviceStatePayload {
   }
 
   Map<String, dynamic> toJson() => Map<String, dynamic>.from(raw);
-}
-
-bool _hasOnlyKeys(Map<String, dynamic> map, Set<String> allowed) {
-  for (final key in map.keys) {
-    if (!allowed.contains(key)) return false;
-  }
-  return true;
 }
 
 bool _hasRequiredKeys(Map<String, dynamic> map, Set<String> required) {

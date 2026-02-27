@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
-import 'package:oshmobile/features/device_about/presentation/cubit/device_about_cubit.dart';
+import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class DeviceAboutPage extends StatefulWidget {
@@ -17,19 +21,10 @@ class DeviceAboutPage extends StatefulWidget {
 }
 
 class _DeviceAboutPageState extends State<DeviceAboutPage> {
-  late final DeviceAboutCubit _cubit;
-
   @override
   void initState() {
     super.initState();
-    _cubit = context.read<DeviceAboutCubit>();
-    _cubit.start();
-  }
-
-  @override
-  void dispose() {
-    _cubit.stop();
-    super.dispose();
+    unawaited(context.read<DeviceFacade>().about.get(force: true));
   }
 
   @override
@@ -39,10 +34,15 @@ class _DeviceAboutPageState extends State<DeviceAboutPage> {
         centerTitle: true,
         title: Text(S.of(context).About),
       ),
-      body: BlocBuilder<DeviceAboutCubit, DeviceAboutState>(
-        builder: (context, state) {
-          final data = state.maybeData;
-          if (state is DeviceAboutLoading && data == null) {
+      body: BlocBuilder<DeviceSnapshotCubit, DeviceSnapshot>(
+        buildWhen: (prev, next) =>
+            prev.about != next.about || prev.updatedAt != next.updatedAt,
+        builder: (context, snap) {
+          final about = snap.about;
+          final data = about.data;
+          if ((about.status == DeviceSliceStatus.loading ||
+                  about.status == DeviceSliceStatus.idle) &&
+              data == null) {
             return const Loader();
           }
 
@@ -53,7 +53,8 @@ class _DeviceAboutPageState extends State<DeviceAboutPage> {
             children: [
               _Header(
                 deviceSn: widget.deviceSn,
-                state: state,
+                receivedAt: snap.updatedAt,
+                error: about.error,
               ),
               Expanded(
                 child: payload == null
@@ -84,30 +85,26 @@ class _DeviceAboutPageState extends State<DeviceAboutPage> {
 
 class _Header extends StatelessWidget {
   final String deviceSn;
-  final DeviceAboutState state;
+  final DateTime? receivedAt;
+  final String? error;
 
   const _Header({
     required this.deviceSn,
-    required this.state,
+    required this.receivedAt,
+    required this.error,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final receivedAt = state is DeviceAboutReady
-        ? (state as DeviceAboutReady).receivedAt
-        : null;
 
     String? subtitle;
     if (receivedAt != null) {
-      final hh = receivedAt.hour.toString().padLeft(2, '0');
-      final mm = receivedAt.minute.toString().padLeft(2, '0');
-      final ss = receivedAt.second.toString().padLeft(2, '0');
+      final hh = receivedAt!.hour.toString().padLeft(2, '0');
+      final mm = receivedAt!.minute.toString().padLeft(2, '0');
+      final ss = receivedAt!.second.toString().padLeft(2, '0');
       subtitle = S.of(context).LastUpdateAt('$hh:$mm:$ss');
     }
-
-    final error =
-        state is DeviceAboutError ? (state as DeviceAboutError).message : null;
 
     return Container(
       width: double.infinity,
@@ -140,7 +137,7 @@ class _Header extends StatelessWidget {
           if (error != null) ...[
             const SizedBox(height: 6),
             Text(
-              error,
+              error!,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.error,
                 fontWeight: FontWeight.w600,

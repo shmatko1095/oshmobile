@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
-import 'package:oshmobile/core/scopes/device_scope.dart';
+import 'package:oshmobile/app/device_session/scopes/device_scope.dart';
 import 'package:oshmobile/features/devices/no_selected_device/presentation/pages/no_selected_device_page.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/home/presentation/widgets/mqtt_activity_icon.dart';

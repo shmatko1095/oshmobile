@@ -5,13 +5,14 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
+import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
-import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
 import 'package:oshmobile/features/schedule/presentation/utils.dart';
 
 /// Bottom-nav-like bar to show and switch thermostat modes with optimistic UI.
 /// Modes: off, range, manual, daily, weekly.
-/// - Reads current mode from DeviceScheduleCubit.
+/// - Reads current mode from facade snapshot.
 /// - Optimistic selection is highlighted immediately; cleared on confirmation or timeout.
 class ThermostatModeBar extends StatefulWidget {
   const ThermostatModeBar({
@@ -49,8 +50,10 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
 
   @override
   Widget build(BuildContext context) {
-    final current =
-        context.select<DeviceScheduleCubit, CalendarMode>((c) => c.state.mode);
+    final current = context.select<DeviceSnapshotCubit, CalendarMode>((c) {
+      final snap = c.state.schedule.data;
+      return snap?.mode ?? CalendarMode.off;
+    });
 
     // If device confirmed our optimistic choice — clear the optimistic flag post-frame.
     if (_optimistic != null && current == _optimistic) {
@@ -85,7 +88,10 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
                 onTap: () {
                   if (effective == mode) return;
                   _startOptimistic(mode);
-                  context.read<DeviceScheduleCubit>().setMode(mode);
+                  unawaited(context
+                      .read<DeviceFacade>()
+                      .schedule
+                      .commandSetMode(mode));
                 },
               ),
             ),

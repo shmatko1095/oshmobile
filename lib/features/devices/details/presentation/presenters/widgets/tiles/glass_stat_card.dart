@@ -34,3 +34,15 @@ String fmtNum(num? v, {int decimalsIfNeeded = 1}) {
       ? v.toStringAsFixed(0)
       : v.toStringAsFixed(decimalsIfNeeded);
 }
+
+dynamic readBind(Map<String, dynamic> data, String bind) {
+  if (data.containsKey(bind)) return data[bind];
+
+  dynamic cur = data;
+  for (final part in bind.split('.')) {
+    if (cur is! Map) return null;
+    if (!cur.containsKey(part)) return null;
+    cur = cur[part];
+  }
+  return cur;
+}

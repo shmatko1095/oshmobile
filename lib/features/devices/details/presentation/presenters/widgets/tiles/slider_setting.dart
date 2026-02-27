@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
 class SliderSetting extends StatefulWidget {
@@ -66,8 +66,8 @@ class _SliderSettingState extends State<SliderSetting> {
 
   @override
   Widget build(BuildContext context) {
-    final current = (context.select<DeviceStateCubit, dynamic>(
-          (c) => c.state.get(widget.bind),
+    final current = (context.select<DeviceSnapshotCubit, dynamic>(
+          (c) => readBind(c.state.telemetry.data ?? const {}, widget.bind),
         ) as num?)
             ?.toDouble() ??
         (widget.min + widget.max) / 2;

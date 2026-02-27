@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
 class PowerCard extends StatelessWidget {
@@ -20,7 +20,9 @@ class PowerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final power = context.select<DeviceStateCubit, num?>((c) => asNum(c.state.get(bind)));
+    final power = context.select<DeviceSnapshotCubit, num?>(
+      (c) => asNum(readBind(c.state.telemetry.data ?? const {}, bind)),
+    );
     return GlassStatCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -28,12 +30,15 @@ class PowerCard extends StatelessWidget {
           Row(children: const [
             Icon(Icons.bolt, color: Colors.amberAccent, size: 18),
             SizedBox(width: 8),
-            Text('Power now', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
+            Text('Power now',
+                style: TextStyle(
+                    color: Colors.white70, fontWeight: FontWeight.w600)),
           ]),
           const SizedBox(height: 8),
           Text(
             _fmtPower(power),
-            style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
+            style: const TextStyle(
+                color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
           ),
         ],
       ),

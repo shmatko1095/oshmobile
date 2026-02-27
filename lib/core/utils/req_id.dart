@@ -1,6 +1,15 @@
 import 'dart:convert';
+import 'dart:math';
 
-String newReqId() => DateTime.now().millisecondsSinceEpoch.toString();
+final Random _reqIdRandom = Random();
+int _reqIdCounter = 0;
+
+String newReqId() {
+  final ts = DateTime.now().microsecondsSinceEpoch;
+  _reqIdCounter = (_reqIdCounter + 1) & 0xFFFF;
+  final rnd = _reqIdRandom.nextInt(1 << 20);
+  return '$ts-${_reqIdCounter.toRadixString(16)}-${rnd.toRadixString(16)}';
+}
 
 /// Returns true if [payload] contains request id equal to [expected].
 /// Supported payload shapes:

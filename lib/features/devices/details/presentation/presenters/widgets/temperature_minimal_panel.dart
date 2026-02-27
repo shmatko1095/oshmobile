@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_state_cubit.dart';
-import 'package:oshmobile/features/schedule/presentation/cubit/schedule_cubit.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
+import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
+import 'package:oshmobile/features/schedule/domain/utils/schedule_point_resolver.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class TemperatureMinimalPanel extends StatefulWidget {
@@ -34,6 +36,9 @@ class TemperatureMinimalPanel extends StatefulWidget {
 class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
   late final PageController _pageCtrl;
   int _page = 0;
+  final List<String> _sensorOrder = <String>[];
+  bool _initialPageResolved = false;
+  int? _pendingJumpTarget;
 
   @override
   void initState() {
@@ -79,7 +84,7 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
   List<_SensorCardData> _parseSensors(dynamic raw) {
     if (raw is! List) return const <_SensorCardData>[];
 
-    final out = <_SensorCardData>[];
+    final parsed = <_SensorCardData>[];
     for (final item in raw) {
       if (item is! Map) continue;
       final m = item.cast<String, dynamic>();
@@ -97,7 +102,7 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
       final tempValid = _asBool(m['temp_valid']) && tempRaw != null;
       final humidityValid = _asBool(m['humidity_valid']) && humidityRaw != null;
 
-      out.add(
+      parsed.add(
         _SensorCardData(
           id: id,
           name: name,
@@ -111,45 +116,103 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
       );
     }
 
-    out.sort((a, b) {
-      if (a.ref != b.ref) return a.ref ? -1 : 1;
-      return a.name.compareTo(b.name);
+    if (parsed.isEmpty) {
+      _sensorOrder.clear();
+      return parsed;
+    }
+
+    final incomingIds = parsed.map((s) => s.id).toSet();
+    _sensorOrder.removeWhere((id) => !incomingIds.contains(id));
+
+    final knownIds = _sensorOrder.toSet();
+    for (final sensor in parsed) {
+      if (!knownIds.contains(sensor.id)) {
+        _sensorOrder.add(sensor.id);
+        knownIds.add(sensor.id);
+      }
+    }
+
+    final byId = <String, _SensorCardData>{
+      for (final sensor in parsed) sensor.id: sensor,
+    };
+
+    return _sensorOrder
+        .map((id) => byId[id])
+        .whereType<_SensorCardData>()
+        .toList(growable: false);
+  }
+
+  void _scheduleJumpToPage(int target) {
+    if (_pendingJumpTarget == target) return;
+    _pendingJumpTarget = target;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final planned = _pendingJumpTarget;
+      _pendingJumpTarget = null;
+      if (planned == null || !_pageCtrl.hasClients) return;
+      _pageCtrl.jumpToPage(planned);
     });
-    return out;
+  }
+
+  void _ensureInitialPage(List<_SensorCardData> sensors) {
+    if (sensors.isEmpty) {
+      _initialPageResolved = false;
+      _page = 0;
+      return;
+    }
+
+    final maxIndex = sensors.length - 1;
+    if (!_initialPageResolved) {
+      final mainIndex = sensors.indexWhere((s) => s.ref);
+      final target = mainIndex >= 0 ? mainIndex : 0;
+      _initialPageResolved = true;
+      _page = target;
+      _scheduleJumpToPage(target);
+      return;
+    }
+
+    if (_page > maxIndex) {
+      _page = maxIndex;
+      _scheduleJumpToPage(maxIndex);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final schedule = context.select<DeviceScheduleCubit,
-        ({double? targetTemp, double? nextTemp, TimeOfDay? nextTime})>((c) {
-      final now = DateTime.now();
-      final current = c.currentPoint(now: now);
-      final next = c.nextPoint(now: now);
+    final model = context.select<DeviceSnapshotCubit,
+        ({Map<String, dynamic> telemetry, CalendarSnapshot? schedule})>((c) {
+      final snap = c.state;
       return (
-        targetTemp: current?.temp,
-        nextTemp: next?.temp,
-        nextTime: next?.time,
+        telemetry: snap.telemetry.data ?? const <String, dynamic>{},
+        schedule: snap.schedule.data,
       );
     });
 
-    final targetLine = schedule.targetTemp == null
+    final telemetry = model.telemetry;
+    final scheduleSnap = model.schedule;
+    final now = DateTime.now();
+    final currentPoint = scheduleSnap == null
+        ? null
+        : resolveCurrentPoint(scheduleSnap, now: now);
+    final nextPoint =
+        scheduleSnap == null ? null : resolveNextPoint(scheduleSnap, now: now);
+
+    final targetLine = currentPoint?.temp == null
         ? null
         : S.of(context).Target(
-              '${_fmtNum(schedule.targetTemp)}${widget.unit}',
+              '${_fmtNum(currentPoint?.temp)}${widget.unit}',
             );
-    final nextLine = (schedule.nextTemp == null || schedule.nextTime == null)
+    final nextLine = (nextPoint?.temp == null || nextPoint?.time == null)
         ? null
         : S.of(context).NextAt(
-              '${_fmtNum(schedule.nextTemp)}${widget.unit}',
-              _fmtTime(context, schedule.nextTime!),
+              '${_fmtNum(nextPoint?.temp)}${widget.unit}',
+              _fmtTime(context, nextPoint!.time),
             );
 
-    final sensors = context.select<DeviceStateCubit, List<_SensorCardData>>(
-      (c) => _parseSensors(c.state.getDynamic(widget.sensorsBind)),
-    );
-    final fallbackCurrent = context.select<DeviceStateCubit, num?>(
-      (c) => _asNum(c.state.getDynamic(widget.currentBind)),
-    );
+    final sensors = _parseSensors(readBind(telemetry, widget.sensorsBind));
+    _ensureInitialPage(sensors);
+    final fallbackCurrent = _asNum(readBind(telemetry, widget.currentBind));
 
     final content = sensors.isEmpty
         ? _FallbackCard(
