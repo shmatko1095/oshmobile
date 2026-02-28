@@ -1,16 +1,17 @@
 import 'dart:async';
 
+import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/device_state_models.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
-import 'package:oshmobile/features/device_state/data/device_state_jsonrpc_codec.dart';
 import 'package:oshmobile/features/device_state/data/device_state_topics.dart';
 import 'package:oshmobile/features/device_state/domain/repositories/device_state_repository.dart';
 
 class DeviceStateRepositoryMqtt implements DeviceStateRepository {
   final JsonRpcClient _jrpc;
   final DeviceStateTopics _topics;
+  final DeviceRuntimeContracts _contracts;
   final String _deviceSn;
   final Duration timeout;
 
@@ -25,8 +26,16 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
     this._jrpc,
     this._topics,
     this._deviceSn, {
+    DeviceRuntimeContracts? contracts,
     this.timeout = const Duration(seconds: 6),
-  });
+  }) : _contracts = contracts ?? DeviceRuntimeContracts();
+
+  String get _schema => _contracts.device.read.schema;
+  String get _domain => _contracts.device.methodDomain;
+  String get _methodState => _contracts.device.read.method('state');
+  String get _methodGet => _contracts.device.read.method('get');
+  String get _methodSet => _contracts.device.set.method('set');
+  String get _methodPatch => _contracts.device.patch.method('patch');
 
   void dispose() {
     if (_disposed) return;
@@ -61,7 +70,7 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
 
     final reqId = newReqId();
     final resp = await _request(
-      method: DeviceStateJsonRpcCodec.methodGet,
+      method: _methodGet,
       reqId: reqId,
       data: null,
       timeoutMessage: 'Timeout waiting for device get response',
@@ -69,8 +78,7 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
 
     final data = resp.data;
     if (data == null) throw StateError('Invalid device state response');
-    if (resp.meta != null &&
-        resp.meta!.schema != DeviceStateJsonRpcCodec.schema) {
+    if (resp.meta != null && resp.meta!.schema != _schema) {
       throw StateError('Invalid device state schema: ${resp.meta!.schema}');
     }
 
@@ -85,7 +93,7 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
     if (_disposed) throw StateError('DeviceStateRepositoryMqtt is disposed');
     final id = reqId ?? newReqId();
     await _request(
-      method: DeviceStateJsonRpcCodec.methodSet,
+      method: _methodSet,
       reqId: id,
       data: const <String, dynamic>{},
       timeoutMessage: 'Timeout waiting for device set response',
@@ -97,7 +105,7 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
     if (_disposed) throw StateError('DeviceStateRepositoryMqtt is disposed');
     final id = reqId ?? newReqId();
     await _request(
-      method: DeviceStateJsonRpcCodec.methodPatch,
+      method: _methodPatch,
       reqId: id,
       data: const <String, dynamic>{},
       timeoutMessage: 'Timeout waiting for device patch response',
@@ -144,10 +152,10 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
     _stateSub = _jrpc
         .notifications(
       topic,
-      method: DeviceStateJsonRpcCodec.methodState,
-      schema: DeviceStateJsonRpcCodec.schema,
+      method: _methodState,
     )
         .listen((notif) {
+      if (notif.meta.schema != _schema) return;
       final data = notif.data;
       if (data == null) return;
 
@@ -166,7 +174,7 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
   }
 
   JsonRpcMeta _meta() => JsonRpcMeta(
-        schema: DeviceStateJsonRpcCodec.schema,
+        schema: _schema,
         src: 'app',
         ts: DateTime.now().millisecondsSinceEpoch,
       );
@@ -183,7 +191,7 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
       meta: _meta(),
       reqId: reqId,
       data: data,
-      domain: DeviceStateJsonRpcCodec.domain,
+      domain: _domain,
       timeout: timeout,
       timeoutMessage: timeoutMessage,
     );

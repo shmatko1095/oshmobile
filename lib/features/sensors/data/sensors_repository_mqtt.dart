@@ -1,11 +1,11 @@
 import 'dart:async';
 
+import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/core/utils/stream_waiters.dart';
-import 'package:oshmobile/features/sensors/data/sensors_jsonrpc_codec.dart';
 import 'package:oshmobile/features/sensors/data/sensors_payload_validator.dart';
 import 'package:oshmobile/features/sensors/data/sensors_topics.dart';
 import 'package:oshmobile/features/sensors/domain/repositories/sensors_repository.dart';
@@ -13,6 +13,7 @@ import 'package:oshmobile/features/sensors/domain/repositories/sensors_repositor
 class SensorsRepositoryMqtt implements SensorsRepository {
   final JsonRpcClient _jrpc;
   final SensorsTopics _topics;
+  final DeviceRuntimeContracts _contracts;
   final String _deviceSn;
   final Duration timeout;
 
@@ -29,8 +30,21 @@ class SensorsRepositoryMqtt implements SensorsRepository {
     this._jrpc,
     this._topics,
     this._deviceSn, {
+    DeviceRuntimeContracts? contracts,
     this.timeout = const Duration(seconds: 6),
-  });
+  }) : _contracts = contracts ?? DeviceRuntimeContracts();
+
+  String get _schema => _contracts.sensors.read.schema;
+  String get _domain => _contracts.sensors.methodDomain;
+  String get _methodState => _contracts.sensors.read.method('state');
+  String get _methodGet => _contracts.sensors.read.method('get');
+  String get _methodSet => _contracts.sensors.set.method('set');
+  String get _methodPatch => _contracts.sensors.patch.method('patch');
+  Set<String> get _responseSchemas => <String>{
+        _contracts.sensors.read.schema,
+        _contracts.sensors.patch.schema,
+        _contracts.sensors.set.schema,
+      };
 
   /// Best-effort cleanup when device scope is disposed.
   /// Not part of SensorsRepository interface on purpose.
@@ -83,7 +97,7 @@ class SensorsRepositoryMqtt implements SensorsRepository {
 
     final reqId = newReqId();
     final resp = await _request(
-      method: SensorsJsonRpcCodec.methodGet,
+      method: _methodGet,
       reqId: reqId,
       data: null,
       timeoutMessage: 'Timeout waiting for sensors get response',
@@ -108,7 +122,7 @@ class SensorsRepositoryMqtt implements SensorsRepository {
     }
 
     final resp = await _request(
-      method: SensorsJsonRpcCodec.methodSet,
+      method: _methodSet,
       reqId: id,
       data: data,
       timeoutMessage: 'Timeout waiting for sensors set response',
@@ -129,7 +143,7 @@ class SensorsRepositoryMqtt implements SensorsRepository {
     }
 
     final resp = await _request(
-      method: SensorsJsonRpcCodec.methodPatch,
+      method: _methodPatch,
       reqId: id,
       data: data,
       timeoutMessage: 'Timeout waiting for sensors patch response',
@@ -185,11 +199,11 @@ class SensorsRepositoryMqtt implements SensorsRepository {
     final topic = _topics.state(_deviceSn);
     _stateSub = _jrpc
         .notifications(
-          topic,
-          method: SensorsJsonRpcCodec.methodState,
-          schema: SensorsJsonRpcCodec.schema,
-        )
+      topic,
+      method: _methodState,
+    )
         .listen((notif) {
+      if (notif.meta.schema != _schema) return;
       final data = notif.data;
       if (data == null) return;
 
@@ -209,7 +223,7 @@ class SensorsRepositoryMqtt implements SensorsRepository {
   }
 
   JsonRpcMeta _meta() => JsonRpcMeta(
-        schema: SensorsJsonRpcCodec.schema,
+        schema: _schema,
         src: 'app',
         ts: DateTime.now().millisecondsSinceEpoch,
       );
@@ -226,7 +240,7 @@ class SensorsRepositoryMqtt implements SensorsRepository {
       meta: _meta(),
       reqId: reqId,
       data: data,
-      domain: SensorsJsonRpcCodec.domain,
+      domain: _domain,
       timeout: timeout,
       timeoutMessage: timeoutMessage,
     );
@@ -236,7 +250,7 @@ class SensorsRepositoryMqtt implements SensorsRepository {
     final data = resp.data;
     if (data == null) return null;
 
-    if (resp.meta != null && resp.meta!.schema != SensorsJsonRpcCodec.schema) {
+    if (resp.meta != null && !_responseSchemas.contains(resp.meta!.schema)) {
       return null;
     }
 

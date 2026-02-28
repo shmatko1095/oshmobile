@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/utils/latest_wins_gate.dart';
@@ -14,6 +15,7 @@ import 'package:oshmobile/features/settings/domain/repositories/settings_reposit
 class SettingsRepositoryMqtt implements SettingsRepository {
   final JsonRpcClient _jrpc;
   final SettingsTopics _topics;
+  final DeviceRuntimeContracts _contracts;
   final String _deviceSn;
   final Duration timeout;
 
@@ -34,8 +36,22 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     this._jrpc,
     this._topics,
     this._deviceSn, {
+    DeviceRuntimeContracts? contracts,
     this.timeout = const Duration(seconds: 6),
-  });
+  }) : _contracts = contracts ?? DeviceRuntimeContracts();
+
+  String get _schema => _contracts.settings.read.schema;
+  String get _domain => _contracts.settings.methodDomain;
+  String get _methodState => _contracts.settings.read.method('state');
+  String get _methodChanged => _contracts.settings.read.method('changed');
+  String get _methodGet => _contracts.settings.read.method('get');
+  String get _methodSet => _contracts.settings.set.method('set');
+  String get _methodPatch => _contracts.settings.patch.method('patch');
+  Set<String> get _responseSchemas => <String>{
+        _contracts.settings.read.schema,
+        _contracts.settings.patch.schema,
+        _contracts.settings.set.schema,
+      };
 
   /// Best-effort cleanup when device scope is disposed.
   /// Not part of SettingsRepository interface on purpose.
@@ -98,7 +114,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
 
     final reqId = newReqId();
     final resp = await _request(
-      method: SettingsJsonRpcCodec.methodGet,
+      method: _methodGet,
       reqId: reqId,
       data: null,
       timeoutMessage: 'Timeout waiting for settings get response',
@@ -125,7 +141,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     final latest = _latest.start(_latestKey('save'));
 
     final resp = await _request(
-      method: SettingsJsonRpcCodec.methodSet,
+      method: _methodSet,
       reqId: id,
       data: data,
       timeoutMessage: 'Timeout waiting for settings save response',
@@ -149,7 +165,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     final data = SettingsJsonRpcCodec.encodePatch(patch);
 
     final resp = await _request(
-      method: SettingsJsonRpcCodec.methodPatch,
+      method: _methodPatch,
       reqId: id,
       data: data,
       timeoutMessage: 'Timeout waiting for settings patch response',
@@ -207,11 +223,11 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     final topic = _topics.state(_deviceSn);
     _stateSub = _jrpc
         .notifications(
-          topic,
-          method: SettingsJsonRpcCodec.methodState,
-          schema: SettingsJsonRpcCodec.schema,
-        )
+      topic,
+      method: _methodState,
+    )
         .listen((notif) {
+      if (notif.meta.schema != _schema) return;
       final data = notif.data;
       if (data == null) return;
 
@@ -223,11 +239,11 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     final evtTopic = _topics.evt(_deviceSn);
     _evtSub = _jrpc
         .notifications(
-          evtTopic,
-          method: SettingsJsonRpcCodec.methodChanged,
-          schema: SettingsJsonRpcCodec.schema,
-        )
+      evtTopic,
+      method: _methodChanged,
+    )
         .listen((notif) {
+      if (notif.meta.schema != _schema) return;
       final data = notif.data;
       if (data == null) return;
 
@@ -248,7 +264,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
   }
 
   JsonRpcMeta _meta() => JsonRpcMeta(
-        schema: SettingsJsonRpcCodec.schema,
+        schema: _schema,
         src: 'app',
         ts: DateTime.now().millisecondsSinceEpoch,
       );
@@ -269,7 +285,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
       meta: _meta(),
       reqId: reqId,
       data: data,
-      domain: SettingsJsonRpcCodec.domain,
+      domain: _domain,
       timeout: timeout,
       timeoutMessage: timeoutMessage,
       cancel: cancel,
@@ -281,7 +297,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     final data = resp.data;
     if (data == null) return null;
 
-    if (resp.meta != null && resp.meta!.schema != SettingsJsonRpcCodec.schema) {
+    if (resp.meta != null && !_responseSchemas.contains(resp.meta!.schema)) {
       return null;
     }
 

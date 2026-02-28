@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/features/devices/details/domain/repositories/telemetry_repository.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
@@ -12,7 +13,7 @@ class DeviceTelemetryApiImpl implements DeviceTelemetryApi {
   final StreamController<Map<String, dynamic>> _stream =
       StreamController<Map<String, dynamic>>.broadcast();
 
-  StreamSubscription<Map<String, dynamic>>? _sub;
+  StreamSubscription<TelemetryState>? _sub;
   bool _started = false;
   bool _disposed = false;
 
@@ -29,6 +30,7 @@ class DeviceTelemetryApiImpl implements DeviceTelemetryApi {
         _onChanged = onChanged;
 
   DeviceSlice<Map<String, dynamic>> get slice => _slice;
+  TelemetryState? get rawCurrent => _repo.currentState;
 
   void _setSlice(DeviceSlice<Map<String, dynamic>> next) {
     _slice = next;
@@ -56,11 +58,9 @@ class DeviceTelemetryApiImpl implements DeviceTelemetryApi {
       return;
     }
 
-    _sub = _repo.watchAliases().listen(
-      (diff) {
-        if (diff.isEmpty) return;
-        final next = Map<String, dynamic>.from(_data)..addAll(diff);
-        _data = next;
+    _sub = _repo.watchState().listen(
+      (state) {
+        _data = _serialize(state);
         _setSlice(DeviceSlice<Map<String, dynamic>>.ready(
           data: Map<String, dynamic>.from(_data),
         ));
@@ -97,7 +97,8 @@ class DeviceTelemetryApiImpl implements DeviceTelemetryApi {
 
     if (force || _data.isEmpty) {
       try {
-        await _repo.fetch();
+        final state = await _repo.fetch();
+        _data = _serialize(state);
         _setSlice(DeviceSlice<Map<String, dynamic>>.ready(
           data: Map<String, dynamic>.from(_data),
         ));
@@ -128,5 +129,22 @@ class DeviceTelemetryApiImpl implements DeviceTelemetryApi {
     try {
       await _stream.close();
     } catch (_) {}
+  }
+
+  Map<String, dynamic> _serialize(TelemetryState state) {
+    return <String, dynamic>{
+      'climate_sensors': [
+        for (final item in state.climateSensors)
+          <String, dynamic>{
+            'id': item.id,
+            'temp_valid': item.tempValid,
+            'humidity_valid': item.humidityValid,
+            if (item.temp != null) 'temp': item.temp,
+            if (item.humidity != null) 'humidity': item.humidity,
+          },
+      ],
+      'heater_enabled': state.heaterEnabled,
+      'load_factor': state.loadFactor,
+    };
   }
 }

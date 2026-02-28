@@ -25,7 +25,7 @@ class HeatingStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isHeating = context.select<DeviceSnapshotCubit, bool>(
-      (c) => _asBool(readBind(c.state.telemetry.data ?? const {}, bind)),
+      (c) => _asBool(readBind(c.state.controlState.data ?? const {}, bind)),
     );
 
     final borderColor = isHeating

@@ -18,7 +18,7 @@ class OutletTempCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final v = context.select<DeviceSnapshotCubit, num?>(
-      (c) => asNum(readBind(c.state.telemetry.data ?? const {}, bind)),
+      (c) => asNum(readBind(c.state.controlState.data ?? const {}, bind)),
     );
     return GlassStatCard(
       child: Column(

@@ -193,6 +193,30 @@ class MessageLookup extends MessageLookupByLibrary {
     "bleConnectingToDevice": MessageLookupByLibrary.simpleMessage(
       "Connecting to device…",
     ),
+    "compatibilityErrorBadge": MessageLookupByLibrary.simpleMessage(
+      "Compatibility error",
+    ),
+    "compatibilityErrorStepCheckConnection": MessageLookupByLibrary.simpleMessage(
+      "Make sure the device is online and the backend bootstrap contract is available.",
+    ),
+    "compatibilityErrorStepContactSupport": MessageLookupByLibrary.simpleMessage(
+      "If it keeps failing, contact support with the serial number, model ID, and the technical details below.",
+    ),
+    "compatibilityErrorStepRetry": MessageLookupByLibrary.simpleMessage(
+      "Retry after the device reconnects or the backend compatibility issue is resolved.",
+    ),
+    "compatibilityErrorSubtitle": MessageLookupByLibrary.simpleMessage(
+      "The app could not establish a compatible protocol contract for this device right now.",
+    ),
+    "compatibilityErrorTitle": MessageLookupByLibrary.simpleMessage(
+      "This device cannot be opened",
+    ),
+    "compatibilityNextStepsTitle": MessageLookupByLibrary.simpleMessage(
+      "What to do next",
+    ),
+    "compatibilityTechnicalDetailsTitle": MessageLookupByLibrary.simpleMessage(
+      "Technical details",
+    ),
     "deviceConnectedToWifi": MessageLookupByLibrary.simpleMessage(
       "Device connected to Wi-Fi",
     ),
@@ -207,6 +231,24 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "offlineBlePermissionHint": MessageLookupByLibrary.simpleMessage(
       "Bluetooth access is needed to change Wi-Fi settings.",
+    ),
+    "updateAppRequiredBadge": MessageLookupByLibrary.simpleMessage(
+      "Update required",
+    ),
+    "updateAppRequiredStepContactSupport": MessageLookupByLibrary.simpleMessage(
+      "If the issue remains after updating, contact support and include the serial number and model ID.",
+    ),
+    "updateAppRequiredStepReopen": MessageLookupByLibrary.simpleMessage(
+      "Open the device again after the update finishes and the session reconnects.",
+    ),
+    "updateAppRequiredStepUpdate": MessageLookupByLibrary.simpleMessage(
+      "Update the app to the latest available version on this device.",
+    ),
+    "updateAppRequiredSubtitle": MessageLookupByLibrary.simpleMessage(
+      "This device uses required protocol domains that are newer than the current app build supports.",
+    ),
+    "updateAppRequiredTitle": MessageLookupByLibrary.simpleMessage(
+      "Update app to continue",
     ),
     "wifiConnectFailed": MessageLookupByLibrary.simpleMessage(
       "Failed to connect to Wi-Fi",

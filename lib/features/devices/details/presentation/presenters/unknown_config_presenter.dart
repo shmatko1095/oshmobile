@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/core/profile/models/device_profile_bundle.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 import '../cubit/device_page_cubit.dart';
-import '../models/osh_config.dart';
 import 'device_presenter.dart';
 
 class UnknownConfigPresenter implements DevicePresenter {
   const UnknownConfigPresenter();
 
   @override
-  Widget build(BuildContext context, Device device, DeviceConfig cfg) {
-    final alias = (device.userData.alias.isEmpty) ? device.sn : device.userData.alias;
+  Widget build(
+      BuildContext context, Device device, DeviceProfileBundle bundle) {
+    final alias =
+        (device.userData.alias.isEmpty) ? device.sn : device.userData.alias;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -31,7 +33,7 @@ class UnknownConfigPresenter implements DevicePresenter {
                 children: [
                   _ProblemCard(),
                   const SizedBox(height: 12),
-                  _MetaCard(device: device, cfg: cfg),
+                  _MetaCard(device: device, bundle: bundle),
                   const SizedBox(height: 12),
                   _ActionsRow(device: device),
                   const SizedBox(height: 8),
@@ -73,14 +75,15 @@ class _ProblemCard extends StatelessWidget {
 }
 
 class _MetaCard extends StatelessWidget {
-  const _MetaCard({required this.device, required this.cfg});
+  const _MetaCard({required this.device, required this.bundle});
 
   final Device device;
-  final DeviceConfig cfg;
+  final DeviceProfileBundle bundle;
 
   @override
   Widget build(BuildContext context) {
-    final capCount = cfg.capabilities.length;
+    final controlCount = bundle.modelProfile.osh.controls.length;
+    final widgetCount = bundle.modelProfile.osh.widgets.length;
     return Card(
       color: Colors.white.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -89,27 +92,38 @@ class _MetaCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(S.of(context).DeviceDetails, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            Text(S.of(context).DeviceDetails,
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w600)),
             _MetaRow(
               label: 'Status',
-              value: device.connectionInfo.online ? S.of(context).Online : S.of(context).Offline,
+              value: device.connectionInfo.online
+                  ? S.of(context).Online
+                  : S.of(context).Offline,
               trailing: device.connectionInfo.online
-                  ? Icon(Icons.check_circle, size: 16, color: Colors.green.withValues(alpha: 0.5))
+                  ? Icon(Icons.check_circle,
+                      size: 16, color: Colors.green.withValues(alpha: 0.5))
                   : Icon(Icons.offline_bolt, size: 16, color: Colors.white70),
             ),
             _MetaRow(label: 'Serial', value: device.sn),
             _MetaRow(label: 'Model ID', value: device.modelId),
+            _MetaRow(label: 'Model name', value: bundle.modelName),
+            _MetaRow(label: 'Profile model', value: bundle.modelId),
+            _MetaRow(
+                label: 'Profile name', value: bundle.modelProfile.modelName),
             _MetaRow(label: 'Device ID', value: device.id),
             _MetaRow(
-              label: 'Capabilities',
-              value: capCount == 0 ? '—' : capCount.toString(),
-              trailing: capCount == 0
+              label: 'Controls',
+              value: controlCount == 0 ? '—' : controlCount.toString(),
+              trailing: controlCount == 0
                   ? null
                   : Tooltip(
-                      message: cfg.capabilities.join(', '),
-                      child: const Icon(Icons.list_alt, size: 18, color: Colors.white70),
+                      message: bundle.modelProfile.osh.controls.keys.join(', '),
+                      child: const Icon(Icons.list_alt,
+                          size: 18, color: Colors.white70),
                     ),
             ),
+            _MetaRow(label: 'Widgets', value: widgetCount.toString()),
           ].expand((widget) => [widget, const SizedBox(height: 12)]).toList(),
         ),
       ),
@@ -151,7 +165,9 @@ class _TipsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(S.of(context).Tips, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            Text(S.of(context).Tips,
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w600)),
             SizedBox(height: 10),
             _TipItem(text: S.of(context).TipEnsureAppUpdated),
             _TipItem(text: S.of(context).TipCheckNetwork),
@@ -215,7 +231,8 @@ class _ActionButton extends StatelessWidget {
           children: [
             Icon(icon, color: color.withValues(alpha: 0.95)),
             const SizedBox(height: 6),
-            Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+            Text(label,
+                style: TextStyle(color: color, fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -236,7 +253,8 @@ class _TipItem extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('•  ', style: TextStyle(color: Colors.white70)),
-          Expanded(child: Text(text, style: const TextStyle(color: Colors.white70))),
+          Expanded(
+              child: Text(text, style: const TextStyle(color: Colors.white70))),
         ],
       ),
     );

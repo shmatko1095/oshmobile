@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,10 +19,12 @@ class ThermostatModeBar extends StatefulWidget {
   const ThermostatModeBar({
     super.key,
     this.visibleModes,
+    this.writable = true,
     this.optimisticTimeout = const Duration(seconds: 5),
   });
 
   final List<CalendarMode>? visibleModes;
+  final bool writable;
   final Duration optimisticTimeout;
 
   @override
@@ -51,8 +54,10 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
   @override
   Widget build(BuildContext context) {
     final current = context.select<DeviceSnapshotCubit, CalendarMode>((c) {
-      final snap = c.state.schedule.data;
-      return snap?.mode ?? CalendarMode.off;
+      final raw = c.state.controlState.data?['schedule_mode']?.toString();
+      return CalendarMode.all.firstWhereOrNull((mode) => mode.id == raw) ??
+          c.state.schedule.data?.mode ??
+          CalendarMode.off;
     });
 
     // If device confirmed our optimistic choice — clear the optimistic flag post-frame.
@@ -85,14 +90,16 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
                 mode: mode,
                 selected: effective == mode,
                 pending: _optimistic == mode && current != mode,
-                onTap: () {
-                  if (effective == mode) return;
-                  _startOptimistic(mode);
-                  unawaited(context
-                      .read<DeviceFacade>()
-                      .schedule
-                      .commandSetMode(mode));
-                },
+                onTap: !widget.writable
+                    ? null
+                    : () {
+                        if (effective == mode) return;
+                        _startOptimistic(mode);
+                        unawaited(context
+                            .read<DeviceFacade>()
+                            .schedule
+                            .commandSetMode(mode));
+                      },
               ),
             ),
             if (mode != modes.last) const SizedBox(width: 6),
@@ -114,7 +121,7 @@ class _ModeItem extends StatelessWidget {
   final CalendarMode mode;
   final bool selected;
   final bool pending; // kept for future use if needed
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   IconData _iconFor(final CalendarMode mode) {
     switch (mode) {

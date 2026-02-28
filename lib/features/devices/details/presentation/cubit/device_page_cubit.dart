@@ -1,9 +1,10 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
+import 'package:oshmobile/core/contracts/device_contracts_models.dart';
+import 'package:oshmobile/core/profile/models/device_profile_bundle.dart';
 
 import '../../../details/domain/queries/get_device_full.dart';
-import '../models/osh_config.dart';
 
 sealed class DevicePageState {
   const DevicePageState();
@@ -19,11 +20,28 @@ final class DevicePageError extends DevicePageState {
   const DevicePageError(this.message);
 }
 
+final class DevicePageUpdateRequired extends DevicePageState {
+  final String message;
+
+  const DevicePageUpdateRequired(this.message);
+}
+
+final class DevicePageCompatibilityError extends DevicePageState {
+  final String message;
+
+  const DevicePageCompatibilityError(this.message);
+}
+
 final class DevicePageReady extends DevicePageState {
   final Device device;
-  final DeviceConfig config;
+  final DeviceProfileBundle bundle;
+  final NegotiatedContractSet negotiated;
 
-  const DevicePageReady({required this.device, required this.config});
+  const DevicePageReady({
+    required this.device,
+    required this.bundle,
+    required this.negotiated,
+  });
 }
 
 class DevicePageCubit extends Cubit<DevicePageState> {
@@ -37,23 +55,45 @@ class DevicePageCubit extends Cubit<DevicePageState> {
 
     try {
       final full = await _getDeviceFull(deviceId);
-      // if (isClosed) return;
-
-      final cfg = DeviceConfig.fromJson(
-        full.configuration['osh-config'] as Map<String, dynamic>? ?? full.configuration,
+      emit(DevicePageReady(
+        device: full.device,
+        bundle: full.bundle,
+        negotiated: full.negotiated,
+      ));
+    } on UpdateAppRequired catch (e, st) {
+      _reportFailure(
+        error: e,
+        stackTrace: st,
+        deviceId: deviceId,
       );
-
-      // if (isClosed) return;
-      emit(DevicePageReady(device: full.device, config: cfg));
+      emit(DevicePageUpdateRequired(e.message));
+    } on CompatibilityError catch (e, st) {
+      _reportFailure(
+        error: e,
+        stackTrace: st,
+        deviceId: deviceId,
+      );
+      emit(DevicePageCompatibilityError(e.message));
     } catch (e, st) {
-      // if (isClosed) return;
-      OshCrashReporter.logNonFatal(
-        e,
-        st,
-        reason: 'DevicePageCubit: failed to load config',
-        context: {'deviceId': deviceId},
+      _reportFailure(
+        error: e,
+        stackTrace: st,
+        deviceId: deviceId,
       );
       emit(DevicePageError(e.toString()));
     }
+  }
+
+  void _reportFailure({
+    required Object error,
+    required StackTrace stackTrace,
+    required String deviceId,
+  }) {
+    OshCrashReporter.logNonFatal(
+      error,
+      stackTrace,
+      reason: 'DevicePageCubit: failed to load config',
+      context: {'deviceId': deviceId},
+    );
   }
 }

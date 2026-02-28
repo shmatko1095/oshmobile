@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_host_state.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/device_compatibility_state_page.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_offline_page.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
@@ -61,23 +62,23 @@ class DeviceHostBody extends StatelessWidget {
       }
     });
 
-    if (liveDevice == null) return const Loader();
+    if (liveDevice == null) {
+      onSettingsActionChanged?.call(null);
+      return const Loader();
+    }
 
     return Builder(
       builder: (innerCtx) {
-        if (onSettingsActionChanged != null) {
-          onSettingsActionChanged!(
-              () => DeviceSettingsNavigator.openFromHost(innerCtx, liveDevice));
-        }
-
         return BlocBuilder<DeviceHostCubit, DeviceHostState>(
           builder: (context, hostState) {
             if (hostState.isWaitingOnline) {
+              onSettingsActionChanged?.call(null);
               return const Loader();
             }
 
             // For offline devices show offline screen immediately.
             if (!liveDevice.connectionInfo.online) {
+              onSettingsActionChanged?.call(null);
               return DeviceOfflinePage(
                 device: liveDevice,
                 onWifiProvisioningSuccess: () {
@@ -95,17 +96,45 @@ class DeviceHostBody extends StatelessWidget {
               builder: (context, st) {
                 switch (st) {
                   case DevicePageLoading():
+                    onSettingsActionChanged?.call(null);
                     return const Loader();
 
                   case DevicePageError(:final message):
+                    onSettingsActionChanged?.call(null);
                     return Center(child: Text(message));
 
-                  case DevicePageReady(:final config):
+                  case DevicePageUpdateRequired(:final message):
+                    onSettingsActionChanged?.call(null);
+                    return DeviceCompatibilityStatePage(
+                      device: liveDevice,
+                      variant: DeviceCompatibilityVariant.updateRequired,
+                      details: message,
+                      onRetry: () =>
+                          context.read<DevicePageCubit>().load(deviceId),
+                    );
+
+                  case DevicePageCompatibilityError(:final message):
+                    onSettingsActionChanged?.call(null);
+                    return DeviceCompatibilityStatePage(
+                      device: liveDevice,
+                      variant: DeviceCompatibilityVariant.compatibilityError,
+                      details: message,
+                      onRetry: () =>
+                          context.read<DevicePageCubit>().load(deviceId),
+                    );
+
+                  case DevicePageReady(:final bundle):
                     {
-                      final presenter = presenters.resolve(liveDevice.modelId);
+                      onSettingsActionChanged?.call(
+                        () => DeviceSettingsNavigator.openFromHost(
+                          innerCtx,
+                          liveDevice,
+                        ),
+                      );
+                      final presenter = presenters.resolve(bundle.modelId);
                       return RefreshIndicator(
                         onRefresh: () => _refreshAll(context),
-                        child: presenter.build(context, liveDevice, config),
+                        child: presenter.build(context, liveDevice, bundle),
                       );
                     }
                 }

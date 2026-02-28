@@ -28,12 +28,13 @@ class JsonRpcContractDescriptor {
   String method(String op) => '$methodDomain.$op';
 }
 
-/// Group of contracts used by the app runtime.
+/// Static v1 contract defaults bundled with the app.
 ///
-/// Future-proofing:
-/// - add `OshContractSet.v2()` when new major is introduced;
-/// - switch [OshContracts.current] to v2 when app migrates.
-class OshContractSet {
+/// Production runtime should prefer device-scoped negotiated contracts from
+/// `DeviceRuntimeContracts`. These descriptors remain useful for:
+/// - bootstrapping before negotiation completes
+/// - tests and compatibility helpers
+class BundledContractSet {
   final JsonRpcContractDescriptor settings;
   final JsonRpcContractDescriptor sensors;
   final JsonRpcContractDescriptor telemetry;
@@ -41,7 +42,7 @@ class OshContractSet {
   final JsonRpcContractDescriptor deviceState;
   final JsonRpcContractDescriptor diag;
 
-  const OshContractSet({
+  const BundledContractSet({
     required this.settings,
     required this.sensors,
     required this.telemetry,
@@ -50,7 +51,7 @@ class OshContractSet {
     required this.diag,
   });
 
-  const OshContractSet.v1()
+  const BundledContractSet.v1()
       : settings = const JsonRpcContractDescriptor.same(
           domain: 'settings',
           major: 1,
@@ -78,10 +79,7 @@ class OshContractSet {
         );
 }
 
-/// Active contracts used by the app.
-class OshContracts {
-  static const OshContractSet v1 = OshContractSet.v1();
-
-  /// Current supported contract set (first release: v1 only).
-  static const OshContractSet current = v1;
+/// Conservative bundled defaults shipped with the app binary.
+class BundledContractDefaults {
+  static const BundledContractSet v1 = BundledContractSet.v1();
 }

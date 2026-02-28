@@ -17,20 +17,20 @@ class LoadFactorKpiCard extends StatelessWidget {
   final String? hoursBind;
   final String? secondsBind;
 
-  double? _computePercent(Map<String, dynamic> telemetry) {
+  double? _computePercent(Map<String, dynamic> controlState) {
     if (percentBind != null) {
-      final p = asNum(readBind(telemetry, percentBind!));
+      final p = asNum(readBind(controlState, percentBind!));
       if (p == null) return null;
       final v = p > 1 ? (p / 100.0) : p.toDouble();
       return v.clamp(0.0, 1.0);
     }
     if (hoursBind != null) {
-      final h = asNum(readBind(telemetry, hoursBind!));
+      final h = asNum(readBind(controlState, hoursBind!));
       if (h == null) return null;
       return (h / 24.0).clamp(0.0, 1.0).toDouble();
     }
     if (secondsBind != null) {
-      final s = asNum(readBind(telemetry, secondsBind!));
+      final s = asNum(readBind(controlState, secondsBind!));
       if (s == null) return null;
       return (s / (24 * 3600)).clamp(0.0, 1.0).toDouble();
     }
@@ -40,7 +40,7 @@ class LoadFactorKpiCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.select<DeviceSnapshotCubit, double?>(
-      (c) => _computePercent(c.state.telemetry.data ?? const {}),
+      (c) => _computePercent(c.state.controlState.data ?? const {}),
     );
     final percentInt = p == null ? null : (p * 100).round();
     final percentTxt = percentInt == null ? '—' : '$percentInt%';

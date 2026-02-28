@@ -1,189 +1,146 @@
+import 'dart:collection';
+
+import 'package:oshmobile/core/profile/control_binding_registry.dart';
+import 'package:oshmobile/core/profile/models/device_profile_bundle.dart';
 import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema.dart';
 import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema_builder.dart';
 
-/// Default implementation that derives UI schema from contracts JSON schema
-/// and merges optional model hints.
-class JsonSchemaSettingsUiSchemaBuilder implements SettingsUiSchemaBuilder {
-  const JsonSchemaSettingsUiSchemaBuilder();
+class ProfileBundleSettingsUiSchemaBuilder implements SettingsUiSchemaBuilder {
+  const ProfileBundleSettingsUiSchemaBuilder();
 
   @override
   SettingsUiSchema build({
-    required Map<String, dynamic> setSchemaJson,
-    required Map<String, dynamic> patchSchemaJson,
-    Map<String, dynamic>? modelHintsJson,
+    required DeviceProfileBundle bundle,
   }) {
-    final setRequiredSections =
-        _asStringSet(setSchemaJson['required']) ?? const <String>{};
-    final patchRootProps =
-        _asMap(patchSchemaJson['properties']) ?? const <String, dynamic>{};
-    final setRootProps =
-        _asMap(setSchemaJson['properties']) ?? const <String, dynamic>{};
-
-    final rootSections = <String>{}
-      ..addAll(setRootProps.keys)
-      ..addAll(patchRootProps.keys);
-
-    final modelFields =
-        _asMap(modelHintsJson?['fields']) ?? const <String, dynamic>{};
-    final modelGroupsList =
-        _asList(modelHintsJson?['groups']) ?? const <dynamic>[];
-    final modelGroupsById = <String, SettingsUiGroup>{};
-
-    for (final item in modelGroupsList) {
-      final g = _asMap(item);
-      if (g == null) continue;
-      final id = g['id']?.toString();
-      if (id == null || id.isEmpty) continue;
-      final title = g['title']?.toString();
-      final order = _asStringList(g['order']) ?? const <String>[];
-      modelGroupsById[id] = SettingsUiGroup(
-        id: id,
-        titleKey: title ?? _humanize(id),
-        order: List<String>.unmodifiable(order),
-      );
-    }
-
+    final registry = ControlBindingRegistry(bundle);
     final fieldsByPath = <String, SettingsUiField>{};
     final groupsById = <String, SettingsUiGroup>{};
+    final controls = bundle.modelProfile.osh.controls;
 
-    for (final section in rootSections) {
-      final setSection = _asMap(setRootProps[section]);
-      final patchSection = _asMap(patchRootProps[section]);
-      final setSectionProps =
-          _asMap(setSection?['properties']) ?? const <String, dynamic>{};
-      final patchSectionProps =
-          _asMap(patchSection?['properties']) ?? const <String, dynamic>{};
-      final setSectionRequired =
-          _asStringSet(setSection?['required']) ?? const <String>{};
-
-      final keys = <String>{}
-        ..addAll(setSectionProps.keys)
-        ..addAll(patchSectionProps.keys);
-
-      if (keys.isEmpty) continue;
-
-      final defaultGroupId = section;
-      groupsById.putIfAbsent(
-        defaultGroupId,
-        () =>
-            modelGroupsById[defaultGroupId] ??
-            SettingsUiGroup(
-              id: defaultGroupId,
-              titleKey: _humanize(section),
-            ),
+    for (final group in bundle.modelProfile.osh.settingsGroups) {
+      final groupControls = _controlsForGroup(
+        bundle: bundle,
+        groupId: group.id,
       );
+      if (groupControls.isEmpty) continue;
 
-      for (final key in keys) {
-        final setField = _asMap(setSectionProps[key]);
-        final patchField = _asMap(patchSectionProps[key]);
-        final source = setField ?? patchField ?? const <String, dynamic>{};
+      final orderedPaths = <String>[];
+      for (final controlId in groupControls) {
+        final control = controls[controlId];
+        final entry = bundle.controlCatalog[controlId];
+        final binding = bundle.bindings[controlId];
+        if (control == null ||
+            entry == null ||
+            binding == null ||
+            !control.enabled ||
+            !registry.isVisible(controlId)) {
+          continue;
+        }
 
-        final path = '$section.$key';
-        final modelField = _asMap(modelFields[path]);
+        final path = binding.write?.path ?? binding.read?.path;
+        if (path == null || path.isEmpty) continue;
 
-        final type = _resolveType(source, modelField);
-        final groupId = modelField?['group']?.toString() ?? defaultGroupId;
-        final titleKey = modelField?['title']?.toString() ?? _humanize(key);
-        final requiredInSet = setRequiredSections.contains(section) &&
-            setSectionRequired.contains(key);
-        final patchable = patchField != null;
-        final writable = patchable;
-        final widget = _resolveWidget(type, source, modelField);
-        final min = _asNum(source['minimum'] ?? modelField?['min']);
-        final max = _asNum(source['maximum'] ?? modelField?['max']);
-        final step = _asNum(modelField?['step']);
-        final unit = modelField?['unit']?.toString();
-        final enumValues = _resolveEnumValues(source, modelField);
+        final hint = _uiHints[controlId];
+        final type = _resolveType(controlId);
+        final widget = _resolveWidget(type, hint);
+        final writable = registry.canWrite(controlId) &&
+            (binding.write?.kind == 'patch_field' ||
+                binding.write?.kind == 'state_patch_field');
 
         fieldsByPath[path] = SettingsUiField(
           path: path,
-          section: section,
-          key: key,
+          section: _sectionOf(path),
+          key: _keyOf(path),
           type: type,
           widget: widget,
-          min: min,
-          max: max,
-          step: step,
-          unit: unit,
-          enumValues: enumValues,
-          requiredInSet: requiredInSet,
-          patchable: patchable,
+          min: hint?.min,
+          max: hint?.max,
+          step: hint?.step,
+          unit: _normalizeUnit(entry.unit),
+          enumValues: hint?.enumValues,
+          requiredInSet: false,
+          patchable: writable,
           writable: writable,
-          groupId: groupId,
-          titleKey: titleKey,
+          groupId: group.id,
+          titleKey: entry.title.isEmpty ? _humanize(controlId) : entry.title,
         );
-
-        groupsById.putIfAbsent(
-          groupId,
-          () =>
-              modelGroupsById[groupId] ??
-              SettingsUiGroup(
-                id: groupId,
-                titleKey: _humanize(groupId),
-              ),
-        );
+        orderedPaths.add(path);
       }
+
+      if (orderedPaths.isEmpty) continue;
+      groupsById[group.id] = SettingsUiGroup(
+        id: group.id,
+        titleKey: group.title.isEmpty ? _humanize(group.id) : group.title,
+        order: List<String>.unmodifiable(orderedPaths),
+      );
     }
 
     return SettingsUiSchema(
-      fieldsByPath: Map<String, SettingsUiField>.unmodifiable(fieldsByPath),
-      groupsById: Map<String, SettingsUiGroup>.unmodifiable(groupsById),
+      fieldsByPath: Map<String, SettingsUiField>.unmodifiable(
+        LinkedHashMap<String, SettingsUiField>.from(fieldsByPath),
+      ),
+      groupsById: Map<String, SettingsUiGroup>.unmodifiable(
+        LinkedHashMap<String, SettingsUiGroup>.from(groupsById),
+      ),
     );
   }
 
-  SettingsUiFieldType _resolveType(
-    Map<String, dynamic> schemaField,
-    Map<String, dynamic>? modelField,
-  ) {
-    final enumRaw = schemaField['enum'];
-    if (enumRaw is List && enumRaw.isNotEmpty) {
-      return SettingsUiFieldType.enumeration;
+  List<String> _controlsForGroup({
+    required DeviceProfileBundle bundle,
+    required String groupId,
+  }) {
+    final ordered = <String>[];
+    final seen = <String>{};
+    final controls = bundle.modelProfile.osh.controls;
+
+    void push(String controlId) {
+      if (!seen.add(controlId)) return;
+      final control = controls[controlId];
+      if (control == null || !control.enabled) return;
+      if (control.settingsGroup != groupId) return;
+      ordered.add(controlId);
     }
 
-    final modelType = modelField?['type']?.toString();
-    switch (modelType) {
-      case 'int':
-        return SettingsUiFieldType.integer;
-      case 'double':
-        return SettingsUiFieldType.number;
-      case 'bool':
-        return SettingsUiFieldType.boolean;
-      case 'string':
-        return SettingsUiFieldType.string;
-      case 'enum':
-        return SettingsUiFieldType.enumeration;
+    final groups = bundle.modelProfile.osh.settingsGroups;
+    var groupOrder = const <String>[];
+    for (final group in groups) {
+      if (group.id == groupId) {
+        groupOrder = group.order;
+        break;
+      }
+    }
+    for (final controlId in groupOrder) {
+      push(controlId);
     }
 
-    final schemaType = schemaField['type']?.toString();
-    switch (schemaType) {
-      case 'integer':
-        return SettingsUiFieldType.integer;
-      case 'number':
-        return SettingsUiFieldType.number;
-      case 'boolean':
-        return SettingsUiFieldType.boolean;
-      case 'string':
-        return SettingsUiFieldType.string;
-      default:
-        return SettingsUiFieldType.unknown;
+    final extra = controls.entries
+        .where((entry) =>
+            entry.value.enabled && entry.value.settingsGroup == groupId)
+        .toList(growable: false)
+      ..sort((a, b) {
+        final ao = a.value.order ?? 1 << 30;
+        final bo = b.value.order ?? 1 << 30;
+        final byOrder = ao.compareTo(bo);
+        if (byOrder != 0) return byOrder;
+        return a.key.compareTo(b.key);
+      });
+    for (final entry in extra) {
+      push(entry.key);
     }
+
+    return ordered;
+  }
+
+  SettingsUiFieldType _resolveType(String controlId) {
+    return _uiHints[controlId]?.type ?? SettingsUiFieldType.unknown;
   }
 
   SettingsUiWidget _resolveWidget(
     SettingsUiFieldType type,
-    Map<String, dynamic> schemaField,
-    Map<String, dynamic>? modelField,
+    _SettingsUiHint? hint,
   ) {
-    final hinted = modelField?['widget']?.toString();
-    switch (hinted) {
-      case 'slider':
-        return SettingsUiWidget.slider;
-      case 'switch':
-        return SettingsUiWidget.toggle;
-      case 'select':
-        return SettingsUiWidget.select;
-      case 'text':
-        return SettingsUiWidget.text;
+    if (hint?.widget != null) {
+      return hint!.widget!;
     }
 
     switch (type) {
@@ -193,9 +150,9 @@ class JsonSchemaSettingsUiSchemaBuilder implements SettingsUiSchemaBuilder {
         return SettingsUiWidget.select;
       case SettingsUiFieldType.integer:
       case SettingsUiFieldType.number:
-        final hasRange = schemaField.containsKey('minimum') ||
-            schemaField.containsKey('maximum');
-        return hasRange ? SettingsUiWidget.slider : SettingsUiWidget.text;
+        return hint?.min != null && hint?.max != null
+            ? SettingsUiWidget.slider
+            : SettingsUiWidget.text;
       case SettingsUiFieldType.string:
         return SettingsUiWidget.text;
       case SettingsUiFieldType.unknown:
@@ -203,48 +160,23 @@ class JsonSchemaSettingsUiSchemaBuilder implements SettingsUiSchemaBuilder {
     }
   }
 
-  List<String>? _resolveEnumValues(
-    Map<String, dynamic> schemaField,
-    Map<String, dynamic>? modelField,
-  ) {
-    final modelEnum = _asStringList(modelField?['enumValues']);
-    if (modelEnum != null && modelEnum.isNotEmpty) return modelEnum;
-
-    final schemaEnum = _asList(schemaField['enum']);
-    if (schemaEnum == null || schemaEnum.isEmpty) return null;
-    return schemaEnum.map((e) => e.toString()).toList(growable: false);
+  String _sectionOf(String path) {
+    final index = path.indexOf('.');
+    return index == -1 ? path : path.substring(0, index);
   }
 
-  Map<String, dynamic>? _asMap(dynamic value) {
-    if (value is Map<String, dynamic>) return value;
-    if (value is Map) {
-      return value.map(
-        (k, v) => MapEntry(k.toString(), v),
-      );
+  String _keyOf(String path) {
+    final index = path.lastIndexOf('.');
+    return index == -1 ? path : path.substring(index + 1);
+  }
+
+  String? _normalizeUnit(String? unit) {
+    switch (unit) {
+      case 'C':
+        return '°C';
+      default:
+        return unit;
     }
-    return null;
-  }
-
-  List<dynamic>? _asList(dynamic value) {
-    if (value is List) return value;
-    return null;
-  }
-
-  List<String>? _asStringList(dynamic value) {
-    final list = _asList(value);
-    if (list == null) return null;
-    return list.map((e) => e.toString()).toList(growable: false);
-  }
-
-  Set<String>? _asStringSet(dynamic value) {
-    final list = _asStringList(value);
-    if (list == null) return null;
-    return list.toSet();
-  }
-
-  num? _asNum(dynamic value) {
-    if (value is num) return value;
-    return null;
   }
 
   String _humanize(String value) {
@@ -259,3 +191,76 @@ class JsonSchemaSettingsUiSchemaBuilder implements SettingsUiSchemaBuilder {
     return compact[0].toUpperCase() + compact.substring(1);
   }
 }
+
+class _SettingsUiHint {
+  final SettingsUiWidget? widget;
+  final SettingsUiFieldType? type;
+  final num? min;
+  final num? max;
+  final num? step;
+  final List<String>? enumValues;
+
+  const _SettingsUiHint({
+    this.widget,
+    this.type,
+    this.min,
+    this.max,
+    this.step,
+    this.enumValues,
+  });
+}
+
+const Map<String, _SettingsUiHint> _uiHints = <String, _SettingsUiHint>{
+  'settings_display_active_brightness': _SettingsUiHint(
+    widget: SettingsUiWidget.slider,
+    type: SettingsUiFieldType.integer,
+    min: 10,
+    max: 100,
+    step: 1,
+  ),
+  'settings_display_idle_brightness': _SettingsUiHint(
+    widget: SettingsUiWidget.slider,
+    type: SettingsUiFieldType.integer,
+    min: 10,
+    max: 100,
+    step: 1,
+  ),
+  'settings_display_idle_time': _SettingsUiHint(
+    widget: SettingsUiWidget.slider,
+    type: SettingsUiFieldType.integer,
+    min: 0,
+    max: 60,
+    step: 1,
+  ),
+  'settings_display_language': _SettingsUiHint(
+    widget: SettingsUiWidget.select,
+    type: SettingsUiFieldType.enumeration,
+    enumValues: <String>['en', 'uk'],
+  ),
+  'settings_update_check_interval_min': _SettingsUiHint(
+    widget: SettingsUiWidget.slider,
+    type: SettingsUiFieldType.integer,
+    min: 1,
+    max: 1440,
+    step: 1,
+  ),
+  'settings_time_time_zone': _SettingsUiHint(
+    widget: SettingsUiWidget.slider,
+    type: SettingsUiFieldType.integer,
+    min: -12,
+    max: 12,
+    step: 1,
+  ),
+  'settings_control_model': _SettingsUiHint(
+    widget: SettingsUiWidget.select,
+    type: SettingsUiFieldType.enumeration,
+    enumValues: <String>['tpi', 'r2c'],
+  ),
+  'settings_control_max_floor_temp': _SettingsUiHint(
+    widget: SettingsUiWidget.slider,
+    type: SettingsUiFieldType.number,
+    min: 10,
+    max: 50,
+    step: 0.5,
+  ),
+};

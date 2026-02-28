@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/core/profile/models/device_profile_bundle.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/unknown_config_presenter.dart';
 
-import '../models/osh_config.dart';
-
 abstract class DevicePresenter {
-  Widget build(BuildContext context, Device device, DeviceConfig cfg);
+  Widget build(BuildContext context, Device device, DeviceProfileBundle bundle);
 }
 
 class DevicePresenterRegistry {

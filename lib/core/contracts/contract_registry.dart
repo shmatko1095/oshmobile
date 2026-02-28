@@ -1,5 +1,5 @@
 import 'package:meta/meta.dart';
-import 'package:oshmobile/core/contracts/osh_contracts.dart';
+import 'package:oshmobile/core/contracts/bundled_contract_defaults.dart';
 
 @immutable
 class ContractSchemaRef {
@@ -50,7 +50,7 @@ abstract interface class ContractRegistry {
 
 class StaticContractRegistry implements ContractRegistry {
   StaticContractRegistry({
-    required OshContractSet contracts,
+    required BundledContractSet contracts,
   }) : _descriptors = <JsonRpcContractDescriptor>[
           contracts.settings,
           contracts.sensors,
@@ -65,8 +65,8 @@ class StaticContractRegistry implements ContractRegistry {
     }
   }
 
-  factory StaticContractRegistry.current() => StaticContractRegistry(
-        contracts: OshContracts.current,
+  factory StaticContractRegistry.bundledV1() => StaticContractRegistry(
+        contracts: BundledContractDefaults.v1,
       );
 
   static final RegExp _schemaRe = RegExp(r'^([A-Za-z0-9_]+)@([0-9]+)$');

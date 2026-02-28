@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:oshmobile/features/settings/data/settings_contract_schema_catalog.dart';
+import 'package:oshmobile/core/common/entities/device/known_device_models.dart';
+import 'package:oshmobile/features/settings/data/json_schema_settings_ui_schema_builder.dart';
 import 'package:oshmobile/features/settings/data/settings_jsonrpc_codec.dart';
 import 'package:oshmobile/features/settings/data/settings_payload_validator.dart';
+import 'support/thermostat_profile_bundle_fixture.dart';
 
 Map<String, dynamic> _baseSettingsPayload() => {
       'display': {
@@ -66,13 +68,53 @@ void main() {
     expect(validateSettingsPatchPayload(badMaxFloorTemp), isFalse);
   });
 
-  test('settings schema catalog exposes control in set and patch schemas', () {
-    final setProps =
-        SettingsContractSchemaCatalog.settingsSetV1['properties'] as Map;
-    final patchProps =
-        SettingsContractSchemaCatalog.settingsPatchV1['properties'] as Map;
+  test('settings UI schema is derived from device profile bundle', () {
+    final bundle = createThermostatProfileBundle(
+      serial: 'TEST-SN',
+      modelId: t1aFlWzeModelId,
+      negotiatedSchemas: const <String>{
+        'settings@1',
+        'schedule@1',
+        'telemetry@1',
+        'sensors@1',
+      },
+    );
 
-    expect(setProps.containsKey('control'), isTrue);
-    expect(patchProps.containsKey('control'), isTrue);
+    final schema = const ProfileBundleSettingsUiSchemaBuilder().build(
+      bundle: bundle,
+    );
+
+    expect(schema.group('display')?.titleKey, 'Display');
+    expect(
+      schema.field('control.maxFloorTemp')?.titleKey,
+      'Maximum floor temperature',
+    );
+    expect(
+      schema.field('display.language')?.enumValues,
+      containsAll(const <String>['en', 'uk']),
+    );
+  });
+
+  test('settings UI respects negotiated write support and feature flags', () {
+    final bundle = createThermostatProfileBundle(
+      serial: 'TEST-SN',
+      modelId: t1aFlWzeModelId,
+      negotiatedSchemas: const <String>{'settings@1'},
+    );
+
+    final schema = const ProfileBundleSettingsUiSchemaBuilder().build(
+      bundle: bundle.copyWith(
+        readableDomains: const <String>{'settings'},
+        patchableDomains: const <String>{},
+        settableDomains: const <String>{},
+        negotiatedFeaturesByDomain: const <String, Set<String>>{
+          'settings': <String>{},
+        },
+      ),
+    );
+
+    expect(schema.field('display.activeBrightness')?.writable, isFalse);
+    expect(schema.field('control.maxFloorTemp'), isNull);
+    expect(schema.field('display.language'), isNull);
   });
 }

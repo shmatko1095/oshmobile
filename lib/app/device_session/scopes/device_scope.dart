@@ -106,14 +106,13 @@ class _DeviceScopeState extends State<DeviceScope> {
       _snapshotInitialized = true;
       _presenters = sl<DevicePresenterRegistry>();
 
-      // Start reactive stream immediately; facade boot/refresh runs in background.
+      await _page.load(_ctx.deviceId);
+
+      // Start reactive stream only after negotiation/profile bootstrap completes.
       _snapshot.start();
 
       if (!mounted) return;
       setState(() => _ready = true);
-
-      // Do not block first paint with network roundtrips.
-      unawaited(_facade.refreshAll());
     } catch (e) {
       if (!mounted) return;
       setState(() {

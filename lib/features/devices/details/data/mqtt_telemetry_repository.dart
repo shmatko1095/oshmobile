@@ -1,17 +1,17 @@
 import 'dart:async';
 
-import 'package:collection/collection.dart';
-import 'package:oshmobile/core/contracts/osh_contracts.dart';
-import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
+import 'package:oshmobile/core/contracts/bundled_contract_defaults.dart';
+import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
+import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/features/devices/details/data/telemetry_topics.dart';
 import 'package:oshmobile/features/devices/details/domain/repositories/telemetry_repository.dart';
-import 'package:oshmobile/features/sensors/data/sensors_jsonrpc_codec.dart';
 
 class TelemetryJsonRpcCodec {
-  static final _contract = OshContracts.current.telemetry;
+  // Legacy v1 defaults kept only for tests and compatibility helpers.
+  static final _contract = BundledContractDefaults.v1.telemetry;
 
   static String get schema => _contract.schema;
   static String get domain => _contract.methodDomain;
@@ -24,41 +24,47 @@ class TelemetryJsonRpcCodec {
   static String get methodPatch => methodOf('patch');
 }
 
-/// Telemetry repo on top of DeviceMqttRepo (JSON-RPC).
-/// Produces alias-keyed diffs, e.g. {'sensor.temperature': 21.5}.
 class MqttTelemetryRepositoryImpl implements TelemetryRepository {
   MqttTelemetryRepositoryImpl({
     required JsonRpcClient jrpc,
     required TelemetryTopics topics,
+    DeviceRuntimeContracts? contracts,
     required String deviceSn,
     this.pollInterval = const Duration(seconds: 2),
     this.timeout = const Duration(seconds: 6),
   })  : _jrpc = jrpc,
         _topics = topics,
+        _contracts = contracts ?? DeviceRuntimeContracts(),
         _deviceSn = deviceSn;
 
   final JsonRpcClient _jrpc;
   final TelemetryTopics _topics;
+  final DeviceRuntimeContracts _contracts;
   final String _deviceSn;
   final Duration pollInterval;
   final Duration timeout;
 
-  StreamController<Map<String, dynamic>>? _ctrl;
-  List<StreamSubscription> _subs = [];
+  StreamController<TelemetryState>? _ctrl;
+  StreamSubscription? _sub;
   int _refs = 0;
 
   Timer? _pollTimer;
   bool _pollInFlight = false;
 
-  SensorsState? _sensors;
   TelemetryState? _telemetry;
-  Map<String, dynamic> _lastAliases = {};
-
   bool _disposed = false;
-  static const DeepCollectionEquality _deepEq = DeepCollectionEquality();
 
-  /// Best-effort cleanup when device scope is disposed.
-  /// Not part of TelemetryRepository interface on purpose.
+  String get _telemetrySchema => _contracts.telemetry.read.schema;
+  String get _telemetryDomain => _contracts.telemetry.methodDomain;
+  String get _telemetryMethodState => _contracts.telemetry.read.method('state');
+  String get _telemetryMethodGet => _contracts.telemetry.read.method('get');
+  String get _telemetryMethodSet => _contracts.telemetry.set.method('set');
+  String get _telemetryMethodPatch =>
+      _contracts.telemetry.patch.method('patch');
+
+  @override
+  TelemetryState? get currentState => _telemetry;
+
   void dispose() {
     if (_disposed) return;
     _disposed = true;
@@ -66,24 +72,21 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
   }
 
   Future<void> _disposeAsync() async {
-    final subs = _subs.toList(growable: false);
-    _subs = [];
-
+    final sub = _sub;
     final ctrl = _ctrl;
+
+    _sub = null;
     _ctrl = null;
     _refs = 0;
 
     _pollTimer?.cancel();
     _pollTimer = null;
     _pollInFlight = false;
-
-    _sensors = null;
     _telemetry = null;
-    _lastAliases = {};
 
-    for (final s in subs) {
+    if (sub != null) {
       try {
-        await s.cancel();
+        await sub.cancel();
       } catch (_) {}
     }
     if (ctrl != null) {
@@ -99,7 +102,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
 
     final reqId = newReqId();
     final resp = await _request(
-      method: TelemetryJsonRpcCodec.methodGet,
+      method: _telemetryMethodGet,
       reqId: reqId,
       data: null,
       timeoutMessage: 'Timeout waiting for telemetry get response',
@@ -107,16 +110,14 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
 
     final data = resp.data;
     if (data == null) throw StateError('Invalid telemetry response');
-    if (resp.meta != null &&
-        resp.meta!.schema != TelemetryJsonRpcCodec.schema) {
+    if (resp.meta != null && resp.meta!.schema != _telemetrySchema) {
       throw StateError('Invalid telemetry schema: ${resp.meta!.schema}');
     }
 
     final parsed = TelemetryState.fromJson(data);
     if (parsed == null) throw StateError('Invalid telemetry payload');
 
-    _telemetry = parsed;
-    _emitAliases();
+    _emitState(parsed);
     return parsed;
   }
 
@@ -125,7 +126,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     if (_disposed) throw StateError('MqttTelemetryRepositoryImpl is disposed');
     final id = reqId ?? newReqId();
     await _request(
-      method: TelemetryJsonRpcCodec.methodSet,
+      method: _telemetryMethodSet,
       reqId: id,
       data: const <String, dynamic>{},
       timeoutMessage: 'Timeout waiting for telemetry set response',
@@ -137,7 +138,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     if (_disposed) throw StateError('MqttTelemetryRepositoryImpl is disposed');
     final id = reqId ?? newReqId();
     await _request(
-      method: TelemetryJsonRpcCodec.methodPatch,
+      method: _telemetryMethodPatch,
       reqId: id,
       data: const <String, dynamic>{},
       timeoutMessage: 'Timeout waiting for telemetry patch response',
@@ -152,49 +153,23 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     if (_refs > 1) return;
 
     final ctrl = _ensureController();
-    final subs = <StreamSubscription>[];
+    _sub = _jrpc
+        .notifications(
+      _topics.stateTelemetry(_deviceSn),
+      method: _telemetryMethodState,
+    )
+        .listen((notif) {
+      if (notif.meta.schema != _telemetrySchema) return;
+      final data = notif.data;
+      if (data == null) return;
 
-    subs.add(
-      _jrpc
-          .notifications(
-        _topics.stateSensors(_deviceSn),
-        method: SensorsJsonRpcCodec.methodState,
-        schema: SensorsJsonRpcCodec.schema,
-      )
-          .listen((notif) {
-        final data = notif.data;
-        if (data == null) return;
+      final parsed = TelemetryState.fromJson(data);
+      if (parsed == null) return;
 
-        final parsed = SensorsState.fromJson(data);
-        if (parsed == null) return;
-
-        _sensors = parsed;
-        _emitAliases(ctrl: ctrl);
-      }),
-    );
-
-    subs.add(
-      _jrpc
-          .notifications(
-        _topics.stateTelemetry(_deviceSn),
-        method: TelemetryJsonRpcCodec.methodState,
-        schema: TelemetryJsonRpcCodec.schema,
-      )
-          .listen((notif) {
-        final data = notif.data;
-        if (data == null) return;
-
-        final parsed = TelemetryState.fromJson(data);
-        if (parsed == null) return;
-
-        _telemetry = parsed;
-        _emitAliases(ctrl: ctrl);
-      }),
-    );
+      _emitState(parsed, ctrl: ctrl);
+    });
 
     _startPolling();
-
-    _subs = subs;
   }
 
   @override
@@ -206,12 +181,13 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
 
     _refs = 0;
 
-    for (final s in _subs) {
+    final sub = _sub;
+    _sub = null;
+    if (sub != null) {
       try {
-        await s.cancel();
+        await sub.cancel();
       } catch (_) {}
     }
-    _subs = [];
 
     _stopPolling();
 
@@ -223,16 +199,16 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
   }
 
   @override
-  Stream<Map<String, dynamic>> watchAliases() {
-    if (_disposed) return Stream<Map<String, dynamic>>.empty();
+  Stream<TelemetryState> watchState() {
+    if (_disposed) return Stream<TelemetryState>.empty();
     return _ensureController().stream;
   }
 
-  StreamController<Map<String, dynamic>> _ensureController() {
+  StreamController<TelemetryState> _ensureController() {
     final existing = _ctrl;
     if (existing != null && !existing.isClosed) return existing;
 
-    final next = StreamController<Map<String, dynamic>>.broadcast();
+    final next = StreamController<TelemetryState>.broadcast();
     _ctrl = next;
     return next;
   }
@@ -249,14 +225,14 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
       meta: _meta(),
       reqId: reqId,
       data: data,
-      domain: TelemetryJsonRpcCodec.domain,
+      domain: _telemetryDomain,
       timeout: timeout,
       timeoutMessage: timeoutMessage,
     );
   }
 
   JsonRpcMeta _meta() => JsonRpcMeta(
-        schema: TelemetryJsonRpcCodec.schema,
+        schema: _telemetrySchema,
         src: 'app',
         ts: DateTime.now().millisecondsSinceEpoch,
       );
@@ -269,7 +245,6 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
       unawaited(_pollOnce());
     });
 
-    // Trigger an immediate poll to avoid waiting for the first tick.
     unawaited(_pollOnce());
   }
 
@@ -287,7 +262,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     _pollInFlight = true;
     try {
       final resp = await _request(
-        method: TelemetryJsonRpcCodec.methodGet,
+        method: _telemetryMethodGet,
         reqId: newReqId(),
         data: null,
         timeoutMessage: 'Timeout waiting for telemetry get response',
@@ -295,16 +270,14 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
 
       final data = resp.data;
       if (data == null) return;
-      if (resp.meta != null &&
-          resp.meta!.schema != TelemetryJsonRpcCodec.schema) {
+      if (resp.meta != null && resp.meta!.schema != _telemetrySchema) {
         return;
       }
 
       final parsed = TelemetryState.fromJson(data);
       if (parsed == null) return;
 
-      _telemetry = parsed;
-      _emitAliases();
+      _emitState(parsed);
     } catch (_) {
       // Polling is best-effort; ignore errors/timeouts.
     } finally {
@@ -312,100 +285,14 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     }
   }
 
-  void _emitAliases({StreamController<Map<String, dynamic>>? ctrl}) {
-    final next = _buildAliases();
-    final diff = _diffAliases(_lastAliases, next);
-    if (diff.isEmpty) return;
-
-    _lastAliases = next;
-
+  void _emitState(
+    TelemetryState next, {
+    StreamController<TelemetryState>? ctrl,
+  }) {
+    _telemetry = next;
     final target = ctrl ?? _ctrl;
     if (target != null && !target.isClosed) {
-      target.add(diff);
+      target.add(next);
     }
-  }
-
-  Map<String, dynamic> _buildAliases() {
-    final out = <String, dynamic>{};
-
-    final telemetry = _telemetry;
-    out['switch.heating.state'] = telemetry?.heaterEnabled;
-    out['stats.heating_duty_24h'] = telemetry?.loadFactor;
-
-    final sensors = _sensors?.items ?? const <SensorMeta>[];
-    final telemetryById = <String, ClimateSensorTelemetry>{
-      for (final item
-          in telemetry?.climateSensors ?? const <ClimateSensorTelemetry>[])
-        item.id: item,
-    };
-
-    final climateCards = <Map<String, dynamic>>[];
-    for (final meta in sensors) {
-      final t = telemetryById[meta.id];
-      final tempValid = t?.tempValid ?? false;
-      final humidityValid = t?.humidityValid ?? false;
-
-      climateCards.add({
-        'id': meta.id,
-        'name': meta.name,
-        'kind': meta.kind,
-        'ref': meta.ref,
-        'temp_valid': tempValid,
-        'humidity_valid': humidityValid,
-        if (tempValid) 'temp': t?.temp,
-        if (humidityValid) 'humidity': t?.humidity,
-      });
-    }
-    out['sensors.climate'] = climateCards;
-
-    final refMeta = sensors.firstWhere(
-      (e) => e.ref,
-      orElse: () => const SensorMeta(
-        id: '',
-        name: '',
-        ref: false,
-        transport: '',
-        removable: false,
-        kind: 'generic',
-        tempCalibration: 0.0,
-      ),
-    );
-
-    ClimateSensorTelemetry? refTelemetry;
-    if (telemetry != null && refMeta.id.isNotEmpty) {
-      for (final item in telemetry.climateSensors) {
-        if (item.id == refMeta.id) {
-          refTelemetry = item;
-          break;
-        }
-      }
-    }
-
-    out['sensor.temperature'] = (refTelemetry != null && refTelemetry.tempValid)
-        ? refTelemetry.temp
-        : null;
-    out['sensor.humidity'] =
-        (refTelemetry != null && refTelemetry.humidityValid)
-            ? refTelemetry.humidity
-            : null;
-
-    return out;
-  }
-
-  Map<String, dynamic> _diffAliases(
-      Map<String, dynamic> prev, Map<String, dynamic> next) {
-    final diff = <String, dynamic>{};
-    final keys = <String>{}
-      ..addAll(prev.keys)
-      ..addAll(next.keys);
-    for (final key in keys) {
-      final prevVal = prev[key];
-      final hasNext = next.containsKey(key);
-      final nextVal = hasNext ? next[key] : null;
-      if (!_deepEq.equals(prevVal, nextVal)) {
-        diff[key] = nextVal;
-      }
-    }
-    return diff;
   }
 }

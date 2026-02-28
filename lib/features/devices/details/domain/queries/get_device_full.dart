@@ -1,197 +1,165 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/core/contracts/contract_negotiator.dart';
+import 'package:oshmobile/core/contracts/device_contracts_models.dart';
+import 'package:oshmobile/core/contracts/device_contracts_repository.dart';
+import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
 import 'package:oshmobile/core/error/failures.dart';
+import 'package:oshmobile/core/profile/models/device_profile_bundle.dart';
+import 'package:oshmobile/core/profile/profile_bundle_repository.dart';
 import 'package:oshmobile/features/home/domain/repositories/device_repository.dart';
 
-/// Temporary mock use-case for loading full device description:
-/// - device entity
-/// - configuration JSON (capabilities + UI hints + settings schema)
-/// - modelId
-///
-/// Later, when real model/config endpoint appears, this should be
-/// replaced with a proper backend call for model/config data.
 class GetDeviceFull {
   final DeviceRepository deviceRepository;
+  final DeviceContractsRepository contractsRepository;
+  final ContractNegotiator contractNegotiator;
+  final ProfileBundleRepository profileBundleRepository;
+  final DeviceRuntimeContracts runtimeContracts;
 
-  GetDeviceFull(this.deviceRepository);
+  GetDeviceFull({
+    required this.deviceRepository,
+    required this.contractsRepository,
+    required this.contractNegotiator,
+    required this.profileBundleRepository,
+    required this.runtimeContracts,
+  });
 
-  Future<({Device device, Map<String, dynamic> configuration, String modelId})>
-      call(
-    String deviceId,
-  ) async {
+  Future<
+      ({
+        Device device,
+        DeviceProfileBundle bundle,
+        NegotiatedContractSet negotiated,
+      })> call(String deviceId) async {
     final Either<Failure, Device> res = await deviceRepository.get(
-        deviceId: deviceId); // TODO: should be modelRepository
+      deviceId: deviceId,
+    );
 
     return await res.fold(
       (f) => Future.error(f.message ?? 'Failed to load device'),
       (d) async {
-        // Mock configuration JSON used by DeviceConfig.fromJson.
-        //
-        // It contains:
-        // - capabilities: high-level feature flags for the device
-        // - ui_hints.dashboard: ordering/visibility for dashboard tiles
-        // - ui_hints.settings: schema describing how to render Settings page
-        //
-        // NOTE:
-        // - Actual settings values come from MQTT shadow (SettingsSnapshot),
-        //   this config only describes types, limits and grouping.
-        final cfg = <String, dynamic>{
-          'capabilities': [
-            'sensor.humidity',
-            'sensor.temperature',
-            'stats.heating_duty_24h',
-
-            // Settings-related capabilities (optional, just for semantics).
-            'settings.display',
-            'settings.update',
-            'settings.time',
-          ],
-          'ui_hints': {
-            // Dashboard layout (already used by DeviceConfig).
-            'dashboard.order': [
-              'currentHumidity',
-              'currentTemp',
-              'targetTemp',
-              'heatingToggle',
-            ],
-            'dashboard.hidden': [],
-
-            // New: Settings schema used by DeviceSettingsPage.
-            'settings': {
-              'groups': [
-                {
-                  'id': 'display',
-                  'title': 'Display',
-                  'order': [
-                    'display.activeBrightness',
-                    'display.idleBrightness',
-                    'display.idleTime',
-                    'display.dimOnIdle',
-                    'display.language',
-                  ],
-                },
-                {
-                  'id': 'update',
-                  'title': 'Updates',
-                  'order': [
-                    'update.autoUpdateEnabled',
-                    'update.updateAtMidnight',
-                    'update.checkIntervalMin',
-                  ],
-                },
-                {
-                  'id': 'time',
-                  'title': 'Date & time',
-                  'order': [
-                    'time.auto',
-                    'time.timeZone',
-                  ],
-                },
-              ],
-              'fields': {
-                // DISPLAY GROUP
-                'display.activeBrightness': {
-                  'group': 'display',
-                  'type':
-                      'int', // "int" | "double" | "bool" | "string" | "enum"
-                  'widget': 'slider', // "slider" | "switch" | "text" | "select"
-                  'min': 10,
-                  'max': 100,
-                  'step': 1,
-                  'unit': '%',
-                  'default': 100,
-                  'title': 'Active brightness',
-                },
-                'display.idleBrightness': {
-                  'group': 'display',
-                  'type': 'int',
-                  'widget': 'slider',
-                  'min': 10,
-                  'max': 100,
-                  'step': 1,
-                  'unit': '%',
-                  'default': 10,
-                  'title': 'Idle brightness',
-                },
-                'display.idleTime': {
-                  'group': 'display',
-                  'type': 'int',
-                  'widget': 'slider',
-                  'min': 0,
-                  'max': 60,
-                  'step': 1,
-                  'unit': 's',
-                  'default': 30,
-                  'title': 'Idle timeout',
-                },
-                'display.dimOnIdle': {
-                  'group': 'display',
-                  'type': 'bool',
-                  'widget': 'switch',
-                  'default': true,
-                  'title': 'Dim on idle',
-                },
-                'display.language': {
-                  'group': 'display',
-                  'type': 'enum',
-                  'widget': 'select',
-                  'enumValues': ['en', 'uk'],
-                  'default': 'en',
-                  'title': 'Language',
-                },
-
-                // UPDATE GROUP
-                'update.autoUpdateEnabled': {
-                  'group': 'update',
-                  'type': 'bool',
-                  'widget': 'switch',
-                  'default': false,
-                  'title': 'Auto updates',
-                },
-                'update.updateAtMidnight': {
-                  'group': 'update',
-                  'type': 'bool',
-                  'widget': 'switch',
-                  'default': false,
-                  'title': 'Update at midnight',
-                },
-                'update.checkIntervalMin': {
-                  'group': 'update',
-                  'type': 'int',
-                  'widget': 'slider',
-                  'min': 1,
-                  'max': 1440,
-                  'step': 1,
-                  'unit': 'min',
-                  'default': 60,
-                  'title': 'Check interval',
-                },
-
-                // TIME GROUP
-                'time.auto': {
-                  'group': 'time',
-                  'type': 'bool',
-                  'widget': 'switch',
-                  'default': true,
-                  'title': 'Automatic time',
-                },
-                'time.timeZone': {
-                  'group': 'time',
-                  'type': 'int',
-                  'widget': 'slider',
-                  'min': -12,
-                  'max': 12,
-                  'step': 1,
-                  'default': 0,
-                  'title': 'Time zone',
-                },
-              },
-            },
+        runtimeContracts.reset();
+        final attempt = await _negotiateContracts();
+        final initialNegotiated = attempt.negotiated;
+        final bundle = await profileBundleRepository.fetchBundle(
+          serial: d.sn,
+          modelId: d.modelId,
+          negotiatedSchemas: initialNegotiated?.allSchemas ?? const <String>{},
+        );
+        final negotiated = _resolveNegotiated(
+          attempt: attempt,
+          bundle: bundle,
+        );
+        _validateCompatibility(
+          attempt: attempt,
+          bundle: bundle,
+          negotiated: negotiated,
+        );
+        runtimeContracts.applyNegotiated(negotiated);
+        final hydratedBundle = bundle.copyWith(
+          negotiatedSchemas: negotiated.allSchemas,
+          readableDomains: negotiated.domains.values
+              .where((domain) => domain.readable)
+              .map((domain) => domain.domain)
+              .toSet(),
+          patchableDomains: negotiated.domains.values
+              .where((domain) => domain.patchable)
+              .map((domain) => domain.domain)
+              .toSet(),
+          settableDomains: negotiated.domains.values
+              .where((domain) => domain.settable)
+              .map((domain) => domain.domain)
+              .toSet(),
+          negotiatedFeaturesByDomain: <String, Set<String>>{
+            for (final entry in negotiated.domains.entries)
+              entry.key: Set<String>.unmodifiable(entry.value.features),
           },
-        };
+        );
 
-        return (device: d, configuration: cfg, modelId: d.modelId);
+        return (device: d, bundle: hydratedBundle, negotiated: negotiated);
       },
     );
   }
+
+  Future<_NegotiationAttempt> _negotiateContracts() async {
+    try {
+      final contracts = await contractsRepository.fetch();
+      return _NegotiationAttempt(
+        negotiated: contractNegotiator.negotiate(contracts),
+      );
+    } catch (error) {
+      return _NegotiationAttempt(error: error);
+    }
+  }
+
+  NegotiatedContractSet _resolveNegotiated({
+    required _NegotiationAttempt attempt,
+    required DeviceProfileBundle bundle,
+  }) {
+    if (attempt.negotiated case final negotiated?) {
+      return negotiated;
+    }
+
+    final bootstrap = bundle.modelProfile.osh.bootstrap;
+    if (bootstrap.contractsRequired || !bootstrap.legacyFallbackAllowed) {
+      throw CompatibilityError(
+        'This device requires contract negotiation but the bootstrap contract is unavailable.',
+      );
+    }
+
+    return contractNegotiator.legacyFallbackConservative();
+  }
+
+  void _validateCompatibility({
+    required _NegotiationAttempt attempt,
+    required DeviceProfileBundle bundle,
+    required NegotiatedContractSet negotiated,
+  }) {
+    final missingRequiredDomains = <String>[];
+    for (final entry in bundle.modelProfile.osh.domains.entries) {
+      if (!entry.value.required) continue;
+      if (!negotiated.canRead(entry.key)) {
+        missingRequiredDomains.add(entry.key);
+      }
+    }
+
+    if (missingRequiredDomains.isEmpty) return;
+
+    if (attempt.negotiated != null) {
+      throw UpdateAppRequired(
+        'Update required. Unsupported required domains: ${missingRequiredDomains.join(', ')}.',
+      );
+    }
+
+    throw CompatibilityError(
+      'Compatibility error. Required domains are unavailable: ${missingRequiredDomains.join(', ')}.',
+    );
+  }
+}
+
+class UpdateAppRequired implements Exception {
+  final String message;
+
+  const UpdateAppRequired(this.message);
+
+  @override
+  String toString() => message;
+}
+
+class CompatibilityError implements Exception {
+  final String message;
+
+  const CompatibilityError(this.message);
+
+  @override
+  String toString() => message;
+}
+
+class _NegotiationAttempt {
+  final NegotiatedContractSet? negotiated;
+  final Object? error;
+
+  const _NegotiationAttempt({
+    this.negotiated,
+    this.error,
+  });
 }

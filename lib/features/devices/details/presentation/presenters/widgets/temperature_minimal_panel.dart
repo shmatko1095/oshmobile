@@ -4,8 +4,6 @@ import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
-import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
-import 'package:oshmobile/features/schedule/domain/utils/schedule_point_resolver.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class TemperatureMinimalPanel extends StatefulWidget {
@@ -13,6 +11,8 @@ class TemperatureMinimalPanel extends StatefulWidget {
     super.key,
     required this.currentBind,
     required this.sensorsBind,
+    required this.currentTargetBind,
+    required this.nextTargetBind,
     this.onTap,
     this.unit = '°C',
     this.height,
@@ -22,6 +22,8 @@ class TemperatureMinimalPanel extends StatefulWidget {
 
   final String currentBind;
   final String sensorsBind;
+  final String currentTargetBind;
+  final String nextTargetBind;
   final String unit;
   final double? height;
   final EdgeInsets padding;
@@ -180,39 +182,27 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final model = context.select<DeviceSnapshotCubit,
-        ({Map<String, dynamic> telemetry, CalendarSnapshot? schedule})>((c) {
-      final snap = c.state;
-      return (
-        telemetry: snap.telemetry.data ?? const <String, dynamic>{},
-        schedule: snap.schedule.data,
-      );
-    });
+    final controlState = context.select<DeviceSnapshotCubit, Map<String, dynamic>>(
+      (c) => c.state.controlState.data ?? const <String, dynamic>{},
+    );
 
-    final telemetry = model.telemetry;
-    final scheduleSnap = model.schedule;
-    final now = DateTime.now();
-    final currentPoint = scheduleSnap == null
-        ? null
-        : resolveCurrentPoint(scheduleSnap, now: now);
-    final nextPoint =
-        scheduleSnap == null ? null : resolveNextPoint(scheduleSnap, now: now);
+    final currentTarget = _asNum(readBind(controlState, widget.currentTargetBind));
+    final nextTarget = readBind(controlState, widget.nextTargetBind);
+    final nextTime = _nextTargetTime(nextTarget);
 
-    final targetLine = currentPoint?.temp == null
+    final targetLine = currentTarget == null
         ? null
-        : S.of(context).Target(
-              '${_fmtNum(currentPoint?.temp)}${widget.unit}',
-            );
-    final nextLine = (nextPoint?.temp == null || nextPoint?.time == null)
+        : S.of(context).Target('${_fmtNum(currentTarget)}${widget.unit}');
+    final nextLine = nextTarget is! Map || nextTime == null
         ? null
         : S.of(context).NextAt(
-              '${_fmtNum(nextPoint?.temp)}${widget.unit}',
-              _fmtTime(context, nextPoint!.time),
-            );
+            '${_fmtNum(_asNum(nextTarget['temp']))}${widget.unit}',
+            _fmtTime(context, nextTime),
+          );
 
-    final sensors = _parseSensors(readBind(telemetry, widget.sensorsBind));
+    final sensors = _parseSensors(readBind(controlState, widget.sensorsBind));
     _ensureInitialPage(sensors);
-    final fallbackCurrent = _asNum(readBind(telemetry, widget.currentBind));
+    final fallbackCurrent = _asNum(readBind(controlState, widget.currentBind));
 
     final content = sensors.isEmpty
         ? _FallbackCard(
@@ -248,6 +238,14 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
       return SizedBox(height: widget.height, child: panel);
     }
     return panel;
+  }
+
+  TimeOfDay? _nextTargetTime(dynamic raw) {
+    if (raw is! Map) return null;
+    final hour = _asNum(raw['hour'])?.toInt();
+    final minute = _asNum(raw['minute'])?.toInt();
+    if (hour == null || minute == null) return null;
+    return TimeOfDay(hour: hour, minute: minute);
   }
 }
 

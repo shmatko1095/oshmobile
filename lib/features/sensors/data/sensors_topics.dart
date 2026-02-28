@@ -1,12 +1,16 @@
+import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
-import 'package:oshmobile/features/sensors/data/sensors_jsonrpc_codec.dart';
 
 class SensorsTopics {
-  static String get domain => SensorsJsonRpcCodec.domain;
-
-  SensorsTopics(this._topics);
+  SensorsTopics(
+    this._topics, [
+    DeviceRuntimeContracts? contracts,
+  ]) : _contracts = contracts ?? DeviceRuntimeContracts();
 
   final DeviceMqttTopicsV1 _topics;
+  final DeviceRuntimeContracts _contracts;
+
+  String get domain => _contracts.sensors.methodDomain;
 
   String cmd(String deviceSn) => _topics.cmd(deviceSn, domain);
 

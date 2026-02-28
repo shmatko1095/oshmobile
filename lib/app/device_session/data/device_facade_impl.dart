@@ -1,15 +1,5 @@
 import 'dart:async';
 
-import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart';
-import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
-import 'package:oshmobile/core/common/entities/device/device.dart';
-import 'package:oshmobile/core/contracts/contract_registry.dart';
-import 'package:oshmobile/core/contracts/osh_contracts.dart';
-import 'package:oshmobile/core/di/device_context.dart';
-import 'package:oshmobile/features/device_about/domain/repositories/device_about_repository.dart';
-import 'package:oshmobile/features/devices/details/domain/repositories/telemetry_repository.dart';
-import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
-import 'package:oshmobile/features/devices/details/presentation/models/osh_config.dart';
 import 'package:oshmobile/app/device_session/data/apis/device_about_api_impl.dart';
 import 'package:oshmobile/app/device_session/data/apis/device_schedule_api_impl.dart';
 import 'package:oshmobile/app/device_session/data/apis/device_sensors_api_impl.dart';
@@ -17,8 +7,17 @@ import 'package:oshmobile/app/device_session/data/apis/device_settings_api_impl.
 import 'package:oshmobile/app/device_session/data/apis/device_telemetry_api_impl.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
+import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart';
+import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
+import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/core/di/device_context.dart';
+import 'package:oshmobile/core/profile/control_binding_registry.dart';
+import 'package:oshmobile/core/profile/control_state_resolver.dart';
+import 'package:oshmobile/core/profile/models/device_profile_bundle.dart';
+import 'package:oshmobile/features/device_about/domain/repositories/device_about_repository.dart';
+import 'package:oshmobile/features/devices/details/domain/repositories/telemetry_repository.dart';
+import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
 import 'package:oshmobile/features/schedule/domain/repositories/schedule_repository.dart';
-import 'package:oshmobile/features/settings/data/settings_contract_schema_catalog.dart';
 import 'package:oshmobile/features/settings/domain/repositories/settings_repository.dart';
 import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema.dart';
 import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema_builder.dart';
@@ -30,8 +29,8 @@ class DeviceFacadeImpl implements DeviceFacade {
   final DevicePageCubit _pageCubit;
   final GlobalMqttCubit _mqttCubit;
   final MqttCommCubit _commCubit;
-  final ContractRegistry _contracts;
   final SettingsUiSchemaBuilder _settingsUiSchemaBuilder;
+  final ControlStateResolver _controlStateResolver;
 
   late final DeviceScheduleApiImpl _scheduleApi;
   late final DeviceSettingsApiImpl _settingsApi;
@@ -76,15 +75,15 @@ class DeviceFacadeImpl implements DeviceFacade {
     required GlobalMqttCubit mqttCubit,
     required MqttCommCubit commCubit,
     required SensorsRepository sensorsRepo,
-    required ContractRegistry contracts,
     required SettingsUiSchemaBuilder settingsUiSchemaBuilder,
+    required ControlStateResolver controlStateResolver,
   })  : _ctx = ctx,
         _bootstrapDevice = bootstrapDevice,
         _pageCubit = pageCubit,
         _mqttCubit = mqttCubit,
         _commCubit = commCubit,
-        _contracts = contracts,
         _settingsUiSchemaBuilder = settingsUiSchemaBuilder,
+        _controlStateResolver = controlStateResolver,
         _current = DeviceSnapshot.initial(device: bootstrapDevice) {
     _scheduleApi = DeviceScheduleApiImpl(
       deviceSn: _ctx.deviceSn,
@@ -132,7 +131,11 @@ class DeviceFacadeImpl implements DeviceFacade {
       _sensorsApi.start().catchError((_) {}),
     ]);
 
-    _publish();
+    if (_pageCubit.state is DevicePageReady) {
+      await _refreshDomainSlices(forceGet: false);
+    } else {
+      _publish();
+    }
   }
 
   @override
@@ -156,16 +159,13 @@ class DeviceFacadeImpl implements DeviceFacade {
 
   @override
   Future<void> refreshAll({bool forceGet = false}) async {
-    await Future.wait<void>([
-      _pageCubit.load(_ctx.deviceId).catchError((_) {}),
-      _telemetryApi.get(force: forceGet).then((_) {}).catchError((_) {}),
-      _scheduleApi.get(force: forceGet).then((_) {}).catchError((_) {}),
-      _settingsApi.get(force: forceGet).then((_) {}).catchError((_) {}),
-      _sensorsApi.get(force: forceGet).then((_) {}).catchError((_) {}),
-      _aboutApi.get(force: forceGet).then((_) {}).catchError((_) {}),
-    ]);
+    await _pageCubit.load(_ctx.deviceId);
+    if (_pageCubit.state is! DevicePageReady) {
+      _publish();
+      return;
+    }
 
-    _publish();
+    await _refreshDomainSlices(forceGet: forceGet);
   }
 
   @override
@@ -202,12 +202,24 @@ class DeviceFacadeImpl implements DeviceFacade {
     }
   }
 
+  Future<void> _refreshDomainSlices({required bool forceGet}) async {
+    await Future.wait<void>([
+      _telemetryApi.get(force: forceGet).then((_) {}).catchError((_) {}),
+      _scheduleApi.get(force: forceGet).then((_) {}).catchError((_) {}),
+      _settingsApi.get(force: forceGet).then((_) {}).catchError((_) {}),
+      _sensorsApi.get(force: forceGet).then((_) {}).catchError((_) {}),
+      _aboutApi.get(force: forceGet).then((_) {}).catchError((_) {}),
+    ]);
+
+    _publish();
+  }
+
   DeviceSnapshot _buildSnapshot() {
     final pageState = _pageCubit.state;
     final mqttState = _mqttCubit.state;
     final commState = _commCubit.state;
 
-    Device device = _bootstrapDevice;
+    var device = _bootstrapDevice;
     if (pageState is DevicePageReady) {
       device = pageState.device;
     }
@@ -223,6 +235,7 @@ class DeviceFacadeImpl implements DeviceFacade {
       mqttBusy: commState.hasPending,
       commError: commState.lastError,
       telemetry: _telemetryApi.slice,
+      controlState: _buildControlState(pageState),
       schedule: _scheduleApi.slice,
       settings: _settingsApi.slice,
       settingsUiSchema: settingsUiSchema,
@@ -232,53 +245,55 @@ class DeviceFacadeImpl implements DeviceFacade {
   }
 
   SettingsUiSchema? _buildSettingsUiSchema(DevicePageState pageState) {
-    final descriptor = _contracts.resolveByMethodDomain(
-      OshContracts.current.settings.methodDomain,
-    );
-    if (descriptor == null) return null;
-
-    final schemaRef = descriptor.schema;
-
-    final setRoute = _contracts.route(
-      method: descriptor.method('set'),
-      schemaRef: schemaRef,
-    );
-    final patchRoute = _contracts.route(
-      method: descriptor.method('patch'),
-      schemaRef: schemaRef,
-    );
-
-    if (setRoute == null || patchRoute == null) return null;
-
-    final setSchema = SettingsContractSchemaCatalog.schemaForRoute(setRoute);
-    final patchSchema =
-        SettingsContractSchemaCatalog.schemaForRoute(patchRoute);
-    if (setSchema == null || patchSchema == null) return null;
-
-    Map<String, dynamic>? modelHintsJson;
-    if (pageState case DevicePageReady(:final config)) {
-      modelHintsJson = config.settings?.toJson();
+    if (pageState case DevicePageReady(:final bundle)) {
+      try {
+        return _settingsUiSchemaBuilder.build(bundle: bundle);
+      } catch (_) {
+        return null;
+      }
     }
+    return null;
+  }
 
-    try {
-      return _settingsUiSchemaBuilder.build(
-        setSchemaJson: setSchema,
-        patchSchemaJson: patchSchema,
-        modelHintsJson: modelHintsJson,
-      );
-    } catch (_) {
-      return null;
+  DeviceSlice<Map<String, dynamic>> _buildControlState(
+      DevicePageState pageState) {
+    switch (pageState) {
+      case DevicePageLoading():
+        return const DeviceSlice<Map<String, dynamic>>.loading(data: {});
+      case DevicePageError(:final message):
+      case DevicePageUpdateRequired(:final message):
+      case DevicePageCompatibilityError(:final message):
+        return DeviceSlice<Map<String, dynamic>>.error(
+          data: const <String, dynamic>{},
+          error: message,
+        );
+      case DevicePageReady(:final bundle):
+        final registry = ControlBindingRegistry(bundle);
+        final state = _controlStateResolver.resolveAll(
+          registry: registry,
+          controlIds: bundle.bindings.keys,
+          telemetry: _telemetryApi.rawCurrent,
+          sensors: _sensorsApi.current,
+          schedule: _scheduleApi.current,
+          settings: _settingsApi.current,
+          deviceState: _aboutApi.current,
+        );
+        return DeviceSlice<Map<String, dynamic>>.ready(
+          data: Map<String, dynamic>.unmodifiable(state),
+        );
     }
   }
 
-  DeviceSlice<DeviceConfig> _mapDetails(DevicePageState state) {
+  DeviceSlice<DeviceProfileBundle> _mapDetails(DevicePageState state) {
     switch (state) {
       case DevicePageLoading():
-        return const DeviceSlice<DeviceConfig>.loading();
+        return const DeviceSlice<DeviceProfileBundle>.loading();
       case DevicePageError(:final message):
-        return DeviceSlice<DeviceConfig>.error(error: message);
-      case DevicePageReady(:final config):
-        return DeviceSlice<DeviceConfig>.ready(data: config);
+      case DevicePageUpdateRequired(:final message):
+      case DevicePageCompatibilityError(:final message):
+        return DeviceSlice<DeviceProfileBundle>.error(error: message);
+      case DevicePageReady(:final bundle):
+        return DeviceSlice<DeviceProfileBundle>.ready(data: bundle);
     }
   }
 }

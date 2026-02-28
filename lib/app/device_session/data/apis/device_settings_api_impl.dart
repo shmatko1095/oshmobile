@@ -234,6 +234,7 @@ class DeviceSettingsApiImpl implements DeviceSettingsApi {
     final desired = _snapshotOrNull();
     if (desired == null) return Future<void>.value();
     if (!_dirty) return Future<void>.value();
+    final patch = _buildNestedPatch(_overrides);
 
     if (_saving) {
       _queuedSaveAll = true;
@@ -252,7 +253,7 @@ class DeviceSettingsApiImpl implements DeviceSettingsApi {
 
     return _ops.run(
       reqId: reqId,
-      op: () => _repo.saveAll(desired, reqId: reqId),
+      op: () => _repo.patch(patch, reqId: reqId),
       timeoutReason: 'Settings ACK timeout',
       errorReason: 'Failed to save settings',
       timeoutCommMessage: 'Operation timed out',
@@ -330,6 +331,35 @@ class DeviceSettingsApiImpl implements DeviceSettingsApi {
       cur = cur[part];
     }
     return cur;
+  }
+
+  static Map<String, dynamic> _buildNestedPatch(Map<String, Object?> values) {
+    final out = <String, dynamic>{};
+    values.forEach((path, value) {
+      final parts = path.split('.');
+      if (parts.isEmpty) return;
+
+      Map<String, dynamic> cur = out;
+      for (var i = 0; i < parts.length; i++) {
+        final key = parts[i];
+        final isLast = i == parts.length - 1;
+        if (isLast) {
+          cur[key] = value;
+          continue;
+        }
+
+        final next = cur[key];
+        if (next is Map<String, dynamic>) {
+          cur = next;
+          continue;
+        }
+
+        final created = <String, dynamic>{};
+        cur[key] = created;
+        cur = created;
+      }
+    });
+    return out;
   }
 
   Future<void> dispose() async {

@@ -35,9 +35,9 @@ class DeltaTCard extends StatelessWidget {
     final data =
         context.select<DeviceSnapshotCubit, ({num? inT, num? outT, num? dT})>(
       (c) {
-        final telemetry = c.state.telemetry.data ?? const {};
-        final inT = _asNum(readBind(telemetry, inletBind));
-        final outT = _asNum(readBind(telemetry, outletBind));
+        final controlState = c.state.controlState.data ?? const {};
+        final inT = _asNum(readBind(controlState, inletBind));
+        final outT = _asNum(readBind(controlState, outletBind));
         final dT = (inT != null && outT != null) ? (outT - inT) : null;
         return (inT: inT, outT: outT, dT: dT);
       },

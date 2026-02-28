@@ -4,10 +4,16 @@ import 'package:get_it/get_it.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
-import 'package:oshmobile/core/contracts/contract_registry.dart';
+import 'package:oshmobile/core/contracts/contract_negotiator.dart';
+import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
+import 'package:oshmobile/core/contracts/device_contracts_repository.dart';
+import 'package:oshmobile/core/contracts/device_contracts_repository_mqtt.dart';
+import 'package:oshmobile/core/contracts/device_contracts_topics.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
+import 'package:oshmobile/core/profile/control_state_resolver.dart';
+import 'package:oshmobile/core/profile/profile_bundle_repository.dart';
 import 'package:oshmobile/features/device_about/data/device_about_repository_mqtt.dart';
 import 'package:oshmobile/features/device_about/domain/repositories/device_about_repository.dart';
 import 'package:oshmobile/features/devices/details/data/mqtt_telemetry_repository.dart';
@@ -99,6 +105,34 @@ class DeviceDi {
     final ctx = DeviceContext.fromDevice(device);
 
     getIt.registerSingleton<DeviceContext>(ctx);
+    getIt.registerLazySingleton<DeviceRuntimeContracts>(
+      () => DeviceRuntimeContracts(),
+    );
+
+    getIt.registerLazySingleton<TelemetryTopics>(
+      () => TelemetryTopics(
+        getIt<DeviceMqttTopicsV1>(),
+        getIt<DeviceRuntimeContracts>(),
+      ),
+    );
+    getIt.registerLazySingleton<ScheduleTopics>(
+      () => ScheduleTopics(
+        getIt<DeviceMqttTopicsV1>(),
+        getIt<DeviceRuntimeContracts>(),
+      ),
+    );
+    getIt.registerLazySingleton<SettingsTopics>(
+      () => SettingsTopics(
+        getIt<DeviceMqttTopicsV1>(),
+        getIt<DeviceRuntimeContracts>(),
+      ),
+    );
+    getIt.registerLazySingleton<SensorsTopics>(
+      () => SensorsTopics(
+        getIt<DeviceMqttTopicsV1>(),
+        getIt<DeviceRuntimeContracts>(),
+      ),
+    );
 
     // ------------ Device-scoped MQTT repositories & usecases ------------
 
@@ -116,6 +150,7 @@ class DeviceDi {
       () => MqttTelemetryRepositoryImpl(
         jrpc: getIt<JsonRpcClient>(),
         topics: getIt<TelemetryTopics>(),
+        contracts: getIt<DeviceRuntimeContracts>(),
         deviceSn: ctx.deviceSn,
       ),
       dispose: (r) {
@@ -126,7 +161,11 @@ class DeviceDi {
     // Schedule.
     getIt.registerLazySingleton<ScheduleRepository>(
       () => ScheduleRepositoryMqtt(
-          getIt<JsonRpcClient>(), getIt<ScheduleTopics>(), ctx.deviceSn),
+        getIt<JsonRpcClient>(),
+        getIt<ScheduleTopics>(),
+        ctx.deviceSn,
+        contracts: getIt<DeviceRuntimeContracts>(),
+      ),
       dispose: (r) {
         if (r is ScheduleRepositoryMqtt) r.dispose();
       },
@@ -135,7 +174,11 @@ class DeviceDi {
     // Settings.
     getIt.registerLazySingleton<SettingsRepository>(
       () => SettingsRepositoryMqtt(
-          getIt<JsonRpcClient>(), getIt<SettingsTopics>(), ctx.deviceSn),
+        getIt<JsonRpcClient>(),
+        getIt<SettingsTopics>(),
+        ctx.deviceSn,
+        contracts: getIt<DeviceRuntimeContracts>(),
+      ),
       dispose: (r) {
         if (r is SettingsRepositoryMqtt) r.dispose();
       },
@@ -144,7 +187,11 @@ class DeviceDi {
     // Sensors.
     getIt.registerLazySingleton<SensorsRepository>(
       () => SensorsRepositoryMqtt(
-          getIt<JsonRpcClient>(), getIt<SensorsTopics>(), ctx.deviceSn),
+        getIt<JsonRpcClient>(),
+        getIt<SensorsTopics>(),
+        ctx.deviceSn,
+        contracts: getIt<DeviceRuntimeContracts>(),
+      ),
       dispose: (r) {
         if (r is SensorsRepositoryMqtt) r.dispose();
       },
@@ -155,11 +202,33 @@ class DeviceDi {
       () => DeviceAboutRepositoryMqtt(
         jrpc: getIt<JsonRpcClient>(),
         topics: getIt<DeviceMqttTopicsV1>(),
+        contracts: getIt<DeviceRuntimeContracts>(),
         deviceSn: ctx.deviceSn,
       ),
       dispose: (r) {
         if (r is DeviceAboutRepositoryMqtt) r.dispose();
       },
+    );
+
+    getIt.registerLazySingleton<DeviceContractsRepository>(
+      () => DeviceContractsRepositoryMqtt(
+        getIt<JsonRpcClient>(),
+        getIt<DeviceContractsTopics>(),
+        ctx.deviceSn,
+      ),
+      dispose: (r) {
+        if (r is DeviceContractsRepositoryMqtt) r.dispose();
+      },
+    );
+
+    getIt.registerLazySingleton<GetDeviceFull>(
+      () => GetDeviceFull(
+        deviceRepository: getIt(),
+        contractsRepository: getIt<DeviceContractsRepository>(),
+        contractNegotiator: getIt<ContractNegotiator>(),
+        profileBundleRepository: getIt<ProfileBundleRepository>(),
+        runtimeContracts: getIt<DeviceRuntimeContracts>(),
+      ),
     );
 
     // ------------ Device-scoped cubits (UI shell only) ------------
@@ -178,12 +247,8 @@ class DeviceDi {
       dispose: (c) => unawaited(c.close()),
     );
 
-    // Contracts/schema helpers.
-    getIt.registerLazySingleton<ContractRegistry>(
-      () => StaticContractRegistry.current(),
-    );
     getIt.registerLazySingleton<SettingsUiSchemaBuilder>(
-      () => const JsonSchemaSettingsUiSchemaBuilder(),
+      () => const ProfileBundleSettingsUiSchemaBuilder(),
     );
 
     // Device facade for UI orchestration (keeps domain services split).
@@ -199,8 +264,8 @@ class DeviceDi {
         mqttCubit: getIt<GlobalMqttCubit>(),
         commCubit: getIt<MqttCommCubit>(),
         sensorsRepo: getIt<SensorsRepository>(),
-        contracts: getIt<ContractRegistry>(),
         settingsUiSchemaBuilder: getIt<SettingsUiSchemaBuilder>(),
+        controlStateResolver: getIt<ControlStateResolver>(),
       ),
       dispose: (f) => unawaited(f.dispose()),
     );

@@ -1,5 +1,5 @@
 import 'package:oshmobile/core/common/entities/device/device.dart';
-import 'package:oshmobile/features/devices/details/presentation/models/osh_config.dart';
+import 'package:oshmobile/core/profile/models/device_profile_bundle.dart';
 import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema.dart';
@@ -58,12 +58,13 @@ class DeviceSlice<T> {
 
 class DeviceSnapshot {
   final Device device;
-  final DeviceSlice<DeviceConfig> details;
+  final DeviceSlice<DeviceProfileBundle> details;
   final bool mqttConnected;
   final bool mqttBusy;
   final String? commError;
 
   final DeviceSlice<Map<String, dynamic>> telemetry;
+  final DeviceSlice<Map<String, dynamic>> controlState;
   final DeviceSlice<CalendarSnapshot> schedule;
   final DeviceSlice<SettingsSnapshot> settings;
   final SettingsUiSchema? settingsUiSchema;
@@ -78,6 +79,7 @@ class DeviceSnapshot {
     required this.mqttBusy,
     required this.commError,
     required this.telemetry,
+    required this.controlState,
     required this.schedule,
     required this.settings,
     required this.settingsUiSchema,
@@ -90,11 +92,12 @@ class DeviceSnapshot {
   }) {
     return DeviceSnapshot(
       device: device,
-      details: const DeviceSlice<DeviceConfig>.idle(),
+      details: const DeviceSlice<DeviceProfileBundle>.idle(),
       mqttConnected: false,
       mqttBusy: false,
       commError: null,
       telemetry: const DeviceSlice<Map<String, dynamic>>.idle(data: {}),
+      controlState: const DeviceSlice<Map<String, dynamic>>.idle(data: {}),
       schedule: const DeviceSlice<CalendarSnapshot>.idle(),
       settings: const DeviceSlice<SettingsSnapshot>.idle(),
       settingsUiSchema: null,
@@ -105,12 +108,13 @@ class DeviceSnapshot {
 
   DeviceSnapshot copyWith({
     Device? device,
-    DeviceSlice<DeviceConfig>? details,
+    DeviceSlice<DeviceProfileBundle>? details,
     bool? mqttConnected,
     bool? mqttBusy,
     String? commError,
     bool clearCommError = false,
     DeviceSlice<Map<String, dynamic>>? telemetry,
+    DeviceSlice<Map<String, dynamic>>? controlState,
     DeviceSlice<CalendarSnapshot>? schedule,
     DeviceSlice<SettingsSnapshot>? settings,
     SettingsUiSchema? settingsUiSchema,
@@ -125,6 +129,7 @@ class DeviceSnapshot {
       mqttBusy: mqttBusy ?? this.mqttBusy,
       commError: clearCommError ? null : (commError ?? this.commError),
       telemetry: telemetry ?? this.telemetry,
+      controlState: controlState ?? this.controlState,
       schedule: schedule ?? this.schedule,
       settings: settings ?? this.settings,
       settingsUiSchema: clearSettingsUiSchema

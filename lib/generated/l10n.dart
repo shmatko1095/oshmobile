@@ -599,6 +599,146 @@ class S {
     return Intl.message('Retry', name: 'Retry', desc: '', args: []);
   }
 
+  /// `Update required`
+  String get updateAppRequiredBadge {
+    return Intl.message(
+      'Update required',
+      name: 'updateAppRequiredBadge',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update app to continue`
+  String get updateAppRequiredTitle {
+    return Intl.message(
+      'Update app to continue',
+      name: 'updateAppRequiredTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This device uses required protocol domains that are newer than the current app build supports.`
+  String get updateAppRequiredSubtitle {
+    return Intl.message(
+      'This device uses required protocol domains that are newer than the current app build supports.',
+      name: 'updateAppRequiredSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update the app to the latest available version on this device.`
+  String get updateAppRequiredStepUpdate {
+    return Intl.message(
+      'Update the app to the latest available version on this device.',
+      name: 'updateAppRequiredStepUpdate',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open the device again after the update finishes and the session reconnects.`
+  String get updateAppRequiredStepReopen {
+    return Intl.message(
+      'Open the device again after the update finishes and the session reconnects.',
+      name: 'updateAppRequiredStepReopen',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `If the issue remains after updating, contact support and include the serial number and model ID.`
+  String get updateAppRequiredStepContactSupport {
+    return Intl.message(
+      'If the issue remains after updating, contact support and include the serial number and model ID.',
+      name: 'updateAppRequiredStepContactSupport',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Compatibility error`
+  String get compatibilityErrorBadge {
+    return Intl.message(
+      'Compatibility error',
+      name: 'compatibilityErrorBadge',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This device cannot be opened`
+  String get compatibilityErrorTitle {
+    return Intl.message(
+      'This device cannot be opened',
+      name: 'compatibilityErrorTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The app could not establish a compatible protocol contract for this device right now.`
+  String get compatibilityErrorSubtitle {
+    return Intl.message(
+      'The app could not establish a compatible protocol contract for this device right now.',
+      name: 'compatibilityErrorSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Make sure the device is online and the backend bootstrap contract is available.`
+  String get compatibilityErrorStepCheckConnection {
+    return Intl.message(
+      'Make sure the device is online and the backend bootstrap contract is available.',
+      name: 'compatibilityErrorStepCheckConnection',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Retry after the device reconnects or the backend compatibility issue is resolved.`
+  String get compatibilityErrorStepRetry {
+    return Intl.message(
+      'Retry after the device reconnects or the backend compatibility issue is resolved.',
+      name: 'compatibilityErrorStepRetry',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `If it keeps failing, contact support with the serial number, model ID, and the technical details below.`
+  String get compatibilityErrorStepContactSupport {
+    return Intl.message(
+      'If it keeps failing, contact support with the serial number, model ID, and the technical details below.',
+      name: 'compatibilityErrorStepContactSupport',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `What to do next`
+  String get compatibilityNextStepsTitle {
+    return Intl.message(
+      'What to do next',
+      name: 'compatibilityNextStepsTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Technical details`
+  String get compatibilityTechnicalDetailsTitle {
+    return Intl.message(
+      'Technical details',
+      name: 'compatibilityTechnicalDetailsTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Mon`
   String get MonShort {
     return Intl.message('Mon', name: 'MonShort', desc: '', args: []);

@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/utils/latest_wins_gate.dart';
@@ -19,6 +20,7 @@ import 'package:oshmobile/features/schedule/domain/repositories/schedule_reposit
 class ScheduleRepositoryMqtt implements ScheduleRepository {
   final JsonRpcClient _jrpc;
   final ScheduleTopics _topics;
+  final DeviceRuntimeContracts _contracts;
   final String _deviceSn;
   final Duration timeout;
 
@@ -38,8 +40,21 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     this._jrpc,
     this._topics,
     this._deviceSn, {
+    DeviceRuntimeContracts? contracts,
     this.timeout = const Duration(seconds: 6),
-  });
+  }) : _contracts = contracts ?? DeviceRuntimeContracts();
+
+  String get _schema => _contracts.schedule.read.schema;
+  String get _domain => _contracts.schedule.methodDomain;
+  String get _methodState => _contracts.schedule.read.method('state');
+  String get _methodGet => _contracts.schedule.read.method('get');
+  String get _methodSet => _contracts.schedule.set.method('set');
+  String get _methodPatch => _contracts.schedule.patch.method('patch');
+  Set<String> get _responseSchemas => <String>{
+        _contracts.schedule.read.schema,
+        _contracts.schedule.patch.schema,
+        _contracts.schedule.set.schema,
+      };
 
   /// Best-effort cleanup when device scope is disposed.
   /// Not part of ScheduleRepository interface on purpose.
@@ -95,7 +110,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
 
     final reqId = newReqId();
     final resp = await _request(
-      method: ScheduleJsonRpcCodec.methodGet,
+      method: _methodGet,
       reqId: reqId,
       data: null,
       timeoutMessage: 'Timeout waiting for schedule get response',
@@ -120,7 +135,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     Map<String, dynamic> data;
 
     if (prev == null) {
-      method = ScheduleJsonRpcCodec.methodSet;
+      method = _methodSet;
       data = ScheduleJsonRpcCodec.encodeBody(snapshot);
     } else {
       final modeChanged = prev.mode.id != snapshot.mode.id;
@@ -129,7 +144,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
 
       if (!modeChanged && pointsPatch.isEmpty && !rangeChanged) return;
 
-      method = ScheduleJsonRpcCodec.methodPatch;
+      method = _methodPatch;
       data = ScheduleJsonRpcCodec.encodePatch(
         mode: modeChanged ? snapshot.mode : null,
         points: pointsPatch.isNotEmpty ? pointsPatch : null,
@@ -157,7 +172,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     final latest = _latest.start(_latestKey('mode'));
 
     final resp = await _request(
-      method: ScheduleJsonRpcCodec.methodPatch,
+      method: _methodPatch,
       reqId: id,
       data: data,
       timeoutMessage: 'Timeout waiting for schedule mode response',
@@ -219,10 +234,10 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     _stateSub = _jrpc
         .notifications(
       topic,
-      method: ScheduleJsonRpcCodec.methodState,
-      schema: ScheduleJsonRpcCodec.schema,
+      method: _methodState,
     )
         .listen((notif) {
+      if (notif.meta.schema != _schema) return;
       final data = notif.data;
       if (data == null) return;
 
@@ -244,7 +259,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   }
 
   JsonRpcMeta _meta() => JsonRpcMeta(
-        schema: ScheduleJsonRpcCodec.schema,
+        schema: _schema,
         src: 'app',
         ts: DateTime.now().millisecondsSinceEpoch,
       );
@@ -265,7 +280,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
       meta: _meta(),
       reqId: reqId,
       data: data,
-      domain: ScheduleJsonRpcCodec.domain,
+      domain: _domain,
       timeout: timeout,
       timeoutMessage: timeoutMessage,
       cancel: cancel,
@@ -277,7 +292,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     final data = resp.data;
     if (data == null) return null;
 
-    if (resp.meta != null && resp.meta!.schema != ScheduleJsonRpcCodec.schema) {
+    if (resp.meta != null && !_responseSchemas.contains(resp.meta!.schema)) {
       return null;
     }
 
@@ -309,6 +324,9 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   }
 
   bool _pointEquals(SchedulePoint x, SchedulePoint y) {
-    return x.daysMask == y.daysMask && x.time.hour == y.time.hour && x.time.minute == y.time.minute && x.temp == y.temp;
+    return x.daysMask == y.daysMask &&
+        x.time.hour == y.time.hour &&
+        x.time.minute == y.time.minute &&
+        x.temp == y.temp;
   }
 }
