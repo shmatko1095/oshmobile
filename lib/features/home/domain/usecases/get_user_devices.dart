@@ -2,41 +2,17 @@ import 'package:fpdart/fpdart.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/error/failures.dart';
 import 'package:oshmobile/core/usecase/usecase.dart';
-import 'package:oshmobile/features/home/domain/repositories/device_repository.dart';
 import 'package:oshmobile/features/home/domain/repositories/user_repository.dart';
 
-class GetUserDevices implements UseCase<List<Device>, String> {
+class GetUserDevices implements UseCase<List<Device>, NoParams> {
   final UserRepository userRepository;
-  final DeviceRepository deviceRepository;
 
   GetUserDevices({
     required this.userRepository,
-    required this.deviceRepository,
   });
 
   @override
-  Future<Either<Failure, List<Device>>> call(String userId) async {
-    final devicesEither = await userRepository.getDevices(userId: userId);
-    return await devicesEither.fold(
-      (l) async => left(l),
-      (userDevices) async {
-        if (userDevices.isEmpty) return right(const []);
-
-        final futures = userDevices.map((d) => deviceRepository.get(deviceId: d.id));
-        final results = await Future.wait(futures, eagerError: false);
-
-        final devices = <Device>[];
-        final errors = <Failure>[];
-
-        for (final r in results) {
-          r.fold(errors.add, devices.add);
-        }
-
-        if (errors.isNotEmpty) {
-          return left(Failure.unexpected(errors.join()));
-        }
-        return right(devices);
-      },
-    );
+  Future<Either<Failure, List<Device>>> call(NoParams params) async {
+    return userRepository.getDevices();
   }
 }

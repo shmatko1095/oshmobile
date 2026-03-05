@@ -10,43 +10,11 @@ class DeviceRepositoryImpl implements DeviceRepository {
   DeviceRepositoryImpl({required this.dataSource});
 
   @override
-  Future<Either<Failure, void>> create({
-    required String serialNumber,
-    required String secureCode,
-    required String password,
-    required String modelId,
-  }) async {
-    try {
-      await dataSource.create(
-        serialNumber: serialNumber,
-        secureCode: secureCode,
-        password: password,
-        modelId: modelId,
-      );
-      return right(null);
-    } on Exception catch (e) {
-      return left(Failure.unexpected(e.toString()));
-    }
-  }
-
-  @override
-  Future<Either<Failure, void>> delete({
-    required String deviceId,
-  }) async {
-    try {
-      await dataSource.delete(deviceId: deviceId);
-      return right(null);
-    } on Exception catch (e) {
-      return left(Failure.unexpected(e.toString()));
-    }
-  }
-
-  @override
   Future<Either<Failure, Device>> get({
-    required String deviceId,
+    required String serial,
   }) async {
     try {
-      final result = await dataSource.get(deviceId: deviceId);
+      final result = await dataSource.get(serial: serial);
       return right(result);
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
@@ -55,13 +23,13 @@ class DeviceRepositoryImpl implements DeviceRepository {
 
   @override
   Future<Either<Failure, void>> updateDeviceUserData({
-    required String deviceId,
+    required String serial,
     required String alias,
     required String description,
   }) async {
     try {
       final result = await dataSource.updateDeviceUserData(
-        deviceId: deviceId,
+        serial: serial,
         alias: alias,
         description: description,
       );

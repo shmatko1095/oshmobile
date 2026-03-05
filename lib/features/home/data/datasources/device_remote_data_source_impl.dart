@@ -1,73 +1,36 @@
-import 'dart:convert';
-
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/error/exceptions.dart';
-import 'package:oshmobile/core/network/chopper_client/osh_api_device/osh_api_device_service.dart';
-import 'package:oshmobile/core/network/chopper_client/osh_api_device/requests/create_device_request.dart';
-import 'package:oshmobile/core/network/chopper_client/osh_api_device/requests/update_device_user_data.dart';
+import 'package:oshmobile/core/network/mobile/mobile_api_client.dart';
 import 'package:oshmobile/features/home/data/datasources/device_remote_data_source.dart';
 
 class DeviceRemoteDataSourceImpl implements DeviceRemoteDataSource {
-  final ApiDeviceService apiDeviceService;
+  final MobileApiClient mobileApiClient;
 
-  const DeviceRemoteDataSourceImpl({required this.apiDeviceService});
-
-  @override
-  Future<void> create({
-    required String serialNumber,
-    required String secureCode,
-    required String password,
-    required String modelId,
-  }) async {
-    final response = await apiDeviceService.createDevice(
-      request: CreateDeviceRequest(
-        serialNumber: serialNumber,
-        secureCode: secureCode,
-        password: password,
-        modelId: modelId,
-      ),
-    );
-    if (!response.isSuccessful) {
-      throw ServerException(response.error as String);
-    }
-  }
-
-  @override
-  Future<void> delete({
-    required String deviceId,
-  }) async {
-    final response = await apiDeviceService.delete(id: deviceId);
-    if (!response.isSuccessful) {
-      throw ServerException(response.error as String);
-    }
-  }
+  const DeviceRemoteDataSourceImpl({required this.mobileApiClient});
 
   @override
   Future<Device> get({
-    required String deviceId,
+    required String serial,
   }) async {
-    final response = await apiDeviceService.get(id: deviceId);
-    if (response.isSuccessful && response.body != null) {
-      return Device.fromJson(response.body);
-    } else {
-      final error = jsonDecode(response.error as String);
-      final errorDescription = error["error"] as String;
-      throw ServerException(errorDescription);
+    try {
+      return await mobileApiClient.getMyDevice(serial: serial);
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(e.toString());
     }
   }
 
   @override
   Future<void> updateDeviceUserData({
-    required String deviceId,
+    required String serial,
     required String alias,
     required String description,
   }) async {
-    final response = await apiDeviceService.updateDeviceUserData(
-      id: deviceId,
-      request: UpdateDeviceUserData(alias: alias, description: description),
+    await mobileApiClient.updateMyDeviceUserData(
+      serial: serial,
+      alias: alias,
+      description: description,
     );
-    if (!response.isSuccessful) {
-      throw ServerException(response.error as String);
-    }
   }
 }

@@ -145,7 +145,7 @@ class _ActionsRow extends StatelessWidget {
           child: _ActionButton(
             icon: Icons.refresh,
             label: S.of(context).Update,
-            onTap: () => context.read<DevicePageCubit>().load(device.id),
+            onTap: () => context.read<DevicePageCubit>().load(device.sn),
             color: color,
           ),
         ),

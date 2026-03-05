@@ -19,28 +19,6 @@ final class _$ApiUserService extends ApiUserService {
   final Type definitionType = ApiUserService;
 
   @override
-  Future<Response<dynamic>> get({required String userId}) {
-    final Uri $url = Uri.parse('https://api.oshhome.com/v1/users/${userId}');
-    final Request $request = Request(
-      'GET',
-      $url,
-      client.baseUrl,
-    );
-    return client.send<dynamic, dynamic>($request);
-  }
-
-  @override
-  Future<Response<dynamic>> getDevices({required String userId}) {
-    final Uri $url = Uri.parse('https://api.oshhome.com/v1/users/${userId}/devices');
-    final Request $request = Request(
-      'GET',
-      $url,
-      client.baseUrl,
-    );
-    return client.send<dynamic, dynamic>($request);
-  }
-
-  @override
   Future<Response<dynamic>> registerUser({
     required String accessToken,
     required RegisterUserRequest request,
@@ -96,48 +74,6 @@ final class _$ApiUserService extends ApiUserService {
       client.baseUrl,
       body: $body,
       headers: $headers,
-    );
-    return client.send<dynamic, dynamic>($request);
-  }
-
-  @override
-  Future<Response<dynamic>> delete({required String userId}) {
-    final Uri $url = Uri.parse('https://api.oshhome.com/v1/users/${userId}');
-    final Request $request = Request(
-      'DELETE',
-      $url,
-      client.baseUrl,
-    );
-    return client.send<dynamic, dynamic>($request);
-  }
-
-  @override
-  Future<Response<dynamic>> assignDevice({
-    required String userId,
-    required String deviceSn,
-    required AssignDeviceRequest request,
-  }) {
-    final Uri $url = Uri.parse('https://api.oshhome.com/v1/users/${userId}/device/${deviceSn}');
-    final $body = request;
-    final Request $request = Request(
-      'PUT',
-      $url,
-      client.baseUrl,
-      body: $body,
-    );
-    return client.send<dynamic, dynamic>($request);
-  }
-
-  @override
-  Future<Response<dynamic>> unassignDevice({
-    required String userId,
-    required String deviceId,
-  }) {
-    final Uri $url = Uri.parse('https://api.oshhome.com/v1/users/${userId}/device/${deviceId}');
-    final Request $request = Request(
-      'DELETE',
-      $url,
-      client.baseUrl,
     );
     return client.send<dynamic, dynamic>($request);
   }

@@ -49,12 +49,12 @@ class DevicePageCubit extends Cubit<DevicePageState> {
 
   DevicePageCubit(this._getDeviceFull) : super(const DevicePageLoading());
 
-  Future<void> load(String deviceId) async {
+  Future<void> load(String deviceSerial) async {
     // if (isClosed) return;
     emit(const DevicePageLoading());
 
     try {
-      final full = await _getDeviceFull(deviceId);
+      final full = await _getDeviceFull(deviceSerial);
       emit(DevicePageReady(
         device: full.device,
         bundle: full.bundle,
@@ -64,21 +64,21 @@ class DevicePageCubit extends Cubit<DevicePageState> {
       _reportFailure(
         error: e,
         stackTrace: st,
-        deviceId: deviceId,
+        deviceId: deviceSerial,
       );
       emit(DevicePageUpdateRequired(e.message));
     } on CompatibilityError catch (e, st) {
       _reportFailure(
         error: e,
         stackTrace: st,
-        deviceId: deviceId,
+        deviceId: deviceSerial,
       );
       emit(DevicePageCompatibilityError(e.message));
     } catch (e, st) {
       _reportFailure(
         error: e,
         stackTrace: st,
-        deviceId: deviceId,
+        deviceId: deviceSerial,
       );
       emit(DevicePageError(e.toString()));
     }

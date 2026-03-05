@@ -1,78 +1,39 @@
-import 'dart:convert';
-
 import 'package:oshmobile/core/error/exceptions.dart';
-import 'package:oshmobile/core/network/chopper_client/osh_api_user/osh_api_user_service.dart';
-import 'package:oshmobile/core/network/chopper_client/osh_api_user/requests/assign_device_request.dart';
+import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/core/network/mobile/mobile_api_client.dart';
 import 'package:oshmobile/features/home/data/datasources/user_remote_data_source.dart';
-import 'package:oshmobile/features/home/domain/entities/user.dart';
-import 'package:oshmobile/features/home/domain/entities/user_device.dart';
 
 class UserRemoteDataSourceImpl implements UserRemoteDataSource {
-  final ApiUserService apiUserService;
+  final MobileApiClient mobileApiClient;
 
-  const UserRemoteDataSourceImpl({required this.apiUserService});
+  const UserRemoteDataSourceImpl({required this.mobileApiClient});
 
   @override
   Future<void> assignDevice({
-    required String userId,
     required String deviceSn,
     required String deviceSc,
   }) async {
-    final response = await apiUserService.assignDevice(
-      userId: userId,
-      deviceSn: deviceSn,
-      request: AssignDeviceRequest(sc: deviceSc),
+    await mobileApiClient.claimMyDevice(
+      serial: deviceSn,
+      secureCode: deviceSc,
     );
-    if (!response.isSuccessful) {
-      throw ServerException(response.error as String);
-    }
   }
 
   @override
   Future<void> unassignDevice({
-    required String userId,
-    required String deviceId,
+    required String serial,
   }) async {
-    final response = await apiUserService.unassignDevice(
-      userId: userId,
-      deviceId: deviceId,
-    );
-    if (!response.isSuccessful) {
-      throw ServerException(response.error as String);
-    }
+    await mobileApiClient.unassignMyDevice(serial: serial);
   }
 
   @override
-  Future<List<UserDevice>> getDevices({
-    required String userId,
-  }) async {
-    final response = await apiUserService.getDevices(userId: userId);
-    if (response.isSuccessful && response.body != null) {
-      if (response.body is List) {
-        return (response.body as List)
-            .map((deviceJson) => UserDevice.fromJson(deviceJson as Map<String, dynamic>))
-            .toList();
-      } else {
-        return [];
-      }
-    } else {
-      final error = jsonDecode(response.error as String);
-      final errorDescription = error["error"] as String;
-      throw ServerException(errorDescription);
-    }
-  }
-
-  @override
-  Future<User> get({
-    required String userId,
-  }) async {
-    final response = await apiUserService.get(userId: userId);
-    if (response.isSuccessful && response.body != null) {
-      return User.fromJson(response.body);
-    } else {
-      final error = jsonDecode(response.error as String);
-      final errorDescription = error["error"] as String;
-      throw ServerException(errorDescription);
+  Future<List<Device>> getDevices() async {
+    try {
+      return await mobileApiClient.listMyDevices();
+    } on ServerException {
+      rethrow;
+    } catch (e) {
+      throw ServerException(e.toString());
     }
   }
 }

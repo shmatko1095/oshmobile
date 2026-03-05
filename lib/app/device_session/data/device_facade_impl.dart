@@ -159,7 +159,7 @@ class DeviceFacadeImpl implements DeviceFacade {
 
   @override
   Future<void> refreshAll({bool forceGet = false}) async {
-    await _pageCubit.load(_ctx.deviceId);
+    await _pageCubit.load(_ctx.deviceSn);
     if (_pageCubit.state is! DevicePageReady) {
       _publish();
       return;

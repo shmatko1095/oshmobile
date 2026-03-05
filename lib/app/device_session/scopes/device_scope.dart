@@ -106,7 +106,7 @@ class _DeviceScopeState extends State<DeviceScope> {
       _snapshotInitialized = true;
       _presenters = sl<DevicePresenterRegistry>();
 
-      await _page.load(_ctx.deviceId);
+      await _page.load(_ctx.deviceSn);
 
       // Start reactive stream only after negotiation/profile bootstrap completes.
       _snapshot.start();

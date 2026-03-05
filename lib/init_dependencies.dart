@@ -15,8 +15,8 @@ import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/core/api_authenticator.dart';
 import 'package:oshmobile/core/network/chopper_client/core/auth_interceptor.dart';
 import 'package:oshmobile/core/network/chopper_client/core/session_storage.dart';
-import 'package:oshmobile/core/network/chopper_client/osh_api_device/osh_api_device_service.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api_user/osh_api_user_service.dart';
+import 'package:oshmobile/core/network/mobile/mobile_api_client.dart';
 import 'package:oshmobile/core/network/mqtt/app_device_id_provider.dart';
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
@@ -170,19 +170,20 @@ Future<void> _initKeycloakWrapper() async {
 void _initHomeFeature() {
   locator
     ..registerFactory<UserRemoteDataSource>(() =>
-        UserRemoteDataSourceImpl(apiUserService: locator<ApiUserService>()))
+        UserRemoteDataSourceImpl(mobileApiClient: locator<MobileApiClient>()))
     ..registerFactory<UserRepository>(
       () => UserRepositoryImpl(dataSource: locator<UserRemoteDataSource>()),
     )
-    ..registerFactory<DeviceRemoteDataSource>(() => DeviceRemoteDataSourceImpl(
-        apiDeviceService: locator<ApiDeviceService>()))
+    ..registerFactory<DeviceRemoteDataSource>(
+      () => DeviceRemoteDataSourceImpl(
+          mobileApiClient: locator<MobileApiClient>()),
+    )
     ..registerFactory<DeviceRepository>(
       () => DeviceRepositoryImpl(dataSource: locator<DeviceRemoteDataSource>()),
     )
     ..registerFactory<GetUserDevices>(
       () => GetUserDevices(
         userRepository: locator<UserRepository>(),
-        deviceRepository: locator<DeviceRepository>(),
       ),
     )
     ..registerFactory<UnassignDevice>(
@@ -353,9 +354,6 @@ Future<void> _initWebClient() async {
     ..registerLazySingleton<ApiUserService>(
       () => ApiUserService.create(),
     )
-    ..registerLazySingleton<ApiDeviceService>(
-      () => ApiDeviceService.create(),
-    )
     ..registerLazySingleton<GlobalAuthCubit>(
       () => GlobalAuthCubit(
           sessionStorage: locator<SessionStorage>(),
@@ -374,7 +372,6 @@ Future<void> _initWebClient() async {
     services: [
       locator<AuthService>(),
       locator<ApiUserService>(),
-      locator<ApiDeviceService>()
     ],
     interceptors: [
       AuthInterceptor(globalAuthCubit: locator<GlobalAuthCubit>()),
@@ -388,9 +385,11 @@ Future<void> _initWebClient() async {
   );
   locator<AuthService>().updateClient(chopperClient);
   locator<ApiUserService>().updateClient(chopperClient);
-  locator<ApiDeviceService>().updateClient(chopperClient);
 
   locator.registerSingleton<ChopperClient>(chopperClient);
+  locator.registerLazySingleton<MobileApiClient>(
+    () => MobileApiClient(client: locator<ChopperClient>()),
+  );
 }
 
 Future<void> _initMqttClient() async {

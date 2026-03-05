@@ -29,9 +29,9 @@ class GetDeviceFull {
         Device device,
         DeviceProfileBundle bundle,
         NegotiatedContractSet negotiated,
-      })> call(String deviceId) async {
+      })> call(String deviceSerial) async {
     final Either<Failure, Device> res = await deviceRepository.get(
-      deviceId: deviceId,
+      serial: deviceSerial,
     );
 
     return await res.fold(

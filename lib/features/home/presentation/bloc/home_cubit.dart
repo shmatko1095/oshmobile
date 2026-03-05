@@ -5,6 +5,7 @@ import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
+import 'package:oshmobile/core/usecase/usecase.dart';
 import 'package:oshmobile/features/home/domain/usecases/assign_device.dart';
 import 'package:oshmobile/features/home/domain/usecases/get_user_devices.dart';
 import 'package:oshmobile/features/home/domain/usecases/unassign_device.dart';
@@ -66,7 +67,7 @@ class HomeCubit extends Cubit<HomeState> {
       emit(HomeLoading(selectedDeviceId: savedSelected));
     }
 
-    final result = await _getUserDevices(userId);
+    final result = await _getUserDevices(NoParams());
 
     result.fold(
       (l) {
@@ -90,6 +91,13 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   Future<void> unassignDevice(String deviceId) async {
+    final device = getDeviceById(deviceId);
+    if (device == null) {
+      emit(HomeFailed('Device not found',
+          selectedDeviceId: state.selectedDeviceId));
+      return;
+    }
+
     final prevDevices = List<Device>.from(userDevices);
     final prevSelected = state.selectedDeviceId;
 
@@ -100,8 +108,7 @@ class HomeCubit extends Cubit<HomeState> {
 
     emit(HomeLoading(selectedDeviceId: nextSelected));
     final result = await _unassignDevice(UnassignDeviceParams(
-      userId: _userUuid,
-      deviceId: deviceId,
+      serial: device.sn,
     ));
     result.fold(
       (l) {
@@ -123,7 +130,6 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> assignDevice(String sn, String sc) async {
     emit(HomeLoading(selectedDeviceId: state.selectedDeviceId));
     final result = await _assignDevice(AssignDeviceParams(
-      uuid: _userUuid,
       sn: sn,
       sc: sc,
     ));
@@ -145,9 +151,16 @@ class HomeCubit extends Cubit<HomeState> {
     String alias,
     String description,
   ) async {
+    final device = getDeviceById(deviceId);
+    if (device == null) {
+      emit(HomeFailed('Device not found',
+          selectedDeviceId: state.selectedDeviceId));
+      return;
+    }
+
     emit(HomeLoading(selectedDeviceId: state.selectedDeviceId));
     final result = await _updateDeviceUserData(UpdateDeviceUserDataParams(
-      deviceId: deviceId,
+      serial: device.sn,
       alias: alias,
       description: description,
     ));

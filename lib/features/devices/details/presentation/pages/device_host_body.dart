@@ -110,7 +110,7 @@ class DeviceHostBody extends StatelessWidget {
                       variant: DeviceCompatibilityVariant.updateRequired,
                       details: message,
                       onRetry: () =>
-                          context.read<DevicePageCubit>().load(deviceId),
+                          context.read<DevicePageCubit>().load(liveDevice.sn),
                     );
 
                   case DevicePageCompatibilityError(:final message):
@@ -120,7 +120,7 @@ class DeviceHostBody extends StatelessWidget {
                       variant: DeviceCompatibilityVariant.compatibilityError,
                       details: message,
                       onRetry: () =>
-                          context.read<DevicePageCubit>().load(deviceId),
+                          context.read<DevicePageCubit>().load(liveDevice.sn),
                     );
 
                   case DevicePageReady(:final bundle):
