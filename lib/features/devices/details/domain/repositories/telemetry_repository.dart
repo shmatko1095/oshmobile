@@ -7,12 +7,6 @@ abstract class TelemetryRepository {
   /// Fetch current telemetry snapshot via JSON-RPC get.
   Future<TelemetryState> fetch();
 
-  /// Send telemetry.set (not allowed by FW, expected to return NotAllowed).
-  Future<void> set({String? reqId});
-
-  /// Send telemetry.patch (not allowed by FW, expected to return NotAllowed).
-  Future<void> patch({String? reqId});
-
   Future<void> subscribe();
 
   Future<void> unsubscribe();

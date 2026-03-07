@@ -5,6 +5,7 @@ class Device {
   final String id;
   final String sn;
   final String modelId;
+  final String modelName;
   final DeviceUserData userData;
   final ConnectionInfo connectionInfo;
 
@@ -12,6 +13,7 @@ class Device {
     required this.id,
     required this.sn,
     required this.modelId,
+    required this.modelName,
     required this.userData,
     required this.connectionInfo,
   });
@@ -22,6 +24,7 @@ class Device {
       id: json['id'] ?? "",
       sn: json['serialNumber'] ?? "",
       modelId: json['modelId'] ?? "",
+      modelName: json['modelName'] ?? "",
       userData: DeviceUserData.fromJson(json["userData"]),
       connectionInfo: ConnectionInfo.fromJson(json["connectionInfo"]),
     );

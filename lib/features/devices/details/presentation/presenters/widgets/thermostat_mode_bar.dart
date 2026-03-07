@@ -8,6 +8,7 @@ import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/presentation/utils.dart';
 
@@ -18,11 +19,13 @@ import 'package:oshmobile/features/schedule/presentation/utils.dart';
 class ThermostatModeBar extends StatefulWidget {
   const ThermostatModeBar({
     super.key,
+    required this.modeBind,
     this.visibleModes,
     this.writable = true,
     this.optimisticTimeout = const Duration(seconds: 5),
   });
 
+  final String modeBind;
   final List<CalendarMode>? visibleModes;
   final bool writable;
   final Duration optimisticTimeout;
@@ -54,7 +57,10 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
   @override
   Widget build(BuildContext context) {
     final current = context.select<DeviceSnapshotCubit, CalendarMode>((c) {
-      final raw = c.state.controlState.data?['schedule_mode']?.toString();
+      final raw = readBind(
+        c.state.controlState.data ?? const <String, dynamic>{},
+        widget.modeBind,
+      )?.toString();
       return CalendarMode.all.firstWhereOrNull((mode) => mode.id == raw) ??
           c.state.schedule.data?.mode ??
           CalendarMode.off;

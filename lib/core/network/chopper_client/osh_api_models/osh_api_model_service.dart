@@ -4,7 +4,7 @@ import 'package:oshmobile/core/secrets/app_secrets.dart';
 
 part 'osh_api_model_service.chopper.dart';
 
-@ChopperApi(baseUrl: "${AppSecrets.oshApiEndpoint}/models")
+@ChopperApi(baseUrl: "${AppSecrets.oshApiEndpoint}/admin/models")
 abstract class ApiModelService extends ChopperService {
   static ApiModelService create([ChopperClient? client]) => _$ApiModelService(client);
 

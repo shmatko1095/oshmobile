@@ -1,4 +1,3 @@
-import 'package:oshmobile/core/contracts/bundled_contract_defaults.dart';
 import 'package:oshmobile/features/settings/data/settings_payload_validator.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 
@@ -11,20 +10,6 @@ import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart
 ///   ...
 /// }
 class SettingsJsonRpcCodec {
-  // Legacy v1 defaults kept only for tests and compatibility helpers.
-  static final _contract = BundledContractDefaults.v1.settings;
-
-  static String get schema => _contract.schema;
-  static String get domain => _contract.methodDomain;
-
-  static String methodOf(String op) => _contract.method(op);
-
-  static String get methodState => methodOf('state');
-  static String get methodChanged => methodOf('changed');
-  static String get methodGet => methodOf('get');
-  static String get methodSet => methodOf('set');
-  static String get methodPatch => methodOf('patch');
-
   static SettingsSnapshot? decodeBody(Map<String, dynamic> data) {
     if (!validateSettingsSetPayload(data)) return null;
     return SettingsSnapshot.fromJson(data);

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:oshmobile/core/contracts/bundled_contract_defaults.dart';
 import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
@@ -8,21 +7,6 @@ import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/features/devices/details/data/telemetry_topics.dart';
 import 'package:oshmobile/features/devices/details/domain/repositories/telemetry_repository.dart';
-
-class TelemetryJsonRpcCodec {
-  // Legacy v1 defaults kept only for tests and compatibility helpers.
-  static final _contract = BundledContractDefaults.v1.telemetry;
-
-  static String get schema => _contract.schema;
-  static String get domain => _contract.methodDomain;
-
-  static String methodOf(String op) => _contract.method(op);
-
-  static String get methodState => methodOf('state');
-  static String get methodGet => methodOf('get');
-  static String get methodSet => methodOf('set');
-  static String get methodPatch => methodOf('patch');
-}
 
 class MqttTelemetryRepositoryImpl implements TelemetryRepository {
   MqttTelemetryRepositoryImpl({
@@ -58,9 +42,6 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
   String get _telemetryDomain => _contracts.telemetry.methodDomain;
   String get _telemetryMethodState => _contracts.telemetry.read.method('state');
   String get _telemetryMethodGet => _contracts.telemetry.read.method('get');
-  String get _telemetryMethodSet => _contracts.telemetry.set.method('set');
-  String get _telemetryMethodPatch =>
-      _contracts.telemetry.patch.method('patch');
 
   @override
   TelemetryState? get currentState => _telemetry;
@@ -119,30 +100,6 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
 
     _emitState(parsed);
     return parsed;
-  }
-
-  @override
-  Future<void> set({String? reqId}) async {
-    if (_disposed) throw StateError('MqttTelemetryRepositoryImpl is disposed');
-    final id = reqId ?? newReqId();
-    await _request(
-      method: _telemetryMethodSet,
-      reqId: id,
-      data: const <String, dynamic>{},
-      timeoutMessage: 'Timeout waiting for telemetry set response',
-    );
-  }
-
-  @override
-  Future<void> patch({String? reqId}) async {
-    if (_disposed) throw StateError('MqttTelemetryRepositoryImpl is disposed');
-    final id = reqId ?? newReqId();
-    await _request(
-      method: _telemetryMethodPatch,
-      reqId: id,
-      data: const <String, dynamic>{},
-      timeoutMessage: 'Timeout waiting for telemetry patch response',
-    );
   }
 
   @override

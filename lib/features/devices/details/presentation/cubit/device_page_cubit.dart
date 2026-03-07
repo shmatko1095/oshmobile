@@ -1,8 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
-import 'package:oshmobile/core/contracts/device_contracts_models.dart';
-import 'package:oshmobile/core/profile/models/device_profile_bundle.dart';
 
 import '../../../details/domain/queries/get_device_full.dart';
 
@@ -34,13 +33,11 @@ final class DevicePageCompatibilityError extends DevicePageState {
 
 final class DevicePageReady extends DevicePageState {
   final Device device;
-  final DeviceProfileBundle bundle;
-  final NegotiatedContractSet negotiated;
+  final DeviceConfigurationBundle bundle;
 
   const DevicePageReady({
     required this.device,
     required this.bundle,
-    required this.negotiated,
   });
 }
 
@@ -58,7 +55,6 @@ class DevicePageCubit extends Cubit<DevicePageState> {
       emit(DevicePageReady(
         device: full.device,
         bundle: full.bundle,
-        negotiated: full.negotiated,
       ));
     } on UpdateAppRequired catch (e, st) {
       _reportFailure(

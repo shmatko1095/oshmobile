@@ -32,8 +32,6 @@ class SettingsUiField {
   final String? unit;
   final List<String>? enumValues;
 
-  final bool requiredInSet;
-  final bool patchable;
   final bool writable;
 
   final String groupId;
@@ -45,8 +43,6 @@ class SettingsUiField {
     required this.key,
     required this.type,
     required this.widget,
-    required this.requiredInSet,
-    required this.patchable,
     required this.writable,
     required this.groupId,
     this.titleKey,

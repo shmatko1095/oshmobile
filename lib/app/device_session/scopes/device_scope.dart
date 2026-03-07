@@ -108,7 +108,7 @@ class _DeviceScopeState extends State<DeviceScope> {
 
       await _page.load(_ctx.deviceSn);
 
-      // Start reactive stream only after negotiation/profile bootstrap completes.
+      // Start the reactive stream only after negotiation and configuration bootstrap complete.
       _snapshot.start();
 
       if (!mounted) return;

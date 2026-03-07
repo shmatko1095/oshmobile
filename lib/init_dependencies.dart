@@ -9,7 +9,9 @@ import 'package:internet_connection_checker_plus/internet_connection_checker_plu
 import 'package:keycloak_wrapper/keycloak_wrapper.dart';
 import 'package:oshmobile/core/common/cubits/app/app_lifecycle_cubit.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
-import 'package:oshmobile/core/common/entities/device/known_device_models.dart';
+import 'package:oshmobile/core/configuration/configuration_bundle_repository.dart';
+import 'package:oshmobile/core/configuration/configuration_bundle_repository_impl.dart';
+import 'package:oshmobile/core/configuration/control_state_resolver.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/core/api_authenticator.dart';
@@ -20,13 +22,7 @@ import 'package:oshmobile/core/network/mobile/mobile_api_client.dart';
 import 'package:oshmobile/core/network/mqtt/app_device_id_provider.dart';
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
-import 'package:oshmobile/core/contracts/contract_negotiator.dart';
-import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
-import 'package:oshmobile/core/contracts/device_contracts_topics.dart';
 import 'package:oshmobile/core/permissions/ble_permission_service.dart';
-import 'package:oshmobile/core/profile/control_state_resolver.dart';
-import 'package:oshmobile/core/profile/profile_bundle_repository.dart';
-import 'package:oshmobile/core/profile/profile_bundle_repository_impl.dart';
 import 'package:oshmobile/core/secrets/app_secrets.dart';
 import 'package:oshmobile/core/utils/app_config.dart';
 import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source.dart';
@@ -51,7 +47,6 @@ import 'package:oshmobile/features/ble_provisioning/domain/usecases/disconnect_b
 import 'package:oshmobile/features/ble_provisioning/domain/usecases/observe_device_nearby.dart';
 import 'package:oshmobile/features/ble_provisioning/domain/usecases/scan_wifi_networks.dart';
 import 'package:oshmobile/features/ble_provisioning/presentation/cubit/ble_provisioning_cubit.dart';
-import 'package:oshmobile/features/devices/details/data/telemetry_topics.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_presenter.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/thermostat_presenters.dart';
 import 'package:oshmobile/features/home/data/datasources/device_remote_data_source.dart';
@@ -67,9 +62,6 @@ import 'package:oshmobile/features/home/domain/usecases/get_user_devices.dart';
 import 'package:oshmobile/features/home/domain/usecases/unassign_device.dart';
 import 'package:oshmobile/features/home/domain/usecases/update_device_user_data.dart';
 import 'package:oshmobile/features/home/utils/selected_device_storage.dart';
-import 'package:oshmobile/features/schedule/data/schedule_topics.dart';
-import 'package:oshmobile/features/settings/data/settings_topics.dart';
-import 'package:oshmobile/features/sensors/data/sensors_topics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final locator = GetIt.instance;
@@ -259,38 +251,15 @@ void _initDevicesFeature() {
   locator
     ..registerLazySingleton<DeviceMqttTopicsV1>(
         () => DeviceMqttTopicsV1(locator<AppConfig>().devicesTenantId))
-    ..registerLazySingleton<DeviceRuntimeContracts>(
-      () => DeviceRuntimeContracts(),
-    )
-    ..registerLazySingleton<TelemetryTopics>(() => TelemetryTopics(
-          locator<DeviceMqttTopicsV1>(),
-          locator<DeviceRuntimeContracts>(),
-        ))
-    ..registerLazySingleton<ScheduleTopics>(() => ScheduleTopics(
-          locator<DeviceMqttTopicsV1>(),
-          locator<DeviceRuntimeContracts>(),
-        ))
-    ..registerLazySingleton<SettingsTopics>(() => SettingsTopics(
-          locator<DeviceMqttTopicsV1>(),
-          locator<DeviceRuntimeContracts>(),
-        ))
-    ..registerLazySingleton<DeviceContractsTopics>(
-        () => DeviceContractsTopics(locator<DeviceMqttTopicsV1>()))
-    ..registerLazySingleton<SensorsTopics>(() => SensorsTopics(
-          locator<DeviceMqttTopicsV1>(),
-          locator<DeviceRuntimeContracts>(),
-        ))
-    ..registerLazySingleton<ContractNegotiator>(
-        () => const ContractNegotiator())
     ..registerLazySingleton<ControlStateResolver>(
       () => const ControlStateResolver(),
     )
-    ..registerLazySingleton<ProfileBundleRepository>(
-      () => ProfileBundleRepositoryImpl(client: locator<ChopperClient>()),
+    ..registerLazySingleton<ConfigurationBundleRepository>(
+      () => ConfigurationBundleRepositoryImpl(client: locator<ChopperClient>()),
     )
     // Device presenters registry (pure mapping).
     ..registerSingleton<DevicePresenterRegistry>(const DevicePresenterRegistry({
-      t1aFlWzeModelId: ThermostatBasicPresenter(),
+      'thermostat_basic': ThermostatBasicPresenter(),
     }));
 }
 

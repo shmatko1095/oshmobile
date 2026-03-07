@@ -34,8 +34,6 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
   String get _domain => _contracts.device.methodDomain;
   String get _methodState => _contracts.device.read.method('state');
   String get _methodGet => _contracts.device.read.method('get');
-  String get _methodSet => _contracts.device.set.method('set');
-  String get _methodPatch => _contracts.device.patch.method('patch');
 
   void dispose() {
     if (_disposed) return;
@@ -86,30 +84,6 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
     if (parsed == null) throw StateError('Invalid device state payload');
     _emitSnapshot(parsed);
     return parsed;
-  }
-
-  @override
-  Future<void> set({String? reqId}) async {
-    if (_disposed) throw StateError('DeviceStateRepositoryMqtt is disposed');
-    final id = reqId ?? newReqId();
-    await _request(
-      method: _methodSet,
-      reqId: id,
-      data: const <String, dynamic>{},
-      timeoutMessage: 'Timeout waiting for device set response',
-    );
-  }
-
-  @override
-  Future<void> patch({String? reqId}) async {
-    if (_disposed) throw StateError('DeviceStateRepositoryMqtt is disposed');
-    final id = reqId ?? newReqId();
-    await _request(
-      method: _methodPatch,
-      reqId: id,
-      data: const <String, dynamic>{},
-      timeoutMessage: 'Timeout waiting for device patch response',
-    );
   }
 
   @override

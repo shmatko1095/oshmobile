@@ -1,23 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
+import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
-import 'package:oshmobile/core/network/mqtt/json_rpc_errors.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/device_state_models.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/features/devices/details/data/mqtt_telemetry_repository.dart';
 import 'package:oshmobile/features/devices/details/data/telemetry_topics.dart';
-import 'package:oshmobile/features/settings/data/settings_jsonrpc_codec.dart';
 import 'package:oshmobile/features/settings/data/settings_repository_mqtt.dart';
 import 'package:oshmobile/features/settings/data/settings_topics.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
-import 'package:oshmobile/features/sensors/data/sensors_jsonrpc_codec.dart';
 import 'package:oshmobile/features/sensors/data/sensors_repository_mqtt.dart';
 import 'package:oshmobile/features/sensors/data/sensors_topics.dart';
-import 'package:oshmobile/features/device_state/data/device_state_jsonrpc_codec.dart';
 import 'package:oshmobile/features/device_state/data/device_state_repository_mqtt.dart';
 import 'package:oshmobile/features/device_state/data/device_state_topics.dart';
 
@@ -140,13 +138,80 @@ Map<String, dynamic> _settingsPayload() => {
       },
     };
 
+String _contractIdForDomain(String domain) {
+  switch (domain) {
+    case 'device':
+      return 'device_state@1';
+    default:
+      return '$domain@1';
+  }
+}
+
+DeviceRuntimeContracts _runtimeContractsFor(Map<String, Set<String>> domains) {
+  final bundle = DeviceConfigurationBundle.fromJson({
+    'configuration_id': 'cfg-1',
+    'model_id': 'model-1',
+    'revision': 1,
+    'status': 'approved',
+    'firmware_version': '1.0.0',
+    'configuration': {
+      'schema_version': 1,
+      'integrations': {
+        'oshmobile': {
+          'layout': 'test',
+          'domains': {
+            for (final entry in domains.entries)
+              entry.key: {
+                'contract_id': _contractIdForDomain(entry.key),
+              },
+          },
+          'widgets': const [],
+          'settings_groups': const [],
+          'collections': const [],
+          'controls': const [],
+        },
+      },
+    },
+    'mqtt_contracts': [
+      for (final entry in domains.entries)
+        {
+          'contract_id': _contractIdForDomain(entry.key),
+          'definition': {
+            'domain': entry.key,
+            'schema': _contractIdForDomain(entry.key),
+            'wire': {
+              if (entry.value.contains('state')) 'state': {'type': 'object'},
+              if (entry.value.contains('patch')) 'patch': {'type': 'object'},
+              if (entry.value.contains('set')) 'set': {'type': 'object'},
+            },
+          },
+        },
+    ],
+  });
+
+  final runtimeContracts = DeviceRuntimeContracts();
+  final resolved = runtimeContracts.applyRuntimeBundle(bundle);
+  if (resolved.missingContracts.isNotEmpty ||
+      resolved.unsupportedContracts.isNotEmpty) {
+    throw StateError(
+      'Failed to resolve runtime contracts for test bundle: '
+      'missing=${resolved.missingContracts}, '
+      'unsupported=${resolved.unsupportedContracts}',
+    );
+  }
+  return runtimeContracts;
+}
+
 void main() {
   test('SettingsRepositoryMqtt builds JSON-RPC set request', () async {
     final mqtt = _FakeDeviceMqttRepo();
-    final topics = SettingsTopics(DeviceMqttTopicsV1('tenant-x'));
+    final contracts = _runtimeContractsFor({
+      'settings': {'state', 'patch', 'set'},
+    });
+    final topics = SettingsTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
     final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
     final repo = SettingsRepositoryMqtt(jrpc, topics, 'device-1',
-        timeout: const Duration(milliseconds: 200));
+        contracts: contracts, timeout: const Duration(milliseconds: 200));
 
     final snap = SettingsSnapshot.fromJson(_settingsPayload());
     final op = repo.saveAll(snap, reqId: 'req-1');
@@ -157,10 +222,10 @@ void main() {
     expect(pub.topic, topics.cmd('device-1'));
     expect(pub.payload['jsonrpc'], '2.0');
     expect(pub.payload['id'], 'req-1');
-    expect(pub.payload['method'], SettingsJsonRpcCodec.methodSet);
+    expect(pub.payload['method'], contracts.settings.set.method('set'));
 
     final params = pub.payload['params'] as Map<String, dynamic>;
-    expect((params['meta'] as Map)['schema'], SettingsJsonRpcCodec.schema);
+    expect((params['meta'] as Map)['schema'], contracts.settings.read.schema);
     expect(params['data'], snap.toJson());
 
     mqtt.emit(
@@ -169,7 +234,7 @@ void main() {
         'jsonrpc': '2.0',
         'id': 'req-1',
         'result': {
-          'meta': {'schema': SettingsJsonRpcCodec.schema},
+          'meta': {'schema': contracts.settings.set.schema},
           'data': snap.toJson(),
         }
       },
@@ -180,9 +245,17 @@ void main() {
 
   test('SettingsRepositoryMqtt rejects unknown patch fields', () async {
     final mqtt = _FakeDeviceMqttRepo();
-    final topics = SettingsTopics(DeviceMqttTopicsV1('tenant-x'));
+    final contracts = _runtimeContractsFor({
+      'settings': {'state', 'patch', 'set'},
+    });
+    final topics = SettingsTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
     final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
-    final repo = SettingsRepositoryMqtt(jrpc, topics, 'device-1');
+    final repo = SettingsRepositoryMqtt(
+      jrpc,
+      topics,
+      'device-1',
+      contracts: contracts,
+    );
 
     await expectLater(repo.patch({'unknown': 1}), throwsFormatException);
     expect(mqtt.published, isEmpty);
@@ -191,14 +264,21 @@ void main() {
   test('JsonRpcClient request fails fast when transport is disconnected',
       () async {
     final mqtt = _FakeDeviceMqttRepo()..isConnected = false;
-    final topics = SettingsTopics(DeviceMqttTopicsV1('tenant-x'));
+    final contracts = _runtimeContractsFor({
+      'settings': {'state', 'patch', 'set'},
+    });
+    final topics = SettingsTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
     final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
 
     await expectLater(
       jrpc.request(
         cmdTopic: topics.cmd('device-1'),
-        method: SettingsJsonRpcCodec.methodGet,
-        meta: const JsonRpcMeta(schema: 'settings@1', src: 'app', ts: 1),
+        method: contracts.settings.read.method('get'),
+        meta: JsonRpcMeta(
+          schema: contracts.settings.read.schema,
+          src: 'app',
+          ts: 1,
+        ),
         reqId: 'req-disconnected',
         data: null,
       ),
@@ -209,10 +289,13 @@ void main() {
   test('SensorsRepositoryMqtt builds set_temp_calibration patch request',
       () async {
     final mqtt = _FakeDeviceMqttRepo();
-    final topics = SensorsTopics(DeviceMqttTopicsV1('tenant-x'));
+    final contracts = _runtimeContractsFor({
+      'sensors': {'state', 'patch', 'set'},
+    });
+    final topics = SensorsTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
     final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
     final repo = SensorsRepositoryMqtt(jrpc, topics, 'device-1',
-        timeout: const Duration(milliseconds: 200));
+        contracts: contracts, timeout: const Duration(milliseconds: 200));
 
     final op = repo.patch(
       const SensorsPatchSetTempCalibration(id: 'air', value: 1.5),
@@ -225,10 +308,10 @@ void main() {
     expect(pub.topic, topics.cmd('device-1'));
     expect(pub.payload['jsonrpc'], '2.0');
     expect(pub.payload['id'], 'req-sensors-patch');
-    expect(pub.payload['method'], SensorsJsonRpcCodec.methodPatch);
+    expect(pub.payload['method'], contracts.sensors.patch.method('patch'));
 
     final params = pub.payload['params'] as Map<String, dynamic>;
-    expect((params['meta'] as Map)['schema'], SensorsJsonRpcCodec.schema);
+    expect((params['meta'] as Map)['schema'], contracts.sensors.read.schema);
     expect(
       params['data'],
       {
@@ -245,7 +328,7 @@ void main() {
         'jsonrpc': '2.0',
         'id': 'req-sensors-patch',
         'result': {
-          'meta': {'schema': SensorsJsonRpcCodec.schema},
+          'meta': {'schema': contracts.sensors.patch.schema},
         },
       },
     );
@@ -255,10 +338,13 @@ void main() {
 
   test('SensorsRepositoryMqtt parses sensors.state notification', () async {
     final mqtt = _FakeDeviceMqttRepo();
-    final topics = SensorsTopics(DeviceMqttTopicsV1('tenant-x'));
+    final contracts = _runtimeContractsFor({
+      'sensors': {'state', 'patch', 'set'},
+    });
+    final topics = SensorsTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
     final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
     final repo = SensorsRepositoryMqtt(jrpc, topics, 'device-1',
-        timeout: const Duration(milliseconds: 200));
+        contracts: contracts, timeout: const Duration(milliseconds: 200));
 
     final future = repo.watchState().first;
 
@@ -266,10 +352,10 @@ void main() {
       topics.state('device-1'),
       {
         'jsonrpc': '2.0',
-        'method': SensorsJsonRpcCodec.methodState,
+        'method': contracts.sensors.read.method('state'),
         'params': {
           'meta': {
-            'schema': SensorsJsonRpcCodec.schema,
+            'schema': contracts.sensors.read.schema,
             'src': 'device',
             'ts': 1
           },
@@ -314,10 +400,17 @@ void main() {
   test('TelemetryRepository emits canonical telemetry.state snapshots',
       () async {
     final mqtt = _FakeDeviceMqttRepo();
-    final topics = TelemetryTopics(DeviceMqttTopicsV1('tenant-x'));
+    final contracts = _runtimeContractsFor({
+      'telemetry': {'state'},
+    });
+    final topics = TelemetryTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
     final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
     final repo = MqttTelemetryRepositoryImpl(
-        jrpc: jrpc, topics: topics, deviceSn: 'device-1');
+      jrpc: jrpc,
+      topics: topics,
+      contracts: contracts,
+      deviceSn: 'device-1',
+    );
 
     await repo.subscribe();
 
@@ -331,10 +424,10 @@ void main() {
       topics.stateTelemetry('device-1'),
       {
         'jsonrpc': '2.0',
-        'method': TelemetryJsonRpcCodec.methodState,
+        'method': contracts.telemetry.read.method('state'),
         'params': {
           'meta': {
-            'schema': TelemetryJsonRpcCodec.schema,
+            'schema': contracts.telemetry.read.schema,
             'src': 'device',
             'ts': 2
           },
@@ -370,42 +463,17 @@ void main() {
     expect(state.climateSensors.first.humidity, 44.2);
   });
 
-  test('TelemetryRepository maps NotAllowed error', () async {
-    final mqtt = _FakeDeviceMqttRepo();
-    final topics = TelemetryTopics(DeviceMqttTopicsV1('tenant-x'));
-    final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
-    final repo = MqttTelemetryRepositoryImpl(
-      jrpc: jrpc,
-      topics: topics,
-      deviceSn: 'device-1',
-      timeout: const Duration(milliseconds: 200),
-    );
-
-    final op = repo.set(reqId: 'req-telemetry-set');
-
-    await Future<void>.delayed(Duration.zero);
-    mqtt.emit(
-      topics.rsp('device-1'),
-      {
-        'jsonrpc': '2.0',
-        'id': 'req-telemetry-set',
-        'error': {
-          'code': JsonRpcErrorCodes.notAllowed,
-          'message': 'Method not allowed'
-        }
-      },
-    );
-
-    await expectLater(op, throwsA(isA<JsonRpcNotAllowed>()));
-  });
-
   test('TelemetryRepository polls telemetry.get periodically', () async {
     final mqtt = _FakeDeviceMqttRepo();
-    final topics = TelemetryTopics(DeviceMqttTopicsV1('tenant-x'));
+    final contracts = _runtimeContractsFor({
+      'telemetry': {'state'},
+    });
+    final topics = TelemetryTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
     final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
     final repo = MqttTelemetryRepositoryImpl(
       jrpc: jrpc,
       topics: topics,
+      contracts: contracts,
       deviceSn: 'device-1',
       timeout: const Duration(milliseconds: 200),
       pollInterval: const Duration(milliseconds: 50),
@@ -420,7 +488,7 @@ void main() {
     final req = mqtt.published.first;
     expect(req.topic, topics.cmd('device-1'));
     expect(req.payload['jsonrpc'], '2.0');
-    expect(req.payload['method'], TelemetryJsonRpcCodec.methodGet);
+    expect(req.payload['method'], contracts.telemetry.read.method('get'));
 
     // Respond to the first request to avoid repeated timeouts.
     final reqId = req.payload['id']?.toString();
@@ -430,7 +498,7 @@ void main() {
         'jsonrpc': '2.0',
         'id': reqId,
         'result': {
-          'meta': {'schema': TelemetryJsonRpcCodec.schema},
+          'meta': {'schema': contracts.telemetry.read.schema},
           'data': {
             'climate_sensors': [
               {
@@ -454,10 +522,13 @@ void main() {
 
   test('DeviceStateRepository parses state notification', () async {
     final mqtt = _FakeDeviceMqttRepo();
-    final topics = DeviceStateTopics(DeviceMqttTopicsV1('tenant-x'));
+    final contracts = _runtimeContractsFor({
+      'device': {'state'},
+    });
+    final topics = DeviceStateTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
     final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
     final repo = DeviceStateRepositoryMqtt(jrpc, topics, 'device-1',
-        timeout: const Duration(milliseconds: 200));
+        contracts: contracts, timeout: const Duration(milliseconds: 200));
 
     final future = repo.watchState().first;
 
@@ -465,10 +536,10 @@ void main() {
       topics.state('device-1'),
       {
         'jsonrpc': '2.0',
-        'method': DeviceStateJsonRpcCodec.methodState,
+        'method': contracts.device.read.method('state'),
         'params': {
           'meta': {
-            'schema': DeviceStateJsonRpcCodec.schema,
+            'schema': contracts.device.read.schema,
             'src': 'device',
             'ts': 1
           },

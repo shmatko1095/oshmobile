@@ -131,7 +131,7 @@ class DeviceHostBody extends StatelessWidget {
                           liveDevice,
                         ),
                       );
-                      final presenter = presenters.resolve(bundle.modelId);
+                      final presenter = presenters.resolve(bundle.layout);
                       return RefreshIndicator(
                         onRefresh: () => _refreshAll(context),
                         child: presenter.build(context, liveDevice, bundle),

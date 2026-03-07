@@ -1,31 +1,24 @@
 import 'dart:convert';
 
 import 'package:chopper/chopper.dart';
-import 'package:oshmobile/core/profile/models/device_profile_bundle.dart';
-import 'package:oshmobile/core/profile/profile_bundle_repository.dart';
+import 'package:oshmobile/core/configuration/configuration_bundle_repository.dart';
+import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
 import 'package:oshmobile/core/secrets/app_secrets.dart';
 
-class ProfileBundleRepositoryImpl implements ProfileBundleRepository {
-  const ProfileBundleRepositoryImpl({
+class ConfigurationBundleRepositoryImpl
+    implements ConfigurationBundleRepository {
+  const ConfigurationBundleRepositoryImpl({
     required ChopperClient client,
   }) : _client = client;
 
   final ChopperClient _client;
 
   @override
-  Future<DeviceProfileBundle> fetchBundle({
+  Future<DeviceConfigurationBundle> fetchBundle({
     required String serial,
-    required String modelId,
-    Set<String> negotiatedSchemas = const <String>{},
   }) async {
     final uri = Uri.parse(
-      '${AppSecrets.oshApiEndpoint}/mobile/devices/$serial/profile-bundle',
-    ).replace(
-      queryParameters: negotiatedSchemas.isEmpty
-          ? null
-          : <String, String>{
-              'schemas': negotiatedSchemas.toList(growable: false).join(','),
-            },
+      '${AppSecrets.oshApiEndpoint}/mobile/devices/$serial/configuration',
     );
 
     final request = Request('GET', uri, _client.baseUrl);
@@ -33,19 +26,16 @@ class ProfileBundleRepositoryImpl implements ProfileBundleRepository {
     final body = _decodeBody(response.body);
     if (!response.isSuccessful) {
       throw StateError(
-        'Profile bundle request failed for model $modelId: HTTP ${response.statusCode}',
+        'Configuration bundle request failed for serial $serial: HTTP ${response.statusCode}',
       );
     }
     if (body == null) {
       throw StateError(
-        'Profile bundle response is invalid for model $modelId',
+        'Configuration bundle response is invalid for serial $serial',
       );
     }
 
-    return DeviceProfileBundle.fromJson(body).copyWith(
-      serial: serial,
-      negotiatedSchemas: negotiatedSchemas,
-    );
+    return DeviceConfigurationBundle.fromJson(body);
   }
 
   Map<String, dynamic>? _decodeBody(dynamic raw) {

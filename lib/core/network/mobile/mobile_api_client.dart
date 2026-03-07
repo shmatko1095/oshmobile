@@ -88,6 +88,7 @@ class MobileApiClient {
       id: json['device_id']?.toString() ?? '',
       sn: json['serial']?.toString() ?? '',
       modelId: json['model_id']?.toString() ?? '',
+      modelName: json['model_name']?.toString() ?? '',
       userData: DeviceUserData(
         alias: json['alias']?.toString() ?? '',
         description: json['description']?.toString() ?? '',

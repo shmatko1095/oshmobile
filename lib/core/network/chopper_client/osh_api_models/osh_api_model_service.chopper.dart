@@ -20,7 +20,7 @@ final class _$ApiModelService extends ApiModelService {
 
   @override
   Future<Response<dynamic>> createModel({required CreateModelRequest request}) {
-    final Uri $url = Uri.parse('https://api.oshhome.com/v1/models');
+    final Uri $url = Uri.parse('https://api.oshhome.com/v1/admin/models');
     final $body = request;
     final Request $request = Request(
       'POST',
@@ -33,7 +33,7 @@ final class _$ApiModelService extends ApiModelService {
 
   @override
   Future<Response<dynamic>> getAll() {
-    final Uri $url = Uri.parse('https://api.oshhome.com/v1/models');
+    final Uri $url = Uri.parse('https://api.oshhome.com/v1/admin/models');
     final Request $request = Request(
       'GET',
       $url,
@@ -44,7 +44,7 @@ final class _$ApiModelService extends ApiModelService {
 
   @override
   Future<Response<dynamic>> get({required String id}) {
-    final Uri $url = Uri.parse('https://api.oshhome.com/v1/models/${id}');
+    final Uri $url = Uri.parse('https://api.oshhome.com/v1/admin/models/${id}');
     final Request $request = Request(
       'GET',
       $url,
@@ -55,7 +55,7 @@ final class _$ApiModelService extends ApiModelService {
 
   @override
   Future<Response<dynamic>> delete({required String id}) {
-    final Uri $url = Uri.parse('https://api.oshhome.com/v1/models/${id}');
+    final Uri $url = Uri.parse('https://api.oshhome.com/v1/admin/models/${id}');
     final Request $request = Request(
       'DELETE',
       $url,

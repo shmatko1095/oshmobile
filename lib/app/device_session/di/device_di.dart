@@ -4,16 +4,12 @@ import 'package:get_it/get_it.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
-import 'package:oshmobile/core/contracts/contract_negotiator.dart';
 import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
-import 'package:oshmobile/core/contracts/device_contracts_repository.dart';
-import 'package:oshmobile/core/contracts/device_contracts_repository_mqtt.dart';
-import 'package:oshmobile/core/contracts/device_contracts_topics.dart';
+import 'package:oshmobile/core/configuration/configuration_bundle_repository.dart';
+import 'package:oshmobile/core/configuration/control_state_resolver.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
-import 'package:oshmobile/core/profile/control_state_resolver.dart';
-import 'package:oshmobile/core/profile/profile_bundle_repository.dart';
 import 'package:oshmobile/features/device_about/data/device_about_repository_mqtt.dart';
 import 'package:oshmobile/features/device_about/domain/repositories/device_about_repository.dart';
 import 'package:oshmobile/features/devices/details/data/mqtt_telemetry_repository.dart';
@@ -30,7 +26,7 @@ import 'package:oshmobile/features/schedule/data/schedule_topics.dart';
 import 'package:oshmobile/features/schedule/domain/repositories/schedule_repository.dart';
 import 'package:oshmobile/features/settings/data/settings_repository_mqtt.dart';
 import 'package:oshmobile/features/settings/data/settings_topics.dart';
-import 'package:oshmobile/features/settings/data/json_schema_settings_ui_schema_builder.dart';
+import 'package:oshmobile/features/settings/data/configuration_settings_ui_schema_builder.dart';
 import 'package:oshmobile/features/settings/domain/repositories/settings_repository.dart';
 import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema_builder.dart';
 import 'package:oshmobile/features/sensors/data/sensors_repository_mqtt.dart';
@@ -210,23 +206,10 @@ class DeviceDi {
       },
     );
 
-    getIt.registerLazySingleton<DeviceContractsRepository>(
-      () => DeviceContractsRepositoryMqtt(
-        getIt<JsonRpcClient>(),
-        getIt<DeviceContractsTopics>(),
-        ctx.deviceSn,
-      ),
-      dispose: (r) {
-        if (r is DeviceContractsRepositoryMqtt) r.dispose();
-      },
-    );
-
     getIt.registerLazySingleton<GetDeviceFull>(
       () => GetDeviceFull(
         deviceRepository: getIt(),
-        contractsRepository: getIt<DeviceContractsRepository>(),
-        contractNegotiator: getIt<ContractNegotiator>(),
-        profileBundleRepository: getIt<ProfileBundleRepository>(),
+        configurationBundleRepository: getIt<ConfigurationBundleRepository>(),
         runtimeContracts: getIt<DeviceRuntimeContracts>(),
       ),
     );
@@ -248,7 +231,7 @@ class DeviceDi {
     );
 
     getIt.registerLazySingleton<SettingsUiSchemaBuilder>(
-      () => const ProfileBundleSettingsUiSchemaBuilder(),
+      () => const ConfigurationSettingsUiSchemaBuilder(),
     );
 
     // Device facade for UI orchestration (keeps domain services split).

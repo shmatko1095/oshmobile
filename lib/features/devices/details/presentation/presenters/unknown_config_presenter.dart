@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
-import 'package:oshmobile/core/profile/models/device_profile_bundle.dart';
+import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 import '../cubit/device_page_cubit.dart';
@@ -12,7 +12,10 @@ class UnknownConfigPresenter implements DevicePresenter {
 
   @override
   Widget build(
-      BuildContext context, Device device, DeviceProfileBundle bundle) {
+    BuildContext context,
+    Device device,
+    DeviceConfigurationBundle bundle,
+  ) {
     final alias =
         (device.userData.alias.isEmpty) ? device.sn : device.userData.alias;
 
@@ -78,12 +81,12 @@ class _MetaCard extends StatelessWidget {
   const _MetaCard({required this.device, required this.bundle});
 
   final Device device;
-  final DeviceProfileBundle bundle;
+  final DeviceConfigurationBundle bundle;
 
   @override
   Widget build(BuildContext context) {
-    final controlCount = bundle.modelProfile.osh.controls.length;
-    final widgetCount = bundle.modelProfile.osh.widgets.length;
+    final controlCount = bundle.configuration.oshmobile.controls.length;
+    final widgetCount = bundle.configuration.oshmobile.widgets.length;
     return Card(
       color: Colors.white.withValues(alpha: 0.04),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -107,10 +110,15 @@ class _MetaCard extends StatelessWidget {
             ),
             _MetaRow(label: 'Serial', value: device.sn),
             _MetaRow(label: 'Model ID', value: device.modelId),
-            _MetaRow(label: 'Model name', value: bundle.modelName),
-            _MetaRow(label: 'Profile model', value: bundle.modelId),
+            _MetaRow(label: 'Model name', value: device.modelName),
             _MetaRow(
-                label: 'Profile name', value: bundle.modelProfile.modelName),
+              label: 'Layout',
+              value: bundle.layout,
+            ),
+            _MetaRow(label: 'Configuration ID', value: bundle.configurationId),
+            _MetaRow(label: 'Revision', value: bundle.revision.toString()),
+            _MetaRow(label: 'Status', value: bundle.status),
+            _MetaRow(label: 'Firmware', value: bundle.firmwareVersion),
             _MetaRow(label: 'Device ID', value: device.id),
             _MetaRow(
               label: 'Controls',
@@ -118,7 +126,8 @@ class _MetaCard extends StatelessWidget {
               trailing: controlCount == 0
                   ? null
                   : Tooltip(
-                      message: bundle.modelProfile.osh.controls.keys.join(', '),
+                      message: bundle.configuration.oshmobile.controls.keys
+                          .join(', '),
                       child: const Icon(Icons.list_alt,
                           size: 18, color: Colors.white70),
                     ),

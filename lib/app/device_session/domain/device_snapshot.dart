@@ -1,5 +1,5 @@
 import 'package:oshmobile/core/common/entities/device/device.dart';
-import 'package:oshmobile/core/profile/models/device_profile_bundle.dart';
+import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
 import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema.dart';
@@ -58,7 +58,7 @@ class DeviceSlice<T> {
 
 class DeviceSnapshot {
   final Device device;
-  final DeviceSlice<DeviceProfileBundle> details;
+  final DeviceSlice<DeviceConfigurationBundle> details;
   final bool mqttConnected;
   final bool mqttBusy;
   final String? commError;
@@ -92,7 +92,7 @@ class DeviceSnapshot {
   }) {
     return DeviceSnapshot(
       device: device,
-      details: const DeviceSlice<DeviceProfileBundle>.idle(),
+      details: const DeviceSlice<DeviceConfigurationBundle>.idle(),
       mqttConnected: false,
       mqttBusy: false,
       commError: null,
@@ -108,7 +108,7 @@ class DeviceSnapshot {
 
   DeviceSnapshot copyWith({
     Device? device,
-    DeviceSlice<DeviceProfileBundle>? details,
+    DeviceSlice<DeviceConfigurationBundle>? details,
     bool? mqttConnected,
     bool? mqttBusy,
     String? commError,
