@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
 import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
@@ -16,6 +17,10 @@ import 'package:oshmobile/features/settings/data/settings_topics.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 import 'package:oshmobile/features/sensors/data/sensors_repository_mqtt.dart';
 import 'package:oshmobile/features/sensors/data/sensors_topics.dart';
+import 'package:oshmobile/features/schedule/data/schedule_repository_mqtt.dart';
+import 'package:oshmobile/features/schedule/data/schedule_topics.dart';
+import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
+import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/device_state/data/device_state_repository_mqtt.dart';
 import 'package:oshmobile/features/device_state/data/device_state_topics.dart';
 
@@ -148,6 +153,430 @@ String _contractIdForDomain(String domain) {
 }
 
 DeviceRuntimeContracts _runtimeContractsFor(Map<String, Set<String>> domains) {
+  Map<String, dynamic> schemaFor(
+    String domain,
+    String operation,
+  ) {
+    if (domain == 'settings') {
+      if (operation == 'patch') {
+        return {
+          'type': 'object',
+          'additionalProperties': false,
+          'properties': {
+            'display': {
+              'type': 'object',
+              'additionalProperties': false,
+              'properties': {
+                'activeBrightness': {'type': 'integer'},
+                'idleBrightness': {'type': 'integer'},
+                'idleTime': {'type': 'integer'},
+                'dimOnIdle': {'type': 'boolean'},
+                'language': {'type': 'string'},
+              },
+            },
+            'update': {
+              'type': 'object',
+              'additionalProperties': false,
+              'properties': {
+                'autoUpdateEnabled': {'type': 'boolean'},
+                'updateAtMidnight': {'type': 'boolean'},
+                'checkIntervalMin': {'type': 'integer'},
+              },
+            },
+            'time': {
+              'type': 'object',
+              'additionalProperties': false,
+              'properties': {
+                'auto': {'type': 'boolean'},
+                'timeZone': {'type': 'integer'},
+              },
+            },
+            'control': {
+              'type': 'object',
+              'additionalProperties': false,
+              'properties': {
+                'model': {'type': 'string'},
+                'maxFloorTemp': {'type': 'number'},
+                'maxFloorTempLimitEnabled': {'type': 'boolean'},
+                'maxFloorTempFailSafe': {'type': 'boolean'},
+              },
+            },
+          },
+        };
+      }
+
+      if (operation == 'set' || operation == 'state') {
+        return {
+          'type': 'object',
+          'additionalProperties': false,
+          'required': ['display', 'update', 'time'],
+          'properties': {
+            'display': {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': [
+                'activeBrightness',
+                'idleBrightness',
+                'idleTime',
+                'dimOnIdle',
+                'language',
+              ],
+              'properties': {
+                'activeBrightness': {'type': 'integer'},
+                'idleBrightness': {'type': 'integer'},
+                'idleTime': {'type': 'integer'},
+                'dimOnIdle': {'type': 'boolean'},
+                'language': {'type': 'string'},
+              },
+            },
+            'update': {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': [
+                'autoUpdateEnabled',
+                'updateAtMidnight',
+                'checkIntervalMin',
+              ],
+              'properties': {
+                'autoUpdateEnabled': {'type': 'boolean'},
+                'updateAtMidnight': {'type': 'boolean'},
+                'checkIntervalMin': {'type': 'integer'},
+              },
+            },
+            'time': {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['auto', 'timeZone'],
+              'properties': {
+                'auto': {'type': 'boolean'},
+                'timeZone': {'type': 'integer'},
+              },
+            },
+            'control': {
+              'type': 'object',
+              'additionalProperties': false,
+              'properties': {
+                'model': {'type': 'string'},
+                'maxFloorTemp': {'type': 'number'},
+                'maxFloorTempLimitEnabled': {'type': 'boolean'},
+                'maxFloorTempFailSafe': {'type': 'boolean'},
+              },
+            },
+          },
+        };
+      }
+    }
+
+    if (domain == 'sensors') {
+      if (operation == 'patch') {
+        return {
+          'type': 'object',
+          'additionalProperties': false,
+          'properties': {
+            'rename': {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['id', 'name'],
+              'properties': {
+                'id': {'type': 'string', 'minLength': 1, 'maxLength': 31},
+                'name': {'type': 'string', 'maxLength': 31},
+              },
+            },
+            'set_ref': {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['id'],
+              'properties': {
+                'id': {'type': 'string', 'minLength': 1, 'maxLength': 31},
+              },
+            },
+            'set_temp_calibration': {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['id', 'value'],
+              'properties': {
+                'id': {'type': 'string', 'minLength': 1, 'maxLength': 31},
+                'value': {
+                  'type': 'number',
+                  'minimum': -10,
+                  'maximum': 10,
+                  'multipleOf': 0.5,
+                },
+              },
+            },
+            'remove': {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['id'],
+              'properties': {
+                'id': {'type': 'string', 'minLength': 1, 'maxLength': 31},
+                'leave': {'type': 'boolean'},
+              },
+            },
+            'pairing': {'type': 'object'},
+          },
+          'anyOf': [
+            {
+              'required': ['rename']
+            },
+            {
+              'required': ['set_ref']
+            },
+            {
+              'required': ['set_temp_calibration']
+            },
+            {
+              'required': ['remove']
+            },
+            {
+              'required': ['pairing']
+            },
+          ],
+        };
+      }
+
+      if (operation == 'set') {
+        return {
+          'type': 'object',
+          'additionalProperties': false,
+          'required': ['items'],
+          'properties': {
+            'items': {
+              'type': 'array',
+              'items': {
+                'type': 'object',
+                'additionalProperties': false,
+                'required': ['id', 'name', 'ref'],
+                'properties': {
+                  'id': {'type': 'string', 'minLength': 1, 'maxLength': 31},
+                  'name': {'type': 'string', 'maxLength': 31},
+                  'ref': {'type': 'boolean'},
+                },
+              },
+            },
+          },
+        };
+      }
+
+      if (operation == 'state') {
+        return {
+          'type': 'object',
+          'additionalProperties': false,
+          'required': ['pairing', 'items'],
+          'properties': {
+            'pairing': {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['enabled', 'transport', 'timeout_sec', 'started_ts'],
+              'properties': {
+                'enabled': {'type': 'boolean'},
+                'transport': {'type': 'string', 'const': 'zigbee'},
+                'timeout_sec': {'type': 'integer', 'minimum': 0},
+                'started_ts': {'type': 'integer', 'minimum': 0},
+              },
+            },
+            'items': {
+              'type': 'array',
+              'items': {
+                'type': 'object',
+                'additionalProperties': false,
+                'required': [
+                  'id',
+                  'name',
+                  'ref',
+                  'transport',
+                  'removable',
+                  'kind',
+                  'temp_calibration',
+                ],
+                'properties': {
+                  'id': {'type': 'string', 'minLength': 1, 'maxLength': 31},
+                  'name': {'type': 'string', 'maxLength': 31},
+                  'ref': {'type': 'boolean'},
+                  'transport': {'type': 'string', 'const': 'wired'},
+                  'removable': {'type': 'boolean'},
+                  'kind': {
+                    'type': 'string',
+                    'enum': ['generic', 'air', 'floor'],
+                  },
+                  'temp_calibration': {
+                    'type': 'number',
+                    'minimum': -10,
+                    'maximum': 10,
+                    'multipleOf': 0.5,
+                  },
+                },
+              },
+            },
+          },
+        };
+      }
+    }
+
+    if (domain == 'schedule') {
+      final pointSchema = {
+        'type': 'object',
+        'additionalProperties': false,
+        'required': ['temp', 'hh', 'mm', 'mask'],
+        'properties': {
+          'temp': {'type': 'number'},
+          'hh': {'type': 'integer', 'minimum': 0, 'maximum': 23},
+          'mm': {'type': 'integer', 'minimum': 0, 'maximum': 59},
+          'mask': {'type': 'integer', 'minimum': 0, 'maximum': 127},
+        },
+      };
+      final listSchema = {
+        'type': 'array',
+        'items': pointSchema,
+      };
+      final rangeSchema = {
+        'type': 'object',
+        'additionalProperties': false,
+        'required': ['min', 'max'],
+        'properties': {
+          'min': {'type': 'number'},
+          'max': {'type': 'number'},
+        },
+      };
+      final pointsProps = {
+        'off': listSchema,
+        'on': listSchema,
+        'daily': listSchema,
+        'weekly': listSchema,
+        'range': rangeSchema,
+      };
+      if (operation == 'state' || operation == 'set') {
+        return {
+          'type': 'object',
+          'additionalProperties': false,
+          'required': ['mode', 'points'],
+          'properties': {
+            'mode': {
+              'type': 'string',
+              'enum': ['off', 'on', 'daily', 'weekly', 'range'],
+            },
+            'points': {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['off', 'on', 'daily', 'weekly', 'range'],
+              'properties': pointsProps,
+            },
+          },
+        };
+      }
+      if (operation == 'patch') {
+        return {
+          'type': 'object',
+          'additionalProperties': false,
+          'properties': {
+            'mode': {
+              'type': 'string',
+              'enum': ['off', 'on', 'daily', 'weekly', 'range'],
+            },
+            'points': {
+              'type': 'object',
+              'additionalProperties': false,
+              'properties': pointsProps,
+              'anyOf': [
+                {
+                  'required': ['off']
+                },
+                {
+                  'required': ['on']
+                },
+                {
+                  'required': ['daily']
+                },
+                {
+                  'required': ['weekly']
+                },
+                {
+                  'required': ['range']
+                },
+              ],
+            },
+          },
+          'anyOf': [
+            {
+              'required': ['mode']
+            },
+            {
+              'required': ['points']
+            },
+          ],
+        };
+      }
+    }
+
+    if (domain == 'telemetry' && operation == 'state') {
+      return {
+        'type': 'object',
+        'additionalProperties': false,
+        'required': ['climate_sensors', 'heater_enabled', 'load_factor'],
+        'properties': {
+          'climate_sensors': {
+            'type': 'array',
+            'items': {
+              'type': 'object',
+              'additionalProperties': false,
+              'required': ['id', 'temp_valid', 'humidity_valid'],
+              'properties': {
+                'id': {'type': 'string', 'minLength': 1, 'maxLength': 31},
+                'temp_valid': {'type': 'boolean'},
+                'humidity_valid': {'type': 'boolean'},
+                'temp': {'type': 'number'},
+                'humidity': {'type': 'number'},
+              },
+              'allOf': [
+                {
+                  'if': {
+                    'type': 'object',
+                    'properties': {
+                      'temp_valid': {'const': true},
+                    },
+                  },
+                  'then': {
+                    'type': 'object',
+                    'required': ['temp'],
+                  },
+                },
+                {
+                  'if': {
+                    'type': 'object',
+                    'properties': {
+                      'humidity_valid': {'const': true},
+                    },
+                  },
+                  'then': {
+                    'type': 'object',
+                    'required': ['humidity'],
+                  },
+                },
+              ],
+            },
+          },
+          'heater_enabled': {'type': 'boolean'},
+          'load_factor': {'type': 'integer'},
+        },
+      };
+    }
+
+    if (domain == 'device' && operation == 'state') {
+      return {
+        'type': 'object',
+        'required': ['Uptime', 'Relay cycles', 'Chip temp', 'PCB temp'],
+        'properties': {
+          'Uptime': {'type': 'string'},
+          'Relay cycles': {'type': 'integer'},
+          'Chip temp': {'type': 'number'},
+          'PCB temp': {'type': 'number'},
+        },
+      };
+    }
+
+    return {'type': 'object'};
+  }
+
   final bundle = DeviceConfigurationBundle.fromJson({
     'configuration_id': 'cfg-1',
     'model_id': 'model-1',
@@ -172,17 +601,21 @@ DeviceRuntimeContracts _runtimeContractsFor(Map<String, Set<String>> domains) {
         },
       },
     },
-    'mqtt_contracts': [
+    'runtime_contracts': [
       for (final entry in domains.entries)
         {
+          'domain': entry.key,
           'contract_id': _contractIdForDomain(entry.key),
           'definition': {
             'domain': entry.key,
             'schema': _contractIdForDomain(entry.key),
             'wire': {
-              if (entry.value.contains('state')) 'state': {'type': 'object'},
-              if (entry.value.contains('patch')) 'patch': {'type': 'object'},
-              if (entry.value.contains('set')) 'set': {'type': 'object'},
+              if (entry.value.contains('state'))
+                'state': schemaFor(entry.key, 'state'),
+              if (entry.value.contains('patch'))
+                'patch': schemaFor(entry.key, 'patch'),
+              if (entry.value.contains('set'))
+                'set': schemaFor(entry.key, 'set'),
             },
           },
         },
@@ -336,6 +769,30 @@ void main() {
     await op;
   });
 
+  test('SensorsRepositoryMqtt rejects patch violating schema constraints',
+      () async {
+    final mqtt = _FakeDeviceMqttRepo();
+    final contracts = _runtimeContractsFor({
+      'sensors': {'state', 'patch', 'set'},
+    });
+    final topics = SensorsTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
+    final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
+    final repo = SensorsRepositoryMqtt(
+      jrpc,
+      topics,
+      'device-1',
+      contracts: contracts,
+    );
+
+    await expectLater(
+      repo.patch(
+        const SensorsPatchSetTempCalibration(id: 'air', value: 1.3),
+      ),
+      throwsFormatException,
+    );
+    expect(mqtt.published, isEmpty);
+  });
+
   test('SensorsRepositoryMqtt parses sensors.state notification', () async {
     final mqtt = _FakeDeviceMqttRepo();
     final contracts = _runtimeContractsFor({
@@ -395,6 +852,93 @@ void main() {
     expect(snap.items.length, 2);
     expect(snap.items.first.ref, true);
     expect(snap.items.first.tempCalibration, 0.0);
+  });
+
+  test('ScheduleRepositoryMqtt builds JSON-RPC set request', () async {
+    final mqtt = _FakeDeviceMqttRepo();
+    final contracts = _runtimeContractsFor({
+      'schedule': {'state', 'patch', 'set'},
+    });
+    final topics = ScheduleTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
+    final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
+    final repo = ScheduleRepositoryMqtt(
+      jrpc,
+      topics,
+      'device-1',
+      contracts: contracts,
+      timeout: const Duration(milliseconds: 200),
+    );
+
+    final snap = CalendarSnapshot(
+      mode: CalendarMode.on,
+      range: const ScheduleRange(min: 15, max: 18.5),
+      lists: {
+        CalendarMode.off: const [],
+        CalendarMode.on: const [
+          SchedulePoint(
+            time: TimeOfDay(hour: 6, minute: 0),
+            daysMask: WeekdayMask.all,
+            temp: 21.0,
+          ),
+        ],
+        CalendarMode.daily: const [],
+        CalendarMode.weekly: const [],
+      },
+    );
+
+    final op = repo.saveAll(snap, reqId: 'req-schedule-set');
+
+    await Future<void>.delayed(Duration.zero);
+    expect(mqtt.published, hasLength(1));
+    final pub = mqtt.published.single;
+    expect(pub.topic, topics.cmd('device-1'));
+    expect(pub.payload['jsonrpc'], '2.0');
+    expect(pub.payload['id'], 'req-schedule-set');
+    expect(pub.payload['method'], contracts.schedule.set.method('set'));
+
+    final params = pub.payload['params'] as Map<String, dynamic>;
+    expect((params['meta'] as Map)['schema'], contracts.schedule.read.schema);
+    final data = params['data'] as Map<String, dynamic>;
+    expect(data['mode'], 'on');
+    expect((data['points'] as Map<String, dynamic>).containsKey('on'), isTrue);
+    expect(
+        (data['points'] as Map<String, dynamic>).containsKey('range'), isTrue);
+
+    mqtt.emit(
+      topics.rsp('device-1'),
+      {
+        'jsonrpc': '2.0',
+        'id': 'req-schedule-set',
+        'result': {
+          'meta': {'schema': contracts.schedule.set.schema},
+          'data': data,
+        },
+      },
+    );
+
+    await op;
+  });
+
+  test('ScheduleRepositoryMqtt rejects mode outside schema enum', () async {
+    final mqtt = _FakeDeviceMqttRepo();
+    final contracts = _runtimeContractsFor({
+      'schedule': {'state', 'patch', 'set'},
+    });
+    final topics = ScheduleTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
+    final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
+    final repo = ScheduleRepositoryMqtt(
+      jrpc,
+      topics,
+      'device-1',
+      contracts: contracts,
+      timeout: const Duration(milliseconds: 200),
+    );
+
+    await expectLater(
+      repo.setMode(const CalendarMode('unsupported')),
+      throwsFormatException,
+    );
+    expect(mqtt.published, isEmpty);
   });
 
   test('TelemetryRepository emits canonical telemetry.state snapshots',

@@ -5,6 +5,7 @@ import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
+import 'package:oshmobile/features/devices/details/data/telemetry_jsonrpc_codec.dart';
 import 'package:oshmobile/features/devices/details/data/telemetry_topics.dart';
 import 'package:oshmobile/features/devices/details/domain/repositories/telemetry_repository.dart';
 
@@ -27,6 +28,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
   final String _deviceSn;
   final Duration pollInterval;
   final Duration timeout;
+  TelemetryJsonRpcCodec? _codec;
 
   StreamController<TelemetryState>? _ctrl;
   StreamSubscription? _sub;
@@ -64,6 +66,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     _pollTimer = null;
     _pollInFlight = false;
     _telemetry = null;
+    _codec = null;
 
     if (sub != null) {
       try {
@@ -95,7 +98,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
       throw StateError('Invalid telemetry schema: ${resp.meta!.schema}');
     }
 
-    final parsed = TelemetryState.fromJson(data);
+    final parsed = _codecOrThrow().decodeState(data);
     if (parsed == null) throw StateError('Invalid telemetry payload');
 
     _emitState(parsed);
@@ -120,7 +123,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
       final data = notif.data;
       if (data == null) return;
 
-      final parsed = TelemetryState.fromJson(data);
+      final parsed = _codecOrThrow().decodeState(data);
       if (parsed == null) return;
 
       _emitState(parsed, ctrl: ctrl);
@@ -231,7 +234,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
         return;
       }
 
-      final parsed = TelemetryState.fromJson(data);
+      final parsed = _codecOrThrow().decodeState(data);
       if (parsed == null) return;
 
       _emitState(parsed);
@@ -251,5 +254,15 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     if (target != null && !target.isClosed) {
       target.add(next);
     }
+  }
+
+  TelemetryJsonRpcCodec _codecOrThrow() {
+    final existing = _codec;
+    if (existing != null) return existing;
+
+    final codec =
+        TelemetryJsonRpcCodec.fromRuntimeContract(_contracts.telemetry);
+    _codec = codec;
+    return codec;
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
 import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
+import 'package:oshmobile/features/schedule/data/schedule_payload_validator.dart';
 
 /// Codec for schedule@1 JSON-RPC payloads.
 ///
@@ -16,7 +18,52 @@ import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 ///   }
 /// }
 class ScheduleJsonRpcCodec {
-  static CalendarSnapshot? decodeBody(Map<String, dynamic> data) {
+  final SchedulePayloadValidator _validator;
+
+  const ScheduleJsonRpcCodec._(this._validator);
+
+  factory ScheduleJsonRpcCodec.fromRuntimeContract(
+    RuntimeDomainContract contract,
+  ) {
+    return ScheduleJsonRpcCodec._(
+      SchedulePayloadValidator(
+        stateSchema: contract.stateSchema,
+        setSchema: contract.setSchema,
+        patchSchema: contract.patchSchema,
+      ),
+    );
+  }
+
+  CalendarSnapshot? decodeBody(Map<String, dynamic> data) {
+    if (!_validator.validateStatePayload(data)) return null;
+    return decodeBodyUnchecked(data);
+  }
+
+  Map<String, dynamic> encodeBody(CalendarSnapshot snapshot) {
+    final data = encodeBodyUnchecked(snapshot);
+    if (!_validator.validateSetPayload(data)) {
+      throw FormatException('Invalid schedule.set payload');
+    }
+    return data;
+  }
+
+  Map<String, dynamic> encodePatch({
+    CalendarMode? mode,
+    Map<CalendarMode, List<SchedulePoint>>? points,
+    ScheduleRange? range,
+  }) {
+    final data = encodePatchUnchecked(
+      mode: mode,
+      points: points,
+      range: range,
+    );
+    if (!_validator.validatePatchPayload(data)) {
+      throw FormatException('Invalid schedule.patch payload');
+    }
+    return data;
+  }
+
+  static CalendarSnapshot? decodeBodyUnchecked(Map<String, dynamic> data) {
     final modeStr = data['mode'];
     if (modeStr is! String) return null;
 
@@ -38,7 +85,7 @@ class ScheduleJsonRpcCodec {
     return CalendarSnapshot(mode: mode, range: range, lists: lists);
   }
 
-  static Map<String, dynamic> encodeBody(CalendarSnapshot snapshot) {
+  static Map<String, dynamic> encodeBodyUnchecked(CalendarSnapshot snapshot) {
     return <String, dynamic>{
       'mode': snapshot.mode.id,
       'points': _encodePoints(snapshot.lists,
@@ -46,7 +93,7 @@ class ScheduleJsonRpcCodec {
     };
   }
 
-  static Map<String, dynamic> encodePatch({
+  static Map<String, dynamic> encodePatchUnchecked({
     CalendarMode? mode,
     Map<CalendarMode, List<SchedulePoint>>? points,
     ScheduleRange? range,

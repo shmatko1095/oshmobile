@@ -23,6 +23,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   final DeviceRuntimeContracts _contracts;
   final String _deviceSn;
   final Duration timeout;
+  ScheduleJsonRpcCodec? _codec;
 
   StreamController<CalendarSnapshot>? _ctrl;
   int _refs = 0;
@@ -70,6 +71,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
 
     _stateSub = null;
     _ctrl = null;
+    _codec = null;
     _refs = 0;
     _last = null;
     _latest.clear();
@@ -136,7 +138,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
 
     if (prev == null) {
       method = _methodSet;
-      data = ScheduleJsonRpcCodec.encodeBody(snapshot);
+      data = _codecOrThrow().encodeBody(snapshot);
     } else {
       final modeChanged = prev.mode.id != snapshot.mode.id;
       final pointsPatch = _pointsPatch(prev.lists, snapshot.lists);
@@ -145,7 +147,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
       if (!modeChanged && pointsPatch.isEmpty && !rangeChanged) return;
 
       method = _methodPatch;
-      data = ScheduleJsonRpcCodec.encodePatch(
+      data = _codecOrThrow().encodePatch(
         mode: modeChanged ? snapshot.mode : null,
         points: pointsPatch.isNotEmpty ? pointsPatch : null,
         range: rangeChanged ? snapshot.range : null,
@@ -168,7 +170,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     if (_disposed) throw StateError('ScheduleRepositoryMqtt is disposed');
 
     final id = reqId ?? newReqId();
-    final data = ScheduleJsonRpcCodec.encodePatch(mode: mode);
+    final data = _codecOrThrow().encodePatch(mode: mode);
     final latest = _latest.start(_latestKey('mode'));
 
     final resp = await _request(
@@ -241,7 +243,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
       final data = notif.data;
       if (data == null) return;
 
-      final snap = ScheduleJsonRpcCodec.decodeBody(data);
+      final snap = _codecOrThrow().decodeBody(data);
       if (snap == null) return;
 
       _emitSnapshot(snap);
@@ -296,7 +298,16 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
       return null;
     }
 
-    return ScheduleJsonRpcCodec.decodeBody(data);
+    return _codecOrThrow().decodeBody(data);
+  }
+
+  ScheduleJsonRpcCodec _codecOrThrow() {
+    final existing = _codec;
+    if (existing != null) return existing;
+
+    final codec = ScheduleJsonRpcCodec.fromRuntimeContract(_contracts.schedule);
+    _codec = codec;
+    return codec;
   }
 
   // -------------------- Diff helpers --------------------

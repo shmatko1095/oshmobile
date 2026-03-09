@@ -18,6 +18,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
   final DeviceRuntimeContracts _contracts;
   final String _deviceSn;
   final Duration timeout;
+  SettingsJsonRpcCodec? _codec;
 
   StreamController<SettingsSnapshot>? _ctrl;
   int _refs = 0;
@@ -136,7 +137,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     if (_disposed) throw StateError('SettingsRepositoryMqtt is disposed');
 
     final id = reqId ?? newReqId();
-    final data = SettingsJsonRpcCodec.encodeBody(snapshot);
+    final data = _codecOrThrow().encodeBody(snapshot);
 
     final latest = _latest.start(_latestKey('save'));
 
@@ -162,7 +163,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
     if (_disposed) throw StateError('SettingsRepositoryMqtt is disposed');
 
     final id = reqId ?? newReqId();
-    final data = SettingsJsonRpcCodec.encodePatch(patch);
+    final data = _codecOrThrow().encodePatch(patch);
 
     final resp = await _request(
       method: _methodPatch,
@@ -231,7 +232,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
       final data = notif.data;
       if (data == null) return;
 
-      final snap = SettingsJsonRpcCodec.decodeBody(data);
+      final snap = _codecOrThrow().decodeBody(data);
       if (snap == null) return;
       _emitSnapshot(snap);
     });
@@ -247,7 +248,7 @@ class SettingsRepositoryMqtt implements SettingsRepository {
       final data = notif.data;
       if (data == null) return;
 
-      final snap = SettingsJsonRpcCodec.decodeBody(data);
+      final snap = _codecOrThrow().decodeBody(data);
       if (snap == null) return;
       _emitSnapshot(snap);
     });
@@ -301,6 +302,15 @@ class SettingsRepositoryMqtt implements SettingsRepository {
       return null;
     }
 
-    return SettingsJsonRpcCodec.decodeBody(data);
+    return _codecOrThrow().decodeBody(data);
+  }
+
+  SettingsJsonRpcCodec _codecOrThrow() {
+    final existing = _codec;
+    if (existing != null) return existing;
+
+    final codec = SettingsJsonRpcCodec.fromRuntimeContract(_contracts.settings);
+    _codec = codec;
+    return codec;
   }
 }

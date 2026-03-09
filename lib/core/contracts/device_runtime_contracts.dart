@@ -5,11 +5,17 @@ class RuntimeDomainContract {
   final JsonRpcContractDescriptor read;
   final JsonRpcContractDescriptor patch;
   final JsonRpcContractDescriptor set;
+  final Map<String, dynamic>? stateSchema;
+  final Map<String, dynamic>? patchSchema;
+  final Map<String, dynamic>? setSchema;
 
   const RuntimeDomainContract({
     required this.read,
     required this.patch,
     required this.set,
+    required this.stateSchema,
+    required this.patchSchema,
+    required this.setSchema,
   });
 
   String get methodDomain => read.methodDomain;
@@ -85,7 +91,7 @@ class DeviceRuntimeContracts {
         continue;
       }
 
-      final contractRecord = bundle.mqttContracts[contractId];
+      final contractRecord = bundle.resolvedContract(domain);
       if (contractRecord == null) {
         missingContracts.add('$domain:$contractId');
         continue;
@@ -103,6 +109,9 @@ class DeviceRuntimeContracts {
         read: parsed.read ?? parsed.descriptor,
         patch: parsed.patch ?? parsed.descriptor,
         set: parsed.set ?? parsed.descriptor,
+        stateSchema: parsed.stateSchema,
+        patchSchema: parsed.patchSchema,
+        setSchema: parsed.setSchema,
       );
 
       if (parsed.read != null) readableDomains.add(domain);
@@ -161,9 +170,13 @@ class DeviceRuntimeContracts {
     );
 
     final wire = _stringKeyedMap(definition['wire']);
-    final read = _isSchemaObject(wire['state']) ? descriptor : null;
-    final patch = _isSchemaObject(wire['patch']) ? descriptor : null;
-    final set = _isSchemaObject(wire['set']) ? descriptor : null;
+    final stateSchema = _schemaObject(wire['state']);
+    final patchSchema = _schemaObject(wire['patch']);
+    final setSchema = _schemaObject(wire['set']);
+
+    final read = stateSchema != null ? descriptor : null;
+    final patch = patchSchema != null ? descriptor : null;
+    final set = setSchema != null ? descriptor : null;
     if (read == null && patch == null && set == null) {
       return null;
     }
@@ -174,6 +187,9 @@ class DeviceRuntimeContracts {
       read: read,
       patch: patch,
       set: set,
+      stateSchema: stateSchema,
+      patchSchema: patchSchema,
+      setSchema: setSchema,
     );
   }
 
@@ -194,8 +210,14 @@ class DeviceRuntimeContracts {
     return const <String, dynamic>{};
   }
 
-  bool _isSchemaObject(dynamic raw) {
-    return raw is Map && raw.isNotEmpty;
+  Map<String, dynamic>? _schemaObject(dynamic raw) {
+    if (raw is Map<String, dynamic> && raw.isNotEmpty) {
+      return raw;
+    }
+    if (raw is Map && raw.isNotEmpty) {
+      return raw.map((key, value) => MapEntry(key.toString(), value));
+    }
+    return null;
   }
 }
 
@@ -205,6 +227,9 @@ class _ParsedContractDefinition {
   final JsonRpcContractDescriptor? read;
   final JsonRpcContractDescriptor? patch;
   final JsonRpcContractDescriptor? set;
+  final Map<String, dynamic>? stateSchema;
+  final Map<String, dynamic>? patchSchema;
+  final Map<String, dynamic>? setSchema;
 
   const _ParsedContractDefinition({
     required this.domain,
@@ -212,6 +237,9 @@ class _ParsedContractDefinition {
     this.read,
     this.patch,
     this.set,
+    required this.stateSchema,
+    required this.patchSchema,
+    required this.setSchema,
   });
 }
 

@@ -364,6 +364,14 @@ class ClimateSensorTelemetry {
       humidity: humidity,
     );
   }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'id': id,
+        'temp_valid': tempValid,
+        'humidity_valid': humidityValid,
+        if (temp != null) 'temp': temp,
+        if (humidity != null) 'humidity': humidity,
+      };
 }
 
 class TelemetryState {
@@ -406,6 +414,14 @@ class TelemetryState {
       loadFactor: loadFactor,
     );
   }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'climate_sensors': [
+          for (final item in climateSensors) item.toJson(),
+        ],
+        'heater_enabled': heaterEnabled,
+        'load_factor': loadFactor,
+      };
 }
 
 bool _isMultipleOfHalf(double value) {

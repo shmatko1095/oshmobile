@@ -239,27 +239,13 @@ class ControlStateResolver {
   }) {
     switch (domain) {
       case 'telemetry':
-        if (telemetry == null) return null;
-        return <String, dynamic>{
-          'climate_sensors': [
-            for (final item in telemetry.climateSensors)
-              <String, dynamic>{
-                'id': item.id,
-                'temp_valid': item.tempValid,
-                'humidity_valid': item.humidityValid,
-                if (item.temp != null) 'temp': item.temp,
-                if (item.humidity != null) 'humidity': item.humidity,
-              },
-          ],
-          'heater_enabled': telemetry.heaterEnabled,
-          'load_factor': telemetry.loadFactor,
-        };
+        return telemetry?.toJson();
       case 'sensors':
         return sensors?.toJson();
       case 'schedule':
         return schedule == null
             ? null
-            : ScheduleJsonRpcCodec.encodeBody(schedule);
+            : ScheduleJsonRpcCodec.encodeBodyUnchecked(schedule);
       case 'settings':
         return settings?.toJson();
       case 'device':

@@ -1,20 +1,59 @@
 import 'package:oshmobile/core/configuration/control_registry.dart';
 import 'package:oshmobile/core/configuration/models/model_configuration.dart';
 
-class RuntimeMqttContractRecord {
+class RuntimeContractRecord {
+  final String domain;
   final String contractId;
   final Map<String, dynamic> definition;
 
-  const RuntimeMqttContractRecord({
+  const RuntimeContractRecord({
+    required this.domain,
     required this.contractId,
     required this.definition,
   });
 
-  factory RuntimeMqttContractRecord.fromJson(Map<String, dynamic> json) {
+  factory RuntimeContractRecord.fromJson(Map<String, dynamic> json) {
     final rawDefinition = json['definition'];
-    return RuntimeMqttContractRecord(
+    return RuntimeContractRecord(
+      domain: json['domain']?.toString() ?? '',
       contractId: json['contract_id']?.toString() ?? '',
       definition: _asMap(rawDefinition),
+    );
+  }
+}
+
+class RuntimeFirmwareVersion {
+  final int major;
+  final int minor;
+
+  const RuntimeFirmwareVersion({
+    required this.major,
+    required this.minor,
+  });
+
+  factory RuntimeFirmwareVersion.fromJson(Map<String, dynamic> json) {
+    return RuntimeFirmwareVersion(
+      major: (json['major'] as num?)?.toInt() ?? 0,
+      minor: (json['minor'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class RuntimeFirmwareCompatibility {
+  final RuntimeFirmwareVersion from;
+  final RuntimeFirmwareVersion? to;
+
+  const RuntimeFirmwareCompatibility({
+    required this.from,
+    this.to,
+  });
+
+  factory RuntimeFirmwareCompatibility.fromJson(Map<String, dynamic> json) {
+    final from = RuntimeFirmwareVersion.fromJson(_asMap(json['from']));
+    final rawTo = json['to'];
+    return RuntimeFirmwareCompatibility(
+      from: from,
+      to: rawTo is Map ? RuntimeFirmwareVersion.fromJson(_asMap(rawTo)) : null,
     );
   }
 }
@@ -25,7 +64,9 @@ class DeviceConfigurationBundle {
   final int revision;
   final String status;
   final String firmwareVersion;
-  final Map<String, RuntimeMqttContractRecord> mqttContracts;
+  final RuntimeFirmwareCompatibility? firmwareCompatibility;
+  final Map<String, RuntimeContractRecord> runtimeContractsByDomain;
+  final Map<String, RuntimeContractRecord> runtimeContractsById;
   final Set<String> readableDomains;
   final Set<String> patchableDomains;
   final ModelConfiguration configuration;
@@ -36,25 +77,58 @@ class DeviceConfigurationBundle {
     required this.revision,
     required this.status,
     required this.firmwareVersion,
-    required this.mqttContracts,
+    this.firmwareCompatibility,
+    required this.runtimeContractsByDomain,
+    required this.runtimeContractsById,
     this.readableDomains = const <String>{},
     this.patchableDomains = const <String>{},
     required this.configuration,
   });
 
   factory DeviceConfigurationBundle.fromJson(Map<String, dynamic> json) {
-    final contracts = <String, RuntimeMqttContractRecord>{};
-    final rawContracts = json['mqtt_contracts'];
-    if (rawContracts is List) {
+    final configuration = ModelConfiguration.fromJson(
+      _asMap(json['configuration']),
+    );
+    final domainByContractId = <String, String>{
+      for (final entry in configuration.oshmobile.domains.entries)
+        entry.value.contractId: entry.key,
+    };
+
+    final byDomain = <String, RuntimeContractRecord>{};
+    final byId = <String, RuntimeContractRecord>{};
+
+    void appendContracts(dynamic rawContracts) {
+      if (rawContracts is! List) return;
       for (final raw in rawContracts) {
         if (raw is! Map) continue;
-        final record = RuntimeMqttContractRecord.fromJson(
+        final record = RuntimeContractRecord.fromJson(
           raw.cast<String, dynamic>(),
         );
         if (record.contractId.isEmpty) continue;
-        contracts[record.contractId] = record;
+
+        final domain = record.domain.isNotEmpty
+            ? record.domain
+            : (domainByContractId[record.contractId] ?? '');
+        if (domain.isEmpty) continue;
+
+        final normalized = RuntimeContractRecord(
+          domain: domain,
+          contractId: record.contractId,
+          definition: record.definition,
+        );
+
+        byDomain[domain] = normalized;
+        byId.putIfAbsent(record.contractId, () => normalized);
       }
     }
+
+    appendContracts(json['runtime_contracts']);
+    if (byDomain.isEmpty) {
+      // Legacy backend format support: [{"contract_id","definition"}]
+      appendContracts(json['mqtt_contracts']);
+    }
+
+    final rawFirmwareCompatibility = json['firmware_compatibility'];
 
     return DeviceConfigurationBundle(
       configurationId: json['configuration_id']?.toString() ?? '',
@@ -62,10 +136,13 @@ class DeviceConfigurationBundle {
       revision: (json['revision'] as num?)?.toInt() ?? 0,
       status: json['status']?.toString() ?? '',
       firmwareVersion: json['firmware_version']?.toString() ?? '',
-      mqttContracts: Map.unmodifiable(contracts),
-      configuration: ModelConfiguration.fromJson(
-        _asMap(json['configuration']),
-      ),
+      firmwareCompatibility: rawFirmwareCompatibility is Map
+          ? RuntimeFirmwareCompatibility.fromJson(
+              _asMap(rawFirmwareCompatibility))
+          : null,
+      runtimeContractsByDomain: Map.unmodifiable(byDomain),
+      runtimeContractsById: Map.unmodifiable(byId),
+      configuration: configuration,
     );
   }
 
@@ -75,7 +152,9 @@ class DeviceConfigurationBundle {
     int? revision,
     String? status,
     String? firmwareVersion,
-    Map<String, RuntimeMqttContractRecord>? mqttContracts,
+    RuntimeFirmwareCompatibility? firmwareCompatibility,
+    Map<String, RuntimeContractRecord>? runtimeContractsByDomain,
+    Map<String, RuntimeContractRecord>? runtimeContractsById,
     Set<String>? readableDomains,
     Set<String>? patchableDomains,
     ModelConfiguration? configuration,
@@ -86,7 +165,11 @@ class DeviceConfigurationBundle {
       revision: revision ?? this.revision,
       status: status ?? this.status,
       firmwareVersion: firmwareVersion ?? this.firmwareVersion,
-      mqttContracts: mqttContracts ?? this.mqttContracts,
+      firmwareCompatibility:
+          firmwareCompatibility ?? this.firmwareCompatibility,
+      runtimeContractsByDomain:
+          runtimeContractsByDomain ?? this.runtimeContractsByDomain,
+      runtimeContractsById: runtimeContractsById ?? this.runtimeContractsById,
       readableDomains: readableDomains ?? this.readableDomains,
       patchableDomains: patchableDomains ?? this.patchableDomains,
       configuration: configuration ?? this.configuration,
@@ -104,10 +187,13 @@ class DeviceConfigurationBundle {
   ConfigurationDomainContract? domainContract(String domain) =>
       configuration.oshmobile.domains[domain];
 
-  RuntimeMqttContractRecord? resolvedContract(String domain) {
+  RuntimeContractRecord? resolvedContract(String domain) {
+    final direct = runtimeContractsByDomain[domain];
+    if (direct != null) return direct;
+
     final contractId = domainContract(domain)?.contractId;
     if (contractId == null || contractId.isEmpty) return null;
-    return mqttContracts[contractId];
+    return runtimeContractsById[contractId];
   }
 
   bool canReadDomain(String domain) => readableDomains.contains(domain);

@@ -1,206 +1,42 @@
-bool validateSettingsSetPayload(Map<String, dynamic> data) {
-  const allowedTop = {'display', 'update', 'time', 'control'};
-  if (!_hasOnlyKeys(data, allowedTop)) return false;
+import 'package:oshmobile/core/contracts/runtime_json_schema_validator.dart';
 
-  final displayRaw = data['display'];
-  final updateRaw = data['update'];
-  final timeRaw = data['time'];
-  final controlRaw = data['control'];
-  if (displayRaw is! Map || updateRaw is! Map || timeRaw is! Map) return false;
-  if (controlRaw != null && controlRaw is! Map) return false;
+class SettingsPayloadValidator {
+  final Map<String, dynamic>? _stateSchema;
+  final Map<String, dynamic>? _setSchema;
+  final Map<String, dynamic>? _patchSchema;
 
-  final ok = _validateDisplay(displayRaw.cast<String, dynamic>(),
-          requireAll: true) &&
-      _validateUpdate(updateRaw.cast<String, dynamic>(), requireAll: true) &&
-      _validateTime(timeRaw.cast<String, dynamic>(), requireAll: true);
-  if (!ok) return false;
+  const SettingsPayloadValidator({
+    Map<String, dynamic>? stateSchema,
+    Map<String, dynamic>? setSchema,
+    Map<String, dynamic>? patchSchema,
+  })  : _stateSchema = stateSchema,
+        _setSchema = setSchema,
+        _patchSchema = patchSchema;
 
-  if (controlRaw != null &&
-      !_validateControl(controlRaw.cast<String, dynamic>(), requireAll: true)) {
-    return false;
+  bool validateStatePayload(Map<String, dynamic> data) {
+    final schema = _stateSchema ?? _setSchema ?? _patchSchema;
+    if (schema == null) return false;
+    return RuntimeJsonSchemaValidator.validate(
+      value: data,
+      schema: schema,
+    );
   }
 
-  return true;
-}
-
-bool validateSettingsPatchPayload(Map<String, dynamic> data) {
-  const allowedTop = {'display', 'update', 'time', 'control'};
-  if (!_hasOnlyKeys(data, allowedTop)) return false;
-
-  final displayRaw = data['display'];
-  final updateRaw = data['update'];
-  final timeRaw = data['time'];
-  final controlRaw = data['control'];
-
-  if (displayRaw != null) {
-    if (displayRaw is! Map) return false;
-    if (!_validateDisplay(displayRaw.cast<String, dynamic>(),
-        requireAll: false)) return false;
+  bool validateSetPayload(Map<String, dynamic> data) {
+    final schema = _setSchema ?? _stateSchema ?? _patchSchema;
+    if (schema == null) return false;
+    return RuntimeJsonSchemaValidator.validate(
+      value: data,
+      schema: schema,
+    );
   }
 
-  if (updateRaw != null) {
-    if (updateRaw is! Map) return false;
-    if (!_validateUpdate(updateRaw.cast<String, dynamic>(), requireAll: false))
-      return false;
+  bool validatePatchPayload(Map<String, dynamic> data) {
+    final schema = _patchSchema ?? _setSchema ?? _stateSchema;
+    if (schema == null) return false;
+    return RuntimeJsonSchemaValidator.validate(
+      value: data,
+      schema: schema,
+    );
   }
-
-  if (timeRaw != null) {
-    if (timeRaw is! Map) return false;
-    if (!_validateTime(timeRaw.cast<String, dynamic>(), requireAll: false))
-      return false;
-  }
-
-  if (controlRaw != null) {
-    if (controlRaw is! Map) return false;
-    if (!_validateControl(controlRaw.cast<String, dynamic>(),
-        requireAll: false)) return false;
-  }
-
-  return true;
-}
-
-bool _validateDisplay(Map<String, dynamic> data, {required bool requireAll}) {
-  const allowed = {
-    'activeBrightness',
-    'idleBrightness',
-    'idleTime',
-    'dimOnIdle',
-    'language'
-  };
-  if (!_hasOnlyKeys(data, allowed)) return false;
-  if (requireAll && !_hasRequiredKeys(data, allowed)) return false;
-
-  int? activeBrightness;
-  if (data.containsKey('activeBrightness')) {
-    activeBrightness = _asIntStrict(data['activeBrightness']);
-    if (activeBrightness == null ||
-        activeBrightness < 10 ||
-        activeBrightness > 100) return false;
-  }
-
-  int? idleBrightness;
-  if (data.containsKey('idleBrightness')) {
-    idleBrightness = _asIntStrict(data['idleBrightness']);
-    if (idleBrightness == null || idleBrightness < 10 || idleBrightness > 100)
-      return false;
-  }
-  if (activeBrightness != null &&
-      idleBrightness != null &&
-      idleBrightness > activeBrightness) {
-    return false;
-  }
-
-  if (data.containsKey('idleTime')) {
-    final v = _asIntStrict(data['idleTime']);
-    if (v == null || v < 0 || v > 60) return false;
-  }
-  if (data.containsKey('dimOnIdle')) {
-    final v = data['dimOnIdle'];
-    if (v is! bool) return false;
-  }
-  if (data.containsKey('language')) {
-    final v = data['language'];
-    if (v is! String) return false;
-    if (v != 'en' && v != 'uk') return false;
-  }
-
-  return true;
-}
-
-bool _validateUpdate(Map<String, dynamic> data, {required bool requireAll}) {
-  const allowed = {'autoUpdateEnabled', 'updateAtMidnight', 'checkIntervalMin'};
-  if (!_hasOnlyKeys(data, allowed)) return false;
-  if (requireAll && !_hasRequiredKeys(data, allowed)) return false;
-
-  if (data.containsKey('autoUpdateEnabled')) {
-    final v = data['autoUpdateEnabled'];
-    if (v is! bool) return false;
-  }
-  if (data.containsKey('updateAtMidnight')) {
-    final v = data['updateAtMidnight'];
-    if (v is! bool) return false;
-  }
-  if (data.containsKey('checkIntervalMin')) {
-    final v = _asIntStrict(data['checkIntervalMin']);
-    if (v == null || v < 1 || v > 1440) return false;
-  }
-
-  return true;
-}
-
-bool _validateTime(Map<String, dynamic> data, {required bool requireAll}) {
-  const allowed = {'auto', 'timeZone'};
-  if (!_hasOnlyKeys(data, allowed)) return false;
-  if (requireAll && !_hasRequiredKeys(data, allowed)) return false;
-
-  if (data.containsKey('auto')) {
-    final v = data['auto'];
-    if (v is! bool) return false;
-  }
-  if (data.containsKey('timeZone')) {
-    final v = _asIntStrict(data['timeZone']);
-    if (v == null || v < -12 || v > 12) return false;
-  }
-
-  return true;
-}
-
-bool _validateControl(Map<String, dynamic> data, {required bool requireAll}) {
-  const allowed = {
-    'model',
-    'maxFloorTemp',
-    'maxFloorTempLimitEnabled',
-    'maxFloorTempFailSafe',
-  };
-  const required = {'model'};
-  if (!_hasOnlyKeys(data, allowed)) return false;
-  if (requireAll && !_hasRequiredKeys(data, required)) return false;
-
-  if (data.containsKey('model')) {
-    final v = data['model'];
-    if (v is! String) return false;
-    if (v != 'tpi' && v != 'r2c') return false;
-  }
-  if (data.containsKey('maxFloorTemp')) {
-    final v = _asNum(data['maxFloorTemp']);
-    if (v == null || v < 10 || v > 50) return false;
-  }
-  if (data.containsKey('maxFloorTempLimitEnabled')) {
-    final v = data['maxFloorTempLimitEnabled'];
-    if (v is! bool) return false;
-  }
-  if (data.containsKey('maxFloorTempFailSafe')) {
-    final v = data['maxFloorTempFailSafe'];
-    if (v is! bool) return false;
-  }
-
-  return true;
-}
-
-bool _hasOnlyKeys(Map<String, dynamic> map, Set<String> allowed) {
-  for (final key in map.keys) {
-    if (!allowed.contains(key)) return false;
-  }
-  return true;
-}
-
-bool _hasRequiredKeys(Map<String, dynamic> map, Set<String> required) {
-  for (final key in required) {
-    if (!map.containsKey(key)) return false;
-  }
-  return true;
-}
-
-int? _asIntStrict(dynamic v) {
-  if (v is int) return v;
-  if (v is num) {
-    if (v % 1 != 0) return null;
-    return v.toInt();
-  }
-  return null;
-}
-
-num? _asNum(dynamic v) {
-  if (v is num) return v;
-  return null;
 }

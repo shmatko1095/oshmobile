@@ -6,7 +6,7 @@ import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/core/utils/stream_waiters.dart';
-import 'package:oshmobile/features/sensors/data/sensors_payload_validator.dart';
+import 'package:oshmobile/features/sensors/data/sensors_jsonrpc_codec.dart';
 import 'package:oshmobile/features/sensors/data/sensors_topics.dart';
 import 'package:oshmobile/features/sensors/domain/repositories/sensors_repository.dart';
 
@@ -16,6 +16,7 @@ class SensorsRepositoryMqtt implements SensorsRepository {
   final DeviceRuntimeContracts _contracts;
   final String _deviceSn;
   final Duration timeout;
+  SensorsJsonRpcCodec? _codec;
 
   StreamController<SensorsState>? _ctrl;
   int _refs = 0;
@@ -116,10 +117,7 @@ class SensorsRepositoryMqtt implements SensorsRepository {
     if (_disposed) throw StateError('SensorsRepositoryMqtt is disposed');
 
     final id = reqId ?? newReqId();
-    final data = payload.toJson();
-    if (!validateSensorsSetPayload(data)) {
-      throw FormatException('Invalid sensors.set payload');
-    }
+    final data = _codecOrThrow().encodeSet(payload);
 
     final resp = await _request(
       method: _methodSet,
@@ -137,10 +135,7 @@ class SensorsRepositoryMqtt implements SensorsRepository {
     if (_disposed) throw StateError('SensorsRepositoryMqtt is disposed');
 
     final id = reqId ?? newReqId();
-    final data = patch.toJson();
-    if (!validateSensorsPatchPayload(data)) {
-      throw FormatException('Invalid sensors.patch payload');
-    }
+    final data = _codecOrThrow().encodePatch(patch);
 
     final resp = await _request(
       method: _methodPatch,
@@ -207,7 +202,7 @@ class SensorsRepositoryMqtt implements SensorsRepository {
       final data = notif.data;
       if (data == null) return;
 
-      final snap = SensorsState.fromJson(data);
+      final snap = _codecOrThrow().decodeState(data);
       if (snap == null) return;
 
       _emitSnapshot(snap);
@@ -254,6 +249,15 @@ class SensorsRepositoryMqtt implements SensorsRepository {
       return null;
     }
 
-    return SensorsState.fromJson(data);
+    return _codecOrThrow().decodeState(data);
+  }
+
+  SensorsJsonRpcCodec _codecOrThrow() {
+    final existing = _codec;
+    if (existing != null) return existing;
+
+    final codec = SensorsJsonRpcCodec.fromRuntimeContract(_contracts.sensors);
+    _codec = codec;
+    return codec;
   }
 }

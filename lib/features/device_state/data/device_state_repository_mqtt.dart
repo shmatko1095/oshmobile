@@ -5,6 +5,7 @@ import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/device_state_models.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
+import 'package:oshmobile/features/device_state/data/device_state_jsonrpc_codec.dart';
 import 'package:oshmobile/features/device_state/data/device_state_topics.dart';
 import 'package:oshmobile/features/device_state/domain/repositories/device_state_repository.dart';
 
@@ -14,6 +15,7 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
   final DeviceRuntimeContracts _contracts;
   final String _deviceSn;
   final Duration timeout;
+  DeviceStateJsonRpcCodec? _codec;
 
   StreamController<DeviceStatePayload>? _ctrl;
   int _refs = 0;
@@ -47,6 +49,7 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
 
     _stateSub = null;
     _ctrl = null;
+    _codec = null;
     _refs = 0;
     _last = null;
 
@@ -80,7 +83,7 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
       throw StateError('Invalid device state schema: ${resp.meta!.schema}');
     }
 
-    final parsed = DeviceStatePayload.tryParse(data);
+    final parsed = _codecOrThrow().decodeState(data);
     if (parsed == null) throw StateError('Invalid device state payload');
     _emitSnapshot(parsed);
     return parsed;
@@ -133,7 +136,7 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
       final data = notif.data;
       if (data == null) return;
 
-      final snap = DeviceStatePayload.tryParse(data);
+      final snap = _codecOrThrow().decodeState(data);
       if (snap == null) return;
       _emitSnapshot(snap);
     });
@@ -169,5 +172,15 @@ class DeviceStateRepositoryMqtt implements DeviceStateRepository {
       timeout: timeout,
       timeoutMessage: timeoutMessage,
     );
+  }
+
+  DeviceStateJsonRpcCodec _codecOrThrow() {
+    final existing = _codec;
+    if (existing != null) return existing;
+
+    final codec =
+        DeviceStateJsonRpcCodec.fromRuntimeContract(_contracts.device);
+    _codec = codec;
+    return codec;
   }
 }

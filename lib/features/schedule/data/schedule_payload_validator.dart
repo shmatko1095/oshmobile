@@ -1,11 +1,11 @@
 import 'package:oshmobile/core/contracts/runtime_json_schema_validator.dart';
 
-class SensorsPayloadValidator {
+class SchedulePayloadValidator {
   final Map<String, dynamic>? _stateSchema;
   final Map<String, dynamic>? _setSchema;
   final Map<String, dynamic>? _patchSchema;
 
-  const SensorsPayloadValidator({
+  const SchedulePayloadValidator({
     Map<String, dynamic>? stateSchema,
     Map<String, dynamic>? setSchema,
     Map<String, dynamic>? patchSchema,

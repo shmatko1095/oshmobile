@@ -132,19 +132,6 @@ class DeviceTelemetryApiImpl implements DeviceTelemetryApi {
   }
 
   Map<String, dynamic> _serialize(TelemetryState state) {
-    return <String, dynamic>{
-      'climate_sensors': [
-        for (final item in state.climateSensors)
-          <String, dynamic>{
-            'id': item.id,
-            'temp_valid': item.tempValid,
-            'humidity_valid': item.humidityValid,
-            if (item.temp != null) 'temp': item.temp,
-            if (item.humidity != null) 'humidity': item.humidity,
-          },
-      ],
-      'heater_enabled': state.heaterEnabled,
-      'load_factor': state.loadFactor,
-    };
+    return state.toJson();
   }
 }
