@@ -4,6 +4,7 @@ import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
+import 'package:oshmobile/features/sensors/presentation/models/sensor_editor_entry.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class TemperatureMinimalPanel extends StatefulWidget {
@@ -18,6 +19,7 @@ class TemperatureMinimalPanel extends StatefulWidget {
     this.height,
     this.padding = const EdgeInsets.symmetric(vertical: 12),
     this.borderRadius = AppPalette.radiusXl,
+    this.onSensorActionTap,
   });
 
   final String currentBind;
@@ -29,6 +31,7 @@ class TemperatureMinimalPanel extends StatefulWidget {
   final EdgeInsets padding;
   final double borderRadius;
   final VoidCallback? onTap;
+  final ValueChanged<SensorEditorEntry>? onSensorActionTap;
 
   @override
   State<TemperatureMinimalPanel> createState() =>
@@ -182,11 +185,13 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final controlState = context.select<DeviceSnapshotCubit, Map<String, dynamic>>(
+    final controlState =
+        context.select<DeviceSnapshotCubit, Map<String, dynamic>>(
       (c) => c.state.controlState.data ?? const <String, dynamic>{},
     );
 
-    final currentTarget = _asNum(readBind(controlState, widget.currentTargetBind));
+    final currentTarget =
+        _asNum(readBind(controlState, widget.currentTargetBind));
     final nextTarget = readBind(controlState, widget.nextTargetBind);
     final nextTime = _nextTargetTime(nextTarget);
 
@@ -196,9 +201,9 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
     final nextLine = nextTarget is! Map || nextTime == null
         ? null
         : S.of(context).NextAt(
-            '${_fmtNum(_asNum(nextTarget['temp']))}${widget.unit}',
-            _fmtTime(context, nextTime),
-          );
+              '${_fmtNum(_asNum(nextTarget['temp']))}${widget.unit}',
+              _fmtTime(context, nextTime),
+            );
 
     final sensors = _parseSensors(readBind(controlState, widget.sensorsBind));
     _ensureInitialPage(sensors);
@@ -227,6 +232,7 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
               setState(() => _page = nextPage);
             },
             formatNum: _fmtNum,
+            onSensorActionTap: widget.onSensorActionTap,
           );
 
     final panel = Padding(
@@ -342,6 +348,7 @@ class _SensorCarousel extends StatelessWidget {
     required this.nextLine,
     required this.onPageChanged,
     required this.formatNum,
+    required this.onSensorActionTap,
   });
 
   final PageController pageController;
@@ -354,6 +361,7 @@ class _SensorCarousel extends StatelessWidget {
   final String? nextLine;
   final ValueChanged<int> onPageChanged;
   final String Function(num? value, {int fractionDigits}) formatNum;
+  final ValueChanged<SensorEditorEntry>? onSensorActionTap;
 
   @override
   Widget build(BuildContext context) {
@@ -378,6 +386,9 @@ class _SensorCarousel extends StatelessWidget {
                 showScheduleMeta:
                     hasRefSensor ? sensors[index].ref : index == 0,
                 formatNum: formatNum,
+                onActionTap: onSensorActionTap == null
+                    ? null
+                    : () => onSensorActionTap!(sensors[index].toEditorEntry()),
               ),
             ),
           ),
@@ -404,6 +415,7 @@ class _SensorCard extends StatelessWidget {
     required this.nextLine,
     required this.showScheduleMeta,
     required this.formatNum,
+    required this.onActionTap,
   });
 
   final _SensorCardData sensor;
@@ -414,6 +426,7 @@ class _SensorCard extends StatelessWidget {
   final String? nextLine;
   final bool showScheduleMeta;
   final String Function(num? value, {int fractionDigits}) formatNum;
+  final VoidCallback? onActionTap;
 
   @override
   Widget build(BuildContext context) {
@@ -450,25 +463,7 @@ class _SensorCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (sensor.ref)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color:
-                              AppPalette.accentPrimary.withValues(alpha: 0.22),
-                          borderRadius:
-                              BorderRadius.circular(AppPalette.radiusPill),
-                        ),
-                        child: const Text(
-                          'Main',
-                          style: TextStyle(
-                            color: AppPalette.textPrimary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
+                    _SensorCardAction(sensor: sensor, onTap: onActionTap),
                   ],
                 ),
                 if (kindLabel.isNotEmpty) ...[
@@ -554,6 +549,55 @@ class _SensorCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SensorCardAction extends StatelessWidget {
+  const _SensorCardAction({
+    required this.sensor,
+    required this.onTap,
+  });
+
+  final _SensorCardData sensor;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (sensor.ref) {
+      return InkWell(
+        borderRadius: BorderRadius.circular(AppPalette.radiusPill),
+        onTap: onTap,
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppPalette.accentPrimary.withValues(alpha: 0.22),
+            borderRadius: BorderRadius.circular(AppPalette.radiusPill),
+          ),
+          child: Text(
+            S.of(context).SensorMainLabel,
+            style: const TextStyle(
+              color: AppPalette.textPrimary,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return IconButton(
+      onPressed: onTap,
+      tooltip: S.of(context).SensorMoreActions,
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+      visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+      padding: EdgeInsets.zero,
+      splashRadius: 18,
+      icon: const Icon(
+        Icons.more_horiz_rounded,
+        size: 20,
+        color: AppPalette.textSecondary,
       ),
     );
   }
@@ -690,4 +734,17 @@ class _SensorCardData {
   final bool humidityValid;
   final double? temp;
   final double? humidity;
+
+  SensorEditorEntry toEditorEntry() {
+    return SensorEditorEntry(
+      id: id,
+      name: name,
+      ref: ref,
+      kind: kind,
+      tempValid: tempValid,
+      humidityValid: humidityValid,
+      temp: temp,
+      humidity: humidity,
+    );
+  }
 }

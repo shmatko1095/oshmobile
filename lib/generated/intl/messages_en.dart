@@ -43,6 +43,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "ContinueWithGoogle": MessageLookupByLibrary.simpleMessage(
       "Continue with Google",
     ),
+    "DeleteSensor": MessageLookupByLibrary.simpleMessage("Delete sensor"),
     "Deleted": MessageLookupByLibrary.simpleMessage("Deleted"),
     "DeviceDetails": MessageLookupByLibrary.simpleMessage("Device details"),
     "DeviceEditTitle": MessageLookupByLibrary.simpleMessage(
@@ -140,6 +141,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "Search": MessageLookupByLibrary.simpleMessage("Search"),
     "SecureCode": MessageLookupByLibrary.simpleMessage("Secure code"),
     "SendEmail": MessageLookupByLibrary.simpleMessage("Send email"),
+    "SensorCalibration": MessageLookupByLibrary.simpleMessage("Calibration"),
+    "SensorConditions": MessageLookupByLibrary.simpleMessage(
+      "Sensor conditions",
+    ),
+    "SensorMainLabel": MessageLookupByLibrary.simpleMessage("Main"),
+    "SensorMakeMain": MessageLookupByLibrary.simpleMessage("Make main sensor"),
+    "SensorMoreActions": MessageLookupByLibrary.simpleMessage("Sensor actions"),
+    "SensorNameHint": MessageLookupByLibrary.simpleMessage("Sensor name"),
+    "SensorRename": MessageLookupByLibrary.simpleMessage("Rename sensor"),
     "SerialNumber": MessageLookupByLibrary.simpleMessage("Serial number"),
     "SetTemperature": MessageLookupByLibrary.simpleMessage("Set temperature"),
     "Settings": MessageLookupByLibrary.simpleMessage("Settings"),

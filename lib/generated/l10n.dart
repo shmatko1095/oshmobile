@@ -444,6 +444,81 @@ class S {
     return Intl.message('Name', name: 'Name', desc: '', args: []);
   }
 
+  /// `Rename sensor`
+  String get SensorRename {
+    return Intl.message(
+      'Rename sensor',
+      name: 'SensorRename',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sensor name`
+  String get SensorNameHint {
+    return Intl.message(
+      'Sensor name',
+      name: 'SensorNameHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Calibration`
+  String get SensorCalibration {
+    return Intl.message(
+      'Calibration',
+      name: 'SensorCalibration',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Make main sensor`
+  String get SensorMakeMain {
+    return Intl.message(
+      'Make main sensor',
+      name: 'SensorMakeMain',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete sensor`
+  String get DeleteSensor {
+    return Intl.message(
+      'Delete sensor',
+      name: 'DeleteSensor',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Main`
+  String get SensorMainLabel {
+    return Intl.message('Main', name: 'SensorMainLabel', desc: '', args: []);
+  }
+
+  /// `Sensor actions`
+  String get SensorMoreActions {
+    return Intl.message(
+      'Sensor actions',
+      name: 'SensorMoreActions',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sensor conditions`
+  String get SensorConditions {
+    return Intl.message(
+      'Sensor conditions',
+      name: 'SensorConditions',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Room`
   String get Room {
     return Intl.message('Room', name: 'Room', desc: '', args: []);

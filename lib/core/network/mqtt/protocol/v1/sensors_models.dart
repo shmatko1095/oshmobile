@@ -14,12 +14,6 @@ class SensorPairing {
   });
 
   static SensorPairing? fromJson(Map<String, dynamic> json) {
-    const allowed = {'enabled', 'transport', 'timeout_sec', 'started_ts'};
-    const required = {'enabled', 'transport', 'timeout_sec', 'started_ts'};
-
-    if (!hasOnlyKeys(json, allowed) || !hasRequiredKeys(json, required))
-      return null;
-
     final enabled = asBool(json['enabled']);
     final transport = asString(json['transport']);
     final timeoutSec = asInt(json['timeout_sec']);
@@ -31,8 +25,6 @@ class SensorPairing {
         startedTs == null) {
       return null;
     }
-
-    if (timeoutSec < 0 || startedTs < 0) return null;
 
     return SensorPairing(
       enabled: enabled,
@@ -70,28 +62,6 @@ class SensorMeta {
   });
 
   static SensorMeta? fromJson(Map<String, dynamic> json) {
-    const allowed = {
-      'id',
-      'name',
-      'ref',
-      'transport',
-      'removable',
-      'kind',
-      'temp_calibration'
-    };
-    const required = {
-      'id',
-      'name',
-      'ref',
-      'transport',
-      'removable',
-      'kind',
-      'temp_calibration'
-    };
-
-    if (!hasOnlyKeys(json, allowed) || !hasRequiredKeys(json, required))
-      return null;
-
     final id = asString(json['id']);
     final name = asString(json['name']);
     final ref = asBool(json['ref']);
@@ -109,14 +79,6 @@ class SensorMeta {
       return null;
     }
     if (tempCalibration == null) return null;
-
-    if (!validStringLength(id, min: 1, max: 31)) return null;
-    if (!validStringLength(name, max: 31)) return null;
-    if (tempCalibration < -10 || tempCalibration > 10) return null;
-    if (!_isMultipleOfHalf(tempCalibration)) return null;
-
-    const kinds = {'air', 'floor', 'generic'};
-    if (!kinds.contains(kind)) return null;
 
     return SensorMeta(
       id: id,
@@ -150,12 +112,6 @@ class SensorsState {
   });
 
   static SensorsState? fromJson(Map<String, dynamic> json) {
-    const allowed = {'pairing', 'items'};
-    const required = {'pairing', 'items'};
-
-    if (!hasOnlyKeys(json, allowed) || !hasRequiredKeys(json, required))
-      return null;
-
     final pairingRaw = json['pairing'];
     final itemsRaw = json['items'];
     if (pairingRaw is! Map || itemsRaw is! List) return null;
@@ -192,18 +148,10 @@ class SensorsSetItem {
   });
 
   static SensorsSetItem? fromJson(Map<String, dynamic> json) {
-    const allowed = {'id', 'name', 'ref'};
-    const required = {'id', 'name', 'ref'};
-    if (!hasOnlyKeys(json, allowed) || !hasRequiredKeys(json, required))
-      return null;
-
     final id = asString(json['id']);
     final name = asString(json['name']);
     final ref = asBool(json['ref']);
     if (id == null || name == null || ref == null) return null;
-
-    if (!validStringLength(id, min: 1, max: 31)) return null;
-    if (!validStringLength(name, max: 31)) return null;
 
     return SensorsSetItem(id: id, name: name, ref: ref);
   }
@@ -333,18 +281,11 @@ class ClimateSensorTelemetry {
   });
 
   static ClimateSensorTelemetry? fromJson(Map<String, dynamic> json) {
-    const allowed = {'id', 'temp_valid', 'humidity_valid', 'temp', 'humidity'};
-    const required = {'id', 'temp_valid', 'humidity_valid'};
-
-    if (!hasOnlyKeys(json, allowed) || !hasRequiredKeys(json, required))
-      return null;
-
     final id = asString(json['id']);
     final tempValid = asBool(json['temp_valid']);
     final humidityValid = asBool(json['humidity_valid']);
 
     if (id == null || tempValid == null || humidityValid == null) return null;
-    if (!validStringLength(id, min: 1, max: 31)) return null;
 
     final tempRaw = json['temp'];
     final humidityRaw = json['humidity'];
@@ -386,12 +327,6 @@ class TelemetryState {
   });
 
   static TelemetryState? fromJson(Map<String, dynamic> json) {
-    const allowed = {'climate_sensors', 'heater_enabled', 'load_factor'};
-    const required = {'climate_sensors', 'heater_enabled', 'load_factor'};
-
-    if (!hasOnlyKeys(json, allowed) || !hasRequiredKeys(json, required))
-      return null;
-
     final sensorsRaw = json['climate_sensors'];
     final heaterEnabled = asBool(json['heater_enabled']);
     final loadFactor = asInt(json['load_factor']);
@@ -422,9 +357,4 @@ class TelemetryState {
         'heater_enabled': heaterEnabled,
         'load_factor': loadFactor,
       };
-}
-
-bool _isMultipleOfHalf(double value) {
-  final scaled = value * 2;
-  return (scaled - scaled.round()).abs() < 1e-9;
 }

@@ -25,6 +25,7 @@ class MessageLookup extends MessageLookupByLibrary {
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "About": MessageLookupByLibrary.simpleMessage("Про пристрій"),
+    "DeleteSensor": MessageLookupByLibrary.simpleMessage("Видалити датчик"),
     "DeviceNoSettingsYet": MessageLookupByLibrary.simpleMessage(
       "Цей пристрій поки що не має доступних налаштувань.",
     ),
@@ -37,8 +38,20 @@ class MessageLookup extends MessageLookupByLibrary {
       "Не вдалося завантажити налаштування.",
     ),
     "LastUpdateAt": m1,
+    "Name": MessageLookupByLibrary.simpleMessage("Назва"),
     "NoDataYet": MessageLookupByLibrary.simpleMessage("Дані ще не надійшли"),
     "Retry": MessageLookupByLibrary.simpleMessage("Спробувати знову"),
+    "SensorCalibration": MessageLookupByLibrary.simpleMessage("Калібрування"),
+    "SensorConditions": MessageLookupByLibrary.simpleMessage(
+      "Показники датчика",
+    ),
+    "SensorMainLabel": MessageLookupByLibrary.simpleMessage("Main"),
+    "SensorMakeMain": MessageLookupByLibrary.simpleMessage("Зробити основним"),
+    "SensorMoreActions": MessageLookupByLibrary.simpleMessage("Дії датчика"),
+    "SensorNameHint": MessageLookupByLibrary.simpleMessage("Назва датчика"),
+    "SensorRename": MessageLookupByLibrary.simpleMessage(
+      "Перейменувати датчик",
+    ),
     "UnsavedChanges": MessageLookupByLibrary.simpleMessage("Незбережені зміни"),
     "UnsavedChangesDiscardPrompt": MessageLookupByLibrary.simpleMessage(
       "У вас є незбережені зміни. Скасувати їх і вийти зі сторінки?",

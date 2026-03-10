@@ -9,8 +9,9 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/widge
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/load_factor_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/outlet_temp_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/power_card.dart';
-import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
+import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
+import 'package:oshmobile/features/sensors/presentation/open_sensor_editor.dart';
 
 import 'device_presenter.dart';
 
@@ -49,10 +50,13 @@ class ThermostatBasicPresenter implements DevicePresenter {
                   nextTargetBind: heroNextTargetBind,
                   unit: '°C',
                   height: MediaQuery.sizeOf(context).height * 0.38,
-                  onTap: scheduleWritable
-                      ? () =>
-                          ThermostatModeNavigator.openForCurrentMode(context)
-                      : null,
+                  onTap: scheduleWritable ? () => ThermostatModeNavigator.openForCurrentMode(context) : null,
+                  onSensorActionTap: (sensor) {
+                    SensorEditorNavigator.openFromHost(
+                      context,
+                      sensor: sensor,
+                    );
+                  },
                 ),
               ),
             ),
@@ -189,10 +193,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
       for (final mode in CalendarMode.all) mode.id: mode,
     };
 
-    return ids
-        .map((id) => all[id])
-        .whereType<CalendarMode>()
-        .toList(growable: false);
+    return ids.map((id) => all[id]).whereType<CalendarMode>().toList(growable: false);
   }
 
   String _widgetControl(
