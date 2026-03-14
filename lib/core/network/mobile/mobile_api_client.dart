@@ -73,14 +73,81 @@ class MobileApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> getMyDeviceTelemetryHistoryRaw({
+    required String serial,
+    required String seriesKey,
+    required DateTime from,
+    required DateTime to,
+    String resolution = 'auto',
+    String apiVersion = 'v1',
+  }) async {
+    final response = await _sendVersioned(
+      'GET',
+      '/devices/$serial/telemetry/history',
+      apiVersion: apiVersion,
+      queryParameters: {
+        'series_key': seriesKey,
+        'from': from.toUtc().toIso8601String(),
+        'to': to.toUtc().toIso8601String(),
+        'resolution': resolution,
+      },
+    );
+
+    final body = _decodeMap(response.body);
+    if (!response.isSuccessful || body == null) {
+      throw ServerException(_errorMessage(response));
+    }
+    return body;
+  }
+
   Future<Response<dynamic>> _send(
     String method,
     String path, {
     Map<String, dynamic>? body,
   }) async {
-    final uri = Uri.parse('${AppSecrets.oshApiEndpoint}/mobile$path');
+    return _sendVersioned(
+      method,
+      path,
+      apiVersion: 'v1',
+      body: body,
+    );
+  }
+
+  Future<Response<dynamic>> _sendVersioned(
+    String method,
+    String path, {
+    required String apiVersion,
+    Map<String, dynamic>? body,
+    Map<String, String>? queryParameters,
+  }) async {
+    final root = _apiRootForVersion(apiVersion);
+    final baseUri = Uri.parse('$root/mobile$path');
+    final uri = (queryParameters == null || queryParameters.isEmpty)
+        ? baseUri
+        : baseUri.replace(queryParameters: {
+            ...baseUri.queryParameters,
+            ...queryParameters,
+          });
+
     final request = Request(method, uri, _client.baseUrl, body: body);
     return _client.send<dynamic, dynamic>(request);
+  }
+
+  String _apiRootForVersion(String apiVersion) {
+    final normalized = apiVersion.trim().toLowerCase();
+    if (normalized.isEmpty || normalized == 'v1') {
+      return AppSecrets.oshApiEndpoint;
+    }
+
+    final uri = Uri.parse(AppSecrets.oshApiEndpoint);
+    final segments = List<String>.from(uri.pathSegments);
+    if (segments.isNotEmpty && segments.last.toLowerCase().startsWith('v')) {
+      segments[segments.length - 1] = normalized;
+    } else {
+      segments.add(normalized);
+    }
+
+    return uri.replace(pathSegments: segments).toString();
   }
 
   Device _deviceFromSummary(Map<String, dynamic> json) {

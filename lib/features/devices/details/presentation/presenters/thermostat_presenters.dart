@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_history_strip_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_mode_bar.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/delta_temp_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/heating_status_card.dart';
@@ -12,6 +13,7 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/widge
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
 import 'package:oshmobile/features/sensors/presentation/open_sensor_editor.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/open_telemetry_history.dart';
 
 import 'device_presenter.dart';
 
@@ -24,7 +26,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
     Device device,
     DeviceConfigurationBundle bundle,
   ) {
-    final tiles = _buildTiles(bundle);
+    final tiles = _buildTiles(context, bundle);
     final showHero = bundle.canRenderWidget('heroTemperature');
     final showModeBar = bundle.canRenderWidget('modeBar');
     final visibleModes = _visibleModes(bundle);
@@ -50,7 +52,10 @@ class ThermostatBasicPresenter implements DevicePresenter {
                   nextTargetBind: heroNextTargetBind,
                   unit: '°C',
                   height: MediaQuery.sizeOf(context).height * 0.38,
-                  onTap: scheduleWritable ? () => ThermostatModeNavigator.openForCurrentMode(context) : null,
+                  onTap: scheduleWritable
+                      ? () =>
+                          ThermostatModeNavigator.openForCurrentMode(context)
+                      : null,
                   onSensorActionTap: (sensor) {
                     SensorEditorNavigator.openFromHost(
                       context,
@@ -69,6 +74,22 @@ class ThermostatBasicPresenter implements DevicePresenter {
                     visibleModes: visibleModes,
                     writable: scheduleWritable,
                   )),
+            ),
+          if (showHero && heroSensorsBind.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: TemperatureHistoryStripCard(
+                  sensorsBind: heroSensorsBind,
+                  onOpenHistory: (sensorId, sensorName) {
+                    TelemetryHistoryNavigator.openTemperatureFromHost(
+                      context,
+                      sensorId: sensorId,
+                      sensorName: sensorName,
+                    );
+                  },
+                ),
+              ),
             ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
@@ -109,7 +130,8 @@ class ThermostatBasicPresenter implements DevicePresenter {
     return ids;
   }
 
-  List<_Tile> _buildTiles(DeviceConfigurationBundle bundle) {
+  List<_Tile> _buildTiles(
+      BuildContext context, DeviceConfigurationBundle bundle) {
     final tiles = <_Tile>[];
 
     if (bundle.canRenderWidget('heatingToggle')) {
@@ -120,6 +142,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
           builder: () => HeatingStatusCard(
             bind: bind,
             title: 'Heating',
+            onTap: () => TelemetryHistoryNavigator.openHeatingFromHost(context),
           ),
         ),
       );
@@ -132,6 +155,8 @@ class ThermostatBasicPresenter implements DevicePresenter {
           id: 'loadFactor24h',
           builder: () => LoadFactorKpiCard(
             percentBind: bind,
+            onTap: () =>
+                TelemetryHistoryNavigator.openLoadFactorFromHost(context),
           ),
         ),
       );
@@ -193,7 +218,10 @@ class ThermostatBasicPresenter implements DevicePresenter {
       for (final mode in CalendarMode.all) mode.id: mode,
     };
 
-    return ids.map((id) => all[id]).whereType<CalendarMode>().toList(growable: false);
+    return ids
+        .map((id) => all[id])
+        .whereType<CalendarMode>()
+        .toList(growable: false);
   }
 
   String _widgetControl(

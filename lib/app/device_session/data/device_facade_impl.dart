@@ -5,6 +5,7 @@ import 'package:oshmobile/app/device_session/data/apis/device_schedule_api_impl.
 import 'package:oshmobile/app/device_session/data/apis/device_sensors_api_impl.dart';
 import 'package:oshmobile/app/device_session/data/apis/device_settings_api_impl.dart';
 import 'package:oshmobile/app/device_session/data/apis/device_telemetry_api_impl.dart';
+import 'package:oshmobile/app/device_session/data/apis/device_telemetry_history_api_impl.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart';
@@ -22,6 +23,7 @@ import 'package:oshmobile/features/settings/domain/repositories/settings_reposit
 import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema.dart';
 import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema_builder.dart';
 import 'package:oshmobile/features/sensors/domain/repositories/sensors_repository.dart';
+import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_history.dart';
 
 class DeviceFacadeImpl implements DeviceFacade {
   final DeviceContext _ctx;
@@ -36,6 +38,7 @@ class DeviceFacadeImpl implements DeviceFacade {
   late final DeviceSettingsApiImpl _settingsApi;
   late final DeviceSensorsApiImpl _sensorsApi;
   late final DeviceTelemetryApiImpl _telemetryApi;
+  late final DeviceTelemetryHistoryApiImpl _telemetryHistoryApi;
   late final DeviceAboutApiImpl _aboutApi;
 
   final StreamController<DeviceSnapshot> _snapshots =
@@ -59,6 +62,9 @@ class DeviceFacadeImpl implements DeviceFacade {
   late final DeviceTelemetryApi telemetry = _telemetryApi;
 
   @override
+  late final DeviceTelemetryHistoryApi telemetryHistory = _telemetryHistoryApi;
+
+  @override
   late final DeviceAboutApi about = _aboutApi;
 
   DeviceSnapshot _current;
@@ -77,6 +83,7 @@ class DeviceFacadeImpl implements DeviceFacade {
     required SensorsRepository sensorsRepo,
     required SettingsUiSchemaBuilder settingsUiSchemaBuilder,
     required ControlStateResolver controlStateResolver,
+    required GetTelemetryHistory getTelemetryHistory,
   })  : _ctx = ctx,
         _bootstrapDevice = bootstrapDevice,
         _pageCubit = pageCubit,
@@ -101,6 +108,10 @@ class DeviceFacadeImpl implements DeviceFacade {
     _telemetryApi = DeviceTelemetryApiImpl(
       repo: telemetryRepo,
       onChanged: _publish,
+    );
+    _telemetryHistoryApi = DeviceTelemetryHistoryApiImpl(
+      deviceSn: _ctx.deviceSn,
+      getTelemetryHistory: getTelemetryHistory,
     );
     _aboutApi = DeviceAboutApiImpl(
       repo: aboutRepo,

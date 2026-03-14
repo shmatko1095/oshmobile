@@ -62,6 +62,11 @@ import 'package:oshmobile/features/home/domain/usecases/get_user_devices.dart';
 import 'package:oshmobile/features/home/domain/usecases/unassign_device.dart';
 import 'package:oshmobile/features/home/domain/usecases/update_device_user_data.dart';
 import 'package:oshmobile/features/home/utils/selected_device_storage.dart';
+import 'package:oshmobile/features/telemetry_history/data/datasources/telemetry_history_remote_data_source.dart';
+import 'package:oshmobile/features/telemetry_history/data/datasources/telemetry_history_remote_data_source_impl.dart';
+import 'package:oshmobile/features/telemetry_history/data/repositories/telemetry_history_repository_impl.dart';
+import 'package:oshmobile/features/telemetry_history/domain/repositories/telemetry_history_repository.dart';
+import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_history.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final locator = GetIt.instance;
@@ -76,6 +81,7 @@ Future<void> initDependencies() async {
   _initAuthFeature();
   _initHomeFeature();
   _initDevicesFeature();
+  _initTelemetryHistoryFeature();
   _initBleProvisioningFeature();
 }
 
@@ -261,6 +267,25 @@ void _initDevicesFeature() {
     ..registerSingleton<DevicePresenterRegistry>(const DevicePresenterRegistry({
       'thermostat_basic': ThermostatBasicPresenter(),
     }));
+}
+
+void _initTelemetryHistoryFeature() {
+  locator
+    ..registerFactory<TelemetryHistoryRemoteDataSource>(
+      () => TelemetryHistoryRemoteDataSourceImpl(
+        mobileApiClient: locator<MobileApiClient>(),
+      ),
+    )
+    ..registerFactory<TelemetryHistoryRepository>(
+      () => TelemetryHistoryRepositoryImpl(
+        remote: locator<TelemetryHistoryRemoteDataSource>(),
+      ),
+    )
+    ..registerFactory<GetTelemetryHistory>(
+      () => GetTelemetryHistory(
+        repository: locator<TelemetryHistoryRepository>(),
+      ),
+    );
 }
 
 void _initBleProvisioningFeature() {

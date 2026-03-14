@@ -10,10 +10,12 @@ class HeatingStatusCard extends StatelessWidget {
     super.key,
     required this.bind,
     this.title = 'Heating',
+    this.onTap,
   });
 
   final String bind;
   final String title;
+  final VoidCallback? onTap;
 
   bool _asBool(dynamic v) {
     if (v is bool) return v;
@@ -33,6 +35,7 @@ class HeatingStatusCard extends StatelessWidget {
         : AppPalette.borderSoft;
 
     return AppSolidCard(
+      onTap: onTap,
       radius: AppPalette.radiusXl,
       backgroundColor: AppPalette.surfaceRaised,
       borderColor: borderColor,
@@ -97,6 +100,12 @@ class HeatingStatusCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (onTap != null)
+                    const Icon(
+                      Icons.show_chart_rounded,
+                      size: 16,
+                      color: AppPalette.textMuted,
+                    ),
                 ],
               ),
               const Spacer(),

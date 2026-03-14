@@ -135,7 +135,7 @@ class _MyAppState extends State<MyApp> {
       listener: (context, state) => _handleAuthTransition(state),
       child: MaterialApp(
         key: ValueKey('nav_$_sessionEpoch'),
-        title: 'OSH Mobile',
+        title: 'Oshhome',
         theme: AppTheme.darkTheme,
         darkTheme: AppTheme.darkTheme,
         debugShowCheckedModeBanner: false,

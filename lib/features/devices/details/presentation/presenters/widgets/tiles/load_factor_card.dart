@@ -11,11 +11,13 @@ class LoadFactorKpiCard extends StatelessWidget {
     this.percentBind,
     this.hoursBind,
     this.secondsBind,
+    this.onTap,
   });
 
   final String? percentBind;
   final String? hoursBind;
   final String? secondsBind;
+  final VoidCallback? onTap;
 
   double? _computePercent(Map<String, dynamic> controlState) {
     if (percentBind != null) {
@@ -46,17 +48,21 @@ class LoadFactorKpiCard extends StatelessWidget {
     final percentTxt = percentInt == null ? '—' : '$percentInt%';
 
     return AppSolidCard(
+      onTap: onTap,
       radius: AppPalette.radiusXl,
       backgroundColor: AppPalette.surfaceRaised,
       borderColor: AppPalette.borderSoft,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.insights_rounded,
-                  size: 16, color: AppPalette.textSecondary),
-              SizedBox(width: 6),
+              const Icon(
+                Icons.insights_rounded,
+                size: 16,
+                color: AppPalette.textSecondary,
+              ),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   'Heating activity (24h)',
@@ -68,6 +74,12 @@ class LoadFactorKpiCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (onTap != null)
+                const Icon(
+                  Icons.show_chart_rounded,
+                  size: 16,
+                  color: AppPalette.textMuted,
+                ),
             ],
           ),
           const SizedBox(height: 10),
@@ -118,11 +130,13 @@ class LoadFactorCard extends StatelessWidget {
     this.percentBind,
     this.hoursBind,
     this.secondsBind,
+    this.onTap,
   });
 
   final String? percentBind;
   final String? hoursBind;
   final String? secondsBind;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -130,6 +144,7 @@ class LoadFactorCard extends StatelessWidget {
       percentBind: percentBind,
       hoursBind: hoursBind,
       secondsBind: secondsBind,
+      onTap: onTap,
     );
   }
 }

@@ -13,7 +13,7 @@ class StartupErrorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'OSH Mobile - Startup error',
+      title: 'Oshhome - Startup error',
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: SafeArea(

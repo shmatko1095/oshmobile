@@ -1,6 +1,6 @@
 {
-    "name": "oshmobile",
-    "short_name": "oshmobile",
+    "name": "Oshhome",
+    "short_name": "Oshhome",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
