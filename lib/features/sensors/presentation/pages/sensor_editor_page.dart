@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
-import 'package:oshmobile/app/device_session/scopes/device_route_scope.dart';
 import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
+import 'package:oshmobile/app/device_session/scopes/device_route_scope.dart';
 import 'package:oshmobile/core/common/widgets/app_button.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
@@ -163,15 +163,13 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
           ),
           body: BlocBuilder<DeviceSnapshotCubit, DeviceSnapshot>(
             buildWhen: (previous, current) {
-              return previous.telemetry != current.telemetry ||
-                  previous.details != current.details;
+              return previous.telemetry != current.telemetry || previous.details != current.details;
             },
             builder: (context, snapshot) {
               final telemetry = _findTelemetry(snapshot.telemetry.data);
 
               final tempValid = telemetry?.tempValid ?? widget.sensor.tempValid;
-              final humidityValid =
-                  telemetry?.humidityValid ?? widget.sensor.humidityValid;
+              final humidityValid = telemetry?.humidityValid ?? widget.sensor.humidityValid;
               final temp = telemetry?.temp ?? widget.sensor.temp;
               final humidity = telemetry?.humidity ?? widget.sensor.humidity;
 
@@ -184,8 +182,7 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
                     AppSolidCard(
                       radius: AppPalette.radiusXl,
                       backgroundColor: AppPalette.surfaceRaised,
-                      borderColor:
-                          AppPalette.accentPrimary.withValues(alpha: 0.26),
+                      borderColor: AppPalette.accentPrimary.withValues(alpha: 0.26),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -232,9 +229,7 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    humidityValid
-                                        ? '${_fmtHumidity(humidity)}%'
-                                        : '--',
+                                    humidityValid ? '${_fmtHumidity(humidity)}%' : '--',
                                     style: const TextStyle(
                                       color: AppPalette.textPrimary,
                                       fontWeight: FontWeight.w700,
@@ -245,25 +240,13 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
                               ),
                             ],
                           ),
-                          if (!tempValid || !humidityValid) ...[
-                            const SizedBox(height: 10),
-                            Text(
-                              S.of(context).NoDataYet,
-                              style: const TextStyle(
-                                color: AppPalette.textMuted,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
                     const SizedBox(height: 12),
                     Card(
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppPalette.radiusXl),
+                        borderRadius: BorderRadius.circular(AppPalette.radiusXl),
                       ),
                       child: Column(
                         children: [
@@ -275,12 +258,10 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
                                 ? null
                                 : () {
                                     final facade = context.read<DeviceFacade>();
-                                    final snapshotCubit =
-                                        context.read<DeviceSnapshotCubit>();
+                                    final snapshotCubit = context.read<DeviceSnapshotCubit>();
                                     Navigator.of(context).push(
                                       MaterialPageRoute(
-                                        builder: (_) =>
-                                            DeviceRouteScope.provide(
+                                        builder: (_) => DeviceRouteScope.provide(
                                           facade: facade,
                                           snapshotCubit: snapshotCubit,
                                           child: SensorRenamePage(
@@ -301,19 +282,15 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
                                 ? null
                                 : () async {
                                     final facade = context.read<DeviceFacade>();
-                                    final snapshotCubit =
-                                        context.read<DeviceSnapshotCubit>();
-                                    final saved =
-                                        await Navigator.of(context).push<bool>(
+                                    final snapshotCubit = context.read<DeviceSnapshotCubit>();
+                                    final saved = await Navigator.of(context).push<bool>(
                                       MaterialPageRoute(
-                                        builder: (_) =>
-                                            DeviceRouteScope.provide(
+                                        builder: (_) => DeviceRouteScope.provide(
                                           facade: facade,
                                           snapshotCubit: snapshotCubit,
                                           child: SensorCalibrationPage(
                                             sensorId: sensor.id,
-                                            initialCalibration:
-                                                sensor.tempCalibration,
+                                            initialCalibration: sensor.tempCalibration,
                                           ),
                                         ),
                                       ),
@@ -332,9 +309,7 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
                     AppButton(
                       text: S.of(context).SensorMakeMain,
                       onPressed:
-                          (sensor == null || sensor.ref || _isSettingReference)
-                              ? null
-                              : () => _setReference(sensor),
+                          (sensor == null || sensor.ref || _isSettingReference) ? null : () => _setReference(sensor),
                       isLoading: _isSettingReference,
                     ),
                     const SizedBox(height: 10),

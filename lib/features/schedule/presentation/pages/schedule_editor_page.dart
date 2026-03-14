@@ -1,13 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
-import 'package:oshmobile/app/device_session/domain/device_facade.dart';
-import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
-import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/features/schedule/presentation/pages/manual_temperature_page.dart';
 import 'package:oshmobile/features/schedule/presentation/utils.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -28,6 +28,8 @@ class ScheduleEditorPage extends StatefulWidget {
 
 class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
   int _filterMask = 0;
+  static const double _timePickerSheetHeight = 460;
+  static const double _timePickerWheelHeight = 390;
 
   Future<TimeOfDay?> _showWheelTimePicker(
     BuildContext context, {
@@ -41,7 +43,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
         final use24h = MediaQuery.of(ctx).alwaysUse24HourFormat;
 
         return Container(
-          height: 300,
+          height: _timePickerSheetHeight,
           color: AppPalette.canvas,
           child: SafeArea(
             top: false,
@@ -54,28 +56,23 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                     children: [
                       MaterialButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: Text(S.of(context).Cancel,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text(S.of(context).Cancel, style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                       MaterialButton(
                         onPressed: () => Navigator.pop(ctx, temp),
-                        child: Text(S.of(context).Done,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text(S.of(context).Done, style: const TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
                 ),
-                Expanded(
+                SizedBox(
+                  height: _timePickerWheelHeight,
                   child: CupertinoDatePicker(
                     mode: CupertinoDatePickerMode.time,
-                    initialDateTime:
-                        DateTime(2020, 1, 1, initial.hour, initial.minute),
+                    initialDateTime: DateTime(2020, 1, 1, initial.hour, initial.minute),
                     use24hFormat: use24h,
                     minuteInterval: minuteInterval,
-                    onDateTimeChanged: (dt) =>
-                        temp = TimeOfDay(hour: dt.hour, minute: dt.minute),
+                    onDateTimeChanged: (dt) => temp = TimeOfDay(hour: dt.hour, minute: dt.minute),
                   ),
                 ),
               ],
@@ -86,13 +83,11 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
     );
   }
 
-  String _fmtTime(TimeOfDay t) =>
-      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  String _fmtTime(TimeOfDay t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   String _fmtTemp(double v) => v.toStringAsFixed(1);
 
-  bool _passesFilter(int mask) =>
-      _filterMask == 0 ? true : (mask & _filterMask) != 0;
+  bool _passesFilter(int mask) => _filterMask == 0 ? true : (mask & _filterMask) != 0;
 
   @override
   Widget build(BuildContext context) {
@@ -106,8 +101,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
       ),
       body: BlocListener<DeviceSnapshotCubit, DeviceSnapshot>(
         listenWhen: (prev, next) {
-          return prev.schedule.error != next.schedule.error &&
-              next.schedule.error != null;
+          return prev.schedule.error != next.schedule.error && next.schedule.error != null;
         },
         listener: (context, snap) {
           final msg = snap.schedule.error!;
@@ -119,8 +113,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
               final scheduleSlice = snap.schedule;
               final status = scheduleSlice.status;
 
-              if (status == DeviceSliceStatus.idle ||
-                  status == DeviceSliceStatus.loading) {
+              if (status == DeviceSliceStatus.idle || status == DeviceSliceStatus.loading) {
                 return const Loader();
               }
 
@@ -150,8 +143,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                   final p = items[i].value;
 
                   return Dismissible(
-                    key: ValueKey(
-                        'sp_${idx}_${p.time.hour}_${p.time.minute}_${p.temp}_${p.daysMask}'),
+                    key: ValueKey('sp_${idx}_${p.time.hour}_${p.time.minute}_${p.temp}_${p.daysMask}'),
                     direction: DismissDirection.endToStart,
                     background: const SizedBox.shrink(),
                     secondaryBackground: Container(
@@ -161,8 +153,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                         color: AppPalette.destructiveBg,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(Icons.delete,
-                          color: AppPalette.destructiveFg),
+                      child: const Icon(Icons.delete, color: AppPalette.destructiveFg),
                     ),
                     onDismissed: (_) => facade.schedule.removePoint(idx),
                     child: _ScheduleTile(
@@ -177,20 +168,17 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                           minuteInterval: 1,
                         );
                         if (!mounted || picked == null) return;
-                        facade.schedule
-                            .patchPoint(idx, p.copyWith(time: picked));
+                        facade.schedule.patchPoint(idx, p.copyWith(time: picked));
                       },
                       onDecTemp: () {
                         final next = (p.temp - 0.5).clamp(5.0, 35.0);
                         final newTemp = double.parse(next.toStringAsFixed(1));
-                        facade.schedule
-                            .patchPoint(idx, p.copyWith(temp: newTemp));
+                        facade.schedule.patchPoint(idx, p.copyWith(temp: newTemp));
                       },
                       onIncTemp: () {
                         final next = (p.temp + 0.5).clamp(5.0, 35.0);
                         final newTemp = double.parse(next.toStringAsFixed(1));
-                        facade.schedule
-                            .patchPoint(idx, p.copyWith(temp: newTemp));
+                        facade.schedule.patchPoint(idx, p.copyWith(temp: newTemp));
                       },
                       onToggleDay: (d) {
                         if (!showDays) return;
@@ -241,8 +229,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
             top: false,
             child: _WeekdayFilterBar(
               mask: _filterMask,
-              onToggle: (d) => setState(
-                  () => _filterMask = WeekdayMask.toggle(_filterMask, d)),
+              onToggle: (d) => setState(() => _filterMask = WeekdayMask.toggle(_filterMask, d)),
             ),
           );
         },
@@ -347,8 +334,7 @@ class _ScheduleTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 onTap: onTapTime,
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
                   child: Text(
                     timeText,
                     maxLines: 1,
@@ -447,13 +433,9 @@ class _TempRangeStepper extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        _IconBtn(
-            icon: Icons.keyboard_arrow_down,
-            onTap: onDecTemp,
-            color: _coolBlue),
+        _IconBtn(icon: Icons.keyboard_arrow_down, onTap: onDecTemp, color: _coolBlue),
         const SizedBox(width: 4),
-        _IconBtn(
-            icon: Icons.keyboard_arrow_up, onTap: onIncTemp, color: _warmRed),
+        _IconBtn(icon: Icons.keyboard_arrow_up, onTap: onIncTemp, color: _warmRed),
       ],
     );
   }
@@ -529,20 +511,15 @@ class _DayChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = selected
-        ? AppPalette.accentPrimary.withValues(alpha: 0.24)
-        : Colors.transparent;
-    final bd = selected
-        ? AppPalette.accentPrimary.withValues(alpha: 0.42)
-        : Colors.transparent;
+    final bg = selected ? AppPalette.accentPrimary.withValues(alpha: 0.24) : Colors.transparent;
+    final bd = selected ? AppPalette.accentPrimary.withValues(alpha: 0.42) : Colors.transparent;
     final fg = selected ? Colors.white : AppPalette.textSecondary;
 
     return InkWell(
       borderRadius: BorderRadius.circular(999),
       onTap: onTap,
       child: Ink(
-        padding: EdgeInsets.symmetric(
-            horizontal: dense ? 8 : 10, vertical: dense ? 6 : 8),
+        padding: EdgeInsets.symmetric(horizontal: dense ? 8 : 10, vertical: dense ? 6 : 8),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(999),
