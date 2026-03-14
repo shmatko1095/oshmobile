@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/telemetry_history_series_reader.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_state.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
@@ -7,12 +7,12 @@ import 'package:oshmobile/features/telemetry_history/presentation/models/telemet
 
 class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
   TelemetryHistoryCubit({
-    required DeviceTelemetryHistoryApi telemetryHistoryApi,
+    required TelemetryHistorySeriesReader seriesReader,
     required List<TelemetryHistoryMetric> metrics,
     int initialMetricIndex = 0,
     TelemetryHistoryRange initialRange = TelemetryHistoryRange.day,
     DateTime Function()? nowUtc,
-  })  : _telemetryHistoryApi = telemetryHistoryApi,
+  })  : _seriesReader = seriesReader,
         _nowUtc = nowUtc ?? _defaultNowUtc,
         super(
           TelemetryHistoryState.initial(
@@ -30,7 +30,7 @@ class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
     }
   }
 
-  final DeviceTelemetryHistoryApi _telemetryHistoryApi;
+  final TelemetryHistorySeriesReader _seriesReader;
   final DateTime Function() _nowUtc;
   final Map<String, int> _requestVersionBySeriesKey = <String, int>{};
   int _scopeVersion = 0;
@@ -97,7 +97,7 @@ class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
     final from = now.subtract(state.range.duration);
 
     try {
-      final series = await _telemetryHistoryApi.getSeries(
+      final series = await _seriesReader.getSeries(
         seriesKey: seriesKey,
         from: from,
         to: now,

@@ -177,7 +177,6 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
     required TelemetryHistoryState state,
     required TelemetryHistoryMetric metric,
     required int metricIndex,
-    required List<_RangeOption> rangeOptions,
     required String localeTag,
     required S s,
   }) {
@@ -213,86 +212,54 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
             const SizedBox(height: 10),
           ],
           _SummaryPanel(items: summaryItems),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppPalette.surfaceRaised,
-                borderRadius: BorderRadius.circular(AppPalette.radiusXl),
-                border: Border.all(color: AppPalette.borderSoft),
-              ),
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-              child: Column(
-                children: [
-                  _RangeSelector(
-                    options: rangeOptions,
-                    selectedRange: state.range,
-                    onSelected: (range) {
-                      if (range == state.range) return;
-                      context.read<TelemetryHistoryCubit>().selectRange(range);
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppPalette.surface,
-                        borderRadius:
-                            BorderRadius.circular(AppPalette.radiusLg),
-                        border: Border.all(color: AppPalette.borderSoft),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(10, 12, 10, 10),
-                        child: isLoading
-                            ? const Center(
-                                child: CircularProgressIndicator(),
-                              )
-                            : (errorMessage != null)
-                                ? _ErrorState(
-                                    title: s.TelemetryHistoryLoadFailed,
-                                    message: errorMessage,
-                                    retryLabel: s.Retry,
-                                    onRetry: () => context
-                                        .read<TelemetryHistoryCubit>()
-                                        .reloadMetric(metric),
-                                  )
-                                : isEmpty
-                                    ? _EmptyState(
-                                        title: s.TelemetryHistoryNoData,
-                                      )
-                                    : HistoryLineChart(
-                                        values: values,
-                                        timestamps: timestamps,
-                                        color: metric.kind ==
-                                                TelemetryHistoryMetricKind
-                                                    .boolean
-                                            ? AppPalette.accentWarning
-                                            : AppPalette.accentPrimary,
-                                        strokeWidth: 2.0,
-                                        fill: true,
-                                        showGrid: false,
-                                        showAxes: true,
-                                        enableTouchTooltip: true,
-                                        valueLabelBuilder: (v) =>
-                                            _fmtValue(v, metric),
-                                        xAxisLabelBuilder: (ts) => _xAxisLabel(
-                                          timestamp: ts,
-                                          range: state.range,
-                                          localeTag: localeTag,
-                                        ),
-                                        tooltipBuilder: (ts, value) =>
-                                            _tooltipLabel(
-                                          timestamp: ts,
-                                          value: value,
-                                          metric: metric,
-                                          localeTag: localeTag,
-                                        ),
-                                      ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(2, 4, 2, 0),
+              child: isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  : (errorMessage != null)
+                      ? _ErrorState(
+                          title: s.TelemetryHistoryLoadFailed,
+                          message: errorMessage,
+                          retryLabel: s.Retry,
+                          onRetry: () => context
+                              .read<TelemetryHistoryCubit>()
+                              .reloadMetric(metric),
+                        )
+                      : isEmpty
+                          ? _EmptyState(
+                              title: s.TelemetryHistoryNoData,
+                            )
+                          : HistoryLineChart(
+                              values: values,
+                              timestamps: timestamps,
+                              windowStart: series?.from,
+                              windowEnd: series?.to,
+                              color: metric.kind ==
+                                      TelemetryHistoryMetricKind.boolean
+                                  ? AppPalette.accentWarning
+                                  : AppPalette.accentPrimary,
+                              strokeWidth: 2.0,
+                              fill: true,
+                              showGrid: false,
+                              showAxes: true,
+                              enableTouchTooltip: true,
+                              valueLabelBuilder: (v) => _fmtValue(v, metric),
+                              xAxisLabelBuilder: (ts) => _xAxisLabel(
+                                timestamp: ts,
+                                range: state.range,
+                                localeTag: localeTag,
+                              ),
+                              tooltipBuilder: (ts, value) => _tooltipLabel(
+                                timestamp: ts,
+                                value: value,
+                                metric: metric,
+                                localeTag: localeTag,
+                              ),
+                            ),
             ),
           ),
         ],
@@ -338,16 +305,32 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
                     state: state,
                     metric: state.metrics[index],
                     metricIndex: index,
-                    rangeOptions: rangeOptions,
                     localeTag: localeTag,
                     s: s,
                   ),
                 ),
               ),
+              SafeArea(
+                top: false,
+                minimum: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  state.hasMultipleMetrics ? 4 : 10,
+                ),
+                child: _RangeSelector(
+                  options: rangeOptions,
+                  selectedRange: state.range,
+                  onSelected: (range) {
+                    if (range == state.range) return;
+                    context.read<TelemetryHistoryCubit>().selectRange(range);
+                  },
+                ),
+              ),
               if (state.hasMultipleMetrics)
                 SafeArea(
                   top: false,
-                  minimum: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+                  minimum: const EdgeInsets.fromLTRB(0, 0, 0, 8),
                   child: _PagerDots(
                     count: state.metrics.length,
                     active: state.selectedMetricIndex,
@@ -486,13 +469,8 @@ class _SummaryPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppPalette.surfaceRaised,
-        borderRadius: BorderRadius.circular(AppPalette.radiusXl),
-        border: Border.all(color: AppPalette.borderSoft),
-      ),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Row(
         children: [
           for (var i = 0; i < items.length; i++) ...[
@@ -501,7 +479,7 @@ class _SummaryPanel extends StatelessWidget {
               Container(
                 width: 1,
                 height: 44,
-                color: AppPalette.borderSoft,
+                color: AppPalette.borderSoft.withValues(alpha: 0.9),
               ),
           ],
         ],

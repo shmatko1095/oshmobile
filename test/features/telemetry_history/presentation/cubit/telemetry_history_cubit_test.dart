@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/telemetry_history_series_reader.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_point.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
@@ -23,7 +23,7 @@ class _Request {
   final Completer<TelemetryHistorySeries> completer;
 }
 
-class _QueuedTelemetryHistoryApi implements DeviceTelemetryHistoryApi {
+class _QueuedTelemetryHistoryApi implements TelemetryHistorySeriesReader {
   final List<_Request> requests = <_Request>[];
 
   @override
@@ -75,7 +75,7 @@ void main() {
     final api = _QueuedTelemetryHistoryApi();
     final now = DateTime.utc(2026, 3, 14, 20, 18, 40);
     final cubit = TelemetryHistoryCubit(
-      telemetryHistoryApi: api,
+      seriesReader: api,
       metrics: const <TelemetryHistoryMetric>[
         TelemetryHistoryMetric(
           title: 'Temperature',
@@ -129,7 +129,7 @@ void main() {
     final api = _QueuedTelemetryHistoryApi();
     final now = DateTime.utc(2026, 3, 14, 20, 18, 40);
     final cubit = TelemetryHistoryCubit(
-      telemetryHistoryApi: api,
+      seriesReader: api,
       metrics: const <TelemetryHistoryMetric>[
         TelemetryHistoryMetric(
           title: 'Temperature',

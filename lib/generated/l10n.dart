@@ -1079,30 +1079,30 @@ class S {
     );
   }
 
-  /// `Min`
+  /// `Minimum`
   String get TelemetryHistoryStatMin {
     return Intl.message(
-      'Min',
+      'Minimum',
       name: 'TelemetryHistoryStatMin',
       desc: '',
       args: [],
     );
   }
 
-  /// `Max`
+  /// `Maximum`
   String get TelemetryHistoryStatMax {
     return Intl.message(
-      'Max',
+      'Maximum',
       name: 'TelemetryHistoryStatMax',
       desc: '',
       args: [],
     );
   }
 
-  /// `Avg`
+  /// `Average`
   String get TelemetryHistoryStatAvg {
     return Intl.message(
-      'Avg',
+      'Average',
       name: 'TelemetryHistoryStatAvg',
       desc: '',
       args: [],
@@ -1149,6 +1149,56 @@ class S {
     );
   }
 
+  /// `Load factor`
+  String get TelemetryHistoryMetricLoadFactor {
+    return Intl.message(
+      'Load factor',
+      name: 'TelemetryHistoryMetricLoadFactor',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Heating activity`
+  String get TelemetryHistoryMetricHeatingActivity {
+    return Intl.message(
+      'Heating activity',
+      name: 'TelemetryHistoryMetricHeatingActivity',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Temperature`
+  String get TelemetryHistoryMetricTemperature {
+    return Intl.message(
+      'Temperature',
+      name: 'TelemetryHistoryMetricTemperature',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Temperature trend (24h)`
+  String get TelemetryHistoryPreviewTitle24h {
+    return Intl.message(
+      'Temperature trend (24h)',
+      name: 'TelemetryHistoryPreviewTitle24h',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Temperature trend (24h): no sensor data`
+  String get TelemetryHistoryPreviewNoSensorData {
+    return Intl.message(
+      'Temperature trend (24h): no sensor data',
+      name: 'TelemetryHistoryPreviewNoSensorData',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Resolution: {resolution} • Points: {points}`
   String TelemetryHistoryResolutionPoints(Object resolution, Object points) {
     return Intl.message(
@@ -1156,6 +1206,16 @@ class S {
       name: 'TelemetryHistoryResolutionPoints',
       desc: '',
       args: [resolution, points],
+    );
+  }
+
+  /// `Device scope is not available in the current context.`
+  String get DeviceScopeUnavailableInContext {
+    return Intl.message(
+      'Device scope is not available in the current context.',
+      name: 'DeviceScopeUnavailableInContext',
+      desc: '',
+      args: [],
     );
   }
 

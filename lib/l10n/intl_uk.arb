@@ -21,9 +21,9 @@
   "TelemetryHistoryRangeWeek": "Тиждень",
   "TelemetryHistoryRangeMonth": "Місяць",
   "TelemetryHistoryRangeYear": "Рік",
-  "TelemetryHistoryStatMin": "Мін",
-  "TelemetryHistoryStatMax": "Макс",
-  "TelemetryHistoryStatAvg": "Сер",
+  "TelemetryHistoryStatMin": "Мінімум",
+  "TelemetryHistoryStatMax": "Максимум",
+  "TelemetryHistoryStatAvg": "Середнє",
   "TelemetryHistorySensorLabel": "Температурний датчик",
   "TelemetryHistorySensorPosition": "Датчик {index}/{total}",
   "@TelemetryHistorySensorPosition": {
@@ -34,6 +34,11 @@
   },
   "TelemetryHistoryLoadFailed": "Не вдалося завантажити графік",
   "TelemetryHistoryNoData": "Даних ще немає.",
+  "TelemetryHistoryMetricLoadFactor": "Коефіцієнт навантаження",
+  "TelemetryHistoryMetricHeatingActivity": "Активність нагріву",
+  "TelemetryHistoryMetricTemperature": "Температура",
+  "TelemetryHistoryPreviewTitle24h": "Тренд температури (24 год)",
+  "TelemetryHistoryPreviewNoSensorData": "Тренд температури (24 год): немає даних датчиків",
   "TelemetryHistoryResolutionPoints": "Роздільність: {resolution} • Точки: {points}",
   "@TelemetryHistoryResolutionPoints": {
     "placeholders": {
@@ -41,6 +46,7 @@
       "points": {}
     }
   },
+  "DeviceScopeUnavailableInContext": "Контекст пристрою недоступний у поточному місці.",
   "startupCheckingInternet": "Перевіряємо підключення до інтернету...",
   "startupNoInternetScreenSemantics": "Екран без підключення до інтернету",
   "startupNoInternetTitle": "Немає підключення до інтернету",

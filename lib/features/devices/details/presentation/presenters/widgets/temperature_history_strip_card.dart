@@ -2,18 +2,20 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/app/device_session/domain/models/device_temperature_sensor_ref.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/utils/temperature_sensors_resolver.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/temperature_history_preview_cubit.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/temperature_history_preview_state.dart';
-import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_sensor.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_line_chart.dart';
+import 'package:oshmobile/generated/l10n.dart';
 
 typedef OnOpenTemperatureHistory = void Function(
-  List<TelemetryHistorySensor> sensors,
+  List<DeviceTemperatureSensorRef> sensors,
   String sensorId,
   String sensorName,
 );
@@ -36,7 +38,7 @@ class TemperatureHistoryStripCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => TemperatureHistoryPreviewCubit(
-        telemetryHistoryApi: context.read<DeviceFacade>().telemetryHistory,
+        seriesReader: context.read<DeviceFacade>().telemetryHistory,
       ),
       child: _TemperatureHistoryStripCardView(
         sensorsBind: sensorsBind,
@@ -70,58 +72,15 @@ class _TemperatureHistoryStripCardViewState
     extends State<_TemperatureHistoryStripCardView> {
   bool _ensureScheduled = false;
   String? _scheduledSeriesKey;
-  final List<String> _sensorOrder = <String>[];
+  final TemperatureSensorsResolver _sensorsResolver =
+      TemperatureSensorsResolver();
 
-  List<_SensorTarget> _resolveSensors(dynamic raw) {
-    if (raw is! List) {
-      _sensorOrder.clear();
-      return const <_SensorTarget>[];
-    }
-
-    final sensors = <_SensorTarget>[];
-    for (final item in raw) {
-      if (item is! Map) continue;
-      final map = item.cast<String, dynamic>();
-      final id = (map['id'] ?? '').toString().trim();
-      if (id.isEmpty) continue;
-
-      final nameRaw = (map['name'] ?? '').toString().trim();
-      final name = nameRaw.isEmpty ? id : nameRaw;
-      final ref = map['ref'] == true;
-      final tempValid = map['temp_valid'] == true;
-      sensors.add(
-          _SensorTarget(id: id, name: name, ref: ref, tempValid: tempValid));
-    }
-
-    if (sensors.isEmpty) {
-      _sensorOrder.clear();
-      return const <_SensorTarget>[];
-    }
-
-    final incomingIds = sensors.map((s) => s.id).toSet();
-    _sensorOrder.removeWhere((id) => !incomingIds.contains(id));
-
-    final knownIds = _sensorOrder.toSet();
-    for (final sensor in sensors) {
-      if (!knownIds.contains(sensor.id)) {
-        _sensorOrder.add(sensor.id);
-        knownIds.add(sensor.id);
-      }
-    }
-
-    final byId = <String, _SensorTarget>{
-      for (final sensor in sensors) sensor.id: sensor,
-    };
-    return _sensorOrder
-        .map((id) => byId[id])
-        .whereType<_SensorTarget>()
-        .toList(growable: false);
-  }
-
-  _SensorTarget? _preferredPreviewSensor(List<_SensorTarget> sensors) {
+  TemperatureSensorData? _preferredPreviewSensor(
+    List<TemperatureSensorData> sensors,
+  ) {
     if (sensors.isEmpty) return null;
 
-    final refValid = sensors.where((s) => s.ref && s.tempValid);
+    final refValid = sensors.where((s) => s.isReference && s.tempValid);
     if (refValid.isNotEmpty) {
       return refValid.first;
     }
@@ -134,13 +93,15 @@ class _TemperatureHistoryStripCardViewState
     return sensors.first;
   }
 
-  List<TelemetryHistorySensor> _toHistorySensors(List<_SensorTarget> sensors) {
+  List<DeviceTemperatureSensorRef> _toHistorySensors(
+    List<TemperatureSensorData> sensors,
+  ) {
     return sensors
         .map(
-          (sensor) => TelemetryHistorySensor(
+          (sensor) => DeviceTemperatureSensorRef(
             id: sensor.id,
             name: sensor.name,
-            ref: sensor.ref,
+            isReference: sensor.isReference,
           ),
         )
         .toList(growable: false);
@@ -164,6 +125,7 @@ class _TemperatureHistoryStripCardViewState
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     final cardHeight = widget.height ?? widget.chartHeight;
     final effectiveChartHeight = math.min(widget.chartHeight, cardHeight);
 
@@ -172,7 +134,7 @@ class _TemperatureHistoryStripCardViewState
       (c) => c.state.controlState.data ?? const <String, dynamic>{},
     );
     final sensorsRaw = readBind(controlState, widget.sensorsBind);
-    final sensors = _resolveSensors(sensorsRaw);
+    final sensors = _sensorsResolver.resolve(sensorsRaw);
     final target = _preferredPreviewSensor(sensors);
 
     if (target == null) {
@@ -183,10 +145,10 @@ class _TemperatureHistoryStripCardViewState
         padding: EdgeInsets.zero,
         child: SizedBox(
           height: cardHeight,
-          child: const Align(
+          child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'Temperature trend (24h): no sensor data',
+              s.TelemetryHistoryPreviewNoSensorData,
               style: TextStyle(
                 color: AppPalette.textMuted,
                 fontSize: 13,
@@ -270,7 +232,7 @@ class _TemperatureHistoryStripCardViewState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Temperature trend (24h)',
+                            s.TelemetryHistoryPreviewTitle24h,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -311,18 +273,4 @@ class _TemperatureHistoryStripCardViewState
       ),
     );
   }
-}
-
-class _SensorTarget {
-  const _SensorTarget({
-    required this.id,
-    required this.name,
-    required this.ref,
-    required this.tempValid,
-  });
-
-  final String id;
-  final String name;
-  final bool ref;
-  final bool tempValid;
 }

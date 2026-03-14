@@ -60,6 +60,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "DeviceOfflineOrNotResponding": MessageLookupByLibrary.simpleMessage(
       "Device seems offline or not responding.",
     ),
+    "DeviceScopeUnavailableInContext": MessageLookupByLibrary.simpleMessage(
+      "Device scope is not available in the current context.",
+    ),
     "DeviceUnlinkAlertContent1": MessageLookupByLibrary.simpleMessage(
       "The device ",
     ),
@@ -167,8 +170,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Failed to load chart",
     ),
+    "TelemetryHistoryMetricHeatingActivity":
+        MessageLookupByLibrary.simpleMessage("Heating activity"),
+    "TelemetryHistoryMetricLoadFactor": MessageLookupByLibrary.simpleMessage(
+      "Load factor",
+    ),
+    "TelemetryHistoryMetricTemperature": MessageLookupByLibrary.simpleMessage(
+      "Temperature",
+    ),
     "TelemetryHistoryNoData": MessageLookupByLibrary.simpleMessage(
       "No data yet.",
+    ),
+    "TelemetryHistoryPreviewNoSensorData": MessageLookupByLibrary.simpleMessage(
+      "Temperature trend (24h): no sensor data",
+    ),
+    "TelemetryHistoryPreviewTitle24h": MessageLookupByLibrary.simpleMessage(
+      "Temperature trend (24h)",
     ),
     "TelemetryHistoryRangeDay": MessageLookupByLibrary.simpleMessage("Day"),
     "TelemetryHistoryRangeMonth": MessageLookupByLibrary.simpleMessage("Month"),
@@ -179,9 +196,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Temperature sensor",
     ),
     "TelemetryHistorySensorPosition": m5,
-    "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Avg"),
-    "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Max"),
-    "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Min"),
+    "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Average"),
+    "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Maximum"),
+    "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Minimum"),
     "ThuShort": MessageLookupByLibrary.simpleMessage("Thu"),
     "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
       "Check the device\'s network connection.",

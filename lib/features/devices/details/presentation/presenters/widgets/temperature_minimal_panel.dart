@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/utils/temperature_sensors_resolver.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 import 'package:oshmobile/features/sensors/presentation/models/sensor_editor_entry.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -40,8 +41,9 @@ class TemperatureMinimalPanel extends StatefulWidget {
 
 class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
   late final PageController _pageCtrl;
+  final TemperatureSensorsResolver _sensorsResolver =
+      TemperatureSensorsResolver();
   int _page = 0;
-  final List<String> _sensorOrder = <String>[];
   bool _initialPageResolved = false;
   int? _pendingJumpTarget;
 
@@ -63,13 +65,6 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
     return null;
   }
 
-  bool _asBool(dynamic v) {
-    if (v is bool) return v;
-    if (v is num) return v != 0;
-    if (v is String) return v.toLowerCase() == 'true' || v == '1';
-    return false;
-  }
-
   String _fmtNum(num? v, {int fractionDigits = 1}) {
     if (v == null) return '—';
     final d = v.toDouble();
@@ -86,67 +81,6 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
     );
   }
 
-  List<_SensorCardData> _parseSensors(dynamic raw) {
-    if (raw is! List) return const <_SensorCardData>[];
-
-    final parsed = <_SensorCardData>[];
-    for (final item in raw) {
-      if (item is! Map) continue;
-      final m = item.cast<String, dynamic>();
-      final id = (m['id'] ?? '').toString();
-      if (id.isEmpty) continue;
-
-      final name = (m['name']?.toString().trim().isNotEmpty ?? false)
-          ? m['name'].toString().trim()
-          : id;
-      final kind = m['kind']?.toString();
-      final ref = _asBool(m['ref']);
-
-      final tempRaw = _asNum(m['temp']);
-      final humidityRaw = _asNum(m['humidity']);
-      final tempValid = _asBool(m['temp_valid']) && tempRaw != null;
-      final humidityValid = _asBool(m['humidity_valid']) && humidityRaw != null;
-
-      parsed.add(
-        _SensorCardData(
-          id: id,
-          name: name,
-          kind: kind,
-          ref: ref,
-          tempValid: tempValid,
-          humidityValid: humidityValid,
-          temp: tempValid ? tempRaw.toDouble() : null,
-          humidity: humidityValid ? humidityRaw.toDouble() : null,
-        ),
-      );
-    }
-
-    if (parsed.isEmpty) {
-      _sensorOrder.clear();
-      return parsed;
-    }
-
-    final incomingIds = parsed.map((s) => s.id).toSet();
-    _sensorOrder.removeWhere((id) => !incomingIds.contains(id));
-
-    final knownIds = _sensorOrder.toSet();
-    for (final sensor in parsed) {
-      if (!knownIds.contains(sensor.id)) {
-        _sensorOrder.add(sensor.id);
-        knownIds.add(sensor.id);
-      }
-    }
-
-    final byId = <String, _SensorCardData>{
-      for (final sensor in parsed) sensor.id: sensor,
-    };
-
-    return _sensorOrder
-        .map((id) => byId[id])
-        .whereType<_SensorCardData>()
-        .toList(growable: false);
-  }
-
   void _scheduleJumpToPage(int target) {
     if (_pendingJumpTarget == target) return;
     _pendingJumpTarget = target;
@@ -160,7 +94,7 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
     });
   }
 
-  void _ensureInitialPage(List<_SensorCardData> sensors) {
+  void _ensureInitialPage(List<TemperatureSensorData> sensors) {
     if (sensors.isEmpty) {
       _initialPageResolved = false;
       _page = 0;
@@ -169,7 +103,7 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
 
     final maxIndex = sensors.length - 1;
     if (!_initialPageResolved) {
-      final mainIndex = sensors.indexWhere((s) => s.ref);
+      final mainIndex = sensors.indexWhere((s) => s.isReference);
       final target = mainIndex >= 0 ? mainIndex : 0;
       _initialPageResolved = true;
       _page = target;
@@ -205,7 +139,9 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
               _fmtTime(context, nextTime),
             );
 
-    final sensors = _parseSensors(readBind(controlState, widget.sensorsBind));
+    final sensors = _sensorsResolver.resolve(
+      readBind(controlState, widget.sensorsBind),
+    );
     _ensureInitialPage(sensors);
     final fallbackCurrent = _asNum(readBind(controlState, widget.currentBind));
 
@@ -353,7 +289,7 @@ class _SensorCarousel extends StatelessWidget {
 
   final PageController pageController;
   final int pageIndex;
-  final List<_SensorCardData> sensors;
+  final List<TemperatureSensorData> sensors;
   final String unit;
   final double borderRadius;
   final VoidCallback? onTap;
@@ -365,7 +301,7 @@ class _SensorCarousel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasRefSensor = sensors.any((s) => s.ref);
+    final hasRefSensor = sensors.any((s) => s.isReference);
     return Column(
       children: [
         Expanded(
@@ -384,11 +320,22 @@ class _SensorCarousel extends StatelessWidget {
                 targetLine: targetLine,
                 nextLine: nextLine,
                 showScheduleMeta:
-                    hasRefSensor ? sensors[index].ref : index == 0,
+                    hasRefSensor ? sensors[index].isReference : index == 0,
                 formatNum: formatNum,
                 onActionTap: onSensorActionTap == null
                     ? null
-                    : () => onSensorActionTap!(sensors[index].toEditorEntry()),
+                    : () => onSensorActionTap!(
+                          SensorEditorEntry(
+                            id: sensors[index].id,
+                            name: sensors[index].name,
+                            ref: sensors[index].isReference,
+                            kind: sensors[index].kind,
+                            tempValid: sensors[index].tempValid,
+                            humidityValid: sensors[index].humidityValid,
+                            temp: sensors[index].temp,
+                            humidity: sensors[index].humidity,
+                          ),
+                        ),
               ),
             ),
           ),
@@ -418,7 +365,7 @@ class _SensorCard extends StatelessWidget {
     required this.onActionTap,
   });
 
-  final _SensorCardData sensor;
+  final TemperatureSensorData sensor;
   final String unit;
   final double borderRadius;
   final VoidCallback? onTap;
@@ -560,12 +507,12 @@ class _SensorCardAction extends StatelessWidget {
     required this.onTap,
   });
 
-  final _SensorCardData sensor;
+  final TemperatureSensorData sensor;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    if (sensor.ref) {
+    if (sensor.isReference) {
       return InkWell(
         borderRadius: BorderRadius.circular(AppPalette.radiusPill),
         onTap: onTap,
@@ -710,41 +657,6 @@ class _Dots extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _SensorCardData {
-  const _SensorCardData({
-    required this.id,
-    required this.name,
-    required this.kind,
-    required this.ref,
-    required this.tempValid,
-    required this.humidityValid,
-    required this.temp,
-    required this.humidity,
-  });
-
-  final String id;
-  final String name;
-  final String? kind;
-  final bool ref;
-  final bool tempValid;
-  final bool humidityValid;
-  final double? temp;
-  final double? humidity;
-
-  SensorEditorEntry toEditorEntry() {
-    return SensorEditorEntry(
-      id: id,
-      name: name,
-      ref: ref,
-      kind: kind,
-      tempValid: tempValid,
-      humidityValid: humidityValid,
-      temp: temp,
-      humidity: humidity,
     );
   }
 }

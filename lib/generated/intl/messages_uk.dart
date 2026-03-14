@@ -37,6 +37,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "DeviceOfflineOrNotResponding": MessageLookupByLibrary.simpleMessage(
       "Схоже, пристрій офлайн або не відповідає.",
     ),
+    "DeviceScopeUnavailableInContext": MessageLookupByLibrary.simpleMessage(
+      "Контекст пристрою недоступний у поточному місці.",
+    ),
     "Discard": MessageLookupByLibrary.simpleMessage("Скасувати зміни"),
     "EmptyPayload": MessageLookupByLibrary.simpleMessage("Порожні дані"),
     "FailedToLoadSettings": MessageLookupByLibrary.simpleMessage(
@@ -60,8 +63,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Не вдалося завантажити графік",
     ),
+    "TelemetryHistoryMetricHeatingActivity":
+        MessageLookupByLibrary.simpleMessage("Активність нагріву"),
+    "TelemetryHistoryMetricLoadFactor": MessageLookupByLibrary.simpleMessage(
+      "Коефіцієнт навантаження",
+    ),
+    "TelemetryHistoryMetricTemperature": MessageLookupByLibrary.simpleMessage(
+      "Температура",
+    ),
     "TelemetryHistoryNoData": MessageLookupByLibrary.simpleMessage(
       "Даних ще немає.",
+    ),
+    "TelemetryHistoryPreviewNoSensorData": MessageLookupByLibrary.simpleMessage(
+      "Тренд температури (24 год): немає даних датчиків",
+    ),
+    "TelemetryHistoryPreviewTitle24h": MessageLookupByLibrary.simpleMessage(
+      "Тренд температури (24 год)",
     ),
     "TelemetryHistoryRangeDay": MessageLookupByLibrary.simpleMessage("День"),
     "TelemetryHistoryRangeMonth": MessageLookupByLibrary.simpleMessage(
@@ -76,9 +93,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Температурний датчик",
     ),
     "TelemetryHistorySensorPosition": m5,
-    "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Сер"),
-    "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Макс"),
-    "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Мін"),
+    "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Середнє"),
+    "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Максимум"),
+    "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Мінімум"),
     "UnsavedChanges": MessageLookupByLibrary.simpleMessage("Незбережені зміни"),
     "UnsavedChangesDiscardPrompt": MessageLookupByLibrary.simpleMessage(
       "У вас є незбережені зміни. Скасувати їх і вийти зі сторінки?",

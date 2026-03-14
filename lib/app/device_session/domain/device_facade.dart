@@ -4,8 +4,7 @@ import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
-import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
-import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/telemetry_history_series_reader.dart';
 
 abstract interface class DeviceFacade {
   DeviceSnapshot get current;
@@ -144,15 +143,8 @@ abstract interface class DeviceTelemetryApi {
   Future<Map<String, dynamic>> get({bool force = false});
 }
 
-abstract interface class DeviceTelemetryHistoryApi {
-  Future<TelemetryHistorySeries> getSeries({
-    required String seriesKey,
-    required DateTime from,
-    required DateTime to,
-    String preferredResolution = 'auto',
-    TelemetryHistoryApiVersion apiVersion = TelemetryHistoryApiVersion.v1,
-  });
-}
+abstract interface class DeviceTelemetryHistoryApi
+    implements TelemetryHistorySeriesReader {}
 
 abstract interface class DeviceAboutApi {
   Map<String, dynamic>? get current;

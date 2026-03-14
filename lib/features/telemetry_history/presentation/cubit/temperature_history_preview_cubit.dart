@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/telemetry_history_series_reader.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_point.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/temperature_history_preview_state.dart';
@@ -7,17 +7,17 @@ import 'package:oshmobile/features/telemetry_history/presentation/cubit/temperat
 class TemperatureHistoryPreviewCubit
     extends Cubit<TemperatureHistoryPreviewState> {
   TemperatureHistoryPreviewCubit({
-    required DeviceTelemetryHistoryApi telemetryHistoryApi,
+    required TelemetryHistorySeriesReader seriesReader,
     Duration cacheTtl = const Duration(minutes: 2),
     DateTime Function()? nowUtc,
-  })  : _telemetryHistoryApi = telemetryHistoryApi,
+  })  : _seriesReader = seriesReader,
         _cacheTtl = cacheTtl,
         _nowUtc = nowUtc ?? _defaultNowUtc,
         super(const TemperatureHistoryPreviewState.initial());
 
   static const Duration _historyWindow = Duration(hours: 24);
 
-  final DeviceTelemetryHistoryApi _telemetryHistoryApi;
+  final TelemetryHistorySeriesReader _seriesReader;
   final Duration _cacheTtl;
   final DateTime Function() _nowUtc;
   final Map<String, int> _requestVersionBySeriesKey = <String, int>{};
@@ -49,7 +49,7 @@ class TemperatureHistoryPreviewCubit
     final from = to.subtract(_historyWindow);
 
     try {
-      final series = await _telemetryHistoryApi.getSeries(
+      final series = await _seriesReader.getSeries(
         seriesKey: normalized,
         from: from,
         to: to,

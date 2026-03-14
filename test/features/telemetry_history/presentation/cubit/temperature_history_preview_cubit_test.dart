@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/telemetry_history_series_reader.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_point.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/temperature_history_preview_cubit.dart';
 
-class _CountingTelemetryHistoryApi implements DeviceTelemetryHistoryApi {
+class _CountingTelemetryHistoryApi implements TelemetryHistorySeriesReader {
   int calls = 0;
 
   @override
@@ -40,7 +40,7 @@ void main() {
     final api = _CountingTelemetryHistoryApi();
     final now = DateTime.utc(2026, 3, 14, 20, 18, 40);
     final cubit = TemperatureHistoryPreviewCubit(
-      telemetryHistoryApi: api,
+      seriesReader: api,
       cacheTtl: const Duration(minutes: 2),
       nowUtc: () => now,
     );

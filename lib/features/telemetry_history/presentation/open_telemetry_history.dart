@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/app/device_session/domain/models/device_temperature_sensor_ref.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/app/device_session/scopes/device_route_scope.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_cubit.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
-import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_sensor.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/pages/telemetry_history_page.dart';
+import 'package:oshmobile/generated/l10n.dart';
 
 class TelemetryHistoryNavigator {
   const TelemetryHistoryNavigator._();
 
   static void openLoadFactorFromHost(BuildContext hostContext) {
+    final s = S.of(hostContext);
     _openMetrics(
       hostContext,
-      metrics: const <TelemetryHistoryMetric>[
+      metrics: <TelemetryHistoryMetric>[
         TelemetryHistoryMetric(
-          title: 'Load factor',
+          title: s.TelemetryHistoryMetricLoadFactor,
           seriesKey: 'load_factor',
           kind: TelemetryHistoryMetricKind.numeric,
           unit: '%',
@@ -27,11 +29,12 @@ class TelemetryHistoryNavigator {
   }
 
   static void openHeatingFromHost(BuildContext hostContext) {
+    final s = S.of(hostContext);
     _openMetrics(
       hostContext,
-      metrics: const <TelemetryHistoryMetric>[
+      metrics: <TelemetryHistoryMetric>[
         TelemetryHistoryMetric(
-          title: 'Heating activity',
+          title: s.TelemetryHistoryMetricHeatingActivity,
           seriesKey: 'heater_enabled',
           kind: TelemetryHistoryMetricKind.boolean,
         ),
@@ -43,12 +46,14 @@ class TelemetryHistoryNavigator {
     BuildContext hostContext, {
     required String sensorId,
     String? sensorName,
-    List<TelemetryHistorySensor> sensors = const <TelemetryHistorySensor>[],
+    List<DeviceTemperatureSensorRef> sensors =
+        const <DeviceTemperatureSensorRef>[],
   }) {
     final normalizedId = sensorId.trim();
     if (normalizedId.isEmpty) {
       return;
     }
+    final s = S.of(hostContext);
 
     final normalizedSensors = sensors
         .where((sensor) => sensor.id.trim().isNotEmpty)
@@ -57,7 +62,7 @@ class TelemetryHistoryNavigator {
     final metrics = normalizedSensors.isEmpty
         ? <TelemetryHistoryMetric>[
             TelemetryHistoryMetric(
-              title: 'Temperature',
+              title: s.TelemetryHistoryMetricTemperature,
               subtitle: sensorName == null || sensorName.trim().isEmpty
                   ? normalizedId
                   : sensorName.trim(),
@@ -70,14 +75,14 @@ class TelemetryHistoryNavigator {
         : normalizedSensors
             .map(
               (sensor) => TelemetryHistoryMetric(
-                title: 'Temperature',
+                title: s.TelemetryHistoryMetricTemperature,
                 subtitle:
                     sensor.name.trim().isEmpty ? sensor.id : sensor.name.trim(),
                 seriesKey: 'climate_sensors.${sensor.id}.temp',
                 kind: TelemetryHistoryMetricKind.numeric,
                 unit: '°C',
                 sensorId: sensor.id,
-                isPrimarySensor: sensor.ref,
+                isPrimarySensor: sensor.isReference,
               ),
             )
             .toList(growable: false);
@@ -99,6 +104,7 @@ class TelemetryHistoryNavigator {
   }) {
     if (metrics.isEmpty) return;
     if (!hostContext.mounted) return;
+    final s = S.of(hostContext);
 
     late final DeviceFacade facade;
     late final DeviceSnapshotCubit snapshotCubit;
@@ -108,7 +114,7 @@ class TelemetryHistoryNavigator {
     } catch (_) {
       SnackBarUtils.showFail(
         context: hostContext,
-        content: 'Device scope is not available in the current context.',
+        content: s.DeviceScopeUnavailableInContext,
       );
       return;
     }
@@ -120,7 +126,7 @@ class TelemetryHistoryNavigator {
           snapshotCubit: snapshotCubit,
           child: BlocProvider(
             create: (_) => TelemetryHistoryCubit(
-              telemetryHistoryApi: facade.telemetryHistory,
+              seriesReader: facade.telemetryHistory,
               metrics: metrics,
               initialMetricIndex: initialMetricIndex,
             )..load(),

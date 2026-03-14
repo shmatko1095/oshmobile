@@ -126,9 +126,9 @@
   "TelemetryHistoryRangeWeek": "Week",
   "TelemetryHistoryRangeMonth": "Month",
   "TelemetryHistoryRangeYear": "Year",
-  "TelemetryHistoryStatMin": "Min",
-  "TelemetryHistoryStatMax": "Max",
-  "TelemetryHistoryStatAvg": "Avg",
+  "TelemetryHistoryStatMin": "Minimum",
+  "TelemetryHistoryStatMax": "Maximum",
+  "TelemetryHistoryStatAvg": "Average",
   "TelemetryHistorySensorLabel": "Temperature sensor",
   "TelemetryHistorySensorPosition": "Sensor {index}/{total}",
   "@TelemetryHistorySensorPosition": {
@@ -139,6 +139,11 @@
   },
   "TelemetryHistoryLoadFailed": "Failed to load chart",
   "TelemetryHistoryNoData": "No data yet.",
+  "TelemetryHistoryMetricLoadFactor": "Load factor",
+  "TelemetryHistoryMetricHeatingActivity": "Heating activity",
+  "TelemetryHistoryMetricTemperature": "Temperature",
+  "TelemetryHistoryPreviewTitle24h": "Temperature trend (24h)",
+  "TelemetryHistoryPreviewNoSensorData": "Temperature trend (24h): no sensor data",
   "TelemetryHistoryResolutionPoints": "Resolution: {resolution} • Points: {points}",
   "@TelemetryHistoryResolutionPoints": {
     "placeholders": {
@@ -146,6 +151,7 @@
       "points": {}
     }
   },
+  "DeviceScopeUnavailableInContext": "Device scope is not available in the current context.",
   "startupCheckingInternet": "Checking internet connection...",
   "startupNoInternetScreenSemantics": "No internet connection screen",
   "startupNoInternetTitle": "No internet connection",

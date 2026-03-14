@@ -16,6 +16,8 @@ class HistoryLineChart extends StatelessWidget {
     super.key,
     required this.values,
     this.timestamps,
+    this.windowStart,
+    this.windowEnd,
     this.color = AppPalette.accentPrimary,
     this.strokeWidth = 2.0,
     this.fill = true,
@@ -29,6 +31,8 @@ class HistoryLineChart extends StatelessWidget {
 
   final List<double> values;
   final List<DateTime>? timestamps;
+  final DateTime? windowStart;
+  final DateTime? windowEnd;
   final Color color;
   final double strokeWidth;
   final bool fill;
@@ -45,8 +49,46 @@ class HistoryLineChart extends StatelessWidget {
       return const SizedBox.expand();
     }
 
+    final resolvedTimestamps = _resolvedTimestamps(values.length);
+    final xWindow = _resolveXWindow();
+    final useWindowAxis = xWindow != null &&
+        resolvedTimestamps.every((timestamp) => timestamp != null);
+
+    final points = <_HistoryChartPoint>[];
+    for (var i = 0; i < values.length; i++) {
+      final timestamp = resolvedTimestamps[i];
+      if (useWindowAxis && timestamp != null) {
+        final xValue = _toXAxisSeconds(
+          timestamp,
+          xWindow.startUtc,
+        );
+        // Drop out-of-range points to keep the line strictly inside
+        // the requested history window.
+        if (xValue < 0 || xValue > xWindow.spanSeconds) continue;
+        points.add(
+          _HistoryChartPoint(
+            x: xValue,
+            y: values[i],
+            timestamp: timestamp,
+          ),
+        );
+        continue;
+      }
+      points.add(
+        _HistoryChartPoint(
+          x: i.toDouble(),
+          y: values[i],
+          timestamp: timestamp,
+        ),
+      );
+    }
+
+    if (points.isEmpty) {
+      return const SizedBox.expand();
+    }
+
     final spots = <FlSpot>[
-      for (var i = 0; i < values.length; i++) FlSpot(i.toDouble(), values[i]),
+      for (final point in points) FlSpot(point.x, point.y),
     ];
     final minRaw = values.reduce(math.min);
     final maxRaw = values.reduce(math.max);
@@ -54,10 +96,12 @@ class HistoryLineChart extends StatelessWidget {
     final yInterval = _niceInterval(span, preferredTickCount: 4);
     final minY = _alignLower(minRaw, yInterval);
     final maxY = _alignUpper(maxRaw, yInterval);
-    final maxX = (values.length - 1).toDouble();
+    final maxX =
+        useWindowAxis ? xWindow.spanSeconds : (points.length - 1).toDouble();
     final xInterval = maxX <= 0 ? 1.0 : maxX / 3;
-    final xTickIndexes = _tickIndexes(values.length, targetTickCount: 4);
-    final resolvedTimestamps = _resolvedTimestamps(values.length);
+    final xTickIndexes = useWindowAxis
+        ? const <int>{}
+        : _tickIndexes(points.length, targetTickCount: 4);
 
     return LineChart(
       LineChartData(
@@ -112,21 +156,36 @@ class HistoryLineChart extends StatelessWidget {
               reservedSize: 28,
               interval: xInterval,
               getTitlesWidget: (value, meta) {
-                final index = value.round();
-                if ((value - index).abs() > 0.2 ||
-                    index < 0 ||
-                    index >= values.length ||
-                    !xTickIndexes.contains(index)) {
-                  return const SizedBox.shrink();
-                }
+                late final String label;
+                if (useWindowAxis) {
+                  final clampedSeconds = value.clamp(0.0, xWindow.spanSeconds);
+                  final timestamp = _fromXAxisSeconds(
+                    xWindow.startUtc,
+                    clampedSeconds,
+                  );
+                  label = xAxisLabelBuilder?.call(timestamp) ??
+                      _defaultTimeLabel(timestamp);
+                } else {
+                  final index = value.round();
+                  if ((value - index).abs() > 0.2 ||
+                      index < 0 ||
+                      index >= points.length ||
+                      !xTickIndexes.contains(index)) {
+                    return const SizedBox.shrink();
+                  }
 
-                final ts = resolvedTimestamps[index];
-                final label = ts == null
-                    ? index.toString()
-                    : (xAxisLabelBuilder?.call(ts) ?? _defaultTimeLabel(ts));
+                  final ts = points[index].timestamp;
+                  label = ts == null
+                      ? index.toString()
+                      : (xAxisLabelBuilder?.call(ts) ?? _defaultTimeLabel(ts));
+                }
                 return SideTitleWidget(
                   meta: meta,
                   space: 8,
+                  fitInside: SideTitleFitInsideData.fromTitleMeta(
+                    meta,
+                    distanceFromEdge: 6,
+                  ),
                   child: Text(
                     label,
                     style: const TextStyle(
@@ -189,9 +248,9 @@ class HistoryLineChart extends StatelessWidget {
             ),
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
-                final index = spot.x.round();
-                if (index < 0 || index >= values.length) return null;
-                final ts = resolvedTimestamps[index];
+                final index = spot.spotIndex;
+                if (index < 0 || index >= points.length) return null;
+                final ts = points[index].timestamp;
                 final title = ts == null
                     ? '#$index'
                     : (xAxisLabelBuilder?.call(ts) ?? _defaultTimeLabel(ts));
@@ -249,6 +308,27 @@ class HistoryLineChart extends StatelessWidget {
     return source.map((v) => v.toUtc()).toList(growable: false);
   }
 
+  _HistoryChartXWindow? _resolveXWindow() {
+    final start = windowStart?.toUtc();
+    final end = windowEnd?.toUtc();
+    if (start == null || end == null || !end.isAfter(start)) {
+      return null;
+    }
+    final spanSeconds = end.difference(start).inMilliseconds / 1000;
+    if (spanSeconds <= 0) return null;
+    return _HistoryChartXWindow(startUtc: start, spanSeconds: spanSeconds);
+  }
+
+  double _toXAxisSeconds(DateTime timestampUtc, DateTime startUtc) {
+    return timestampUtc.toUtc().difference(startUtc).inMilliseconds / 1000;
+  }
+
+  DateTime _fromXAxisSeconds(DateTime startUtc, double seconds) {
+    return startUtc.add(
+      Duration(milliseconds: (seconds * 1000).round()),
+    );
+  }
+
   String _defaultTimeLabel(DateTime timestamp) {
     final t = timestamp.toLocal();
     final mm = t.month.toString().padLeft(2, '0');
@@ -303,4 +383,26 @@ double _alignLower(double value, double interval) {
 
 double _alignUpper(double value, double interval) {
   return (value / interval).ceilToDouble() * interval;
+}
+
+class _HistoryChartPoint {
+  const _HistoryChartPoint({
+    required this.x,
+    required this.y,
+    required this.timestamp,
+  });
+
+  final double x;
+  final double y;
+  final DateTime? timestamp;
+}
+
+class _HistoryChartXWindow {
+  const _HistoryChartXWindow({
+    required this.startUtc,
+    required this.spanSeconds,
+  });
+
+  final DateTime startUtc;
+  final double spanSeconds;
 }
