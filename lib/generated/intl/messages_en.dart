@@ -29,6 +29,11 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m3(temp) => "Target ${temp}";
 
+  static String m4(resolution, points) =>
+      "Resolution: ${resolution} • Points: ${points}";
+
+  static String m5(index, total) => "Sensor ${index}/${total}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "About": MessageLookupByLibrary.simpleMessage("About"),
@@ -159,6 +164,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
     "SunShort": MessageLookupByLibrary.simpleMessage("Sun"),
     "Target": m3,
+    "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
+      "Failed to load chart",
+    ),
+    "TelemetryHistoryNoData": MessageLookupByLibrary.simpleMessage(
+      "No data yet.",
+    ),
+    "TelemetryHistoryRangeDay": MessageLookupByLibrary.simpleMessage("Day"),
+    "TelemetryHistoryRangeMonth": MessageLookupByLibrary.simpleMessage("Month"),
+    "TelemetryHistoryRangeWeek": MessageLookupByLibrary.simpleMessage("Week"),
+    "TelemetryHistoryRangeYear": MessageLookupByLibrary.simpleMessage("Year"),
+    "TelemetryHistoryResolutionPoints": m4,
+    "TelemetryHistorySensorLabel": MessageLookupByLibrary.simpleMessage(
+      "Temperature sensor",
+    ),
+    "TelemetryHistorySensorPosition": m5,
+    "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Avg"),
+    "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Max"),
+    "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Min"),
     "ThuShort": MessageLookupByLibrary.simpleMessage("Thu"),
     "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
       "Check the device\'s network connection.",

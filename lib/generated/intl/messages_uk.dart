@@ -22,6 +22,11 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m1(time) => "Останнє оновлення: ${time}";
 
+  static String m4(resolution, points) =>
+      "Роздільність: ${resolution} • Точки: ${points}";
+
+  static String m5(index, total) => "Датчик ${index}/${total}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "About": MessageLookupByLibrary.simpleMessage("Про пристрій"),
@@ -52,6 +57,28 @@ class MessageLookup extends MessageLookupByLibrary {
     "SensorRename": MessageLookupByLibrary.simpleMessage(
       "Перейменувати датчик",
     ),
+    "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
+      "Не вдалося завантажити графік",
+    ),
+    "TelemetryHistoryNoData": MessageLookupByLibrary.simpleMessage(
+      "Даних ще немає.",
+    ),
+    "TelemetryHistoryRangeDay": MessageLookupByLibrary.simpleMessage("День"),
+    "TelemetryHistoryRangeMonth": MessageLookupByLibrary.simpleMessage(
+      "Місяць",
+    ),
+    "TelemetryHistoryRangeWeek": MessageLookupByLibrary.simpleMessage(
+      "Тиждень",
+    ),
+    "TelemetryHistoryRangeYear": MessageLookupByLibrary.simpleMessage("Рік"),
+    "TelemetryHistoryResolutionPoints": m4,
+    "TelemetryHistorySensorLabel": MessageLookupByLibrary.simpleMessage(
+      "Температурний датчик",
+    ),
+    "TelemetryHistorySensorPosition": m5,
+    "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Сер"),
+    "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Макс"),
+    "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Мін"),
     "UnsavedChanges": MessageLookupByLibrary.simpleMessage("Незбережені зміни"),
     "UnsavedChangesDiscardPrompt": MessageLookupByLibrary.simpleMessage(
       "У вас є незбережені зміни. Скасувати їх і вийти зі сторінки?",

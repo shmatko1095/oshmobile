@@ -122,6 +122,30 @@
   "FailedToLoadSettings": "Failed to load settings.",
   "NoDataYet": "No data yet",
   "EmptyPayload": "Empty payload",
+  "TelemetryHistoryRangeDay": "Day",
+  "TelemetryHistoryRangeWeek": "Week",
+  "TelemetryHistoryRangeMonth": "Month",
+  "TelemetryHistoryRangeYear": "Year",
+  "TelemetryHistoryStatMin": "Min",
+  "TelemetryHistoryStatMax": "Max",
+  "TelemetryHistoryStatAvg": "Avg",
+  "TelemetryHistorySensorLabel": "Temperature sensor",
+  "TelemetryHistorySensorPosition": "Sensor {index}/{total}",
+  "@TelemetryHistorySensorPosition": {
+    "placeholders": {
+      "index": {},
+      "total": {}
+    }
+  },
+  "TelemetryHistoryLoadFailed": "Failed to load chart",
+  "TelemetryHistoryNoData": "No data yet.",
+  "TelemetryHistoryResolutionPoints": "Resolution: {resolution} • Points: {points}",
+  "@TelemetryHistoryResolutionPoints": {
+    "placeholders": {
+      "resolution": {},
+      "points": {}
+    }
+  },
   "startupCheckingInternet": "Checking internet connection...",
   "startupNoInternetScreenSemantics": "No internet connection screen",
   "startupNoInternetTitle": "No internet connection",

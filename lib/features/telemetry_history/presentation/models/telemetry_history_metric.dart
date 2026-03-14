@@ -10,6 +10,8 @@ class TelemetryHistoryMetric {
     required this.kind,
     this.unit = '',
     this.subtitle,
+    this.sensorId,
+    this.isPrimarySensor = false,
   });
 
   final String title;
@@ -17,4 +19,6 @@ class TelemetryHistoryMetric {
   final TelemetryHistoryMetricKind kind;
   final String unit;
   final String? subtitle;
+  final String? sensorId;
+  final bool isPrimarySensor;
 }

@@ -1039,6 +1039,126 @@ class S {
     );
   }
 
+  /// `Day`
+  String get TelemetryHistoryRangeDay {
+    return Intl.message(
+      'Day',
+      name: 'TelemetryHistoryRangeDay',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Week`
+  String get TelemetryHistoryRangeWeek {
+    return Intl.message(
+      'Week',
+      name: 'TelemetryHistoryRangeWeek',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Month`
+  String get TelemetryHistoryRangeMonth {
+    return Intl.message(
+      'Month',
+      name: 'TelemetryHistoryRangeMonth',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Year`
+  String get TelemetryHistoryRangeYear {
+    return Intl.message(
+      'Year',
+      name: 'TelemetryHistoryRangeYear',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Min`
+  String get TelemetryHistoryStatMin {
+    return Intl.message(
+      'Min',
+      name: 'TelemetryHistoryStatMin',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Max`
+  String get TelemetryHistoryStatMax {
+    return Intl.message(
+      'Max',
+      name: 'TelemetryHistoryStatMax',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Avg`
+  String get TelemetryHistoryStatAvg {
+    return Intl.message(
+      'Avg',
+      name: 'TelemetryHistoryStatAvg',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Temperature sensor`
+  String get TelemetryHistorySensorLabel {
+    return Intl.message(
+      'Temperature sensor',
+      name: 'TelemetryHistorySensorLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sensor {index}/{total}`
+  String TelemetryHistorySensorPosition(Object index, Object total) {
+    return Intl.message(
+      'Sensor $index/$total',
+      name: 'TelemetryHistorySensorPosition',
+      desc: '',
+      args: [index, total],
+    );
+  }
+
+  /// `Failed to load chart`
+  String get TelemetryHistoryLoadFailed {
+    return Intl.message(
+      'Failed to load chart',
+      name: 'TelemetryHistoryLoadFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No data yet.`
+  String get TelemetryHistoryNoData {
+    return Intl.message(
+      'No data yet.',
+      name: 'TelemetryHistoryNoData',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Resolution: {resolution} • Points: {points}`
+  String TelemetryHistoryResolutionPoints(Object resolution, Object points) {
+    return Intl.message(
+      'Resolution: $resolution • Points: $points',
+      name: 'TelemetryHistoryResolutionPoints',
+      desc: '',
+      args: [resolution, points],
+    );
+  }
+
   /// `Checking internet connection...`
   String get startupCheckingInternet {
     return Intl.message(

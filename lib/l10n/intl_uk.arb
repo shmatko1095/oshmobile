@@ -17,6 +17,30 @@
   "FailedToLoadSettings": "Не вдалося завантажити налаштування.",
   "NoDataYet": "Дані ще не надійшли",
   "EmptyPayload": "Порожні дані",
+  "TelemetryHistoryRangeDay": "День",
+  "TelemetryHistoryRangeWeek": "Тиждень",
+  "TelemetryHistoryRangeMonth": "Місяць",
+  "TelemetryHistoryRangeYear": "Рік",
+  "TelemetryHistoryStatMin": "Мін",
+  "TelemetryHistoryStatMax": "Макс",
+  "TelemetryHistoryStatAvg": "Сер",
+  "TelemetryHistorySensorLabel": "Температурний датчик",
+  "TelemetryHistorySensorPosition": "Датчик {index}/{total}",
+  "@TelemetryHistorySensorPosition": {
+    "placeholders": {
+      "index": {},
+      "total": {}
+    }
+  },
+  "TelemetryHistoryLoadFailed": "Не вдалося завантажити графік",
+  "TelemetryHistoryNoData": "Даних ще немає.",
+  "TelemetryHistoryResolutionPoints": "Роздільність: {resolution} • Точки: {points}",
+  "@TelemetryHistoryResolutionPoints": {
+    "placeholders": {
+      "resolution": {},
+      "points": {}
+    }
+  },
   "startupCheckingInternet": "Перевіряємо підключення до інтернету...",
   "startupNoInternetScreenSemantics": "Екран без підключення до інтернету",
   "startupNoInternetTitle": "Немає підключення до інтернету",

@@ -127,7 +127,11 @@ class TelemetryHistoryRemoteDataSourceImpl
     final value = map[key];
     if (value is int) return value;
     if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value);
+    if (value is String) {
+      final text = value.trim();
+      if (text.isEmpty) return null;
+      return int.tryParse(text) ?? num.tryParse(text)?.toInt();
+    }
     return null;
   }
 
@@ -135,7 +139,11 @@ class TelemetryHistoryRemoteDataSourceImpl
     final value = map[key];
     if (value is double) return value;
     if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value);
+    if (value is String) {
+      final text = value.trim();
+      if (text.isEmpty) return null;
+      return double.tryParse(text);
+    }
     return null;
   }
 
@@ -155,6 +163,32 @@ class TelemetryHistoryRemoteDataSourceImpl
     final value = map[key];
     if (value == null) return null;
     if (value is DateTime) return value.toUtc();
-    return DateTime.tryParse(value.toString())?.toUtc();
+    if (value is num) return _epochToUtc(value);
+
+    final text = value.toString().trim();
+    if (text.isEmpty) return null;
+
+    final parsedIso = DateTime.tryParse(text);
+    if (parsedIso != null) {
+      return parsedIso.toUtc();
+    }
+
+    final parsedNum = num.tryParse(text);
+    if (parsedNum != null) {
+      return _epochToUtc(parsedNum);
+    }
+    return null;
+  }
+
+  DateTime _epochToUtc(num value) {
+    final abs = value.abs();
+    if (abs >= 100000000000000) {
+      return DateTime.fromMicrosecondsSinceEpoch(value.round(), isUtc: true);
+    }
+    if (abs >= 100000000000) {
+      return DateTime.fromMillisecondsSinceEpoch(value.round(), isUtc: true);
+    }
+    final micros = (value * 1000000).round();
+    return DateTime.fromMicrosecondsSinceEpoch(micros, isUtc: true);
   }
 }

@@ -26,6 +26,18 @@ class ThermostatBasicPresenter implements DevicePresenter {
     Device device,
     DeviceConfigurationBundle bundle,
   ) {
+    const horizontalPadding = 20.0;
+    const gridCrossAxisCount = 2;
+    const gridCrossAxisSpacing = 16.0;
+    const gridMainAxisSpacing = 16.0;
+    const gridChildAspectRatio = 1.1;
+    final contentWidth =
+        MediaQuery.sizeOf(context).width - horizontalPadding * 2;
+    final tileWidth =
+        (contentWidth - gridCrossAxisSpacing * (gridCrossAxisCount - 1)) /
+            gridCrossAxisCount;
+    final statTileHeight = tileWidth / gridChildAspectRatio;
+
     final tiles = _buildTiles(context, bundle);
     final showHero = bundle.canRenderWidget('heroTemperature');
     final showModeBar = bundle.canRenderWidget('modeBar');
@@ -78,12 +90,15 @@ class ThermostatBasicPresenter implements DevicePresenter {
           if (showHero && heroSensorsBind.isNotEmpty)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                padding: const EdgeInsets.fromLTRB(
+                    horizontalPadding, 12, horizontalPadding, 0),
                 child: TemperatureHistoryStripCard(
                   sensorsBind: heroSensorsBind,
-                  onOpenHistory: (sensorId, sensorName) {
+                  height: statTileHeight,
+                  onOpenHistory: (sensors, sensorId, sensorName) {
                     TelemetryHistoryNavigator.openTemperatureFromHost(
                       context,
+                      sensors: sensors,
                       sensorId: sensorId,
                       sensorName: sensorName,
                     );
@@ -92,13 +107,18 @@ class ThermostatBasicPresenter implements DevicePresenter {
               ),
             ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+            padding: const EdgeInsets.fromLTRB(
+              horizontalPadding,
+              14,
+              horizontalPadding,
+              18,
+            ),
             sliver: SliverGrid(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.1,
+                crossAxisCount: gridCrossAxisCount,
+                crossAxisSpacing: gridCrossAxisSpacing,
+                mainAxisSpacing: gridMainAxisSpacing,
+                childAspectRatio: gridChildAspectRatio,
               ),
               delegate: SliverChildListDelegate(
                 [for (final tile in tiles) tile.builder()],
