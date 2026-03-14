@@ -51,12 +51,16 @@ class _ItemListState extends State<ItemList> {
               return ListView.builder(
                 itemCount: devices.length,
                 itemBuilder: (context, index) {
+                  final selectedId = state.selectedDeviceId;
                   Device device = devices[index];
                   return ThingItem(
                     id: device.id,
-                    name: device.userData.alias.isEmpty ? device.sn : device.userData.alias,
+                    name: device.userData.alias.isEmpty
+                        ? device.sn
+                        : device.userData.alias,
                     room: device.userData.description,
                     online: device.connectionInfo.online,
+                    selected: device.id == selectedId,
                     // type: device.model.configuration.osh.type,
                   );
                 },

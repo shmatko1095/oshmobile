@@ -10,6 +10,7 @@ import 'package:oshmobile/features/home/presentation/pages/unassign_device_dialo
 
 class ThingItem extends StatelessWidget {
   final bool online;
+  final bool selected;
   final String room;
   final String name;
 
@@ -19,6 +20,7 @@ class ThingItem extends StatelessWidget {
   const ThingItem({
     super.key,
     required this.online,
+    required this.selected,
     required this.room,
     required this.name,
     // required this.type,
@@ -41,12 +43,12 @@ class ThingItem extends StatelessWidget {
   }
 
   Widget _getIcon() {
-    Color color = online ? AppPalette.accentSuccess : AppPalette.textMuted;
+    Color color = online ? AppPalette.accentSuccess : AppPalette.accentWarning;
     // switch (type) {
     //   case OshConfiguration.heaterType:
     //     return Icon(Icons.thermostat, color: color);
     //   default:
-    return Icon(Icons.circle_rounded, color: color);
+    return Icon(Icons.circle_rounded, size: 18, color: color);
     // }
   }
 
@@ -89,24 +91,61 @@ class ThingItem extends StatelessWidget {
   }
 
   Widget _buildDeviceButton(BuildContext context) {
+    final Color titleColor = selected ? Colors.white : AppPalette.textSecondary;
+    final Color subtitleColor =
+        selected ? Colors.white.withValues(alpha: 0.75) : AppPalette.textMuted;
+    final Color backgroundColor = selected
+        ? AppPalette.accentPrimary.withValues(alpha: 0.22)
+        : AppPalette.surface;
+    final Color? borderColor =
+        selected ? AppPalette.accentPrimary.withValues(alpha: 0.4) : null;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       child: AppSolidCard(
         padding: EdgeInsets.zero,
-        backgroundColor: AppPalette.surface,
-        child: ListTile(
+        backgroundColor: backgroundColor,
+        borderColor: borderColor,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppPalette.radiusXl),
           onTap: () => _onDeviceSelected(context),
           onLongPress: () => _onDeviceRename(context),
-          leading: _getIcon(),
-          title: Text(
-            name,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          subtitle:
-              room.isEmpty ? null : Text(room, style: TextStyles.contentStyle),
-          trailing: const Icon(
-            Icons.chevron_right_rounded,
-            color: AppPalette.textMuted,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                _getIcon(),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight:
+                              selected ? FontWeight.w700 : FontWeight.w600,
+                          color: titleColor,
+                        ),
+                      ),
+                      if (room.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          room,
+                          style: TextStyles.contentStyle
+                              .copyWith(color: subtitleColor),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: selected ? titleColor : AppPalette.textMuted,
+                ),
+              ],
+            ),
           ),
         ),
       ),
