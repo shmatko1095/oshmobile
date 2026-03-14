@@ -122,6 +122,12 @@
   "FailedToLoadSettings": "Failed to load settings.",
   "NoDataYet": "No data yet",
   "EmptyPayload": "Empty payload",
+  "startupCheckingInternet": "Checking internet connection...",
+  "startupNoInternetScreenSemantics": "No internet connection screen",
+  "startupNoInternetTitle": "No internet connection",
+  "startupNoInternetSubtitle": "Connect to Wi-Fi or mobile data to continue using Oshhome.",
+  "startupNoInternetHintNetwork": "Check that your network is available.",
+  "startupNoInternetHintRetry": "If needed, reconnect and tap Retry.",
   "LastUpdateAt": "Last update: {time}",
   "@LastUpdateAt": {
     "placeholders": {

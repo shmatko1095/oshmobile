@@ -80,6 +80,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "compatibilityTechnicalDetailsTitle": MessageLookupByLibrary.simpleMessage(
       "Технічні деталі",
     ),
+    "startupCheckingInternet": MessageLookupByLibrary.simpleMessage(
+      "Перевіряємо підключення до інтернету...",
+    ),
+    "startupNoInternetHintNetwork": MessageLookupByLibrary.simpleMessage(
+      "Перевірте, чи доступна мережа.",
+    ),
+    "startupNoInternetHintRetry": MessageLookupByLibrary.simpleMessage(
+      "За потреби перепідключіться і натисніть «Спробувати знову».",
+    ),
+    "startupNoInternetScreenSemantics": MessageLookupByLibrary.simpleMessage(
+      "Екран без підключення до інтернету",
+    ),
+    "startupNoInternetSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Підключіться до Wi-Fi або мобільного інтернету, щоб продовжити користуватися Oshhome.",
+    ),
+    "startupNoInternetTitle": MessageLookupByLibrary.simpleMessage(
+      "Немає підключення до інтернету",
+    ),
     "updateAppRequiredBadge": MessageLookupByLibrary.simpleMessage(
       "Потрібне оновлення",
     ),

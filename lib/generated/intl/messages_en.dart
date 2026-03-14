@@ -242,6 +242,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "offlineBlePermissionHint": MessageLookupByLibrary.simpleMessage(
       "Bluetooth access is needed to change Wi-Fi settings.",
     ),
+    "startupCheckingInternet": MessageLookupByLibrary.simpleMessage(
+      "Checking internet connection...",
+    ),
+    "startupNoInternetHintNetwork": MessageLookupByLibrary.simpleMessage(
+      "Check that your network is available.",
+    ),
+    "startupNoInternetHintRetry": MessageLookupByLibrary.simpleMessage(
+      "If needed, reconnect and tap Retry.",
+    ),
+    "startupNoInternetScreenSemantics": MessageLookupByLibrary.simpleMessage(
+      "No internet connection screen",
+    ),
+    "startupNoInternetSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Connect to Wi-Fi or mobile data to continue using Oshhome.",
+    ),
+    "startupNoInternetTitle": MessageLookupByLibrary.simpleMessage(
+      "No internet connection",
+    ),
     "updateAppRequiredBadge": MessageLookupByLibrary.simpleMessage(
       "Update required",
     ),

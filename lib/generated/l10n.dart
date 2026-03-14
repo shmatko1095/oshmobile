@@ -1039,6 +1039,66 @@ class S {
     );
   }
 
+  /// `Checking internet connection...`
+  String get startupCheckingInternet {
+    return Intl.message(
+      'Checking internet connection...',
+      name: 'startupCheckingInternet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No internet connection screen`
+  String get startupNoInternetScreenSemantics {
+    return Intl.message(
+      'No internet connection screen',
+      name: 'startupNoInternetScreenSemantics',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No internet connection`
+  String get startupNoInternetTitle {
+    return Intl.message(
+      'No internet connection',
+      name: 'startupNoInternetTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connect to Wi-Fi or mobile data to continue using Oshhome.`
+  String get startupNoInternetSubtitle {
+    return Intl.message(
+      'Connect to Wi-Fi or mobile data to continue using Oshhome.',
+      name: 'startupNoInternetSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check that your network is available.`
+  String get startupNoInternetHintNetwork {
+    return Intl.message(
+      'Check that your network is available.',
+      name: 'startupNoInternetHintNetwork',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `If needed, reconnect and tap Retry.`
+  String get startupNoInternetHintRetry {
+    return Intl.message(
+      'If needed, reconnect and tap Retry.',
+      name: 'startupNoInternetHintRetry',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Last update: {time}`
   String LastUpdateAt(Object time) {
     return Intl.message(
