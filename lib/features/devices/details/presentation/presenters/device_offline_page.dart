@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/features/ble_provisioning/presentation/widgets/ble_offline_entry.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -15,9 +16,13 @@ class DeviceOfflinePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lastOnline = device.connectionInfo.timestampText;
     final theme = Theme.of(context);
     final s = S.of(context);
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
+    final lastSeenAt = device.connectionInfo.timestamp;
+    final lastSeenLabel = lastSeenAt == null ? null : DateFormat.yMMMd(localeTag).add_Hm().format(lastSeenAt.toLocal());
+    final subtitle =
+        lastSeenLabel == null ? s.deviceOfflineSubtitle : s.deviceOfflineSubtitleWithLastSeen(lastSeenLabel);
 
     const secureCodeStub = 'TODO_SECURE_CODE';
 
@@ -50,31 +55,20 @@ class DeviceOfflinePage extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          s.deviceOfflineSubtitle,
+                          subtitle,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
                             color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                           ),
                         ),
-                        if (lastOnline.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            'Last online: $lastOnline',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
                   BleOfflineEntry(
                     deviceSn: device.sn,
                     secureCode: secureCodeStub,
-                    lastOnlineText: lastOnline,
+                    lastOnlineText: device.connectionInfo.timestampText,
                     onWifiProvisioningSuccess: onWifiProvisioningSuccess,
                   ),
                 ],

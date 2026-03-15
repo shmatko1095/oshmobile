@@ -152,26 +152,74 @@ class MobileApiClient {
 
   Device _deviceFromSummary(Map<String, dynamic> json) {
     return Device(
-      id: json['device_id']?.toString() ?? '',
-      sn: json['serial']?.toString() ?? '',
-      modelId: json['model_id']?.toString() ?? '',
-      modelName: json['model_name']?.toString() ?? '',
+      id: _readString(json, 'device_id', 'deviceId'),
+      sn: _readString(json, 'serial', 'serialNumber'),
+      modelId: _readString(json, 'model_id', 'modelId'),
+      modelName: _readString(json, 'model_name', 'modelName'),
       userData: DeviceUserData(
-        alias: json['alias']?.toString() ?? '',
-        description: json['description']?.toString() ?? '',
+        alias: _readString(json, 'alias'),
+        description: _readString(json, 'description'),
       ),
       connectionInfo: ConnectionInfo(
-        online: json['online'] == true,
-        timestamp: _parseTimestamp(json['last_seen_at']),
+        online: _readBool(json, 'online'),
+        timestamp: _parseTimestamp(
+          _readRaw(json, 'last_seen_at', 'lastSeenAt'),
+        ),
       ),
     );
   }
 
+  dynamic _readRaw(Map<String, dynamic> json, String key, [String? altKey]) {
+    if (json.containsKey(key)) return json[key];
+    if (altKey != null && json.containsKey(altKey)) return json[altKey];
+    return null;
+  }
+
+  String _readString(Map<String, dynamic> json, String key, [String? altKey]) {
+    final raw = _readRaw(json, key, altKey);
+    if (raw == null) return '';
+    return raw.toString();
+  }
+
+  bool _readBool(Map<String, dynamic> json, String key, [String? altKey]) {
+    final raw = _readRaw(json, key, altKey);
+    if (raw is bool) return raw;
+    if (raw is num) return raw != 0;
+    if (raw is String) {
+      final normalized = raw.trim().toLowerCase();
+      if (normalized == 'true' || normalized == '1') return true;
+      if (normalized == 'false' || normalized == '0') return false;
+    }
+    return false;
+  }
+
   DateTime? _parseTimestamp(dynamic raw) {
     if (raw == null) return null;
-    final text = raw.toString();
+    if (raw is DateTime) return raw.toUtc();
+    if (raw is num) return _epochToUtc(raw);
+
+    final text = raw.toString().trim();
     if (text.isEmpty) return null;
-    return DateTime.tryParse(text)?.toUtc();
+
+    final iso = DateTime.tryParse(text);
+    if (iso != null) return iso.toUtc();
+
+    final numeric = num.tryParse(text);
+    if (numeric != null) return _epochToUtc(numeric);
+
+    return null;
+  }
+
+  DateTime _epochToUtc(num value) {
+    final abs = value.abs();
+    if (abs >= 100000000000000) {
+      return DateTime.fromMicrosecondsSinceEpoch(value.round(), isUtc: true);
+    }
+    if (abs >= 100000000000) {
+      return DateTime.fromMillisecondsSinceEpoch(value.round(), isUtc: true);
+    }
+    final micros = (value * 1000000).round();
+    return DateTime.fromMicrosecondsSinceEpoch(micros, isUtc: true);
   }
 
   Map<String, dynamic>? _decodeMap(dynamic raw) {

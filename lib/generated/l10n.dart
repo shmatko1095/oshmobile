@@ -924,13 +924,23 @@ class S {
     );
   }
 
-  /// `No internet connection detected.Connect to a Wi-Fi network to continue`
+  /// `The device is currently offline. Check its Wi-Fi and power, then try again.`
   String get deviceOfflineSubtitle {
     return Intl.message(
-      'No internet connection detected.Connect to a Wi-Fi network to continue',
+      'The device is currently offline. Check its Wi-Fi and power, then try again.',
       name: 'deviceOfflineSubtitle',
       desc: '',
       args: [],
+    );
+  }
+
+  /// `The device is currently offline. Last seen: {lastSeenAt}. Check its Wi-Fi and power, then try again.`
+  String deviceOfflineSubtitleWithLastSeen(Object lastSeenAt) {
+    return Intl.message(
+      'The device is currently offline. Last seen: $lastSeenAt. Check its Wi-Fi and power, then try again.',
+      name: 'deviceOfflineSubtitleWithLastSeen',
+      desc: '',
+      args: [lastSeenAt],
     );
   }
 
