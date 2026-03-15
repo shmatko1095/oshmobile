@@ -57,12 +57,19 @@ class TemperatureHistoryPreviewCubit
       );
       if (_isStaleResponse(normalized, requestVersion)) return;
 
-      final values = _numericValues(series);
+      final samples = _numericSamples(series);
+      final values =
+          samples.map((sample) => sample.value).toList(growable: false);
+      final timestamps =
+          samples.map((sample) => sample.timestamp).toList(growable: false);
       final entry = TemperatureHistoryPreviewEntry(
         status: TemperatureHistoryPreviewStatus.ready,
         values: values,
+        timestamps: timestamps,
         lastValue: values.isEmpty ? null : values.last,
         updatedAt: _nowUtc(),
+        windowStart: series.from,
+        windowEnd: series.to,
       );
       emit(state.upsert(normalized, entry));
     } catch (error) {
@@ -73,8 +80,11 @@ class TemperatureHistoryPreviewCubit
           TemperatureHistoryPreviewEntry(
             status: TemperatureHistoryPreviewStatus.error,
             values: const <double>[],
+            timestamps: const <DateTime>[],
             lastValue: null,
             updatedAt: _nowUtc(),
+            windowStart: null,
+            windowEnd: null,
             errorMessage: error.toString(),
           ),
         ),
@@ -102,10 +112,17 @@ class TemperatureHistoryPreviewCubit
     return _requestVersionBySeriesKey[seriesKey] != requestVersion;
   }
 
-  List<double> _numericValues(TelemetryHistorySeries series) {
+  List<_PreviewNumericSample> _numericSamples(TelemetryHistorySeries series) {
     return series.points
-        .map(_numericValueFromPoint)
-        .whereType<double>()
+        .map((point) {
+          final value = _numericValueFromPoint(point);
+          if (value == null) return null;
+          return _PreviewNumericSample(
+            value: value,
+            timestamp: point.bucketStart.toUtc(),
+          );
+        })
+        .whereType<_PreviewNumericSample>()
         .toList(growable: false);
   }
 
@@ -115,4 +132,14 @@ class TemperatureHistoryPreviewCubit
         point.maxValue ??
         point.minValue;
   }
+}
+
+class _PreviewNumericSample {
+  const _PreviewNumericSample({
+    required this.value,
+    required this.timestamp,
+  });
+
+  final double value;
+  final DateTime timestamp;
 }

@@ -9,6 +9,8 @@ class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
   TelemetryHistoryCubit({
     required TelemetryHistorySeriesReader seriesReader,
     required List<TelemetryHistoryMetric> metrics,
+    List<TelemetryHistoryMetric> comparisonMetrics =
+        const <TelemetryHistoryMetric>[],
     int initialMetricIndex = 0,
     TelemetryHistoryRange initialRange = TelemetryHistoryRange.day,
     DateTime Function()? nowUtc,
@@ -17,6 +19,7 @@ class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
         super(
           TelemetryHistoryState.initial(
             metrics: metrics,
+            comparisonMetrics: comparisonMetrics,
             initialMetricIndex: initialMetricIndex,
             initialRange: initialRange,
           ),
@@ -65,6 +68,22 @@ class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
 
   Future<void> reloadMetric(TelemetryHistoryMetric metric) {
     return _loadMetric(metric, forceRefresh: true);
+  }
+
+  Future<void> ensureMetricsLoaded(
+    Iterable<TelemetryHistoryMetric> metrics, {
+    bool forceRefresh = false,
+  }) async {
+    final uniqueBySeriesKey = <String, TelemetryHistoryMetric>{};
+    for (final metric in metrics) {
+      uniqueBySeriesKey[metric.seriesKey] = metric;
+    }
+    if (uniqueBySeriesKey.isEmpty) return;
+    await Future.wait(
+      uniqueBySeriesKey.values.map(
+        (metric) => _loadMetric(metric, forceRefresh: forceRefresh),
+      ),
+    );
   }
 
   Future<void> _loadMetric(

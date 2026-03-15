@@ -148,8 +148,9 @@
   "TelemetryHistoryMetricLoadFactor": "Коефіцієнт навантаження",
   "TelemetryHistoryMetricHeatingActivity": "Активність нагріву",
   "TelemetryHistoryMetricTemperature": "Температура",
-  "TelemetryHistoryPreviewTitle24h": "Тренд температури (24 год)",
-  "TelemetryHistoryPreviewNoSensorData": "Тренд температури (24 год): немає даних датчиків",
+  "TelemetryHistoryMetricTarget": "Ціль",
+  "TelemetryHistoryPreviewTitle24h": "Історія температури (24 год)",
+  "TelemetryHistoryPreviewNoSensorData": "Історія температури (24 год): немає даних датчиків",
   "TelemetryHistoryResolutionPoints": "Роздільність: {resolution} • Точки: {points}",
   "@TelemetryHistoryResolutionPoints": {
     "placeholders": {

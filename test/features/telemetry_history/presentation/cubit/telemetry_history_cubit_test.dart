@@ -184,4 +184,66 @@ void main() {
 
     await cubit.close();
   });
+
+  test('ensureMetricsLoaded deduplicates by series key', () async {
+    final api = _QueuedTelemetryHistoryApi();
+    final now = DateTime.utc(2026, 3, 14, 20, 18, 40);
+    final cubit = TelemetryHistoryCubit(
+      seriesReader: api,
+      metrics: const <TelemetryHistoryMetric>[
+        TelemetryHistoryMetric(
+          title: 'Temperature',
+          seriesKey: 'climate_sensors.floor.temp',
+          kind: TelemetryHistoryMetricKind.numeric,
+          unit: '°C',
+        ),
+      ],
+      nowUtc: () => now,
+    );
+
+    unawaited(
+      cubit.ensureMetricsLoaded(
+        const <TelemetryHistoryMetric>[
+          TelemetryHistoryMetric(
+            title: 'Target',
+            seriesKey: 'target_temp',
+            kind: TelemetryHistoryMetricKind.numeric,
+            unit: '°C',
+          ),
+          TelemetryHistoryMetric(
+            title: 'Target duplicate',
+            seriesKey: 'target_temp',
+            kind: TelemetryHistoryMetricKind.numeric,
+            unit: '°C',
+          ),
+          TelemetryHistoryMetric(
+            title: 'Heating',
+            seriesKey: 'heater_enabled',
+            kind: TelemetryHistoryMetricKind.boolean,
+          ),
+        ],
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(api.requests, hasLength(2));
+    expect(
+      api.requests.map((request) => request.seriesKey).toSet(),
+      {'target_temp', 'heater_enabled'},
+    );
+
+    for (final request in api.requests) {
+      request.completer.complete(
+        _series(
+          seriesKey: request.seriesKey,
+          from: request.from,
+          to: request.to,
+          value: 1,
+        ),
+      );
+    }
+    await Future<void>.delayed(Duration.zero);
+
+    await cubit.close();
+  });
 }

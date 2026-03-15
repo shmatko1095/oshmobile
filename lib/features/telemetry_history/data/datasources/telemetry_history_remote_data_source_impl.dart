@@ -20,7 +20,7 @@ class TelemetryHistoryRemoteDataSourceImpl
   }) async {
     final raw = await _mobileApiClient.getMyDeviceTelemetryHistoryRaw(
       serial: serial,
-      seriesKey: query.seriesKey,
+      seriesKeys: <String>[query.seriesKey],
       from: query.from,
       to: query.to,
       resolution: query.preferredResolution,
@@ -47,24 +47,44 @@ class TelemetryHistoryRemoteDataSourceImpl
     final deviceId = _readString(payload, 'device_id') ??
         _readString(payload, 'deviceId') ??
         '';
-
     final serial = _readString(payload, 'serial') ?? fallbackSerial;
-    final seriesKey = _readString(payload, 'series_key') ??
-        _readString(payload, 'seriesKey') ??
-        fallbackQuery.seriesKey;
     final resolution = (_readString(payload, 'resolution') ?? 'auto').trim();
-
     final from = _readDate(payload, 'from') ?? fallbackQuery.from.toUtc();
     final to = _readDate(payload, 'to') ?? fallbackQuery.to.toUtc();
 
-    final pointsRaw = _readList(payload, 'points');
-    final points = pointsRaw
+    final multiSeries = _readList(payload, 'series')
         .whereType<Map>()
-        .map((item) => _parsePoint(item.cast<String, dynamic>()))
-        .whereType<TelemetryHistoryPoint>()
-        .toList(growable: false)
-      ..sort((a, b) => a.bucketStart.compareTo(b.bucketStart));
+        .map((item) => item.cast<String, dynamic>())
+        .toList(growable: false);
+    if (multiSeries.isNotEmpty) {
+      final selected = multiSeries.firstWhere(
+        (item) {
+          final key = _readString(item, 'series_key') ??
+              _readString(item, 'seriesKey') ??
+              '';
+          return key == fallbackQuery.seriesKey;
+        },
+        orElse: () => multiSeries.first,
+      );
+      final seriesKey = _readString(selected, 'series_key') ??
+          _readString(selected, 'seriesKey') ??
+          fallbackQuery.seriesKey;
+      final points = _parsePoints(_readList(selected, 'points'));
+      return TelemetryHistorySeries(
+        deviceId: deviceId,
+        serial: serial,
+        seriesKey: seriesKey,
+        resolution: resolution,
+        from: from,
+        to: to,
+        points: points,
+      );
+    }
 
+    final seriesKey = _readString(payload, 'series_key') ??
+        _readString(payload, 'seriesKey') ??
+        fallbackQuery.seriesKey;
+    final points = _parsePoints(_readList(payload, 'points'));
     return TelemetryHistorySeries(
       deviceId: deviceId,
       serial: serial,
@@ -74,6 +94,15 @@ class TelemetryHistoryRemoteDataSourceImpl
       to: to,
       points: points,
     );
+  }
+
+  List<TelemetryHistoryPoint> _parsePoints(List<dynamic> rawPoints) {
+    return rawPoints
+        .whereType<Map>()
+        .map((item) => _parsePoint(item.cast<String, dynamic>()))
+        .whereType<TelemetryHistoryPoint>()
+        .toList(growable: false)
+      ..sort((a, b) => a.bucketStart.compareTo(b.bucketStart));
   }
 
   Map<String, dynamic> _unwrapPayload(Map<String, dynamic> raw) {
@@ -107,6 +136,8 @@ class TelemetryHistoryRemoteDataSourceImpl
           _readBool(raw, 'last_bool_value') ?? _readBool(raw, 'lastBoolValue'),
       trueRatio:
           _readDouble(raw, 'true_ratio') ?? _readDouble(raw, 'trueRatio'),
+      referenceSensorId: _readString(raw, 'reference_sensor_id') ??
+          _readString(raw, 'referenceSensorId'),
     );
   }
 

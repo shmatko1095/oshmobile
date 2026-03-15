@@ -93,6 +93,19 @@ class TelemetryHistoryNavigator {
     _openMetrics(
       hostContext,
       metrics: metrics,
+      comparisonMetrics: <TelemetryHistoryMetric>[
+        TelemetryHistoryMetric(
+          title: s.TelemetryHistoryMetricTarget,
+          seriesKey: 'target_temp',
+          kind: TelemetryHistoryMetricKind.numeric,
+          unit: '°C',
+        ),
+        TelemetryHistoryMetric(
+          title: s.Heating,
+          seriesKey: 'heater_enabled',
+          kind: TelemetryHistoryMetricKind.boolean,
+        ),
+      ],
       initialMetricIndex: initialIndex < 0 ? 0 : initialIndex,
     );
   }
@@ -100,6 +113,8 @@ class TelemetryHistoryNavigator {
   static void _openMetrics(
     BuildContext hostContext, {
     required List<TelemetryHistoryMetric> metrics,
+    List<TelemetryHistoryMetric> comparisonMetrics =
+        const <TelemetryHistoryMetric>[],
     int initialMetricIndex = 0,
   }) {
     if (metrics.isEmpty) return;
@@ -128,6 +143,7 @@ class TelemetryHistoryNavigator {
             create: (_) => TelemetryHistoryCubit(
               seriesReader: facade.telemetryHistory,
               metrics: metrics,
+              comparisonMetrics: comparisonMetrics,
               initialMetricIndex: initialMetricIndex,
             )..load(),
             child: const TelemetryHistoryPage(),

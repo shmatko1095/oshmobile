@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_chart_gap_resolver.dart';
 
 typedef HistoryChartValueLabelBuilder = String Function(double value);
 typedef HistoryChartTimeLabelBuilder = String Function(DateTime timestamp);
@@ -89,12 +90,18 @@ class HistoryLineChart extends StatelessWidget {
 
     final spots = <FlSpot>[];
     final spotToPoint = <_HistoryChartPoint?>[];
-    final gapThresholdSeconds = _resolveGapThresholdSeconds(points);
+    final gapThresholdSeconds =
+        HistoryChartGapResolver.resolveGapThresholdSeconds(
+      points.map((point) => point.timestamp).toList(growable: false),
+    );
     for (var i = 0; i < points.length; i++) {
       final point = points[i];
       if (gapThresholdSeconds != null && i > 0) {
         final previous = points[i - 1];
-        final gapSeconds = _secondsBetween(previous.timestamp, point.timestamp);
+        final gapSeconds = HistoryChartGapResolver.secondsBetween(
+          previous.timestamp,
+          point.timestamp,
+        );
         if (gapSeconds != null && gapSeconds > gapThresholdSeconds) {
           spots.add(FlSpot.nullSpot);
           spotToPoint.add(null);
@@ -107,10 +114,11 @@ class HistoryLineChart extends StatelessWidget {
     final yValues = points.map((p) => p.y).toList(growable: false);
     final minRaw = yValues.reduce(math.min);
     final maxRaw = yValues.reduce(math.max);
-    final span = (maxRaw - minRaw).abs();
+    final stableRange = _stableRange(minRaw, maxRaw);
+    final span = (stableRange.max - stableRange.min).abs();
     final yInterval = _niceInterval(span, preferredTickCount: 4);
-    final minY = _alignLower(minRaw, yInterval);
-    final maxY = _alignUpper(maxRaw, yInterval);
+    final minY = _alignLower(stableRange.min, yInterval);
+    final maxY = _alignUpper(stableRange.max, yInterval);
     final maxX =
         useWindowAxis ? xWindow.spanSeconds : (points.length - 1).toDouble();
     final xInterval = maxX <= 0 ? 1.0 : maxX / 3;
@@ -402,37 +410,23 @@ double _alignUpper(double value, double interval) {
   return (value / interval).ceilToDouble() * interval;
 }
 
-double? _resolveGapThresholdSeconds(List<_HistoryChartPoint> points) {
-  if (points.length < 3) return null;
+class _YAxisRange {
+  const _YAxisRange({
+    required this.min,
+    required this.max,
+  });
 
-  final deltas = <double>[];
-  for (var i = 1; i < points.length; i++) {
-    final seconds = _secondsBetween(
-      points[i - 1].timestamp,
-      points[i].timestamp,
-    );
-    if (seconds != null && seconds > 0) {
-      deltas.add(seconds);
-    }
-  }
-
-  if (deltas.length < 2) return null;
-  deltas.sort();
-  final mid = deltas.length ~/ 2;
-  final median =
-      deltas.length.isEven ? (deltas[mid - 1] + deltas[mid]) / 2 : deltas[mid];
-  if (median <= 0) return null;
-
-  // Consider intervals that are much larger than a typical bucket size
-  // as "missing data" and split the line there.
-  return median * 2.5;
+  final double min;
+  final double max;
 }
 
-double? _secondsBetween(DateTime? from, DateTime? to) {
-  if (from == null || to == null) return null;
-  final deltaMs = to.toUtc().difference(from.toUtc()).inMilliseconds;
-  if (deltaMs <= 0) return null;
-  return deltaMs / 1000;
+_YAxisRange _stableRange(double minRaw, double maxRaw) {
+  final span = (maxRaw - minRaw).abs();
+  if (span > 0.0001) {
+    return _YAxisRange(min: minRaw, max: maxRaw);
+  }
+  final pad = math.max(minRaw.abs() * 0.04, 1.0);
+  return _YAxisRange(min: minRaw - pad, max: maxRaw + pad);
 }
 
 class _HistoryChartPoint {

@@ -148,6 +148,7 @@
   "TelemetryHistoryMetricLoadFactor": "Load factor",
   "TelemetryHistoryMetricHeatingActivity": "Heating activity",
   "TelemetryHistoryMetricTemperature": "Temperature",
+  "TelemetryHistoryMetricTarget": "Target",
   "TelemetryHistoryPreviewTitle24h": "Temperature trend (24h)",
   "TelemetryHistoryPreviewNoSensorData": "Temperature trend (24h): no sensor data",
   "TelemetryHistoryResolutionPoints": "Resolution: {resolution} • Points: {points}",

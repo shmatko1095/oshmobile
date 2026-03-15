@@ -75,18 +75,27 @@ class MobileApiClient {
 
   Future<Map<String, dynamic>> getMyDeviceTelemetryHistoryRaw({
     required String serial,
-    required String seriesKey,
+    required List<String> seriesKeys,
     required DateTime from,
     required DateTime to,
     String resolution = 'auto',
     String apiVersion = 'v1',
   }) async {
+    final normalizedSeriesKeys = seriesKeys
+        .map((key) => key.trim())
+        .where((key) => key.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+    if (normalizedSeriesKeys.isEmpty) {
+      throw ServerException('series_keys must not be empty');
+    }
+
     final response = await _sendVersioned(
       'GET',
       '/devices/$serial/telemetry/history',
       apiVersion: apiVersion,
       queryParameters: {
-        'series_key': seriesKey,
+        'series_keys': normalizedSeriesKeys.join(','),
         'from': from.toUtc().toIso8601String(),
         'to': to.toUtc().toIso8601String(),
         'resolution': resolution,

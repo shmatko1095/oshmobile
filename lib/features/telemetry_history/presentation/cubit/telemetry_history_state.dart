@@ -5,6 +5,7 @@ import 'package:oshmobile/features/telemetry_history/presentation/models/telemet
 class TelemetryHistoryState {
   const TelemetryHistoryState({
     required this.metrics,
+    required this.comparisonMetrics,
     required this.selectedMetricIndex,
     required this.range,
     required this.loadingSeriesKeys,
@@ -14,6 +15,8 @@ class TelemetryHistoryState {
 
   factory TelemetryHistoryState.initial({
     required List<TelemetryHistoryMetric> metrics,
+    List<TelemetryHistoryMetric> comparisonMetrics =
+        const <TelemetryHistoryMetric>[],
     required int initialMetricIndex,
     required TelemetryHistoryRange initialRange,
   }) {
@@ -21,6 +24,7 @@ class TelemetryHistoryState {
         metrics.isEmpty ? 0 : initialMetricIndex.clamp(0, metrics.length - 1);
     return TelemetryHistoryState(
       metrics: metrics,
+      comparisonMetrics: comparisonMetrics,
       selectedMetricIndex: clampedIndex,
       range: initialRange,
       loadingSeriesKeys: const <String>{},
@@ -30,6 +34,7 @@ class TelemetryHistoryState {
   }
 
   final List<TelemetryHistoryMetric> metrics;
+  final List<TelemetryHistoryMetric> comparisonMetrics;
   final int selectedMetricIndex;
   final TelemetryHistoryRange range;
   final Set<String> loadingSeriesKeys;
@@ -39,6 +44,7 @@ class TelemetryHistoryState {
   TelemetryHistoryMetric get metric => metrics[selectedMetricIndex];
 
   bool get hasMultipleMetrics => metrics.length > 1;
+  bool get hasComparisonMetrics => comparisonMetrics.isNotEmpty;
 
   TelemetryHistorySeries? get series => seriesFor(metric);
 
@@ -62,6 +68,7 @@ class TelemetryHistoryState {
 
   TelemetryHistoryState copyWith({
     List<TelemetryHistoryMetric>? metrics,
+    List<TelemetryHistoryMetric>? comparisonMetrics,
     int? selectedMetricIndex,
     TelemetryHistoryRange? range,
     Object? loadingSeriesKeys = _unset,
@@ -75,6 +82,7 @@ class TelemetryHistoryState {
 
     return TelemetryHistoryState(
       metrics: nextMetrics,
+      comparisonMetrics: comparisonMetrics ?? this.comparisonMetrics,
       selectedMetricIndex: clampedIndex,
       range: range ?? this.range,
       loadingSeriesKeys: loadingSeriesKeys == _unset

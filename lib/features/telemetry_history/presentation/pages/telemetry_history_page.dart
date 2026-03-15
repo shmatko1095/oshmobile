@@ -10,6 +10,7 @@ import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetr
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_range.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_line_chart.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_chart.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class TelemetryHistoryPage extends StatefulWidget {
@@ -29,8 +30,14 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
     TelemetryHistoryRange.month,
     TelemetryHistoryRange.year,
   ];
+  static const String _toggleTemp = 'temp';
+  static const String _toggleTarget = 'target';
+  static const String _toggleHeating = 'heating';
+  static const Color _tempInactiveColor = Color(0xFF7BC5FF);
 
   late final PageController _pageController;
+  Set<String> _enabledTemperatureSeries = <String>{};
+  String? _comparisonLoadKey;
 
   @override
   void initState() {
@@ -44,6 +51,64 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  bool _isTemperatureMetric(TelemetryHistoryMetric metric) {
+    return metric.kind == TelemetryHistoryMetricKind.numeric &&
+        metric.seriesKey.endsWith('.temp');
+  }
+
+  TelemetryHistoryMetric? _findComparisonMetric(
+    TelemetryHistoryState state,
+    String seriesKey,
+  ) {
+    for (final metric in state.comparisonMetrics) {
+      if (metric.seriesKey == seriesKey) {
+        return metric;
+      }
+    }
+    return null;
+  }
+
+  void _ensureComparisonLoaded(
+    BuildContext context,
+    TelemetryHistoryState state,
+    TelemetryHistoryMetric metric,
+  ) {
+    if (!_isTemperatureMetric(metric) || !state.hasComparisonMetrics) {
+      return;
+    }
+    final loadKey = '${state.range.name}|${metric.seriesKey}';
+    if (_comparisonLoadKey == loadKey) {
+      return;
+    }
+    _comparisonLoadKey = loadKey;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context
+          .read<TelemetryHistoryCubit>()
+          .ensureMetricsLoaded(state.comparisonMetrics);
+    });
+  }
+
+  Set<String> _selectedTemperatureToggles(List<_OverlayToggleOption> options) {
+    if (options.isEmpty) {
+      return const <String>{};
+    }
+    final available = options.map((option) => option.id).toSet();
+    return _enabledTemperatureSeries.intersection(available);
+  }
+
+  void _toggleTemperatureSeries(String id) {
+    setState(() {
+      final next = <String>{..._enabledTemperatureSeries};
+      if (next.contains(id)) {
+        next.remove(id);
+      } else {
+        next.add(id);
+      }
+      _enabledTemperatureSeries = next;
+    });
   }
 
   List<_ChartEntry> _chartEntries(
@@ -69,6 +134,7 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
         _ChartEntry(
           timestamp: point.bucketStart,
           value: value,
+          referenceSensorId: point.referenceSensorId,
         ),
       );
     }
@@ -121,6 +187,13 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
     return '$time\n${_fmtValue(value, metric)}';
   }
 
+  String _tooltipTimeLabel({
+    required DateTime timestamp,
+    required String localeTag,
+  }) {
+    return DateFormat('MM/dd HH:mm', localeTag).format(timestamp.toLocal());
+  }
+
   List<_SummaryItem> _summaryItems(
     List<double> values,
     TelemetryHistoryMetric metric,
@@ -159,6 +232,166 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
     ];
   }
 
+  _NumericDomain _resolveNumericDomain(
+    List<_ChartEntry> primaryEntries,
+    List<_ChartEntry> targetEntries,
+  ) {
+    final values = <double>[
+      ...primaryEntries.map((entry) => entry.value),
+      ...targetEntries.map((entry) => entry.value),
+    ];
+    if (values.isEmpty) {
+      return const _NumericDomain(min: 0, max: 1);
+    }
+
+    final minRaw = values.reduce(math.min);
+    final maxRaw = values.reduce(math.max);
+    final span = (maxRaw - minRaw).abs();
+    if (span > 0.0001) {
+      return _NumericDomain(min: minRaw, max: maxRaw);
+    }
+
+    final fallbackPadding = math.max(minRaw.abs() * 0.04, 1.0);
+    return _NumericDomain(
+      min: minRaw - fallbackPadding,
+      max: maxRaw + fallbackPadding,
+    );
+  }
+
+  List<_ChartEntry> _mapBooleanToTemperatureDomain(
+    List<_ChartEntry> entries, {
+    required _NumericDomain domain,
+  }) {
+    if (entries.isEmpty) {
+      return const <_ChartEntry>[];
+    }
+    final span = math.max((domain.max - domain.min).abs(), 2.0);
+    final lower = domain.min + span * 0.08;
+    final upper = domain.max - span * 0.08;
+    final cappedUpper = upper <= lower ? lower + 1.0 : upper;
+
+    return entries
+        .map(
+          (entry) => _ChartEntry(
+            timestamp: entry.timestamp,
+            value: lower + entry.value.clamp(0.0, 1.0) * (cappedUpper - lower),
+            referenceSensorId: entry.referenceSensorId,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  Color _temperaturePointColor(_ChartEntry entry, String sensorId) {
+    final referenceId = entry.referenceSensorId?.trim();
+    if (referenceId == null || referenceId.isEmpty) {
+      return _tempInactiveColor;
+    }
+    return referenceId == sensorId
+        ? AppPalette.accentPrimary
+        : _tempInactiveColor;
+  }
+
+  Color _temperatureLineColor(
+    List<_ChartEntry> entries,
+    TelemetryHistoryMetric metric,
+  ) {
+    final sensorId = metric.sensorId?.trim();
+    if (sensorId == null || sensorId.isEmpty || entries.isEmpty) {
+      return AppPalette.accentPrimary;
+    }
+
+    for (final entry in entries) {
+      final referenceId = entry.referenceSensorId?.trim();
+      if (referenceId == null || referenceId.isEmpty) {
+        continue;
+      }
+      return _temperaturePointColor(entry, sensorId);
+    }
+    return AppPalette.accentPrimary;
+  }
+
+  LinearGradient? _temperatureLineGradient(
+    List<_ChartEntry> entries,
+    TelemetryHistoryMetric metric, {
+    DateTime? windowStart,
+    DateTime? windowEnd,
+  }) {
+    final sensorId = metric.sensorId?.trim();
+    if (sensorId == null || sensorId.isEmpty || entries.length < 2) {
+      return null;
+    }
+    final hasReferenceData = entries.any(
+      (entry) => (entry.referenceSensorId?.trim().isNotEmpty ?? false),
+    );
+    if (!hasReferenceData) {
+      return null;
+    }
+
+    final startUtc = windowStart?.toUtc();
+    final endUtc = windowEnd?.toUtc();
+    final hasWindow =
+        startUtc != null && endUtc != null && endUtc.isAfter(startUtc);
+    final spanMicros =
+        hasWindow ? endUtc.difference(startUtc).inMicroseconds.toDouble() : 0.0;
+
+    double stopForEntry(int index) {
+      if (hasWindow && spanMicros > 0) {
+        final offsetMicros = entries[index]
+            .timestamp
+            .toUtc()
+            .difference(startUtc)
+            .inMicroseconds
+            .toDouble();
+        return (offsetMicros / spanMicros).clamp(0.0, 1.0);
+      }
+      if (entries.length == 1) return 0.0;
+      return (index / (entries.length - 1)).clamp(0.0, 1.0);
+    }
+
+    final colors = <Color>[];
+    final stops = <double>[];
+    var previousColor = _temperaturePointColor(entries.first, sensorId);
+    var previousStop = stopForEntry(0);
+
+    colors.add(previousColor);
+    stops.add(previousStop);
+    var hasColorTransitions = false;
+
+    for (var i = 1; i < entries.length; i++) {
+      final currentColor = _temperaturePointColor(entries[i], sensorId);
+      final currentStop = stopForEntry(i);
+      if (currentColor != previousColor) {
+        hasColorTransitions = true;
+        colors.add(previousColor);
+        stops.add(currentStop);
+      }
+      colors.add(currentColor);
+      stops.add(currentStop);
+      previousColor = currentColor;
+      previousStop = currentStop;
+    }
+
+    if (stops.first > 0.0) {
+      colors.insert(0, colors.first);
+      stops.insert(0, 0.0);
+    }
+    if (stops.last < 1.0) {
+      colors.add(colors.last);
+      stops.add(1.0);
+    }
+
+    if (!hasColorTransitions) {
+      return null;
+    }
+
+    return LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: colors,
+      stops: stops,
+    );
+  }
+
   void _syncPager(TelemetryHistoryState state) {
     if (!_pageController.hasClients) return;
     final page = _pageController.page?.round();
@@ -180,17 +413,143 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
     required String localeTag,
     required S s,
   }) {
+    _ensureComparisonLoaded(context, state, metric);
+
+    final isTemperatureOverlayMode =
+        _isTemperatureMetric(metric) && state.hasComparisonMetrics;
+    final targetMetric = _findComparisonMetric(state, 'target_temp');
+    final heatingMetric = _findComparisonMetric(state, 'heater_enabled');
+    final overlayOptions = isTemperatureOverlayMode
+        ? <_OverlayToggleOption>[
+            if (heatingMetric != null)
+              _OverlayToggleOption(
+                id: _toggleHeating,
+                label: heatingMetric.title,
+                metric: heatingMetric,
+                color: AppPalette.accentWarning,
+              ),
+            if (targetMetric != null)
+              _OverlayToggleOption(
+                id: _toggleTarget,
+                label: targetMetric.title,
+                metric: targetMetric,
+                color: AppPalette.accentSuccess,
+              ),
+          ]
+        : const <_OverlayToggleOption>[];
+    final selectedOverlayIds = _selectedTemperatureToggles(overlayOptions);
+    final overlayMetricById = {
+      _toggleTemp: metric,
+      for (final option in overlayOptions) option.id: option.metric,
+    };
+
     final series = state.seriesFor(metric);
     final isLoading = state.isLoadingFor(metric);
     final errorMessage = state.errorFor(metric);
     final entries = _chartEntries(series, metric);
     final values = entries.map((entry) => entry.value).toList(growable: false);
-    final timestamps =
-        entries.map((entry) => entry.timestamp).toList(growable: false);
-    final isEmpty = !isLoading && errorMessage == null && values.isEmpty;
     final summaryItems = _summaryItems(values, metric, s);
     final sensorName = (metric.subtitle ?? '').trim();
     final hasSensorIdentity = sensorName.isNotEmpty && metric.sensorId != null;
+
+    final targetEntries = targetMetric == null
+        ? const <_ChartEntry>[]
+        : _chartEntries(state.seriesFor(targetMetric), targetMetric);
+    final heatingEntries = heatingMetric == null
+        ? const <_ChartEntry>[]
+        : _chartEntries(state.seriesFor(heatingMetric), heatingMetric);
+    final temperatureDomain = _resolveNumericDomain(entries, targetEntries);
+
+    final hasTemperatureAxisSeries = entries.isNotEmpty ||
+        (selectedOverlayIds.contains(_toggleTarget) &&
+            targetEntries.isNotEmpty);
+
+    final overlaySeries = <HistoryMultiLineSeries>[];
+    if (isTemperatureOverlayMode) {
+      if (entries.isNotEmpty) {
+        final tempLineColor = _temperatureLineColor(entries, metric);
+        overlaySeries.add(
+          HistoryMultiLineSeries(
+            id: _toggleTemp,
+            label: metric.title,
+            values: entries.map((entry) => entry.value).toList(growable: false),
+            displayValues:
+                entries.map((entry) => entry.value).toList(growable: false),
+            timestamps:
+                entries.map((entry) => entry.timestamp).toList(growable: false),
+            color: tempLineColor,
+            lineGradient: _temperatureLineGradient(
+              entries,
+              metric,
+              windowStart: series?.from,
+              windowEnd: series?.to,
+            ),
+            strokeWidth: 2.0,
+            fill: true,
+          ),
+        );
+      }
+      for (final option in overlayOptions) {
+        if (!selectedOverlayIds.contains(option.id)) {
+          continue;
+        }
+
+        final sourceEntries = switch (option.id) {
+          _toggleTarget => targetEntries,
+          _toggleHeating => heatingEntries,
+          _ => const <_ChartEntry>[],
+        };
+        if (sourceEntries.isEmpty) {
+          continue;
+        }
+
+        final resolvedEntries =
+            option.id == _toggleHeating && hasTemperatureAxisSeries
+                ? _mapBooleanToTemperatureDomain(
+                    sourceEntries,
+                    domain: temperatureDomain,
+                  )
+                : sourceEntries;
+
+        overlaySeries.add(
+          HistoryMultiLineSeries(
+            id: option.id,
+            label: option.label,
+            values: resolvedEntries
+                .map((entry) => entry.value)
+                .toList(growable: false),
+            displayValues: sourceEntries
+                .map((entry) => entry.value)
+                .toList(growable: false),
+            timestamps: resolvedEntries
+                .map((entry) => entry.timestamp)
+                .toList(growable: false),
+            color: option.color,
+            strokeWidth: 2.0,
+            fill: true,
+          ),
+        );
+      }
+    }
+
+    final selectedOverlayMetrics = overlayOptions
+        .where((option) => selectedOverlayIds.contains(option.id))
+        .map((option) => option.metric)
+        .toList(growable: false);
+    final overlayLoading = selectedOverlayMetrics
+        .any((overlayMetric) => state.isLoadingFor(overlayMetric));
+
+    final lineChartValues = entries.map((entry) => entry.value).toList(
+          growable: false,
+        );
+    final lineChartTimestamps = entries.map((entry) => entry.timestamp).toList(
+          growable: false,
+        );
+    final hasChartData = isTemperatureOverlayMode
+        ? overlaySeries.isNotEmpty
+        : lineChartValues.isNotEmpty;
+    final isEmpty =
+        !isLoading && !overlayLoading && errorMessage == null && !hasChartData;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -233,33 +592,88 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
                           ? _EmptyState(
                               title: s.TelemetryHistoryNoData,
                             )
-                          : HistoryLineChart(
-                              values: values,
-                              timestamps: timestamps,
-                              windowStart: series?.from,
-                              windowEnd: series?.to,
-                              color: metric.kind ==
-                                      TelemetryHistoryMetricKind.boolean
-                                  ? AppPalette.accentWarning
-                                  : AppPalette.accentPrimary,
-                              strokeWidth: 2.0,
-                              fill: true,
-                              showGrid: false,
-                              showAxes: true,
-                              enableTouchTooltip: true,
-                              valueLabelBuilder: (v) => _fmtValue(v, metric),
-                              xAxisLabelBuilder: (ts) => _xAxisLabel(
-                                timestamp: ts,
-                                range: state.range,
-                                localeTag: localeTag,
-                              ),
-                              tooltipBuilder: (ts, value) => _tooltipLabel(
-                                timestamp: ts,
-                                value: value,
-                                metric: metric,
-                                localeTag: localeTag,
-                              ),
-                            ),
+                          : isTemperatureOverlayMode
+                              ? Column(
+                                  children: [
+                                    if (overlayOptions.isNotEmpty)
+                                      Align(
+                                        alignment: Alignment.topRight,
+                                        child: Padding(
+                                          padding:
+                                              const EdgeInsets.only(right: 6),
+                                          child: _OverlaySeriesSelector(
+                                            options: overlayOptions,
+                                            selectedIds: selectedOverlayIds,
+                                            onToggle: _toggleTemperatureSeries,
+                                          ),
+                                        ),
+                                      ),
+                                    if (overlayOptions.isNotEmpty)
+                                      const SizedBox(height: 8),
+                                    Expanded(
+                                      child: HistoryMultiLineChart(
+                                        series: overlaySeries,
+                                        windowStart: series?.from,
+                                        windowEnd: series?.to,
+                                        showGrid: false,
+                                        showAxes: true,
+                                        enableTouchTooltip: true,
+                                        valueLabelBuilder:
+                                            hasTemperatureAxisSeries
+                                                ? (v) => _fmtValue(v, metric)
+                                                : (v) =>
+                                                    '${(v * 100).round()}%',
+                                        tooltipValueFormatter:
+                                            (seriesId, value) {
+                                          final sourceMetric =
+                                              overlayMetricById[seriesId];
+                                          if (sourceMetric == null) {
+                                            return value.toStringAsFixed(2);
+                                          }
+                                          return _fmtValue(value, sourceMetric);
+                                        },
+                                        xAxisLabelBuilder: (ts) => _xAxisLabel(
+                                          timestamp: ts,
+                                          range: state.range,
+                                          localeTag: localeTag,
+                                        ),
+                                        tooltipTimeLabelBuilder: (ts) =>
+                                            _tooltipTimeLabel(
+                                          timestamp: ts,
+                                          localeTag: localeTag,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : HistoryLineChart(
+                                  values: lineChartValues,
+                                  timestamps: lineChartTimestamps,
+                                  windowStart: series?.from,
+                                  windowEnd: series?.to,
+                                  color: metric.kind ==
+                                          TelemetryHistoryMetricKind.boolean
+                                      ? AppPalette.accentWarning
+                                      : AppPalette.accentPrimary,
+                                  strokeWidth: 2.0,
+                                  fill: true,
+                                  showGrid: false,
+                                  showAxes: true,
+                                  enableTouchTooltip: true,
+                                  valueLabelBuilder: (v) =>
+                                      _fmtValue(v, metric),
+                                  xAxisLabelBuilder: (ts) => _xAxisLabel(
+                                    timestamp: ts,
+                                    range: state.range,
+                                    localeTag: localeTag,
+                                  ),
+                                  tooltipBuilder: (ts, value) => _tooltipLabel(
+                                    timestamp: ts,
+                                    value: value,
+                                    metric: metric,
+                                    localeTag: localeTag,
+                                  ),
+                                ),
             ),
           ),
         ],
@@ -525,6 +939,101 @@ class _SummaryCell extends StatelessWidget {
   }
 }
 
+class _OverlaySeriesSelector extends StatelessWidget {
+  const _OverlaySeriesSelector({
+    required this.options,
+    required this.selectedIds,
+    required this.onToggle,
+  });
+
+  final List<_OverlayToggleOption> options;
+  final Set<String> selectedIds;
+  final ValueChanged<String> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < options.length; i++) ...[
+          _OverlaySeriesChip(
+            option: options[i],
+            selected: selectedIds.contains(options[i].id),
+            onTap: () => onToggle(options[i].id),
+          ),
+          if (i < options.length - 1) const SizedBox(width: 6),
+        ],
+      ],
+    );
+  }
+}
+
+class _OverlaySeriesChip extends StatelessWidget {
+  const _OverlaySeriesChip({
+    required this.option,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final _OverlayToggleOption option;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: AppPalette.motionBase,
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            color: selected
+                ? option.color.withValues(alpha: 0.2)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppPalette.radiusPill),
+            border: Border.all(
+              color: selected
+                  ? option.color.withValues(alpha: 0.72)
+                  : Colors.transparent,
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 9),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: selected
+                      ? option.color
+                      : option.color.withValues(alpha: 0.42),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                option.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color:
+                      selected ? AppPalette.textPrimary : AppPalette.textMuted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _RangeSelector extends StatelessWidget {
   const _RangeSelector({
     required this.options,
@@ -654,14 +1163,40 @@ class _RangeOption {
   final String label;
 }
 
+class _OverlayToggleOption {
+  const _OverlayToggleOption({
+    required this.id,
+    required this.label,
+    required this.metric,
+    required this.color,
+  });
+
+  final String id;
+  final String label;
+  final TelemetryHistoryMetric metric;
+  final Color color;
+}
+
+class _NumericDomain {
+  const _NumericDomain({
+    required this.min,
+    required this.max,
+  });
+
+  final double min;
+  final double max;
+}
+
 class _ChartEntry {
   const _ChartEntry({
     required this.timestamp,
     required this.value,
+    this.referenceSensorId,
   });
 
   final DateTime timestamp;
   final double value;
+  final String? referenceSensorId;
 }
 
 class _ErrorState extends StatelessWidget {

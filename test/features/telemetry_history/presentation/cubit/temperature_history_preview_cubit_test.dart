@@ -52,6 +52,9 @@ void main() {
     final entry = cubit.state.entryOf('climate_sensors.floor.temp');
     expect(entry, isNotNull);
     expect(entry!.values, hasLength(1));
+    expect(entry.timestamps, hasLength(1));
+    expect(entry.windowStart, isNotNull);
+    expect(entry.windowEnd, isNotNull);
     expect(entry.lastValue, 28.5);
 
     await cubit.close();

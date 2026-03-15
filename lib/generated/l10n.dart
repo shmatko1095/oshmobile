@@ -1189,6 +1189,16 @@ class S {
     );
   }
 
+  /// `Target`
+  String get TelemetryHistoryMetricTarget {
+    return Intl.message(
+      'Target',
+      name: 'TelemetryHistoryMetricTarget',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Temperature trend (24h)`
   String get TelemetryHistoryPreviewTitle24h {
     return Intl.message(

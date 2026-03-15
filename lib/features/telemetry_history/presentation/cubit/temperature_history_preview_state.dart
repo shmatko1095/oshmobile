@@ -8,8 +8,11 @@ class TemperatureHistoryPreviewEntry {
   const TemperatureHistoryPreviewEntry({
     required this.status,
     required this.values,
+    required this.timestamps,
     required this.lastValue,
     required this.updatedAt,
+    required this.windowStart,
+    required this.windowEnd,
     this.errorMessage,
   });
 
@@ -19,15 +22,21 @@ class TemperatureHistoryPreviewEntry {
     return TemperatureHistoryPreviewEntry(
       status: TemperatureHistoryPreviewStatus.loading,
       values: const <double>[],
+      timestamps: const <DateTime>[],
       lastValue: null,
       updatedAt: updatedAt,
+      windowStart: null,
+      windowEnd: null,
     );
   }
 
   final TemperatureHistoryPreviewStatus status;
   final List<double> values;
+  final List<DateTime> timestamps;
   final double? lastValue;
   final DateTime? updatedAt;
+  final DateTime? windowStart;
+  final DateTime? windowEnd;
   final String? errorMessage;
 }
 

@@ -27,6 +27,43 @@ import 'package:oshmobile/generated/l10n.dart';
 import 'package:oshmobile/init_dependencies.dart';
 import 'package:oshmobile/startup_error_app.dart';
 
+bool _isBackgroundSocketAbort(Object error) {
+  if (error is! SocketException) return false;
+
+  final code = error.osError?.errorCode;
+  // 103: Software caused connection abort (Linux/Android)
+  // 104: Connection reset by peer (Linux)
+  // 54:  Connection reset by peer (Darwin/iOS)
+  return code == 103 || code == 104 || code == 54;
+}
+
+void _reportUncaughtError(
+  Object error,
+  StackTrace stack, {
+  required String reason,
+}) {
+  // Mobile OS may abort sockets when app goes to background.
+  // Treat common "connection aborted" errors as non-fatal to avoid noisy crash reports.
+  if (_isBackgroundSocketAbort(error)) {
+    unawaited(
+      OshCrashReporter.logNonFatal(
+        error,
+        stack,
+        reason: 'Socket aborted by OS (background)',
+      ),
+    );
+    return;
+  }
+
+  unawaited(
+    OshCrashReporter.logFatal(
+      error,
+      stack,
+      reason: reason,
+    ),
+  );
+}
+
 Future<void> main() async {
   runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +73,7 @@ Future<void> main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    await OshCrashReporter.setCollectionEnabled(true);
+    await OshCrashReporter.setCollectionEnabled(kReleaseMode);
     Bloc.observer = OshBlocObserver();
 
     FlutterError.onError = (FlutterErrorDetails details) {
@@ -44,6 +81,14 @@ Future<void> main() async {
         FlutterError.dumpErrorToConsole(details);
       }
       FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+    };
+    PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+      _reportUncaughtError(
+        error,
+        stack,
+        reason: 'Uncaught platform dispatcher error',
+      );
+      return true;
     };
 
     try {
@@ -67,21 +112,11 @@ Future<void> main() async {
       ),
     );
   }, (Object error, StackTrace stack) {
-    // Mobile OS may abort sockets when app goes to background.
-    // Treat common "connection aborted" errors as non-fatal to avoid noisy crash reports.
-    if (error is SocketException) {
-      final code = error.osError?.errorCode;
-      // 103: Software caused connection abort (Linux/Android)
-      // 104: Connection reset by peer (Linux)
-      // 54:  Connection reset by peer (Darwin/iOS)
-      if (code == 103 || code == 104 || code == 54) {
-        OshCrashReporter.logNonFatal(error, stack,
-            reason: 'Socket aborted by OS (background)');
-        return;
-      }
-    }
-
-    OshCrashReporter.logFatal(error, stack, reason: 'Uncaught zone error');
+    _reportUncaughtError(
+      error,
+      stack,
+      reason: 'Uncaught zone error',
+    );
   });
 }
 

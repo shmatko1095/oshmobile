@@ -169,6 +169,7 @@ class _TemperatureHistoryStripCardViewState
       (cubit) => cubit.state.entryOf(seriesKey),
     );
     final values = preview?.values ?? const <double>[];
+    final timestamps = preview?.timestamps;
     final hasData = values.isNotEmpty;
     final loading = preview == null ||
         preview.status == TemperatureHistoryPreviewStatus.loading;
@@ -203,6 +204,9 @@ class _TemperatureHistoryStripCardViewState
                     : hasData
                         ? HistoryLineChart(
                             values: values,
+                            timestamps: timestamps,
+                            windowStart: preview.windowStart,
+                            windowEnd: preview.windowEnd,
                             color: AppPalette.accentPrimary,
                             strokeWidth: 1.8,
                             fill: true,

@@ -179,6 +179,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryMetricLoadFactor": MessageLookupByLibrary.simpleMessage(
       "Коефіцієнт навантаження",
     ),
+    "TelemetryHistoryMetricTarget": MessageLookupByLibrary.simpleMessage(
+      "Ціль",
+    ),
     "TelemetryHistoryMetricTemperature": MessageLookupByLibrary.simpleMessage(
       "Температура",
     ),
@@ -186,10 +189,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "Даних ще немає.",
     ),
     "TelemetryHistoryPreviewNoSensorData": MessageLookupByLibrary.simpleMessage(
-      "Тренд температури (24 год): немає даних датчиків",
+      "Історія температури (24 год): немає даних датчиків",
     ),
     "TelemetryHistoryPreviewTitle24h": MessageLookupByLibrary.simpleMessage(
-      "Тренд температури (24 год)",
+      "Історія температури (24 год)",
     ),
     "TelemetryHistoryRangeDay": MessageLookupByLibrary.simpleMessage("День"),
     "TelemetryHistoryRangeMonth": MessageLookupByLibrary.simpleMessage(
