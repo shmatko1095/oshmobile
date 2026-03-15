@@ -60,7 +60,7 @@
   "Offline": "Офлайн",
   "Tips": "Поради",
   "TipEnsureAppUpdated": "Переконайтеся, що застосунок оновлено до останньої версії.",
-  "TipCheckNetwork": "Перевірте мережеве підключення пристрою.",
+  "TipCheckNetwork": "Перевірте, чи підключено пристрій до Wi‑Fi.",
   "TipContactSupport": "Зверніться в підтримку та вкажіть Model ID і Device ID.",
   "Settings": "Налаштування",
   "Update": "Оновити",
@@ -109,8 +109,8 @@
   "offlineBlePermissionHint": "Щоб змінити налаштування Wi‑Fi, потрібен доступ до Bluetooth.",
   "offlineBleNotNearbyHint": "Підійдіть ближче до пристрою, щоб налаштувати Wi‑Fi.",
   "deviceOfflineTitle": "Пристрій офлайн",
-  "deviceOfflineSubtitle": "Зараз пристрій офлайн. Перевірте його Wi‑Fi та живлення і спробуйте ще раз.",
-  "deviceOfflineSubtitleWithLastSeen": "Зараз пристрій офлайн. Востаннє був онлайн: {lastSeenAt}. Перевірте його Wi‑Fi та живлення і спробуйте ще раз.",
+  "deviceOfflineSubtitleWithLastSeen": "Востаннє був онлайн: {lastSeenAt}",
+  "deviceOfflineHintBluetooth": "Наблизьтеся до пристрою, щоб налаштувати Wi‑Fi через Bluetooth.",
   "@deviceOfflineSubtitleWithLastSeen": {
     "placeholders": {
       "lastSeenAt": {}

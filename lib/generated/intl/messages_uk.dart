@@ -34,8 +34,7 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(index, total) => "Датчик ${index}/${total}";
 
-  static String m6(lastSeenAt) =>
-      "Зараз пристрій офлайн. Востаннє був онлайн: ${lastSeenAt}. Перевірте його Wi‑Fi та живлення і спробуйте ще раз.";
+  static String m6(lastSeenAt) => "Востаннє був онлайн: ${lastSeenAt}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -210,7 +209,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Мінімум"),
     "ThuShort": MessageLookupByLibrary.simpleMessage("Чт"),
     "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
-      "Перевірте мережеве підключення пристрою.",
+      "Перевірте, чи підключено пристрій до Wi‑Fi.",
     ),
     "TipContactSupport": MessageLookupByLibrary.simpleMessage(
       "Зверніться в підтримку та вкажіть Model ID і Device ID.",
@@ -281,8 +280,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "deviceConnectedToWifi": MessageLookupByLibrary.simpleMessage(
       "Пристрій підключено до Wi‑Fi",
     ),
-    "deviceOfflineSubtitle": MessageLookupByLibrary.simpleMessage(
-      "Зараз пристрій офлайн. Перевірте його Wi‑Fi та живлення і спробуйте ще раз.",
+    "deviceOfflineHintBluetooth": MessageLookupByLibrary.simpleMessage(
+      "Наблизьтеся до пристрою, щоб налаштувати Wi‑Fi через Bluetooth.",
     ),
     "deviceOfflineSubtitleWithLastSeen": m6,
     "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(

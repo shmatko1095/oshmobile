@@ -34,8 +34,7 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(index, total) => "Sensor ${index}/${total}";
 
-  static String m6(lastSeenAt) =>
-      "The device is currently offline. Last seen: ${lastSeenAt}. Check its Wi-Fi and power, then try again.";
+  static String m6(lastSeenAt) => "Last seen online: ${lastSeenAt}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -273,8 +272,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "deviceConnectedToWifi": MessageLookupByLibrary.simpleMessage(
       "Device connected to Wi-Fi",
     ),
-    "deviceOfflineSubtitle": MessageLookupByLibrary.simpleMessage(
-      "The device is currently offline. Check its Wi-Fi and power, then try again.",
+    "deviceOfflineHintBluetooth": MessageLookupByLibrary.simpleMessage(
+      "Move closer to the device to set up Wi-Fi over Bluetooth.",
     ),
     "deviceOfflineSubtitleWithLastSeen": m6,
     "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(

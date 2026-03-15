@@ -59,7 +59,8 @@ class _BleOfflineEntryBody extends StatelessWidget {
         final s = S.of(context);
 
         final isAvailable = state.deviceNearby == true;
-        final needPermission = state.status == ProvisioningStatus.permissionDenied;
+        final needPermission =
+            state.status == ProvisioningStatus.permissionDenied;
 
         Widget child;
         String? helperText;
@@ -74,7 +75,7 @@ class _BleOfflineEntryBody extends StatelessWidget {
           );
         } else {
           child = const SizedBox.shrink();
-          helperText = s.offlineBleNotNearbyHint;
+          helperText = null;
         }
 
         return Column(
@@ -87,7 +88,8 @@ class _BleOfflineEntryBody extends StatelessWidget {
                 helperText,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                  color:
+                      theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                 ),
               ),
             ],
@@ -99,11 +101,13 @@ class _BleOfflineEntryBody extends StatelessWidget {
 
   Future<void> _openBleFlow(BuildContext context) async {
     final cubit = context.read<BleProvisioningCubit>();
+    final navigator = Navigator.of(context);
 
     await cubit.ensureBleDisconnected();
+    if (!context.mounted) return;
     cubit.resetForNewFlow();
 
-    final connected = await Navigator.of(context).push<bool>(
+    final connected = await navigator.push<bool>(
       MaterialPageRoute(
         builder: (_) => BlocProvider.value(
           value: cubit,

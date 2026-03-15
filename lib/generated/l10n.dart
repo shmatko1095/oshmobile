@@ -924,23 +924,23 @@ class S {
     );
   }
 
-  /// `The device is currently offline. Check its Wi-Fi and power, then try again.`
-  String get deviceOfflineSubtitle {
-    return Intl.message(
-      'The device is currently offline. Check its Wi-Fi and power, then try again.',
-      name: 'deviceOfflineSubtitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `The device is currently offline. Last seen: {lastSeenAt}. Check its Wi-Fi and power, then try again.`
+  /// `Last seen online: {lastSeenAt}`
   String deviceOfflineSubtitleWithLastSeen(Object lastSeenAt) {
     return Intl.message(
-      'The device is currently offline. Last seen: $lastSeenAt. Check its Wi-Fi and power, then try again.',
+      'Last seen online: $lastSeenAt',
       name: 'deviceOfflineSubtitleWithLastSeen',
       desc: '',
       args: [lastSeenAt],
+    );
+  }
+
+  /// `Move closer to the device to set up Wi-Fi over Bluetooth.`
+  String get deviceOfflineHintBluetooth {
+    return Intl.message(
+      'Move closer to the device to set up Wi-Fi over Bluetooth.',
+      name: 'deviceOfflineHintBluetooth',
+      desc: '',
+      args: [],
     );
   }
 

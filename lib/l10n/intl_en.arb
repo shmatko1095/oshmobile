@@ -109,8 +109,8 @@
   "offlineBlePermissionHint": "Bluetooth access is needed to change Wi-Fi settings.",
   "offlineBleNotNearbyHint": "Move closer to the device to set up Wi-Fi.",
   "deviceOfflineTitle": "Device is offline",
-  "deviceOfflineSubtitle": "The device is currently offline. Check its Wi-Fi and power, then try again.",
-  "deviceOfflineSubtitleWithLastSeen": "The device is currently offline. Last seen: {lastSeenAt}. Check its Wi-Fi and power, then try again.",
+  "deviceOfflineSubtitleWithLastSeen": "Last seen online: {lastSeenAt}",
+  "deviceOfflineHintBluetooth": "Move closer to the device to set up Wi-Fi over Bluetooth.",
   "@deviceOfflineSubtitleWithLastSeen": {
     "placeholders": {
       "lastSeenAt": {}

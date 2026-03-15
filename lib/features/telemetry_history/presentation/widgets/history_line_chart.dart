@@ -87,11 +87,26 @@ class HistoryLineChart extends StatelessWidget {
       return const SizedBox.expand();
     }
 
-    final spots = <FlSpot>[
-      for (final point in points) FlSpot(point.x, point.y),
-    ];
-    final minRaw = values.reduce(math.min);
-    final maxRaw = values.reduce(math.max);
+    final spots = <FlSpot>[];
+    final spotToPoint = <_HistoryChartPoint?>[];
+    final gapThresholdSeconds = _resolveGapThresholdSeconds(points);
+    for (var i = 0; i < points.length; i++) {
+      final point = points[i];
+      if (gapThresholdSeconds != null && i > 0) {
+        final previous = points[i - 1];
+        final gapSeconds = _secondsBetween(previous.timestamp, point.timestamp);
+        if (gapSeconds != null && gapSeconds > gapThresholdSeconds) {
+          spots.add(FlSpot.nullSpot);
+          spotToPoint.add(null);
+        }
+      }
+      spots.add(FlSpot(point.x, point.y));
+      spotToPoint.add(point);
+    }
+
+    final yValues = points.map((p) => p.y).toList(growable: false);
+    final minRaw = yValues.reduce(math.min);
+    final maxRaw = yValues.reduce(math.max);
     final span = (maxRaw - minRaw).abs();
     final yInterval = _niceInterval(span, preferredTickCount: 4);
     final minY = _alignLower(minRaw, yInterval);
@@ -249,13 +264,15 @@ class HistoryLineChart extends StatelessWidget {
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
                 final index = spot.spotIndex;
-                if (index < 0 || index >= points.length) return null;
-                final ts = points[index].timestamp;
+                if (index < 0 || index >= spotToPoint.length) return null;
+                final point = spotToPoint[index];
+                if (point == null) return null;
+                final ts = point.timestamp;
                 final title = ts == null
                     ? '#$index'
                     : (xAxisLabelBuilder?.call(ts) ?? _defaultTimeLabel(ts));
                 final valueText = ts == null
-                    ? _formatValueLabel(spot.y)
+                    ? _formatValueLabel(point.y)
                     : (tooltipBuilder?.call(ts, spot.y) ??
                         '$title\n${_formatValueLabel(spot.y)}');
                 return LineTooltipItem(
@@ -383,6 +400,39 @@ double _alignLower(double value, double interval) {
 
 double _alignUpper(double value, double interval) {
   return (value / interval).ceilToDouble() * interval;
+}
+
+double? _resolveGapThresholdSeconds(List<_HistoryChartPoint> points) {
+  if (points.length < 3) return null;
+
+  final deltas = <double>[];
+  for (var i = 1; i < points.length; i++) {
+    final seconds = _secondsBetween(
+      points[i - 1].timestamp,
+      points[i].timestamp,
+    );
+    if (seconds != null && seconds > 0) {
+      deltas.add(seconds);
+    }
+  }
+
+  if (deltas.length < 2) return null;
+  deltas.sort();
+  final mid = deltas.length ~/ 2;
+  final median =
+      deltas.length.isEven ? (deltas[mid - 1] + deltas[mid]) / 2 : deltas[mid];
+  if (median <= 0) return null;
+
+  // Consider intervals that are much larger than a typical bucket size
+  // as "missing data" and split the line there.
+  return median * 2.5;
+}
+
+double? _secondsBetween(DateTime? from, DateTime? to) {
+  if (from == null || to == null) return null;
+  final deltaMs = to.toUtc().difference(from.toUtc()).inMilliseconds;
+  if (deltaMs <= 0) return null;
+  return deltaMs / 1000;
 }
 
 class _HistoryChartPoint {
