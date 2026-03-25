@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
     <application
-        android:label="Oshhome"
+        android:label="OSH Home"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

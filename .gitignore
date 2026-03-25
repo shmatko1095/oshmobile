@@ -13,6 +13,9 @@ doc/api/
 
 # Ignore app secrets
 lib/core/secrets/*
+android/key.properties
+*.jks
+*.keystore
 
 # dotenv environment variables file
 .env*

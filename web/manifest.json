@@ -1,11 +1,11 @@
 {
-    "name": "Oshhome",
-    "short_name": "Oshhome",
+    "name": "OSH Home",
+    "short_name": "OSH Home",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Osh mobile application project",
+    "description": "OSH Home mobile application project",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
