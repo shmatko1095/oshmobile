@@ -36,6 +36,7 @@ class ConfigurationSettingsUiSchemaBuilder implements SettingsUiSchemaBuilder {
         final writable = registry.canWrite(controlId);
 
         fieldsByPath[path] = SettingsUiField(
+          id: control.id,
           path: path,
           section: _sectionOf(path),
           key: _keyOf(path),

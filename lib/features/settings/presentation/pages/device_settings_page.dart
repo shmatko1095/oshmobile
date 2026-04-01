@@ -14,11 +14,13 @@ import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart
 import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema.dart';
 import 'package:oshmobile/features/settings/presentation/widgets/settings_slider_tile.dart';
 import 'package:oshmobile/features/settings/presentation/widgets/settings_switch_tile.dart';
+import 'package:oshmobile/features/settings/presentation/utils/settings_text_localizer.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class DeviceSettingsPage extends StatelessWidget {
   final Device device;
   final SettingsUiSchema schema;
+  static const SettingsTextLocalizer _textLocalizer = SettingsTextLocalizer();
 
   const DeviceSettingsPage({
     super.key,
@@ -286,7 +288,7 @@ class DeviceSettingsPage extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
                   child: Text(
-                    group.titleKey ?? group.id,
+                    _textLocalizer.groupTitle(context, group),
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
@@ -342,9 +344,7 @@ class DeviceSettingsPage extends StatelessWidget {
     required bool showDivider,
   }) {
     final facade = context.read<DeviceFacade>();
-    final title = (field.titleKey == null || field.titleKey!.trim().isEmpty)
-        ? field.path
-        : field.titleKey!.trim();
+    final title = _textLocalizer.fieldTitle(context, field);
 
     switch (field.widget) {
       case SettingsUiWidget.toggle:

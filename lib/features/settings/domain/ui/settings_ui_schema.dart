@@ -19,6 +19,7 @@ enum SettingsUiWidget {
 
 @immutable
 class SettingsUiField {
+  final String id;
   final String path;
   final String section;
   final String key;
@@ -38,6 +39,7 @@ class SettingsUiField {
   final String? titleKey;
 
   const SettingsUiField({
+    required this.id,
     required this.path,
     required this.section,
     required this.key,

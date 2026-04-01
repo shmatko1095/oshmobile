@@ -280,6 +280,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "compatibilityTechnicalDetailsTitle": MessageLookupByLibrary.simpleMessage(
       "Технічні деталі",
     ),
+    "control": MessageLookupByLibrary.simpleMessage("Керування нагрівом"),
+    "controlModel": MessageLookupByLibrary.simpleMessage("Модель керування"),
     "deviceConnectedToWifi": MessageLookupByLibrary.simpleMessage(
       "Пристрій підключено до Wi‑Fi",
     ),
@@ -289,6 +291,29 @@ class MessageLookup extends MessageLookupByLibrary {
     "deviceOfflineSubtitleWithLastSeen": m6,
     "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
       "Пристрій офлайн",
+    ),
+    "display": MessageLookupByLibrary.simpleMessage("Екран"),
+    "displayActiveBrightness": MessageLookupByLibrary.simpleMessage(
+      "Яскравість у роботі",
+    ),
+    "displayDimOnIdle": MessageLookupByLibrary.simpleMessage(
+      "Затемнювати у простої",
+    ),
+    "displayIdleBrightness": MessageLookupByLibrary.simpleMessage(
+      "Яскравість у простої",
+    ),
+    "displayIdleTime": MessageLookupByLibrary.simpleMessage(
+      "Затримка затемнення",
+    ),
+    "displayLanguage": MessageLookupByLibrary.simpleMessage("Мова"),
+    "maxFloorTempFailSafe": MessageLookupByLibrary.simpleMessage(
+      "Аварійний режим датчика підлоги",
+    ),
+    "maxFloorTempLimitEnabled": MessageLookupByLibrary.simpleMessage(
+      "Обмеження температури підлоги",
+    ),
+    "maxFloorTemperature": MessageLookupByLibrary.simpleMessage(
+      "Макс. температура підлоги",
     ),
     "offlineBleNotNearbyHint": MessageLookupByLibrary.simpleMessage(
       "Підійдіть ближче до пристрою, щоб налаштувати Wi‑Fi.",
@@ -314,6 +339,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "startupNoInternetTitle": MessageLookupByLibrary.simpleMessage(
       "Немає підключення до інтернету",
     ),
+    "time": MessageLookupByLibrary.simpleMessage("Час"),
+    "timeAuto": MessageLookupByLibrary.simpleMessage("Автоматичний час"),
+    "timeZone": MessageLookupByLibrary.simpleMessage("Часовий пояс"),
     "updateAppRequiredBadge": MessageLookupByLibrary.simpleMessage(
       "Потрібне оновлення",
     ),
@@ -332,6 +360,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "updateAppRequiredTitle": MessageLookupByLibrary.simpleMessage(
       "Оновіть застосунок, щоб продовжити",
     ),
+    "updateAtMidnight": MessageLookupByLibrary.simpleMessage(
+      "Оновлювати опівночі",
+    ),
+    "updateAutoUpdateEnabled": MessageLookupByLibrary.simpleMessage(
+      "Автооновлення",
+    ),
+    "updates": MessageLookupByLibrary.simpleMessage("Оновлення"),
     "wifiConnectFailed": MessageLookupByLibrary.simpleMessage(
       "Не вдалося підключитися до Wi‑Fi",
     ),

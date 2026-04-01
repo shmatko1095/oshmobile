@@ -272,6 +272,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "compatibilityTechnicalDetailsTitle": MessageLookupByLibrary.simpleMessage(
       "Technical details",
     ),
+    "control": MessageLookupByLibrary.simpleMessage("Heating control"),
+    "controlModel": MessageLookupByLibrary.simpleMessage("Control model"),
     "deviceConnectedToWifi": MessageLookupByLibrary.simpleMessage(
       "Device connected to Wi-Fi",
     ),
@@ -281,6 +283,25 @@ class MessageLookup extends MessageLookupByLibrary {
     "deviceOfflineSubtitleWithLastSeen": m6,
     "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
       "Device is offline",
+    ),
+    "display": MessageLookupByLibrary.simpleMessage("Display"),
+    "displayActiveBrightness": MessageLookupByLibrary.simpleMessage(
+      "Active brightness",
+    ),
+    "displayDimOnIdle": MessageLookupByLibrary.simpleMessage("Dim on idle"),
+    "displayIdleBrightness": MessageLookupByLibrary.simpleMessage(
+      "Idle brightness",
+    ),
+    "displayIdleTime": MessageLookupByLibrary.simpleMessage("Idle dim timeout"),
+    "displayLanguage": MessageLookupByLibrary.simpleMessage("Language"),
+    "maxFloorTempFailSafe": MessageLookupByLibrary.simpleMessage(
+      "Floor sensor fail-safe",
+    ),
+    "maxFloorTempLimitEnabled": MessageLookupByLibrary.simpleMessage(
+      "Floor temperature limit",
+    ),
+    "maxFloorTemperature": MessageLookupByLibrary.simpleMessage(
+      "Max floor temperature",
     ),
     "offlineBleNotNearbyHint": MessageLookupByLibrary.simpleMessage(
       "Move closer to the device to set up Wi-Fi.",
@@ -306,6 +327,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "startupNoInternetTitle": MessageLookupByLibrary.simpleMessage(
       "No internet connection",
     ),
+    "time": MessageLookupByLibrary.simpleMessage("Time"),
+    "timeAuto": MessageLookupByLibrary.simpleMessage("Automatic time"),
+    "timeZone": MessageLookupByLibrary.simpleMessage("Time zone"),
     "updateAppRequiredBadge": MessageLookupByLibrary.simpleMessage(
       "Update required",
     ),
@@ -324,6 +348,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "updateAppRequiredTitle": MessageLookupByLibrary.simpleMessage(
       "Update app to continue",
     ),
+    "updateAtMidnight": MessageLookupByLibrary.simpleMessage(
+      "Update at midnight",
+    ),
+    "updateAutoUpdateEnabled": MessageLookupByLibrary.simpleMessage(
+      "Auto update",
+    ),
+    "updates": MessageLookupByLibrary.simpleMessage("Updates"),
     "wifiConnectFailed": MessageLookupByLibrary.simpleMessage(
       "Failed to connect to Wi-Fi",
     ),

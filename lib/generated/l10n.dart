@@ -574,6 +574,146 @@ class S {
     return Intl.message('Settings', name: 'Settings', desc: '', args: []);
   }
 
+  /// `Display`
+  String get display {
+    return Intl.message('Display', name: 'display', desc: '', args: []);
+  }
+
+  /// `Updates`
+  String get updates {
+    return Intl.message('Updates', name: 'updates', desc: '', args: []);
+  }
+
+  /// `Time`
+  String get time {
+    return Intl.message('Time', name: 'time', desc: '', args: []);
+  }
+
+  /// `Heating control`
+  String get control {
+    return Intl.message('Heating control', name: 'control', desc: '', args: []);
+  }
+
+  /// `Active brightness`
+  String get displayActiveBrightness {
+    return Intl.message(
+      'Active brightness',
+      name: 'displayActiveBrightness',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Idle brightness`
+  String get displayIdleBrightness {
+    return Intl.message(
+      'Idle brightness',
+      name: 'displayIdleBrightness',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Idle dim timeout`
+  String get displayIdleTime {
+    return Intl.message(
+      'Idle dim timeout',
+      name: 'displayIdleTime',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Dim on idle`
+  String get displayDimOnIdle {
+    return Intl.message(
+      'Dim on idle',
+      name: 'displayDimOnIdle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Language`
+  String get displayLanguage {
+    return Intl.message(
+      'Language',
+      name: 'displayLanguage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Auto update`
+  String get updateAutoUpdateEnabled {
+    return Intl.message(
+      'Auto update',
+      name: 'updateAutoUpdateEnabled',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update at midnight`
+  String get updateAtMidnight {
+    return Intl.message(
+      'Update at midnight',
+      name: 'updateAtMidnight',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Automatic time`
+  String get timeAuto {
+    return Intl.message('Automatic time', name: 'timeAuto', desc: '', args: []);
+  }
+
+  /// `Time zone`
+  String get timeZone {
+    return Intl.message('Time zone', name: 'timeZone', desc: '', args: []);
+  }
+
+  /// `Control model`
+  String get controlModel {
+    return Intl.message(
+      'Control model',
+      name: 'controlModel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Max floor temperature`
+  String get maxFloorTemperature {
+    return Intl.message(
+      'Max floor temperature',
+      name: 'maxFloorTemperature',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Floor temperature limit`
+  String get maxFloorTempLimitEnabled {
+    return Intl.message(
+      'Floor temperature limit',
+      name: 'maxFloorTempLimitEnabled',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Floor sensor fail-safe`
+  String get maxFloorTempFailSafe {
+    return Intl.message(
+      'Floor sensor fail-safe',
+      name: 'maxFloorTempFailSafe',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Update`
   String get Update {
     return Intl.message('Update', name: 'Update', desc: '', args: []);
