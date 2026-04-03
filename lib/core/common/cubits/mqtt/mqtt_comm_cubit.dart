@@ -32,19 +32,22 @@ class MqttCommCubit extends Cubit<MqttCommState> {
   MqttCommCubit() : super(const MqttCommState());
 
   void start({required String reqId, required String deviceSn}) {
-    final next = List<MqttCommOp>.from(state.pending)..add(MqttCommOp(reqId: reqId, deviceSn: deviceSn));
+    final next = List<MqttCommOp>.from(state.pending)
+      ..add(MqttCommOp(reqId: reqId, deviceSn: deviceSn));
     emit(MqttCommState(pending: next, lastError: null));
   }
 
   void complete(String reqId) {
     if (!state.pending.any((e) => e.reqId == reqId)) return;
-    final next = state.pending.where((e) => e.reqId != reqId).toList(growable: false);
+    final next =
+        state.pending.where((e) => e.reqId != reqId).toList(growable: false);
     emit(MqttCommState(pending: next, lastError: null));
   }
 
   void fail(String reqId, String message) {
     if (!state.pending.any((e) => e.reqId == reqId)) return;
-    final next = state.pending.where((e) => e.reqId != reqId).toList(growable: false);
+    final next =
+        state.pending.where((e) => e.reqId != reqId).toList(growable: false);
     emit(MqttCommState(pending: next, lastError: message));
   }
 
@@ -53,7 +56,9 @@ class MqttCommCubit extends Cubit<MqttCommState> {
   }
 
   void dropForDevice(String? deviceSn) {
-    final next = state.pending.where((e) => e.deviceSn != deviceSn).toList(growable: false);
+    final next = state.pending
+        .where((e) => e.deviceSn != deviceSn)
+        .toList(growable: false);
     emit(MqttCommState(pending: next, lastError: null));
   }
 }

@@ -7,17 +7,16 @@ import 'package:oshmobile/generated/l10n.dart';
 bool _rangeIsDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
 
-Color _rangeSurfaceColor(BuildContext context) =>
-    _rangeIsDark(context) ? AppPalette.glass : Colors.white;
-
 Color _rangeBorderColor(BuildContext context) =>
-    _rangeIsDark(context) ? AppPalette.borderSoft : const Color(0x1A0F172A);
+    _rangeIsDark(context) ? AppPalette.borderSoft : AppPalette.lightBorder;
 
-Color _rangePrimaryTextColor(BuildContext context) =>
-    _rangeIsDark(context) ? AppPalette.textPrimary : const Color(0xFF0F172A);
+Color _rangePrimaryTextColor(BuildContext context) => _rangeIsDark(context)
+    ? AppPalette.textPrimary
+    : AppPalette.lightTextPrimary;
 
-Color _rangeSecondaryTextColor(BuildContext context) =>
-    _rangeIsDark(context) ? AppPalette.textSecondary : const Color(0xFF475569);
+Color _rangeSecondaryTextColor(BuildContext context) => _rangeIsDark(context)
+    ? AppPalette.textSecondary
+    : AppPalette.lightTextSecondary;
 
 class ScheduleRangePage extends StatefulWidget {
   const ScheduleRangePage({
@@ -135,29 +134,24 @@ class _ScheduleRangePageState extends State<ScheduleRangePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppPalette.transparent,
         elevation: 0,
         title: Text(widget.title),
       ),
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _pill(
-                  context,
-                  'Min',
-                  '${_fmt(_values[_iMin])}${widget.unit}',
-                ),
-                const SizedBox(width: 12),
-                _pill(
-                  context,
-                  'Max',
-                  '${_fmt(_values[_iMax])}${widget.unit}',
-                ),
-              ],
+            const SizedBox(height: 24),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 160),
+              style: TextStyle(
+                fontSize: 56,
+                fontWeight: FontWeight.w600,
+                color: _rangePrimaryTextColor(context),
+              ),
+              child: Text(
+                '${_fmt(_values[_iMin])} - ${_fmt(_values[_iMax])}${widget.unit}',
+              ),
             ),
             const SizedBox(height: 12),
             Expanded(
@@ -204,33 +198,6 @@ class _ScheduleRangePageState extends State<ScheduleRangePage> {
       ),
     );
   }
-
-  Widget _pill(BuildContext context, String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: _rangeSurfaceColor(context),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: _rangeBorderColor(context)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: _rangeSecondaryTextColor(context),
-              fontSize: 12,
-            ),
-          ),
-          Text(value,
-              style: TextStyle(
-                  color: _rangePrimaryTextColor(context),
-                  fontWeight: FontWeight.w800)),
-        ],
-      ),
-    );
-  }
 }
 
 class _PickerColumn extends StatelessWidget {
@@ -263,7 +230,7 @@ class _PickerColumn extends StatelessWidget {
             magnification: 1.1,
             scrollController: controller,
             selectionOverlay: const CupertinoPickerDefaultSelectionOverlay(
-                background: Colors.transparent),
+                background: AppPalette.transparent),
             onSelectedItemChanged: onChanged,
             children: [
               for (final v in values)

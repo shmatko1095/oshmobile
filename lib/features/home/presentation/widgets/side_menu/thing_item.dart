@@ -93,18 +93,18 @@ class ThingItem extends StatelessWidget {
   Widget _buildDeviceButton(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final Color defaultTitleColor =
-        isDark ? AppPalette.textSecondary : const Color(0xFF111827);
+        isDark ? AppPalette.textSecondary : AppPalette.lightTextStrong;
     final Color defaultSubtitleColor =
-        isDark ? AppPalette.textMuted : const Color(0xFF6B7280);
+        isDark ? AppPalette.textMuted : AppPalette.lightTextDisabled;
     final Color selectedTitleColor =
-        isDark ? Colors.white : const Color(0xFF111827);
+        isDark ? AppPalette.white : AppPalette.lightTextStrong;
     final Color titleColor = selected ? selectedTitleColor : defaultTitleColor;
     final Color subtitleColor = selected
         ? selectedTitleColor.withValues(alpha: 0.75)
         : defaultSubtitleColor;
     final Color backgroundColor = selected
         ? AppPalette.accentPrimary.withValues(alpha: 0.22)
-        : (isDark ? AppPalette.surface : Colors.white);
+        : (isDark ? AppPalette.surface : AppPalette.white);
     final Color? borderColor =
         selected ? AppPalette.accentPrimary.withValues(alpha: 0.4) : null;
 

@@ -27,13 +27,13 @@ class AccountDrawerHeader extends StatelessWidget {
     final avatarText =
         name.isNotEmpty ? name.substring(0, 1).toUpperCase() : 'U';
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surface = isDark ? AppPalette.surface : Colors.white;
+    final surface = isDark ? AppPalette.surface : AppPalette.white;
     final avatarSurface =
-        isDark ? AppPalette.surfaceAlt : const Color(0xFFF1F3F5);
+        isDark ? AppPalette.surfaceAlt : AppPalette.lightSurfaceMuted;
     final titleColor =
-        isDark ? AppPalette.textPrimary : const Color(0xFF111827);
+        isDark ? AppPalette.textPrimary : AppPalette.lightTextStrong;
     final subtitleColor =
-        isDark ? AppPalette.textSecondary : const Color(0xFF4B5563);
+        isDark ? AppPalette.textSecondary : AppPalette.lightTextMuted;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),

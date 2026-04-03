@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
 class PowerCard extends StatelessWidget {
@@ -28,7 +29,7 @@ class PowerCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Icon(Icons.bolt, color: Colors.amberAccent, size: 18),
+            Icon(Icons.bolt, color: AppPalette.amberAccent, size: 18),
             const SizedBox(width: 8),
             Text(
               'Power now',

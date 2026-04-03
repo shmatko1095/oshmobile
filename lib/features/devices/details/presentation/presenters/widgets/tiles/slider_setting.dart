@@ -116,12 +116,13 @@ class _SliderSettingState extends State<SliderSetting> {
             data: SliderTheme.of(context).copyWith(
               trackHeight: 4,
               activeTrackColor: AppPalette.accentPrimary,
-              inactiveTrackColor: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white24
-                  : const Color(0xFFCBD5E1),
+              inactiveTrackColor:
+                  Theme.of(context).brightness == Brightness.dark
+                      ? AppPalette.white24
+                      : AppPalette.lightControlTrack,
               thumbColor: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : const Color(0xFF0F172A),
+                  ? AppPalette.white
+                  : AppPalette.lightTextPrimary,
               overlayColor: AppPalette.accentPrimary.withValues(alpha: 0.15),
               valueIndicatorColor: statSurfaceAltColor(context),
             ),

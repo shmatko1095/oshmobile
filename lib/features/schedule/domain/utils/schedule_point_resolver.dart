@@ -19,7 +19,8 @@ SchedulePoint? resolveNextPoint(
   CalendarSnapshot snapshot, {
   DateTime? now,
 }) {
-  if (snapshot.mode != CalendarMode.daily && snapshot.mode != CalendarMode.weekly) {
+  if (snapshot.mode != CalendarMode.daily &&
+      snapshot.mode != CalendarMode.weekly) {
     return null;
   }
 

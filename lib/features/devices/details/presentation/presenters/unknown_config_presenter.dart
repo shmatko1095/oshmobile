@@ -12,24 +12,25 @@ bool _unknownIsDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
 
 Color _unknownSurfaceColor(BuildContext context) => _unknownIsDark(context)
-    ? Colors.white.withValues(alpha: 0.04)
-    : Colors.white;
+    ? AppPalette.white.withValues(alpha: 0.04)
+    : AppPalette.white;
 
 Color _unknownSurfaceAltColor(BuildContext context) => _unknownIsDark(context)
-    ? Colors.white.withValues(alpha: 0.06)
-    : const Color(0xFFF8FAFC);
+    ? AppPalette.white.withValues(alpha: 0.06)
+    : AppPalette.lightSurfaceSoft;
 
 Color _unknownBorderColor(BuildContext context) => _unknownIsDark(context)
-    ? Colors.white.withValues(alpha: 0.08)
-    : const Color(0x1A0F172A);
+    ? AppPalette.white.withValues(alpha: 0.08)
+    : AppPalette.lightBorder;
 
-Color _unknownPrimaryTextColor(BuildContext context) =>
-    _unknownIsDark(context) ? AppPalette.textPrimary : const Color(0xFF0F172A);
+Color _unknownPrimaryTextColor(BuildContext context) => _unknownIsDark(context)
+    ? AppPalette.textPrimary
+    : AppPalette.lightTextPrimary;
 
 Color _unknownSecondaryTextColor(BuildContext context) =>
     _unknownIsDark(context)
         ? AppPalette.textSecondary
-        : const Color(0xFF475569);
+        : AppPalette.lightTextSecondary;
 
 class UnknownConfigPresenter implements DevicePresenter {
   const UnknownConfigPresenter();
@@ -47,7 +48,7 @@ class UnknownConfigPresenter implements DevicePresenter {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(alias, overflow: TextOverflow.ellipsis),
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppPalette.transparent,
         elevation: 0,
       ),
       body: SafeArea(
@@ -79,14 +80,14 @@ class _ProblemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Colors.amber.withValues(alpha: 0.15),
+      color: AppPalette.amber.withValues(alpha: 0.15),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.info_outline, color: Colors.amber, size: 28),
+            Icon(Icons.info_outline, color: AppPalette.amber, size: 28),
             SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -133,7 +134,7 @@ class _MetaCard extends StatelessWidget {
                   : S.of(context).Offline,
               trailing: device.connectionInfo.online
                   ? Icon(Icons.check_circle,
-                      size: 16, color: Colors.green.withValues(alpha: 0.5))
+                      size: 16, color: AppPalette.green.withValues(alpha: 0.5))
                   : Icon(
                       Icons.offline_bolt,
                       size: 16,

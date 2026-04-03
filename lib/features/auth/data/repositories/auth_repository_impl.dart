@@ -58,7 +58,8 @@ class AuthRepositoryImpl implements AuthRepository {
       /// After a successful login, KeycloakWrapper should hold a refresh token.
       final refreshToken = kc.refreshToken;
       if (refreshToken == null || refreshToken.isEmpty) {
-        return left(Failure.unexpected('Keycloak did not return a refresh token'));
+        return left(
+            Failure.unexpected('Keycloak did not return a refresh token'));
       }
 
       /// Exchange refresh token via /token to get a normalized Session

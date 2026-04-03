@@ -10,19 +10,22 @@ bool _compatIsDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
 
 Color _compatSurfaceColor(BuildContext context) =>
-    _compatIsDark(context) ? AppPalette.surface : Colors.white;
+    _compatIsDark(context) ? AppPalette.surface : AppPalette.white;
 
-Color _compatSurfaceAltColor(BuildContext context) =>
-    _compatIsDark(context) ? AppPalette.surfaceRaised : const Color(0xFFF8FAFC);
+Color _compatSurfaceAltColor(BuildContext context) => _compatIsDark(context)
+    ? AppPalette.surfaceRaised
+    : AppPalette.lightSurfaceSoft;
 
 Color _compatBorderColor(BuildContext context) =>
-    _compatIsDark(context) ? AppPalette.borderSoft : const Color(0x1A0F172A);
+    _compatIsDark(context) ? AppPalette.borderSoft : AppPalette.lightBorder;
 
-Color _compatPrimaryTextColor(BuildContext context) =>
-    _compatIsDark(context) ? AppPalette.textPrimary : const Color(0xFF0F172A);
+Color _compatPrimaryTextColor(BuildContext context) => _compatIsDark(context)
+    ? AppPalette.textPrimary
+    : AppPalette.lightTextPrimary;
 
-Color _compatSecondaryTextColor(BuildContext context) =>
-    _compatIsDark(context) ? AppPalette.textSecondary : const Color(0xFF475569);
+Color _compatSecondaryTextColor(BuildContext context) => _compatIsDark(context)
+    ? AppPalette.textSecondary
+    : AppPalette.lightTextSecondary;
 
 enum DeviceCompatibilityVariant {
   updateRequired,

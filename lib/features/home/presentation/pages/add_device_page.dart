@@ -13,7 +13,8 @@ import 'package:oshmobile/features/home/presentation/widgets/add_device/device_f
 import 'package:oshmobile/generated/l10n.dart';
 
 class AddDevicePage extends StatefulWidget {
-  static CupertinoPageRoute route() => CupertinoPageRoute(builder: (context) => const AddDevicePage());
+  static CupertinoPageRoute route() =>
+      CupertinoPageRoute(builder: (context) => const AddDevicePage());
 
   const AddDevicePage({super.key});
 
@@ -21,7 +22,8 @@ class AddDevicePage extends StatefulWidget {
   State<AddDevicePage> createState() => _AddDevicePageState();
 }
 
-class _AddDevicePageState extends State<AddDevicePage> with WidgetsBindingObserver {
+class _AddDevicePageState extends State<AddDevicePage>
+    with WidgetsBindingObserver {
   final _serialCtrl = TextEditingController();
   final _secureCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -65,7 +67,8 @@ class _AddDevicePageState extends State<AddDevicePage> with WidgetsBindingObserv
 
   void _onScan(BarcodeCapture capture) {
     if (_handledScan) return;
-    final code = capture.barcodes.isNotEmpty ? capture.barcodes.first.rawValue : null;
+    final code =
+        capture.barcodes.isNotEmpty ? capture.barcodes.first.rawValue : null;
     if (code == null) return;
 
     try {
@@ -113,7 +116,8 @@ class _AddDevicePageState extends State<AddDevicePage> with WidgetsBindingObserv
       body: Padding(
           padding: const EdgeInsets.all(24),
           child: BlocConsumer<HomeCubit, HomeState>(
-            listenWhen: (previous, current) => ModalRoute.of(context)?.isCurrent ?? true,
+            listenWhen: (previous, current) =>
+                ModalRoute.of(context)?.isCurrent ?? true,
             listener: (context, state) => _onStateChanged(context, state),
             builder: (context, state) {
               return Column(

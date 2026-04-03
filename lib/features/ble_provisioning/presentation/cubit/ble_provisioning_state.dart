@@ -53,7 +53,9 @@ class BleProvisioningState {
     return BleProvisioningState(
       status: status ?? this.status,
       networks: networks ?? this.networks,
-      selectedNetwork: clearSelectedNetwork ? null : (selectedNetwork ?? this.selectedNetwork),
+      selectedNetwork: clearSelectedNetwork
+          ? null
+          : (selectedNetwork ?? this.selectedNetwork),
       lastConnectStatus: lastConnectStatus ?? this.lastConnectStatus,
       error: error,
       deviceNearby: deviceNearby ?? this.deviceNearby,

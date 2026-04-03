@@ -6,7 +6,8 @@ part 'osh_api_model_service.chopper.dart';
 
 @ChopperApi(baseUrl: "${AppSecrets.oshApiEndpoint}/admin/models")
 abstract class ApiModelService extends ChopperService {
-  static ApiModelService create([ChopperClient? client]) => _$ApiModelService(client);
+  static ApiModelService create([ChopperClient? client]) =>
+      _$ApiModelService(client);
 
   void updateClient(ChopperClient client) {
     this.client = client;

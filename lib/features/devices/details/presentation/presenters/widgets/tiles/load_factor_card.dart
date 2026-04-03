@@ -101,8 +101,8 @@ class LoadFactorKpiCard extends StatelessWidget {
               value: p ?? 0,
               minHeight: 7,
               backgroundColor: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white.withValues(alpha: 0.14)
-                  : const Color(0xFFE2E8F0),
+                  ? AppPalette.white.withValues(alpha: 0.14)
+                  : AppPalette.lightBorderSubtle,
               valueColor:
                   const AlwaysStoppedAnimation<Color>(AppPalette.accentPrimary),
             ),

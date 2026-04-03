@@ -48,9 +48,11 @@ class ReactiveBleClientImpl implements BleClient {
       connectionTimeout: const Duration(seconds: 10),
     )
         .listen((update) {
-      if (update.connectionState == DeviceConnectionState.connected && !completer.isCompleted) {
+      if (update.connectionState == DeviceConnectionState.connected &&
+          !completer.isCompleted) {
         completer.complete();
-      } else if (update.connectionState == DeviceConnectionState.disconnected && !completer.isCompleted) {
+      } else if (update.connectionState == DeviceConnectionState.disconnected &&
+          !completer.isCompleted) {
         completer.completeError(
           Exception('Disconnected while connecting'),
         );

@@ -18,7 +18,7 @@ bool _sensorEditorIsDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
 
 Color _sensorEditorSurfaceColor(BuildContext context) =>
-    _sensorEditorIsDark(context) ? AppPalette.surfaceRaised : Colors.white;
+    _sensorEditorIsDark(context) ? AppPalette.surfaceRaised : AppPalette.white;
 
 Color _sensorEditorBorderColor(BuildContext context) =>
     _sensorEditorIsDark(context)
@@ -28,12 +28,12 @@ Color _sensorEditorBorderColor(BuildContext context) =>
 Color _sensorEditorPrimaryTextColor(BuildContext context) =>
     _sensorEditorIsDark(context)
         ? AppPalette.textPrimary
-        : const Color(0xFF0F172A);
+        : AppPalette.lightTextPrimary;
 
 Color _sensorEditorSecondaryTextColor(BuildContext context) =>
     _sensorEditorIsDark(context)
         ? AppPalette.textSecondary
-        : const Color(0xFF475569);
+        : AppPalette.lightTextSecondary;
 
 class SensorEditorPage extends StatefulWidget {
   final SensorEditorEntry sensor;

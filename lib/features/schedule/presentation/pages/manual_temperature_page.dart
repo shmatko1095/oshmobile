@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
@@ -8,8 +9,8 @@ bool _manualTempIsDark(BuildContext context) =>
 
 Color _manualTempPrimaryTextColor(BuildContext context) =>
     _manualTempIsDark(context)
-        ? const Color(0xFFF5F7FA)
-        : const Color(0xFF0F172A);
+        ? AppPalette.textPrimary
+        : AppPalette.lightTextPrimary;
 
 class ManualTemperaturePage extends StatefulWidget {
   const ManualTemperaturePage({
@@ -72,7 +73,7 @@ class _ManualTemperaturePageState extends State<ManualTemperaturePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppPalette.transparent,
         elevation: 0,
         title: Text(widget.title),
       ),
@@ -98,7 +99,7 @@ class _ManualTemperaturePageState extends State<ManualTemperaturePage> {
                 scrollController:
                     FixedExtentScrollController(initialItem: _index),
                 selectionOverlay: const CupertinoPickerDefaultSelectionOverlay(
-                    background: Colors.transparent),
+                    background: AppPalette.transparent),
                 onSelectedItemChanged: (i) => setState(() => _index = i),
                 children: [
                   for (final v in _values)

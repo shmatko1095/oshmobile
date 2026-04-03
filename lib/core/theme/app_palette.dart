@@ -1,6 +1,49 @@
 import 'package:flutter/material.dart';
 
 class AppPalette {
+  // Shared literal colors centralized to avoid screen-level hardcoding.
+  static const Color transparent = Color(0x00000000);
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color black = Color(0xFF000000);
+  static const Color white24 = Color(0x3DFFFFFF);
+  static const Color black54 = Color(0x8A000000);
+
+  static const Color grey = Color(0xFF9E9E9E);
+  static const Color grey400 = Color(0xFFBDBDBD);
+  static const Color grey700 = Color(0xFF616161);
+
+  static const Color lightTextBody = Color(0xFF1E293B);
+  static const Color lightTextPrimary = Color(0xFF0F172A);
+  static const Color lightTextStrong = Color(0xFF111827);
+  static const Color lightTextSecondary = Color(0xFF475569);
+  static const Color lightTextMuted = Color(0xFF4B5563);
+  static const Color lightTextSubtle = Color(0xFF64748B);
+  static const Color lightTextDisabled = Color(0xFF6B7280);
+
+  static const Color lightBorder = Color(0x1A0F172A);
+  static const Color lightBorderStrong = Color(0x2A0F172A);
+  static const Color lightBorderSubtle = Color(0xFFE2E8F0);
+  static const Color lightControlDisabled = Color(0xFF94A3B8);
+  static const Color lightControlTrack = Color(0xFFCBD5E1);
+  static const Color lightControlThumb = Color(0xFFE5E7EB);
+  static const Color darkControlThumb = Color(0xFFE3E5EC);
+  static const Color darkControlTrack = Color(0xFF6A6C75);
+
+  static const Color lightSurfaceMuted = Color(0xFFF1F3F5);
+  static const Color lightSurfaceSubtle = Color(0xFFF3F4F6);
+  static const Color lightSurfaceSoft = Color(0xFFF8FAFC);
+
+  static const Color tooltipDarkSurface = Color(0xFF141820);
+  static const Color chartTempInactive = Color(0xFF7BC5FF);
+
+  static const Color orangeAccent = Color(0xFFFFAB40);
+  static const Color cyanAccent = Color(0xFF18FFFF);
+  static const Color amber = Color(0xFFFFC107);
+  static const Color amberAccent = Color(0xFFFFD740);
+  static const Color green = Color(0xFF4CAF50);
+  static const Color indigo = Color(0xFF3F51B5);
+  static const Color cyan = Color(0xFF00BCD4);
+
   // Semantic dark-first design tokens (Samsung One UI inspired)
   static const Color canvas = Color(0xFF000000);
   static const Color surface = Color(0xFF181818);

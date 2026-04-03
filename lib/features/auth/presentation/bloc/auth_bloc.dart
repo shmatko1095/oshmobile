@@ -73,7 +73,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
   }
 
-  Future<void> _onSignInWithGoogle(AuthSignInWithGoogle event, Emitter<AuthState> emit) async {
+  Future<void> _onSignInWithGoogle(
+      AuthSignInWithGoogle event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
     final result = await _signInWithGoogle(NoParams());
     result.fold(
@@ -82,14 +83,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
   }
 
-  void _onAuthSendVerifyEmail(AuthSendVerifyEmail event, Emitter<AuthState> emit) async {
+  void _onAuthSendVerifyEmail(
+      AuthSendVerifyEmail event, Emitter<AuthState> emit) async {
     final response = await _verifyEmail(VerifyEmailParams(email: event.email));
     response.fold((l) => _emitAuthFailure(emit, l), (r) {});
   }
 
-  void _onSendResetPasswordEmail(AuthSendResetPasswordEmail event, Emitter<AuthState> emit) async {
+  void _onSendResetPasswordEmail(
+      AuthSendResetPasswordEmail event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
-    final response = await _resetPassword(ResetPasswordParams(email: event.email));
+    final response =
+        await _resetPassword(ResetPasswordParams(email: event.email));
     response.fold(
       (l) => _emitAuthFailure(emit, l),
       (r) => emit(AuthSuccess("Success")),
@@ -110,7 +114,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       case FailureType.invalidUserCredentials:
         emit(const AuthFailedInvalidUserCredentials());
       case FailureType.unexpected:
-        OshCrashReporter.log("AuthBloc: Unexpected failure: ${failure.message}");
+        OshCrashReporter.log(
+            "AuthBloc: Unexpected failure: ${failure.message}");
         emit(AuthFailedUnexpected(failure.message));
       case FailureType.conflict:
         emit(const AuthConflict());

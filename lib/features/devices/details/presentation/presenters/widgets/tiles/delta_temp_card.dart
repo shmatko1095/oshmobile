@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
 class DeltaTCard extends StatelessWidget {
@@ -49,7 +50,7 @@ class DeltaTCard extends StatelessWidget {
 
     final Color accent = (data.dT == null)
         ? statValueColor(context)
-        : (data.dT! >= 0 ? Colors.orangeAccent : Colors.cyanAccent);
+        : (data.dT! >= 0 ? AppPalette.orangeAccent : AppPalette.cyanAccent);
 
     return LayoutBuilder(
       builder: (context, c) {
@@ -57,7 +58,7 @@ class DeltaTCard extends StatelessWidget {
         final double gap = tight ? 6 : 8;
 
         return Card(
-          color: Colors.transparent,
+          color: AppPalette.transparent,
           elevation: 0,
           margin: EdgeInsets.zero,
           shape:
@@ -74,7 +75,8 @@ class DeltaTCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.sync_alt, size: 16, color: statTitleColor(context)),
+                    Icon(Icons.sync_alt,
+                        size: 16, color: statTitleColor(context)),
                     SizedBox(width: gap),
                     Expanded(
                       child: Text(

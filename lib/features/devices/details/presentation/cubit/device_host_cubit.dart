@@ -47,7 +47,8 @@ class DeviceHostCubit extends Cubit<DeviceHostState> {
     // if (isClosed) return;
     await _homeCubit.updateDeviceList();
 
-    Device? device = _homeCubit.userDevices.filter((d) => d.id == _deviceId).firstOrNull;
+    Device? device =
+        _homeCubit.userDevices.filter((d) => d.id == _deviceId).firstOrNull;
     final isOnline = device?.connectionInfo.online == true;
 
     if (isOnline) {

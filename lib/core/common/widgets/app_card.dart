@@ -35,7 +35,7 @@ class AppSolidCard extends StatelessWidget {
       return Card(
         margin: EdgeInsets.zero,
         elevation: 0,
-        color: Colors.transparent,
+        color: AppPalette.transparent,
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
         child: content,
@@ -48,7 +48,7 @@ class AppSolidCard extends StatelessWidget {
       child: Card(
         margin: EdgeInsets.zero,
         elevation: 0,
-        color: Colors.transparent,
+        color: AppPalette.transparent,
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
         child: content,

@@ -10,18 +10,19 @@ bool _offlineIsDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
 
 Color _offlineSurfaceColor(BuildContext context) =>
-    _offlineIsDark(context) ? AppPalette.surface : Colors.white;
+    _offlineIsDark(context) ? AppPalette.surface : AppPalette.white;
 
 Color _offlineBorderColor(BuildContext context) =>
-    _offlineIsDark(context) ? AppPalette.borderSoft : const Color(0x1A0F172A);
+    _offlineIsDark(context) ? AppPalette.borderSoft : AppPalette.lightBorder;
 
-Color _offlinePrimaryTextColor(BuildContext context) =>
-    _offlineIsDark(context) ? AppPalette.textPrimary : const Color(0xFF0F172A);
+Color _offlinePrimaryTextColor(BuildContext context) => _offlineIsDark(context)
+    ? AppPalette.textPrimary
+    : AppPalette.lightTextPrimary;
 
 Color _offlineSecondaryTextColor(BuildContext context) =>
     _offlineIsDark(context)
         ? AppPalette.textSecondary
-        : const Color(0xFF475569);
+        : AppPalette.lightTextSecondary;
 
 class DeviceOfflinePage extends StatelessWidget {
   final Device device;

@@ -8,10 +8,10 @@ class AppTheme {
   static const _lightColorScheme = ColorScheme.light(
     primary: AppPalette.accentPrimary,
     secondary: AppPalette.accentPrimary,
-    surface: Colors.white,
+    surface: AppPalette.white,
     error: AppPalette.accentError,
-    onPrimary: Colors.white,
-    onSurface: Color(0xFF1E293B),
+    onPrimary: AppPalette.white,
+    onSurface: AppPalette.lightTextBody,
   );
 
   static final lightThemeMode = ThemeData.light().copyWith(
@@ -21,7 +21,7 @@ class AppTheme {
     appBarTheme: const AppBarTheme(
       surfaceTintColor: AppPalette.backgroundColorLight,
       backgroundColor: AppPalette.backgroundColorLight,
-      foregroundColor: Color(0xFF0F172A),
+      foregroundColor: AppPalette.lightTextPrimary,
       elevation: 0,
     ),
     chipTheme: const ChipThemeData(
@@ -31,8 +31,8 @@ class AppTheme {
     textTheme: ThemeData.light()
         .textTheme
         .apply(
-          bodyColor: const Color(0xFF0F172A),
-          displayColor: const Color(0xFF0F172A),
+          bodyColor: AppPalette.lightTextPrimary,
+          displayColor: AppPalette.lightTextPrimary,
         )
         .copyWith(
           titleLarge:
@@ -41,15 +41,18 @@ class AppTheme {
               const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           titleSmall:
               const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-          bodyLarge: const TextStyle(fontSize: 16, color: Color(0xFF0F172A)),
-          bodyMedium: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
-          bodySmall: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+          bodyLarge:
+              const TextStyle(fontSize: 16, color: AppPalette.lightTextPrimary),
+          bodyMedium:
+              const TextStyle(fontSize: 14, color: AppPalette.lightTextPrimary),
+          bodySmall: const TextStyle(
+              fontSize: 12, color: AppPalette.lightTextSecondary),
           labelLarge:
               const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
-    dividerColor: const Color(0x1A0F172A),
+    dividerColor: AppPalette.lightBorder,
     dividerTheme: const DividerThemeData(
-      color: Color(0x1A0F172A),
+      color: AppPalette.lightBorder,
       thickness: 0.8,
       space: 1,
     ),
@@ -66,35 +69,35 @@ class AppTheme {
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.disabled)) {
-          return const Color(0xFF94A3B8);
+          return AppPalette.lightControlDisabled;
         }
         if (states.contains(WidgetState.selected)) {
-          return Colors.white;
+          return AppPalette.white;
         }
-        return const Color(0xFFE5E7EB);
+        return AppPalette.lightControlThumb;
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.disabled)) {
-          return const Color(0xFFCBD5E1);
+          return AppPalette.lightControlTrack;
         }
         if (states.contains(WidgetState.selected)) {
           return AppPalette.accentPrimary;
         }
-        return const Color(0xFF94A3B8);
+        return AppPalette.lightControlDisabled;
       }),
-      trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+      trackOutlineColor: const WidgetStatePropertyAll(AppPalette.transparent),
     ),
     sliderTheme: SliderThemeData(
       activeTrackColor: AppPalette.accentPrimary,
-      inactiveTrackColor: const Color(0xFFCBD5E1),
-      thumbColor: Colors.white,
+      inactiveTrackColor: AppPalette.lightControlTrack,
+      thumbColor: AppPalette.white,
       overlayColor: AppPalette.accentPrimary.withValues(alpha: 0.18),
-      valueIndicatorColor: Colors.white,
+      valueIndicatorColor: AppPalette.white,
     ),
     snackBarTheme: const SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      backgroundColor: Colors.white,
-      contentTextStyle: TextStyle(color: Color(0xFF0F172A)),
+      backgroundColor: AppPalette.white,
+      contentTextStyle: TextStyle(color: AppPalette.lightTextPrimary),
     ),
   );
 
@@ -105,7 +108,7 @@ class AppTheme {
     secondary: AppPalette.accentPrimary,
     surface: AppPalette.surface,
     error: AppPalette.accentError,
-    onPrimary: Colors.white,
+    onPrimary: AppPalette.white,
     onSurface: AppPalette.textPrimary,
   );
 
@@ -174,9 +177,9 @@ class AppTheme {
           return AppPalette.textMuted.withValues(alpha: 0.7);
         }
         if (states.contains(WidgetState.selected)) {
-          return Colors.white;
+          return AppPalette.white;
         }
-        return const Color(0xFFE3E5EC);
+        return AppPalette.darkControlThumb;
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.disabled)) {
@@ -185,14 +188,14 @@ class AppTheme {
         if (states.contains(WidgetState.selected)) {
           return AppPalette.accentPrimary;
         }
-        return const Color(0xFF6A6C75);
+        return AppPalette.darkControlTrack;
       }),
-      trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+      trackOutlineColor: const WidgetStatePropertyAll(AppPalette.transparent),
     ),
     sliderTheme: SliderThemeData(
       activeTrackColor: AppPalette.accentPrimary,
-      inactiveTrackColor: Colors.white24,
-      thumbColor: Colors.white,
+      inactiveTrackColor: AppPalette.white24,
+      thumbColor: AppPalette.white,
       overlayColor: AppPalette.accentPrimary.withValues(alpha: 0.18),
       valueIndicatorColor: AppPalette.surfaceRaised,
     ),

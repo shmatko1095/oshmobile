@@ -111,7 +111,8 @@ class ScheduleRange {
   }
 
   @override
-  bool operator ==(Object other) => other is ScheduleRange && other.min == min && other.max == max;
+  bool operator ==(Object other) =>
+      other is ScheduleRange && other.min == min && other.max == max;
 
   @override
   int get hashCode => Object.hash(min, max);

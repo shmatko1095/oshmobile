@@ -99,7 +99,8 @@ class _BleWifiScanPageState extends State<BleWifiScanPage> {
     );
   }
 
-  Future<void> _onNetworkSelected(BuildContext context, WifiNetwork network) async {
+  Future<void> _onNetworkSelected(
+      BuildContext context, WifiNetwork network) async {
     final cubit = context.read<BleProvisioningCubit>();
     cubit.selectNetwork(network);
 

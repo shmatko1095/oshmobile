@@ -55,7 +55,7 @@ class HeatingStatusCard extends StatelessWidget {
                       colors: [
                         AppPalette.accentWarning.withValues(alpha: 0.20),
                         AppPalette.accentWarning.withValues(alpha: 0.07),
-                        Colors.transparent,
+                        AppPalette.transparent,
                       ],
                     ),
                   ),

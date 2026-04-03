@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart' as global_mqtt;
+import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart'
+    as global_mqtt;
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 
 /// Tiny indicator used in AppBar to show MQTT connection
 /// and in-flight device communication status.
@@ -42,7 +44,10 @@ class _MqttActivityIconState extends State<MqttActivityIcon> {
     // - now there are no pending ops.
     // - there is no error on the comm tracker
     // - MQTT transport is connected
-    if (wasPending && !hasPending && state.lastError == null && isTransportConnected) {
+    if (wasPending &&
+        !hasPending &&
+        state.lastError == null &&
+        isTransportConnected) {
       _successTimer?.cancel();
       setState(() => _showSuccess = true);
       _successTimer = Timer(const Duration(milliseconds: 200), () {
@@ -83,7 +88,8 @@ class _MqttActivityIconState extends State<MqttActivityIcon> {
             child = const Tooltip(
               key: ValueKey('mqtt_error'),
               message: 'MQTT error',
-              child: Icon(Icons.cloud_off, size: 22, color: Colors.redAccent),
+              child: Icon(Icons.cloud_off,
+                  size: 22, color: AppPalette.accentWarning),
             );
           } else if (_showSuccess) {
             // 2) Transport is connected and we just finished pending ops successfully.
@@ -103,7 +109,8 @@ class _MqttActivityIconState extends State<MqttActivityIcon> {
             child = Tooltip(
               key: const ValueKey('mqtt_comm_error'),
               message: commState.lastError ?? 'Last operation failed',
-              child: const Icon(Icons.error_outline, size: 22, color: Colors.orangeAccent),
+              child: const Icon(Icons.error_outline,
+                  size: 22, color: AppPalette.orangeAccent),
             );
           } else {
             // 5) Transport connected, no pending, no recent error.
@@ -171,7 +178,8 @@ class _RotatingSyncIcon extends StatefulWidget {
   State<_RotatingSyncIcon> createState() => _RotatingSyncIconState();
 }
 
-class _RotatingSyncIconState extends State<_RotatingSyncIcon> with SingleTickerProviderStateMixin {
+class _RotatingSyncIconState extends State<_RotatingSyncIcon>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override

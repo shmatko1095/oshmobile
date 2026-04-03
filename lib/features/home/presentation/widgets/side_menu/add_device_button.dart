@@ -10,7 +10,7 @@ class AddDeviceButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surface = isDark ? AppPalette.surface : Colors.white;
+    final surface = isDark ? AppPalette.surface : AppPalette.white;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),

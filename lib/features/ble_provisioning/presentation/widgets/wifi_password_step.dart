@@ -65,7 +65,8 @@ class _WifiPasswordStepState extends State<WifiPasswordStep> {
               final isNotEmpty = value.text.trim().isNotEmpty;
 
               return AppButton(
-                onPressed: (isNotEmpty && !widget.isConnecting) ? _onConnect : null,
+                onPressed:
+                    (isNotEmpty && !widget.isConnecting) ? _onConnect : null,
                 text: S.of(context).Connect,
                 isLoading: widget.isConnecting,
               );

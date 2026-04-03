@@ -590,7 +590,7 @@ class _MainCardAccentLayer extends StatelessWidget {
               colors: [
                 AppPalette.accentPrimary.withValues(alpha: 0.14),
                 AppPalette.accentPrimary.withValues(alpha: 0.06),
-                Colors.transparent,
+                AppPalette.transparent,
               ],
               stops: const [0.0, 0.42, 1.0],
             ),
@@ -625,7 +625,7 @@ class _ScheduleMetaBlock extends StatelessWidget {
         Divider(
           color: isDarkSurface(context)
               ? AppPalette.separator
-              : const Color(0x1A0F172A),
+              : AppPalette.lightBorder,
           thickness: 0.8,
           height: 1,
         ),

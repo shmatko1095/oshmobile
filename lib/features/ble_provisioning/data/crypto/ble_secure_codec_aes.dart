@@ -10,7 +10,8 @@ import 'package:oshmobile/features/ble_provisioning/data/crypto/ble_secure_codec
 class AesCtrBleSecureCodec implements BleSecureCodec {
   final Uint8List _keyBytes; // 16 bytes
 
-  AesCtrBleSecureCodec(String secureCode) : _keyBytes = _normalizeKey(secureCode);
+  AesCtrBleSecureCodec(String secureCode)
+      : _keyBytes = _normalizeKey(secureCode);
 
   static Uint8List _normalizeKey(String secureCode) {
     // This function must ensure 16 bytes key.

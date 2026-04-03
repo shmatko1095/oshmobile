@@ -45,7 +45,9 @@ class _RenameDevicePageState extends State<RenameDevicePage> {
 
   String _norm(String? s) => (s ?? '').trim().replaceAll(RegExp(r'\s+'), ' ');
 
-  bool get _canSave => _norm(_aliasCtrl.text) != _initialAlias || _norm(_descriptionCtrl.text) != _initialDesc;
+  bool get _canSave =>
+      _norm(_aliasCtrl.text) != _initialAlias ||
+      _norm(_descriptionCtrl.text) != _initialDesc;
 
   @override
   void initState() {
@@ -98,7 +100,8 @@ class _RenameDevicePageState extends State<RenameDevicePage> {
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: BlocConsumer<HomeCubit, HomeState>(
-          listenWhen: (previous, current) => ModalRoute.of(context)?.isCurrent ?? true,
+          listenWhen: (previous, current) =>
+              ModalRoute.of(context)?.isCurrent ?? true,
           listener: (context, state) => _onStateChanged(context, state),
           builder: (context, state) {
             final isLoading = state is HomeLoading;

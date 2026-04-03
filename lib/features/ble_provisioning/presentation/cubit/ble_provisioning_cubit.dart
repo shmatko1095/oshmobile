@@ -114,12 +114,16 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
     emit(state.copyWith(status: ProvisioningStatus.connectingBle, error: null));
 
     try {
-      await _connectBleDevice(serialNumber: serialNumber, secureCode: secureCode);
-      emit(state.copyWith(status: ProvisioningStatus.wifiScanIdle, error: null));
+      await _connectBleDevice(
+          serialNumber: serialNumber, secureCode: secureCode);
+      emit(
+          state.copyWith(status: ProvisioningStatus.wifiScanIdle, error: null));
       await refreshScan();
     } catch (e, st) {
       OshCrashReporter.logNonFatal(e, st, reason: "Failed to connect via BLE");
-      emit(state.copyWith(status: ProvisioningStatus.error, error: 'Failed to connect via BLE: $e'));
+      emit(state.copyWith(
+          status: ProvisioningStatus.error,
+          error: 'Failed to connect via BLE: $e'));
     }
   }
 
@@ -135,11 +139,13 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
 
     _scanSub = _scanWifiNetworks().listen(
       (networks) {
-        emit(state.copyWith(status: ProvisioningStatus.wifiScanInProgress, networks: networks));
+        emit(state.copyWith(
+            status: ProvisioningStatus.wifiScanInProgress, networks: networks));
       },
       onError: (e) {
         OshCrashReporter.logNonFatal(e, null, reason: "Wi-Fi scan failed");
-        emit(state.copyWith(status: ProvisioningStatus.error, error: 'Wi-Fi scan failed: $e'));
+        emit(state.copyWith(
+            status: ProvisioningStatus.error, error: 'Wi-Fi scan failed: $e'));
       },
       onDone: () {
         emit(state.copyWith(status: ProvisioningStatus.wifiScanDone));

@@ -44,7 +44,8 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
 
   Future<void> signedIn(Session session) async {
     await _sessionStorage.setSession(session);
-    OshCrashReporter.setUserId(getJwtUserData()?.email ?? getJwtUserData()!.uuid);
+    OshCrashReporter.setUserId(
+        getJwtUserData()?.email ?? getJwtUserData()!.uuid);
     _emitAuthenticated();
   }
 
@@ -76,7 +77,8 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
       if (response.isSuccessful && response.body != null) {
         final newSession = Session.fromJson(response.body);
         await _sessionStorage.setSession(newSession);
-        OshCrashReporter.setUserId(getJwtUserData()?.email ?? getJwtUserData()!.uuid);
+        OshCrashReporter.setUserId(
+            getJwtUserData()?.email ?? getJwtUserData()!.uuid);
         _emitAuthenticated();
         return true;
       } else {

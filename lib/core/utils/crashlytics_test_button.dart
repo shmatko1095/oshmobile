@@ -24,7 +24,8 @@ class CrashlyticsTestButton extends StatelessWidget {
               'build_type': kDebugMode ? 'debug' : 'release',
             },
           );
-          SnackBarUtils.showAlert(context: context, content: "Test error sent to Crashlytic");
+          SnackBarUtils.showAlert(
+              context: context, content: "Test error sent to Crashlytic");
         }
       },
       child: const Text('Send test error to Crashlytics'),

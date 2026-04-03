@@ -11,14 +11,19 @@ class BleWifiPasswordPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<BleProvisioningCubit, BleProvisioningState>(
       listenWhen: (prev, cur) =>
-          prev.status != cur.status || prev.lastConnectStatus != cur.lastConnectStatus || prev.error != cur.error,
+          prev.status != cur.status ||
+          prev.lastConnectStatus != cur.lastConnectStatus ||
+          prev.error != cur.error,
       listener: (context, state) {
         if (state.status == ProvisioningStatus.wifiSuccess) {
-          SnackBarUtils.showSuccess(context: context, content: "Device connected to Wi-Fi");
+          SnackBarUtils.showSuccess(
+              context: context, content: "Device connected to Wi-Fi");
           Navigator.of(context).pop(true);
         } else if (state.status == ProvisioningStatus.wifiFailed) {
-          SnackBarUtils.showFail(context: context, content: "Failed to connect");
-        } else if (state.status == ProvisioningStatus.error && state.error != null) {
+          SnackBarUtils.showFail(
+              context: context, content: "Failed to connect");
+        } else if (state.status == ProvisioningStatus.error &&
+            state.error != null) {
           SnackBarUtils.showFail(context: context, content: state.error!);
         }
       },

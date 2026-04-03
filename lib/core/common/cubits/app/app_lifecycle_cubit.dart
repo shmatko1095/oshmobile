@@ -15,7 +15,8 @@ class AppLifecycleStateVm {
 /// - WidgetsBindingObserver lives in the UI.
 /// - Business/session coordinators depend on this cubit instead of widgets.
 class AppLifecycleCubit extends Cubit<AppLifecycleStateVm> {
-  AppLifecycleCubit() : super(const AppLifecycleStateVm(AppLifecycleState.resumed));
+  AppLifecycleCubit()
+      : super(const AppLifecycleStateVm(AppLifecycleState.resumed));
 
   void setLifecycle(AppLifecycleState s) {
     if (state.state == s) return;

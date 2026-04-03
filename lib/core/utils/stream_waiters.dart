@@ -50,7 +50,8 @@ Future<T> firstWithTimeout<T>(
   sub = stream.listen(
     finishValue,
     onError: (Object e, StackTrace st) => finishError(e, st),
-    onDone: () => finishError(StateError(doneMessage ?? 'Stream closed before first event')),
+    onDone: () => finishError(
+        StateError(doneMessage ?? 'Stream closed before first event')),
     cancelOnError: false,
   );
 
@@ -61,7 +62,8 @@ Future<T> firstWithTimeout<T>(
   }
 
   timer = Timer(timeout, () {
-    finishError(TimeoutException(timeoutMessage ?? 'Timeout waiting for first event', timeout));
+    finishError(TimeoutException(
+        timeoutMessage ?? 'Timeout waiting for first event', timeout));
   });
 
   return completer.future;
@@ -124,7 +126,8 @@ Future<T> firstWhereWithTimeout<T>(
       finishValue(event);
     },
     onError: (Object e, StackTrace st) => finishError(e, st),
-    onDone: () => finishError(StateError(doneMessage ?? 'Stream closed before match')),
+    onDone: () =>
+        finishError(StateError(doneMessage ?? 'Stream closed before match')),
     cancelOnError: false,
   );
 
@@ -135,7 +138,8 @@ Future<T> firstWhereWithTimeout<T>(
   }
 
   timer = Timer(timeout, () {
-    finishError(TimeoutException(timeoutMessage ?? 'Timeout waiting for match', timeout));
+    finishError(TimeoutException(
+        timeoutMessage ?? 'Timeout waiting for match', timeout));
   });
 
   return completer.future;

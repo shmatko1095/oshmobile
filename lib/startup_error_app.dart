@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 
 /// Root application used when startup initialization fails.
 /// Shows a simple error screen with a message and hint for the user.
@@ -53,7 +54,7 @@ class StartupErrorApp extends StatelessWidget {
                       'Technical details:',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade700,
+                        color: AppPalette.grey700,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -62,7 +63,7 @@ class StartupErrorApp extends StatelessWidget {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade400),
+                        border: Border.all(color: AppPalette.grey400),
                       ),
                       height: 140,
                       child: SingleChildScrollView(

@@ -71,19 +71,20 @@ class HistoryMultiLineChart extends StatelessWidget {
     }
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final axisMutedColor =
-        isDark ? AppPalette.textMuted : const Color(0xFF64748B);
+        isDark ? AppPalette.textMuted : AppPalette.lightTextSubtle;
     final separatorColor =
-        isDark ? AppPalette.separator : const Color(0x1A0F172A);
+        isDark ? AppPalette.separator : AppPalette.lightBorder;
     final axisBorderColor = isDark
         ? AppPalette.separator.withValues(alpha: 0.7)
-        : const Color(0x2A0F172A);
+        : AppPalette.lightBorderStrong;
     final tooltipBackground = isDark
-        ? const Color(0xFF141820).withValues(alpha: 0.96)
-        : Colors.white.withValues(alpha: 0.96);
+        ? AppPalette.tooltipDarkSurface.withValues(alpha: 0.96)
+        : AppPalette.white.withValues(alpha: 0.96);
     final tooltipTextColor =
-        isDark ? AppPalette.textPrimary : const Color(0xFF0F172A);
-    final tooltipStrokeColor =
-        isDark ? Colors.white.withValues(alpha: 0.95) : const Color(0xFFE2E8F0);
+        isDark ? AppPalette.textPrimary : AppPalette.lightTextPrimary;
+    final tooltipStrokeColor = isDark
+        ? AppPalette.white.withValues(alpha: 0.95)
+        : AppPalette.lightBorderSubtle;
 
     final xWindow = _resolveXWindow();
     final windowStartUtc = xWindow?.startUtc;
@@ -293,8 +294,8 @@ class HistoryMultiLineChart extends StatelessWidget {
               color: axisBorderColor,
               width: 1,
             ),
-            right: const BorderSide(color: Colors.transparent, width: 0),
-            top: const BorderSide(color: Colors.transparent, width: 0),
+            right: const BorderSide(color: AppPalette.transparent, width: 0),
+            top: const BorderSide(color: AppPalette.transparent, width: 0),
           ),
         ),
         lineTouchData: LineTouchData(

@@ -17,24 +17,26 @@ bool _historyIsDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
 
 Color _historySurfaceColor(BuildContext context) =>
-    _historyIsDark(context) ? AppPalette.surfaceRaised : Colors.white;
+    _historyIsDark(context) ? AppPalette.surfaceRaised : AppPalette.white;
 
-Color _historySurfaceAltColor(BuildContext context) =>
-    _historyIsDark(context) ? AppPalette.surfaceAlt : const Color(0xFFF3F4F6);
+Color _historySurfaceAltColor(BuildContext context) => _historyIsDark(context)
+    ? AppPalette.surfaceAlt
+    : AppPalette.lightSurfaceSubtle;
 
 Color _historyBorderColor(BuildContext context) =>
-    _historyIsDark(context) ? AppPalette.borderSoft : const Color(0x1A0F172A);
+    _historyIsDark(context) ? AppPalette.borderSoft : AppPalette.lightBorder;
 
-Color _historyPrimaryTextColor(BuildContext context) =>
-    _historyIsDark(context) ? AppPalette.textPrimary : const Color(0xFF0F172A);
+Color _historyPrimaryTextColor(BuildContext context) => _historyIsDark(context)
+    ? AppPalette.textPrimary
+    : AppPalette.lightTextPrimary;
 
 Color _historySecondaryTextColor(BuildContext context) =>
     _historyIsDark(context)
         ? AppPalette.textSecondary
-        : const Color(0xFF475569);
+        : AppPalette.lightTextSecondary;
 
 Color _historyMutedTextColor(BuildContext context) =>
-    _historyIsDark(context) ? AppPalette.textMuted : const Color(0xFF64748B);
+    _historyIsDark(context) ? AppPalette.textMuted : AppPalette.lightTextSubtle;
 
 class TelemetryHistoryPage extends StatefulWidget {
   const TelemetryHistoryPage({
@@ -56,7 +58,7 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
   static const String _toggleTemp = 'temp';
   static const String _toggleTarget = 'target';
   static const String _toggleHeating = 'heating';
-  static const Color _tempInactiveColor = Color(0xFF7BC5FF);
+  static const Color _tempInactiveColor = AppPalette.chartTempInactive;
 
   late final PageController _pageController;
   Set<String> _enabledTemperatureSeries = <String>{};
@@ -1015,12 +1017,12 @@ class _OverlaySeriesChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? option.color.withValues(alpha: 0.2)
-                : Colors.transparent,
+                : AppPalette.transparent,
             borderRadius: BorderRadius.circular(AppPalette.radiusPill),
             border: Border.all(
               color: selected
                   ? option.color.withValues(alpha: 0.72)
-                  : Colors.transparent,
+                  : AppPalette.transparent,
             ),
           ),
           padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 9),
@@ -1120,7 +1122,7 @@ class _RangeChip extends StatelessWidget {
                 ? AppPalette.accentPrimary.withValues(
                     alpha: _historyIsDark(context) ? 0.36 : 0.14,
                   )
-                : Colors.transparent,
+                : AppPalette.transparent,
             borderRadius: BorderRadius.circular(AppPalette.radiusMd),
           ),
           padding: const EdgeInsets.symmetric(vertical: 12),

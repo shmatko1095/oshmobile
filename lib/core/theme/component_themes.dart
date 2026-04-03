@@ -36,11 +36,11 @@ class AppComponentThemes {
       );
 
   static CardThemeData get lightCardTheme => CardThemeData(
-        color: Colors.white,
+        color: AppPalette.white,
         margin: EdgeInsets.zero,
         elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.transparent,
+        surfaceTintColor: AppPalette.transparent,
+        shadowColor: AppPalette.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppPalette.radiusLg),
         ),
@@ -50,8 +50,8 @@ class AppComponentThemes {
         color: AppPalette.surface,
         margin: EdgeInsets.zero,
         elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        shadowColor: Colors.transparent,
+        surfaceTintColor: AppPalette.transparent,
+        shadowColor: AppPalette.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppPalette.radiusXl),
         ),
@@ -73,7 +73,7 @@ class AppComponentThemes {
       ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppPalette.accentPrimary,
-          foregroundColor: Colors.white,
+          foregroundColor: AppPalette.white,
           disabledBackgroundColor: AppPalette.surfaceAlt,
           disabledForegroundColor: AppPalette.textMuted,
           elevation: 0,

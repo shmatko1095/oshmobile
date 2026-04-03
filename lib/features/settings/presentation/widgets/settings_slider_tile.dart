@@ -35,7 +35,8 @@ class SettingsSliderTile extends StatelessWidget {
     final clampedMax = max > min ? max : min + 1;
     final clampedValue = value.clamp(clampedMin, clampedMax);
     final divisionsDouble = (clampedMax - clampedMin) / (step <= 0 ? 1 : step);
-    final divisions = divisionsDouble.isFinite ? divisionsDouble.round().clamp(1, 200) : 10;
+    final divisions =
+        divisionsDouble.isFinite ? divisionsDouble.round().clamp(1, 200) : 10;
 
     String fmt(double v) {
       // Compact value formatting; add unit if present.

@@ -48,8 +48,12 @@ class MqttThermostatMock {
       ..onDisconnected = _onDisconnected;
 
     // Configure LWT (retained offline)
-    final lwtPayload = jsonEncode(
-        {'ver': '1', 'device_id': deviceId, 'online': false, 'ts': DateTime.now().toUtc().toIso8601String()});
+    final lwtPayload = jsonEncode({
+      'ver': '1',
+      'device_id': deviceId,
+      'online': false,
+      'ts': DateTime.now().toUtc().toIso8601String()
+    });
     _client.connectionMessage = mqtt.MqttConnectMessage()
         .withClientIdentifier('dev:$deviceId')
         .startClean()
@@ -60,7 +64,8 @@ class MqttThermostatMock {
 
     if (username != null) {
       _client.setProtocolV311();
-      _client.connectionMessage = _client.connectionMessage!.authenticateAs(username!, password ?? '');
+      _client.connectionMessage =
+          _client.connectionMessage!.authenticateAs(username!, password ?? '');
     }
   }
 
@@ -88,14 +93,17 @@ class MqttThermostatMock {
     );
 
     // Subscriptions
-    _client.subscribe(Topics.desired(tenantId, deviceId), mqtt.MqttQos.atLeastOnce);
-    _client.subscribe(Topics.cmdInbox(tenantId, deviceId), mqtt.MqttQos.atLeastOnce);
+    _client.subscribe(
+        Topics.desired(tenantId, deviceId), mqtt.MqttQos.atLeastOnce);
+    _client.subscribe(
+        Topics.cmdInbox(tenantId, deviceId), mqtt.MqttQos.atLeastOnce);
 
     _client.updates!.listen(_onMessage);
 
     // Base telemetry every 30s
     _baseTeleTimer?.cancel();
-    _baseTeleTimer = Timer.periodic(const Duration(seconds: 30), (_) => _tickBaseTelemetry());
+    _baseTeleTimer = Timer.periodic(
+        const Duration(seconds: 30), (_) => _tickBaseTelemetry());
   }
 
   void dispose() {
@@ -152,7 +160,8 @@ class MqttThermostatMock {
       } else {
         _state.output = 'off';
       }
-      _publishJson(Topics.reported(tenantId, deviceId), _state.toReported(deviceId),
+      _publishJson(
+          Topics.reported(tenantId, deviceId), _state.toReported(deviceId),
           retained: true, qos: mqtt.MqttQos.atLeastOnce);
     }
   }
@@ -191,11 +200,17 @@ class MqttThermostatMock {
         final fields = (args['fields'] as List?)?.cast<String>();
 
         if (enable) {
-          _rtLeases[sessionId] = DateTime.now().toUtc().add(Duration(seconds: duration));
+          _rtLeases[sessionId] =
+              DateTime.now().toUtc().add(Duration(seconds: duration));
           _rtHz = hz.clamp(0.1, 2.0);
           _rtFields = fields?.toSet();
           _ensureRtTick();
-          _publishJson(replyTo, ok({'hz': _rtHz, 'expires_at': _rtLeases[sessionId]!.toIso8601String()}));
+          _publishJson(
+              replyTo,
+              ok({
+                'hz': _rtHz,
+                'expires_at': _rtLeases[sessionId]!.toIso8601String()
+              }));
         } else {
           _rtLeases.remove(sessionId);
           _publishJson(replyTo, ok({'stopped': true}));
@@ -206,15 +221,21 @@ class MqttThermostatMock {
         _publishJson(replyTo, ok({'accepted': true, 'eta_s': 2}));
         Future.delayed(const Duration(seconds: 1), () {
           _state.online = false;
-          _publishJson(Topics.status(tenantId, deviceId), _state.status(deviceId),
+          _publishJson(
+              Topics.status(tenantId, deviceId), _state.status(deviceId),
               retained: true, qos: mqtt.MqttQos.atLeastOnce);
         });
         Future.delayed(const Duration(seconds: 3), () {
           _state.online = true;
-          _publishJson(Topics.status(tenantId, deviceId), _state.status(deviceId),
+          _publishJson(
+              Topics.status(tenantId, deviceId), _state.status(deviceId),
               retained: true, qos: mqtt.MqttQos.atLeastOnce);
-          _publishJson(Topics.events(tenantId, deviceId),
-              {'ver': '1', 'ts': DateTime.now().toUtc().toIso8601String(), 'type': 'rebooted', 'cause': 'user_cmd'});
+          _publishJson(Topics.events(tenantId, deviceId), {
+            'ver': '1',
+            'ts': DateTime.now().toUtc().toIso8601String(),
+            'type': 'rebooted',
+            'cause': 'user_cmd'
+          });
         });
         break;
 
@@ -222,12 +243,14 @@ class MqttThermostatMock {
         final args = (msg['args'] ?? {}) as Map<String, dynamic>;
         final out = args['output'] as String?;
         if (out == null || (out != 'on' && out != 'off')) {
-          _publishJson(replyTo, err('bad_args', 'output must be "on" or "off"'));
+          _publishJson(
+              replyTo, err('bad_args', 'output must be "on" or "off"'));
           return;
         }
         _state.output = out;
         _publishJson(replyTo, ok({'accepted': true}));
-        _publishJson(Topics.reported(tenantId, deviceId), _state.toReported(deviceId),
+        _publishJson(
+            Topics.reported(tenantId, deviceId), _state.toReported(deviceId),
             retained: true, qos: mqtt.MqttQos.atLeastOnce);
         break;
 
@@ -241,13 +264,22 @@ class MqttThermostatMock {
           if (pct >= 100) {
             t.cancel();
             _state.fwVersion = ver;
-            _publishJson(Topics.events(tenantId, deviceId),
-                {'ver': '1', 'ts': DateTime.now().toUtc().toIso8601String(), 'type': 'ota_done', 'version': ver});
-            _publishJson(Topics.status(tenantId, deviceId), _state.status(deviceId),
+            _publishJson(Topics.events(tenantId, deviceId), {
+              'ver': '1',
+              'ts': DateTime.now().toUtc().toIso8601String(),
+              'type': 'ota_done',
+              'version': ver
+            });
+            _publishJson(
+                Topics.status(tenantId, deviceId), _state.status(deviceId),
                 retained: true, qos: mqtt.MqttQos.atLeastOnce);
           } else {
-            _publishJson(Topics.otaProgress(tenantId, deviceId),
-                {'ver': '1', 'ts': DateTime.now().toUtc().toIso8601String(), 'phase': 'download', 'percent': pct});
+            _publishJson(Topics.otaProgress(tenantId, deviceId), {
+              'ver': '1',
+              'ts': DateTime.now().toUtc().toIso8601String(),
+              'phase': 'download',
+              'percent': pct
+            });
           }
         });
         break;
@@ -301,7 +333,8 @@ class MqttThermostatMock {
       if (setFields == null || setFields.contains('output')) {
         rt['output'] = _state.output;
       }
-      _publishJson(Topics.telemetryRt(tenantId, deviceId), rt, retained: false, qos: mqtt.MqttQos.atMostOnce);
+      _publishJson(Topics.telemetryRt(tenantId, deviceId), rt,
+          retained: false, qos: mqtt.MqttQos.atMostOnce);
     });
   }
 

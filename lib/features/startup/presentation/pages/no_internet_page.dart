@@ -8,21 +8,20 @@ bool _noInternetIsDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
 
 Color _noInternetSurfaceColor(BuildContext context) =>
-    _noInternetIsDark(context) ? AppPalette.surface : Colors.white;
+    _noInternetIsDark(context) ? AppPalette.surface : AppPalette.white;
 
-Color _noInternetBorderColor(BuildContext context) => _noInternetIsDark(context)
-    ? AppPalette.borderSoft
-    : const Color(0x1A0F172A);
+Color _noInternetBorderColor(BuildContext context) =>
+    _noInternetIsDark(context) ? AppPalette.borderSoft : AppPalette.lightBorder;
 
 Color _noInternetPrimaryTextColor(BuildContext context) =>
     _noInternetIsDark(context)
         ? AppPalette.textPrimary
-        : const Color(0xFF0F172A);
+        : AppPalette.lightTextPrimary;
 
 Color _noInternetSecondaryTextColor(BuildContext context) =>
     _noInternetIsDark(context)
         ? AppPalette.textSecondary
-        : const Color(0xFF475569);
+        : AppPalette.lightTextSecondary;
 
 class NoInternetPage extends StatelessWidget {
   const NoInternetPage({

@@ -152,14 +152,14 @@ class _ModeItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final Color fg = selected
-        ? (isDark ? Colors.white : const Color(0xFF0F172A))
-        : (isDark ? AppPalette.textSecondary : const Color(0xFF475569));
+        ? (isDark ? AppPalette.white : AppPalette.lightTextPrimary)
+        : (isDark ? AppPalette.textSecondary : AppPalette.lightTextSecondary);
     final Color bg = selected
         ? AppPalette.accentPrimary.withValues(alpha: isDark ? 0.22 : 0.14)
-        : Colors.transparent;
+        : AppPalette.transparent;
     final Color bd = selected
         ? AppPalette.accentPrimary.withValues(alpha: isDark ? 0.4 : 0.32)
-        : Colors.transparent;
+        : AppPalette.transparent;
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),

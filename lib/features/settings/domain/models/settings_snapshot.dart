@@ -77,7 +77,8 @@ class SettingsSnapshot {
         if (next is Map<String, dynamic>) {
           cur = next;
         } else if (next is Map) {
-          final normalized = Map<String, dynamic>.from(next.cast<String, dynamic>());
+          final normalized =
+              Map<String, dynamic>.from(next.cast<String, dynamic>());
           cur[key] = normalized;
           cur = normalized;
         } else {
@@ -119,7 +120,8 @@ class SettingsSnapshot {
     return result;
   }
 
-  static void _deepMerge(Map<String, dynamic> target, Map<String, dynamic> patch) {
+  static void _deepMerge(
+      Map<String, dynamic> target, Map<String, dynamic> patch) {
     patch.forEach((key, value) {
       if (value is Map<String, dynamic>) {
         final existing = target[key];

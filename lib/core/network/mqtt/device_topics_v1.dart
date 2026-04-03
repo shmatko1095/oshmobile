@@ -22,5 +22,6 @@ class DeviceMqttTopicsV1 {
 
   String evt(String deviceId, String domain) => '${base(deviceId)}/evt/$domain';
 
-  String state(String deviceId, String domain) => '${base(deviceId)}/state/$domain';
+  String state(String deviceId, String domain) =>
+      '${base(deviceId)}/state/$domain';
 }

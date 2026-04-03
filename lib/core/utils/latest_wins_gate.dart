@@ -14,10 +14,12 @@ class LatestWinsGate {
     final cancel = Completer<void>();
     _slots[key] = _LatestWinsSlot(token: nextToken, cancelled: cancel);
 
-    return LatestWinsToken(key: key, token: nextToken, cancelled: cancel.future);
+    return LatestWinsToken(
+        key: key, token: nextToken, cancelled: cancel.future);
   }
 
-  bool isCurrent(LatestWinsToken token) => _slots[token.key]?.token == token.token;
+  bool isCurrent(LatestWinsToken token) =>
+      _slots[token.key]?.token == token.token;
 
   void clear() {
     for (final slot in _slots.values) {

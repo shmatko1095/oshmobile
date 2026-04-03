@@ -77,13 +77,13 @@ class _AccountSettingsView extends StatelessWidget {
     final avatarText =
         safeName.isNotEmpty ? safeName.substring(0, 1).toUpperCase() : 'U';
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surface = isDark ? AppPalette.surface : Colors.white;
+    final surface = isDark ? AppPalette.surface : AppPalette.white;
     final avatarSurface =
-        isDark ? AppPalette.surfaceAlt : const Color(0xFFF1F3F5);
+        isDark ? AppPalette.surfaceAlt : AppPalette.lightSurfaceMuted;
     final titleColor =
-        isDark ? AppPalette.textPrimary : const Color(0xFF111827);
+        isDark ? AppPalette.textPrimary : AppPalette.lightTextStrong;
     final subtitleColor =
-        isDark ? AppPalette.textSecondary : const Color(0xFF4B5563);
+        isDark ? AppPalette.textSecondary : AppPalette.lightTextMuted;
 
     return AppSolidCard(
       backgroundColor: surface,
@@ -228,7 +228,7 @@ class _AccountSettingsView extends StatelessWidget {
                   )
                 : const Icon(
                     Icons.chevron_right_rounded,
-                    color: Color(0xFF6B7280),
+                    color: AppPalette.lightTextDisabled,
                   ),
             onTap: state.isDeleting
                 ? null
@@ -268,8 +268,9 @@ class _AccountSettingsView extends StatelessWidget {
           ),
           trailing: Icon(
             selected ? Icons.check_circle_rounded : Icons.circle_outlined,
-            color:
-                selected ? AppPalette.accentPrimary : const Color(0xFF6B7280),
+            color: selected
+                ? AppPalette.accentPrimary
+                : AppPalette.lightTextDisabled,
           ),
           onTap: () => onSelected(value),
           selected: selected,

@@ -38,7 +38,7 @@ class WifiListStep extends StatelessWidget {
                         ? const SizedBox()
                         : Text(
                             S.of(context).NoNetworksFound,
-                            style: const TextStyle(color: Colors.grey),
+                            style: const TextStyle(color: AppPalette.grey),
                           ),
                   )
                 : ListView.separated(
@@ -92,9 +92,9 @@ class _WifiTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final tileColor = isDark ? AppPalette.surface : Colors.white;
-    final textColor = isDark ? AppPalette.textPrimary : Colors.black;
-    final iconColor = isDark ? AppPalette.textSecondary : Colors.black54;
+    final tileColor = isDark ? AppPalette.surface : AppPalette.white;
+    final textColor = isDark ? AppPalette.textPrimary : AppPalette.black;
+    final iconColor = isDark ? AppPalette.textSecondary : AppPalette.black54;
 
     return Material(
       color: tileColor,

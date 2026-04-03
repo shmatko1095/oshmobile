@@ -8,5 +8,6 @@ class ObserveDeviceNearby {
 
   const ObserveDeviceNearby(this._repo);
 
-  Stream<bool> call({required String serialNumber}) => _repo.observeDeviceNearby(serialNumber: serialNumber);
+  Stream<bool> call({required String serialNumber}) =>
+      _repo.observeDeviceNearby(serialNumber: serialNumber);
 }

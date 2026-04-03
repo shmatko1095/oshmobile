@@ -28,25 +28,26 @@ bool isDarkSurface(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
 
 Color statSurfaceColor(BuildContext context) =>
-    isDarkSurface(context) ? AppPalette.surfaceRaised : Colors.white;
+    isDarkSurface(context) ? AppPalette.surfaceRaised : AppPalette.white;
 
 Color statSurfaceAltColor(BuildContext context) => isDarkSurface(context)
     ? AppPalette.surfaceAlt
-    : const Color(0xFFF3F4F6);
+    : AppPalette.lightSurfaceSubtle;
 
-Color statBorderColor(BuildContext context) => isDarkSurface(context)
-    ? AppPalette.borderSoft
-    : const Color(0x1A0F172A);
+Color statBorderColor(BuildContext context) =>
+    isDarkSurface(context) ? AppPalette.borderSoft : AppPalette.lightBorder;
 
 Color statTitleColor(BuildContext context) => isDarkSurface(context)
     ? AppPalette.textSecondary
-    : const Color(0xFF475569);
+    : AppPalette.lightTextSecondary;
 
-Color statValueColor(BuildContext context) =>
-    isDarkSurface(context) ? AppPalette.textPrimary : const Color(0xFF0F172A);
+Color statValueColor(BuildContext context) => isDarkSurface(context)
+    ? AppPalette.textPrimary
+    : AppPalette.lightTextPrimary;
 
-Color statMutedColor(BuildContext context) =>
-    isDarkSurface(context) ? AppPalette.textMuted : const Color(0xFF6B7280);
+Color statMutedColor(BuildContext context) => isDarkSurface(context)
+    ? AppPalette.textMuted
+    : AppPalette.lightTextDisabled;
 
 num? asNum(dynamic v) {
   if (v is num) return v;

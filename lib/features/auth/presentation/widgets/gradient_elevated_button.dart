@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 
 class GradientElevatedButton extends StatelessWidget {
   final BorderRadiusGeometry? borderRadius;
@@ -10,7 +11,8 @@ class GradientElevatedButton extends StatelessWidget {
 
   const GradientElevatedButton({
     super.key,
-    this.gradient = const LinearGradient(colors: [Colors.indigo, Colors.cyan]),
+    this.gradient =
+        const LinearGradient(colors: [AppPalette.indigo, AppPalette.cyan]),
     required this.onPressed,
     required this.buttonText,
     this.borderRadius,
@@ -31,8 +33,8 @@ class GradientElevatedButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
+          backgroundColor: AppPalette.transparent,
+          shadowColor: AppPalette.transparent,
           shape: RoundedRectangleBorder(borderRadius: borderRadius),
         ),
         child: Text(

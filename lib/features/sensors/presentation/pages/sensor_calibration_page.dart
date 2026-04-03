@@ -13,12 +13,12 @@ bool _sensorCalibrationIsDark(BuildContext context) =>
 Color _sensorCalibrationPrimaryTextColor(BuildContext context) =>
     _sensorCalibrationIsDark(context)
         ? AppPalette.textPrimary
-        : const Color(0xFF0F172A);
+        : AppPalette.lightTextPrimary;
 
 Color _sensorCalibrationSecondaryTextColor(BuildContext context) =>
     _sensorCalibrationIsDark(context)
         ? AppPalette.textSecondary
-        : const Color(0xFF475569);
+        : AppPalette.lightTextSecondary;
 
 class SensorCalibrationPage extends StatefulWidget {
   final String sensorId;

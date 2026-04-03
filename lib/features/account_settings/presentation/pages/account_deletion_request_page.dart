@@ -89,7 +89,7 @@ class _AccountDeletionRequestPageState
     final s = S.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final secondaryTextColor =
-        isDark ? AppPalette.textSecondary : const Color(0xFF4B5563);
+        isDark ? AppPalette.textSecondary : AppPalette.lightTextMuted;
     final safeEmail = _normalizedEmail.isEmpty ? '—' : _normalizedEmail;
 
     return Column(
@@ -160,7 +160,7 @@ class _AccountDeletionRequestPageState
     final s = S.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final secondaryTextColor =
-        isDark ? AppPalette.textSecondary : const Color(0xFF4B5563);
+        isDark ? AppPalette.textSecondary : AppPalette.lightTextMuted;
     final safeEmail = _normalizedEmail.isEmpty ? '—' : _normalizedEmail;
 
     return Column(

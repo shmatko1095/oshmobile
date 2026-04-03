@@ -45,10 +45,12 @@ class Session {
         'access_token': accessToken,
         'refresh_token': refreshToken,
         'token_type': tokenType,
-        'expires_in':
-            accessTokenExpiry != null ? accessTokenExpiry!.difference(DateTime.now()).inSeconds : 0, // Remaining time
-        'refresh_expires_in':
-            refreshTokenExpiry != null ? refreshTokenExpiry!.difference(DateTime.now()).inSeconds : 0, // Remaining time
+        'expires_in': accessTokenExpiry != null
+            ? accessTokenExpiry!.difference(DateTime.now()).inSeconds
+            : 0, // Remaining time
+        'refresh_expires_in': refreshTokenExpiry != null
+            ? refreshTokenExpiry!.difference(DateTime.now()).inSeconds
+            : 0, // Remaining time
         'session_state': sessionState,
         'not-before-policy': notBeforePolicy,
         'scope': scope,

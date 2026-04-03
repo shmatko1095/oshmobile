@@ -63,7 +63,8 @@ final class _$ApiUserService extends ApiUserService {
     required String accessToken,
     required SendResetPasswordEmailRequest request,
   }) {
-    final Uri $url = Uri.parse('https://api.oshhome.com/v1/users/reset-password');
+    final Uri $url =
+        Uri.parse('https://api.oshhome.com/v1/users/reset-password');
     final Map<String, String> $headers = {
       'authorization': accessToken,
     };

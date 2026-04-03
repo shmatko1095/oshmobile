@@ -8,6 +8,7 @@ import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
+import 'package:oshmobile/features/schedule/presentation/pages/manual_time_page.dart';
 import 'package:oshmobile/features/schedule/presentation/pages/manual_temperature_page.dart';
 import 'package:oshmobile/features/schedule/presentation/utils.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -18,12 +19,20 @@ bool _scheduleIsDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
 
 Color _schedulePrimaryTextColor(BuildContext context) =>
-    _scheduleIsDark(context) ? AppPalette.textPrimary : const Color(0xFF0F172A);
+    _scheduleIsDark(context)
+        ? AppPalette.textPrimary
+        : AppPalette.lightTextPrimary;
 
 Color _scheduleSecondaryTextColor(BuildContext context) =>
     _scheduleIsDark(context)
         ? AppPalette.textSecondary
-        : const Color(0xFF475569);
+        : AppPalette.lightTextSecondary;
+
+Color _scheduleTileSurfaceColor(BuildContext context) =>
+    _scheduleIsDark(context) ? AppPalette.surfaceRaised : AppPalette.white;
+
+Color _scheduleTileBorderColor(BuildContext context) =>
+    _scheduleIsDark(context) ? AppPalette.borderSoft : AppPalette.lightBorder;
 
 class ScheduleEditorPage extends StatefulWidget {
   const ScheduleEditorPage({
@@ -39,66 +48,6 @@ class ScheduleEditorPage extends StatefulWidget {
 
 class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
   int _filterMask = 0;
-  static const double _timePickerSheetHeight = 460;
-  static const double _timePickerWheelHeight = 390;
-
-  Future<TimeOfDay?> _showWheelTimePicker(
-    BuildContext context, {
-    required TimeOfDay initial,
-    int minuteInterval = 1,
-  }) {
-    return showCupertinoModalPopup<TimeOfDay>(
-      context: context,
-      builder: (ctx) {
-        TimeOfDay temp = initial;
-        final use24h = MediaQuery.of(ctx).alwaysUse24HourFormat;
-
-        return Container(
-          height: _timePickerSheetHeight,
-          color: Theme.of(ctx).colorScheme.surface,
-          child: SafeArea(
-            top: false,
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 48,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      MaterialButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: Text(S.of(context).Cancel,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      MaterialButton(
-                        onPressed: () => Navigator.pop(ctx, temp),
-                        child: Text(S.of(context).Done,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  height: _timePickerWheelHeight,
-                  child: CupertinoDatePicker(
-                    mode: CupertinoDatePickerMode.time,
-                    initialDateTime:
-                        DateTime(2020, 1, 1, initial.hour, initial.minute),
-                    use24hFormat: use24h,
-                    minuteInterval: minuteInterval,
-                    onDateTimeChanged: (dt) =>
-                        temp = TimeOfDay(hour: dt.hour, minute: dt.minute),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   String _fmtTime(TimeOfDay t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
@@ -115,7 +64,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title, overflow: TextOverflow.ellipsis),
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppPalette.transparent,
         elevation: 0,
       ),
       body: BlocListener<DeviceSnapshotCubit, DeviceSnapshot>(
@@ -185,14 +134,18 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                       daysMask: p.daysMask,
                       showDays: showDays,
                       onTapTime: () async {
-                        final picked = await _showWheelTimePicker(
-                          context,
-                          initial: p.time,
-                          minuteInterval: 1,
+                        Navigator.of(context).push(
+                          CupertinoPageRoute(
+                            builder: (_) => ManualTimePage(
+                              title: S.of(context).time,
+                              initial: p.time,
+                              onSave: (v) => facade.schedule.patchPoint(
+                                idx,
+                                p.copyWith(time: v),
+                              ),
+                            ),
+                          ),
                         );
-                        if (!mounted || picked == null) return;
-                        facade.schedule
-                            .patchPoint(idx, p.copyWith(time: picked));
                       },
                       onDecTemp: () {
                         final next = (p.temp - 0.5).clamp(5.0, 35.0);
@@ -273,10 +226,10 @@ class _AddPointFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg =
-        _scheduleIsDark(context) ? AppPalette.surfaceRaised : Colors.white;
+        _scheduleIsDark(context) ? AppPalette.surfaceRaised : AppPalette.white;
     final shadow = _scheduleIsDark(context)
-        ? Colors.black.withValues(alpha: 0.25)
-        : const Color(0xFF0F172A).withValues(alpha: 0.12);
+        ? AppPalette.black.withValues(alpha: 0.25)
+        : AppPalette.lightTextPrimary.withValues(alpha: 0.12);
 
     return Container(
       decoration: BoxDecoration(
@@ -356,6 +309,8 @@ class _ScheduleTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppGlassCard(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      backgroundColor: _scheduleTileSurfaceColor(context),
+      borderColor: _scheduleTileBorderColor(context),
       child: Column(
         children: [
           LayoutBuilder(
@@ -549,10 +504,10 @@ class _DayChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final bg = selected
         ? AppPalette.accentPrimary.withValues(alpha: 0.24)
-        : Colors.transparent;
+        : AppPalette.transparent;
     final bd = selected
         ? AppPalette.accentPrimary.withValues(alpha: 0.42)
-        : Colors.transparent;
+        : AppPalette.transparent;
     final fg = selected
         ? _schedulePrimaryTextColor(context)
         : _scheduleSecondaryTextColor(context);

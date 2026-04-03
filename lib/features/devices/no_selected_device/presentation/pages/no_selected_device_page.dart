@@ -21,7 +21,7 @@ class NoSelectedDevicePage extends StatelessWidget {
               size: 150.0,
               color: (_noDeviceIsDark(context)
                       ? AppPalette.textMuted
-                      : const Color(0xFF64748B))
+                      : AppPalette.lightTextSubtle)
                   .withValues(alpha: 0.22),
             ),
             const SizedBox(height: 20),
@@ -32,7 +32,7 @@ class NoSelectedDevicePage extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 color: _noDeviceIsDark(context)
                     ? AppPalette.textSecondary
-                    : const Color(0xFF475569),
+                    : AppPalette.lightTextSecondary,
               ),
               textAlign: TextAlign.center,
             ),

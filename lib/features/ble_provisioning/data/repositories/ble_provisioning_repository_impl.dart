@@ -31,15 +31,18 @@ class BleProvisioningRepositoryImpl implements BleProvisioningRepository {
   final Map<String, String> _lastSeenDeviceIdForSerial = {};
 
   /// Global "nearby" tracking
-  final Set<String> _nearbySerials = {}; // devices currently considered "nearby"
+  final Set<String> _nearbySerials =
+      {}; // devices currently considered "nearby"
   final Map<String, Timer> _disappearTimers = {}; // SN -> inactivity timer
-  final Map<String, Set<StreamController<bool>>> _nearbyControllersBySerial = {};
+  final Map<String, Set<StreamController<bool>>> _nearbyControllersBySerial =
+      {};
   StreamSubscription<BleAdvertisement>? _globalScanSub;
   int _nearbyListeners = 0; // total active observeDeviceNearby listeners
 
   BleProvisioningRepositoryImpl(this._bleClient, this._codecFactory);
 
-  bool get _isConnected => _deviceId != null && _codec != null && _innerStream != null;
+  bool get _isConnected =>
+      _deviceId != null && _codec != null && _innerStream != null;
 
   bool _advertMatchesSerial(BleAdvertisement adv, String serialNumber) {
     final data = adv.manufacturerData[_manufacturerCompanyId];
@@ -173,13 +176,15 @@ class BleProvisioningRepositoryImpl implements BleProvisioningRepository {
     final transportJson = codec.encode(innerReq);
     await _writeJson(deviceId, transportJson);
 
-    final stream = _innerStream!.where((msg) => msg['reqId'] == reqId && msg['type'] == 'status');
+    final stream = _innerStream!
+        .where((msg) => msg['reqId'] == reqId && msg['type'] == 'status');
 
     await for (final msg in stream) {
       final status = WifiConnectStatus.fromJson(msg);
       yield status;
 
-      if (status.state == WifiConnectState.success || status.state == WifiConnectState.failed) {
+      if (status.state == WifiConnectState.success ||
+          status.state == WifiConnectState.failed) {
         break;
       }
     }
@@ -198,7 +203,8 @@ class BleProvisioningRepositoryImpl implements BleProvisioningRepository {
     controller.onListen = () {
       _nearbyListeners++;
       // Register this controller for given serial
-      final set = _nearbyControllersBySerial.putIfAbsent(serialNumber, () => <StreamController<bool>>{});
+      final set = _nearbyControllersBySerial.putIfAbsent(
+          serialNumber, () => <StreamController<bool>>{});
       set.add(controller);
 
       // Ensure global scan is running
@@ -328,7 +334,6 @@ class BleProvisioningRepositoryImpl implements BleProvisioningRepository {
       throw TimeoutException('Device with SN $serialNumber not found');
     }
   }
-
 
   String _makeReqId(String prefix) {
     final now = DateTime.now().millisecondsSinceEpoch;
