@@ -184,6 +184,66 @@ class S {
     );
   }
 
+  /// `Confirm account deletion`
+  String get DeleteAccountEmailFlowTitle {
+    return Intl.message(
+      'Confirm account deletion',
+      name: 'DeleteAccountEmailFlowTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `For your security, we’ll send a confirmation email. Your account stays active until you confirm deletion in your inbox.`
+  String get DeleteAccountEmailFlowDescription {
+    return Intl.message(
+      'For your security, we’ll send a confirmation email. Your account stays active until you confirm deletion in your inbox.',
+      name: 'DeleteAccountEmailFlowDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `After you confirm from email, your account and related data will be scheduled for deletion.`
+  String get DeleteAccountEmailFlowPendingNote {
+    return Intl.message(
+      'After you confirm from email, your account and related data will be scheduled for deletion.',
+      name: 'DeleteAccountEmailFlowPendingNote',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Send confirmation email`
+  String get DeleteAccountEmailFlowSendButton {
+    return Intl.message(
+      'Send confirmation email',
+      name: 'DeleteAccountEmailFlowSendButton',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `We sent a confirmation email to {email}. Open it and confirm account deletion.`
+  String DeleteAccountEmailFlowSuccessDescription(Object email) {
+    return Intl.message(
+      'We sent a confirmation email to $email. Open it and confirm account deletion.',
+      name: 'DeleteAccountEmailFlowSuccessDescription',
+      desc: '',
+      args: [email],
+    );
+  }
+
+  /// `Didn’t request this? You can safely ignore this email.`
+  String get DeleteAccountEmailFlowSuccessHint {
+    return Intl.message(
+      'Didn’t request this? You can safely ignore this email.',
+      name: 'DeleteAccountEmailFlowSuccessHint',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Invalid user credentials`
   String get InvalidUserCredentials {
     return Intl.message(

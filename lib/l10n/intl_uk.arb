@@ -23,6 +23,17 @@
   "DeleteAccountDescription": "Назавжди видалити акаунт і всі пов’язані дані.",
   "DeleteAccountConfirmTitle": "Видалити акаунт?",
   "DeleteAccountConfirmMessage": "Цю дію неможливо скасувати.",
+  "DeleteAccountEmailFlowTitle": "Підтвердьте видалення акаунта",
+  "DeleteAccountEmailFlowDescription": "Для безпеки ми надішлемо лист для підтвердження. Акаунт залишатиметься активним, доки ви не підтвердите видалення у пошті.",
+  "DeleteAccountEmailFlowPendingNote": "Після підтвердження в листі акаунт і пов'язані дані буде заплановано до видалення.",
+  "DeleteAccountEmailFlowSendButton": "Надіслати лист підтвердження",
+  "DeleteAccountEmailFlowSuccessDescription": "Ми надіслали лист для підтвердження на {email}. Відкрийте його та підтвердьте видалення акаунта.",
+  "@DeleteAccountEmailFlowSuccessDescription": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "DeleteAccountEmailFlowSuccessHint": "Не запитували видалення? Просто проігноруйте цей лист.",
   "InvalidUserCredentials": "Неправильний email або пароль",
   "UnknownError": "Сталася невідома помилка",
   "FirstName": "Ім’я",

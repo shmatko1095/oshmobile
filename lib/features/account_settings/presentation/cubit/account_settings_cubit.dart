@@ -46,6 +46,7 @@ class AccountSettingsCubit extends Cubit<AccountSettingsState> {
         st,
         reason: 'Account deletion request failed',
       );
+      rethrow;
     } finally {
       emit(state.copyWith(isDeleting: false));
     }

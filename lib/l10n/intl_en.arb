@@ -23,6 +23,17 @@
   "DeleteAccountDescription": "Permanently remove your account and all associated data.",
   "DeleteAccountConfirmTitle": "Delete account?",
   "DeleteAccountConfirmMessage": "This action is permanent and cannot be undone.",
+  "DeleteAccountEmailFlowTitle": "Confirm account deletion",
+  "DeleteAccountEmailFlowDescription": "For your security, we’ll send a confirmation email. Your account stays active until you confirm deletion in your inbox.",
+  "DeleteAccountEmailFlowPendingNote": "After you confirm from email, your account and related data will be scheduled for deletion.",
+  "DeleteAccountEmailFlowSendButton": "Send confirmation email",
+  "DeleteAccountEmailFlowSuccessDescription": "We sent a confirmation email to {email}. Open it and confirm account deletion.",
+  "@DeleteAccountEmailFlowSuccessDescription": {
+    "placeholders": {
+      "email": {}
+    }
+  },
+  "DeleteAccountEmailFlowSuccessHint": "Didn’t request this? You can safely ignore this email.",
   "InvalidUserCredentials": "Invalid user credentials",
   "UnknownError": "Unknown error",
   "FirstName": "First name",

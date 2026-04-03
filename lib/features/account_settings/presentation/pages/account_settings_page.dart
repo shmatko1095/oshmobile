@@ -9,6 +9,7 @@ import 'package:oshmobile/init_dependencies.dart';
 import 'package:oshmobile/features/account_settings/domain/models/app_theme_preference.dart';
 import 'package:oshmobile/features/account_settings/presentation/cubit/account_settings_cubit.dart';
 import 'package:oshmobile/features/account_settings/presentation/cubit/account_settings_state.dart';
+import 'package:oshmobile/features/account_settings/presentation/pages/account_deletion_request_page.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class AccountSettingsPage extends StatelessWidget {
@@ -57,7 +58,7 @@ class _AccountSettingsView extends StatelessWidget {
                 const SizedBox(height: 12),
                 _buildApplicationSettingsCard(context, state),
                 const SizedBox(height: 12),
-                _buildAccountSettingsCard(context, state),
+                _buildAccountSettingsCard(context, state, email),
               ],
             );
           },
@@ -187,6 +188,7 @@ class _AccountSettingsView extends StatelessWidget {
   Widget _buildAccountSettingsCard(
     BuildContext context,
     AccountSettingsState state,
+    String email,
   ) {
     final s = S.of(context);
 
@@ -218,7 +220,6 @@ class _AccountSettingsView extends StatelessWidget {
                 color: AppPalette.destructiveFg,
               ),
             ),
-            subtitle: Text(s.DeleteAccountDescription),
             trailing: state.isDeleting
                 ? const SizedBox(
                     width: 18,
@@ -229,43 +230,21 @@ class _AccountSettingsView extends StatelessWidget {
                     Icons.chevron_right_rounded,
                     color: Color(0xFF6B7280),
                   ),
-            onTap: state.isDeleting ? null : () => _onDeleteAccountTap(context),
+            onTap: state.isDeleting
+                ? null
+                : () => _onDeleteAccountTap(context, email),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _onDeleteAccountTap(BuildContext context) async {
-    final shouldDelete = await _showDeleteAccountConfirmDialog(context);
-    if (shouldDelete != true || !context.mounted) return;
-    await context.read<AccountSettingsCubit>().deleteAccount();
-  }
-
-  Future<bool?> _showDeleteAccountConfirmDialog(BuildContext context) {
-    final s = S.of(context);
-
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: Text(s.DeleteAccountConfirmTitle),
-          content: Text(s.DeleteAccountConfirmMessage),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text(s.Cancel),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text(
-                s.Delete,
-                style: const TextStyle(color: AppPalette.destructiveFg),
-              ),
-            ),
-          ],
-        );
-      },
+  Future<void> _onDeleteAccountTap(BuildContext context, String email) async {
+    await Navigator.of(context).push(
+      AccountDeletionRequestPage.route(
+        cubit: context.read<AccountSettingsCubit>(),
+        email: email,
+      ),
     );
   }
 

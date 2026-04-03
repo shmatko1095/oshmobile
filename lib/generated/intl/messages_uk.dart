@@ -20,29 +20,32 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'uk';
 
-  static String m0(min, max) =>
-      "Ім’я має містити від ${min} до ${max} символів";
+  static String m0(email) =>
+      "Ми надіслали лист для підтвердження на ${email}. Відкрийте його та підтвердьте видалення акаунта.";
 
   static String m1(min, max) =>
+      "Ім’я має містити від ${min} до ${max} символів";
+
+  static String m2(min, max) =>
       "Прізвище має містити від ${min} до ${max} символів";
 
-  static String m2(length) =>
+  static String m3(length) =>
       "Пароль має містити щонайменше ${length} символів";
 
-  static String m3(time) => "Останнє оновлення: ${time}";
+  static String m4(time) => "Останнє оновлення: ${time}";
 
-  static String m4(temp, time) => "Наступне ${temp} о ${time}";
+  static String m5(temp, time) => "Наступне ${temp} о ${time}";
 
-  static String m5(current, total) => "Крок ${current} з ${total}";
+  static String m6(current, total) => "Крок ${current} з ${total}";
 
-  static String m6(temp) => "Ціль ${temp}";
+  static String m7(temp) => "Ціль ${temp}";
 
-  static String m7(resolution, points) =>
+  static String m8(resolution, points) =>
       "Роздільність: ${resolution} • Точки: ${points}";
 
-  static String m8(index, total) => "Датчик ${index}/${total}";
+  static String m9(index, total) => "Датчик ${index}/${total}";
 
-  static String m9(lastSeenAt) => "Востаннє був онлайн: ${lastSeenAt}";
+  static String m10(lastSeenAt) => "Востаннє був онлайн: ${lastSeenAt}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -76,6 +79,22 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "DeleteAccountDescription": MessageLookupByLibrary.simpleMessage(
       "Назавжди видалити акаунт і всі пов’язані дані.",
+    ),
+    "DeleteAccountEmailFlowDescription": MessageLookupByLibrary.simpleMessage(
+      "Для безпеки ми надішлемо лист для підтвердження. Акаунт залишатиметься активним, доки ви не підтвердите видалення у пошті.",
+    ),
+    "DeleteAccountEmailFlowPendingNote": MessageLookupByLibrary.simpleMessage(
+      "Після підтвердження в листі акаунт і пов\'язані дані буде заплановано до видалення.",
+    ),
+    "DeleteAccountEmailFlowSendButton": MessageLookupByLibrary.simpleMessage(
+      "Надіслати лист підтвердження",
+    ),
+    "DeleteAccountEmailFlowSuccessDescription": m0,
+    "DeleteAccountEmailFlowSuccessHint": MessageLookupByLibrary.simpleMessage(
+      "Не запитували видалення? Просто проігноруйте цей лист.",
+    ),
+    "DeleteAccountEmailFlowTitle": MessageLookupByLibrary.simpleMessage(
+      "Підтвердьте видалення акаунта",
     ),
     "DeleteSensor": MessageLookupByLibrary.simpleMessage("Видалити датчик"),
     "Deleted": MessageLookupByLibrary.simpleMessage("Видалено"),
@@ -121,15 +140,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "InvalidEmailAddress": MessageLookupByLibrary.simpleMessage(
       "Неправильна email-адреса",
     ),
-    "InvalidFirstName": m0,
-    "InvalidLastName": m1,
-    "InvalidPassword": m2,
+    "InvalidFirstName": m1,
+    "InvalidLastName": m2,
+    "InvalidPassword": m3,
     "InvalidUserCredentials": MessageLookupByLibrary.simpleMessage(
       "Неправильний email або пароль",
     ),
     "InvalidValue": MessageLookupByLibrary.simpleMessage("Недійсне значення"),
     "LastName": MessageLookupByLibrary.simpleMessage("Прізвище"),
-    "LastUpdateAt": m3,
+    "LastUpdateAt": m4,
     "ManualTemperature": MessageLookupByLibrary.simpleMessage(
       "Ручна температура",
     ),
@@ -141,7 +160,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "MonShort": MessageLookupByLibrary.simpleMessage("Пн"),
     "Name": MessageLookupByLibrary.simpleMessage("Назва"),
     "Next": MessageLookupByLibrary.simpleMessage("Далі"),
-    "NextAt": m4,
+    "NextAt": m5,
     "No": MessageLookupByLibrary.simpleMessage("Ні"),
     "NoDataYet": MessageLookupByLibrary.simpleMessage("Дані ще не надійшли"),
     "NoDeviceSelected": MessageLookupByLibrary.simpleMessage(
@@ -203,10 +222,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "SignIn": MessageLookupByLibrary.simpleMessage("Увійти"),
     "SignOut": MessageLookupByLibrary.simpleMessage("Вийти"),
     "SignUp": MessageLookupByLibrary.simpleMessage("Зареєструватися"),
-    "StepOf": m5,
+    "StepOf": m6,
     "Successful": MessageLookupByLibrary.simpleMessage("Успішно"),
     "SunShort": MessageLookupByLibrary.simpleMessage("Нд"),
-    "Target": m6,
+    "Target": m7,
     "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Не вдалося завантажити графік",
     ),
@@ -238,11 +257,11 @@ class MessageLookup extends MessageLookupByLibrary {
       "Тиждень",
     ),
     "TelemetryHistoryRangeYear": MessageLookupByLibrary.simpleMessage("Рік"),
-    "TelemetryHistoryResolutionPoints": m7,
+    "TelemetryHistoryResolutionPoints": m8,
     "TelemetryHistorySensorLabel": MessageLookupByLibrary.simpleMessage(
       "Температурний датчик",
     ),
-    "TelemetryHistorySensorPosition": m8,
+    "TelemetryHistorySensorPosition": m9,
     "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Середнє"),
     "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Максимум"),
     "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Мінімум"),
@@ -327,7 +346,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "deviceOfflineHintBluetooth": MessageLookupByLibrary.simpleMessage(
       "Наблизьтеся до пристрою, щоб налаштувати Wi‑Fi через Bluetooth.",
     ),
-    "deviceOfflineSubtitleWithLastSeen": m9,
+    "deviceOfflineSubtitleWithLastSeen": m10,
     "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
       "Пристрій офлайн",
     ),

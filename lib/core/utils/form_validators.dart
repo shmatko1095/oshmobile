@@ -22,9 +22,10 @@ class FormValidator {
     required String errorMessage,
   }) {
     const String pattern =
-        r'^[a-zA-Z0-9.a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
+        r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$';
+    final normalizedValue = value?.trim();
     return regExpPattern(
-      value: value,
+      value: normalizedValue,
       errorMessage: errorMessage,
       pattern: pattern,
     );

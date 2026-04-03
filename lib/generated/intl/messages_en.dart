@@ -20,29 +20,32 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'en';
 
-  static String m0(min, max) =>
-      "First name must be between ${min} and ${max} characters";
+  static String m0(email) =>
+      "We sent a confirmation email to ${email}. Open it and confirm account deletion.";
 
   static String m1(min, max) =>
+      "First name must be between ${min} and ${max} characters";
+
+  static String m2(min, max) =>
       "Last name must be between ${min} and ${max} characters";
 
-  static String m2(length) =>
+  static String m3(length) =>
       "Password must be at least ${length} characters long";
 
-  static String m3(time) => "Last update: ${time}";
+  static String m4(time) => "Last update: ${time}";
 
-  static String m4(temp, time) => "Next ${temp} at ${time}";
+  static String m5(temp, time) => "Next ${temp} at ${time}";
 
-  static String m5(current, total) => "Step ${current} of ${total}";
+  static String m6(current, total) => "Step ${current} of ${total}";
 
-  static String m6(temp) => "Target ${temp}";
+  static String m7(temp) => "Target ${temp}";
 
-  static String m7(resolution, points) =>
+  static String m8(resolution, points) =>
       "Resolution: ${resolution} • Points: ${points}";
 
-  static String m8(index, total) => "Sensor ${index}/${total}";
+  static String m9(index, total) => "Sensor ${index}/${total}";
 
-  static String m9(lastSeenAt) => "Last seen online: ${lastSeenAt}";
+  static String m10(lastSeenAt) => "Last seen online: ${lastSeenAt}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -74,6 +77,22 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "DeleteAccountDescription": MessageLookupByLibrary.simpleMessage(
       "Permanently remove your account and all associated data.",
+    ),
+    "DeleteAccountEmailFlowDescription": MessageLookupByLibrary.simpleMessage(
+      "For your security, we’ll send a confirmation email. Your account stays active until you confirm deletion in your inbox.",
+    ),
+    "DeleteAccountEmailFlowPendingNote": MessageLookupByLibrary.simpleMessage(
+      "After you confirm from email, your account and related data will be scheduled for deletion.",
+    ),
+    "DeleteAccountEmailFlowSendButton": MessageLookupByLibrary.simpleMessage(
+      "Send confirmation email",
+    ),
+    "DeleteAccountEmailFlowSuccessDescription": m0,
+    "DeleteAccountEmailFlowSuccessHint": MessageLookupByLibrary.simpleMessage(
+      "Didn’t request this? You can safely ignore this email.",
+    ),
+    "DeleteAccountEmailFlowTitle": MessageLookupByLibrary.simpleMessage(
+      "Confirm account deletion",
     ),
     "DeleteSensor": MessageLookupByLibrary.simpleMessage("Delete sensor"),
     "Deleted": MessageLookupByLibrary.simpleMessage("Deleted"),
@@ -121,15 +140,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "InvalidEmailAddress": MessageLookupByLibrary.simpleMessage(
       "Invalid email address",
     ),
-    "InvalidFirstName": m0,
-    "InvalidLastName": m1,
-    "InvalidPassword": m2,
+    "InvalidFirstName": m1,
+    "InvalidLastName": m2,
+    "InvalidPassword": m3,
     "InvalidUserCredentials": MessageLookupByLibrary.simpleMessage(
       "Invalid user credentials",
     ),
     "InvalidValue": MessageLookupByLibrary.simpleMessage("Invalid value"),
     "LastName": MessageLookupByLibrary.simpleMessage("Last name"),
-    "LastUpdateAt": m3,
+    "LastUpdateAt": m4,
     "ManualTemperature": MessageLookupByLibrary.simpleMessage(
       "Manual temperature",
     ),
@@ -141,7 +160,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "MonShort": MessageLookupByLibrary.simpleMessage("Mon"),
     "Name": MessageLookupByLibrary.simpleMessage("Name"),
     "Next": MessageLookupByLibrary.simpleMessage("Next"),
-    "NextAt": m4,
+    "NextAt": m5,
     "No": MessageLookupByLibrary.simpleMessage("No"),
     "NoDataYet": MessageLookupByLibrary.simpleMessage("No data yet"),
     "NoDeviceSelected": MessageLookupByLibrary.simpleMessage(
@@ -199,10 +218,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "SignIn": MessageLookupByLibrary.simpleMessage("Sign In"),
     "SignOut": MessageLookupByLibrary.simpleMessage("Sign Out"),
     "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
-    "StepOf": m5,
+    "StepOf": m6,
     "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
     "SunShort": MessageLookupByLibrary.simpleMessage("Sun"),
-    "Target": m6,
+    "Target": m7,
     "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Failed to load chart",
     ),
@@ -230,11 +249,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryRangeMonth": MessageLookupByLibrary.simpleMessage("Month"),
     "TelemetryHistoryRangeWeek": MessageLookupByLibrary.simpleMessage("Week"),
     "TelemetryHistoryRangeYear": MessageLookupByLibrary.simpleMessage("Year"),
-    "TelemetryHistoryResolutionPoints": m7,
+    "TelemetryHistoryResolutionPoints": m8,
     "TelemetryHistorySensorLabel": MessageLookupByLibrary.simpleMessage(
       "Temperature sensor",
     ),
-    "TelemetryHistorySensorPosition": m8,
+    "TelemetryHistorySensorPosition": m9,
     "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Average"),
     "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Maximum"),
     "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Minimum"),
@@ -317,7 +336,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "deviceOfflineHintBluetooth": MessageLookupByLibrary.simpleMessage(
       "Move closer to the device to set up Wi-Fi over Bluetooth.",
     ),
-    "deviceOfflineSubtitleWithLastSeen": m9,
+    "deviceOfflineSubtitleWithLastSeen": m10,
     "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
       "Device is offline",
     ),
