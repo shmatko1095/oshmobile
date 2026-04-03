@@ -27,18 +27,25 @@ class PowerCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: const [
+          Row(children: [
             Icon(Icons.bolt, color: Colors.amberAccent, size: 18),
-            SizedBox(width: 8),
-            Text('Power now',
-                style: TextStyle(
-                    color: Colors.white70, fontWeight: FontWeight.w600)),
+            const SizedBox(width: 8),
+            Text(
+              'Power now',
+              style: TextStyle(
+                color: statTitleColor(context),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ]),
           const SizedBox(height: 8),
           Text(
             _fmtPower(power),
-            style: const TextStyle(
-                color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              color: statValueColor(context),
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),

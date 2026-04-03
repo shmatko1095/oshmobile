@@ -80,7 +80,7 @@ class _SliderSettingState extends State<SliderSetting> {
         children: [
           Row(
             children: [
-              const Icon(Icons.tune, size: 18, color: Colors.white70),
+              Icon(Icons.tune, size: 18, color: statTitleColor(context)),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -88,8 +88,10 @@ class _SliderSettingState extends State<SliderSetting> {
                   maxLines: 1,
                   softWrap: false,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: statValueColor(context),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -100,10 +102,11 @@ class _SliderSettingState extends State<SliderSetting> {
                 child: Text(
                   _fmt(v),
                   key: ValueKey(v.toStringAsFixed(_decimals)),
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18),
+                  style: TextStyle(
+                    color: statValueColor(context),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
                 ),
               ),
             ],
@@ -113,10 +116,14 @@ class _SliderSettingState extends State<SliderSetting> {
             data: SliderTheme.of(context).copyWith(
               trackHeight: 4,
               activeTrackColor: AppPalette.accentPrimary,
-              inactiveTrackColor: Colors.white24,
-              thumbColor: Colors.white,
+              inactiveTrackColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white24
+                  : const Color(0xFFCBD5E1),
+              thumbColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : const Color(0xFF0F172A),
               overlayColor: AppPalette.accentPrimary.withValues(alpha: 0.15),
-              valueIndicatorColor: AppPalette.surfaceAlt,
+              valueIndicatorColor: statSurfaceAltColor(context),
             ),
             child: Slider(
               value: v,
@@ -136,12 +143,12 @@ class _SliderSettingState extends State<SliderSetting> {
             children: [
               Text(
                 _fmt(widget.min),
-                style: const TextStyle(color: Colors.white60, fontSize: 12),
+                style: TextStyle(color: statMutedColor(context), fontSize: 12),
               ),
               const Spacer(),
               Text(
                 _fmt(widget.max),
-                style: const TextStyle(color: Colors.white60, fontSize: 12),
+                style: TextStyle(color: statMutedColor(context), fontSize: 12),
               ),
             ],
           ),

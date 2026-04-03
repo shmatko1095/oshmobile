@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/account_drawer_header.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/add_device_button.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/item_list.dart';
@@ -10,8 +9,11 @@ class SideMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final backgroundColor = Theme.of(context).drawerTheme.backgroundColor ??
+        Theme.of(context).scaffoldBackgroundColor;
+
     return Drawer(
-      backgroundColor: AppPalette.canvas,
+      backgroundColor: backgroundColor,
       child: SafeArea(
         bottom: true,
         child: Column(

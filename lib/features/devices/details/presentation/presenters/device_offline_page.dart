@@ -6,6 +6,23 @@ import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/ble_provisioning/presentation/widgets/ble_offline_entry.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
+bool _offlineIsDark(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark;
+
+Color _offlineSurfaceColor(BuildContext context) =>
+    _offlineIsDark(context) ? AppPalette.surface : Colors.white;
+
+Color _offlineBorderColor(BuildContext context) =>
+    _offlineIsDark(context) ? AppPalette.borderSoft : const Color(0x1A0F172A);
+
+Color _offlinePrimaryTextColor(BuildContext context) =>
+    _offlineIsDark(context) ? AppPalette.textPrimary : const Color(0xFF0F172A);
+
+Color _offlineSecondaryTextColor(BuildContext context) =>
+    _offlineIsDark(context)
+        ? AppPalette.textSecondary
+        : const Color(0xFF475569);
+
 class DeviceOfflinePage extends StatelessWidget {
   final Device device;
   final VoidCallback? onWifiProvisioningSuccess;
@@ -28,11 +45,12 @@ class DeviceOfflinePage extends StatelessWidget {
     final subtitle = lastSeenLabel == null
         ? null
         : s.deviceOfflineSubtitleWithLastSeen(lastSeenLabel);
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
 
     const secureCodeStub = 'TODO_SECURE_CODE';
 
     return Scaffold(
-      backgroundColor: AppPalette.canvas,
+      backgroundColor: bgColor,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -53,21 +71,21 @@ class DeviceOfflinePage extends StatelessWidget {
                       gradient: RadialGradient(
                         colors: [
                           AppPalette.accentPrimary.withValues(alpha: 0.30),
-                          AppPalette.canvas,
+                          bgColor,
                         ],
                         radius: 0.85,
                       ),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.wifi_off_rounded,
                       size: 58,
-                      color: AppPalette.textPrimary,
+                      color: _offlinePrimaryTextColor(context),
                     ),
                   ),
                   const SizedBox(height: AppPalette.spaceXl),
                   AppSolidCard(
-                    backgroundColor: AppPalette.surface,
-                    borderColor: AppPalette.borderSoft,
+                    backgroundColor: _offlineSurfaceColor(context),
+                    borderColor: _offlineBorderColor(context),
                     padding: const EdgeInsets.all(AppPalette.spaceXl),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -77,7 +95,7 @@ class DeviceOfflinePage extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppPalette.textPrimary,
+                            color: _offlinePrimaryTextColor(context),
                           ),
                         ),
                         const SizedBox(height: AppPalette.spaceSm),
@@ -87,7 +105,7 @@ class DeviceOfflinePage extends StatelessWidget {
                             subtitle,
                             textAlign: TextAlign.center,
                             style: textTheme.bodyMedium?.copyWith(
-                              color: AppPalette.textSecondary,
+                              color: _offlineSecondaryTextColor(context),
                               height: 1.45,
                             ),
                           ),
@@ -142,7 +160,7 @@ class _HintRow extends StatelessWidget {
           child: Text(
             text,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppPalette.textSecondary,
+                  color: _offlineSecondaryTextColor(context),
                   height: 1.35,
                 ),
           ),

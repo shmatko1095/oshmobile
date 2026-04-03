@@ -73,6 +73,13 @@ class MobileApiClient {
     }
   }
 
+  Future<void> requestMyAccountDeletion() async {
+    final response = await _send('POST', '/me/account-deletion');
+    if (!response.isSuccessful) {
+      throw ServerException(_errorMessage(response));
+    }
+  }
+
   Future<Map<String, dynamic>> getMyDeviceTelemetryHistoryRaw({
     required String serial,
     required List<String> seriesKeys,

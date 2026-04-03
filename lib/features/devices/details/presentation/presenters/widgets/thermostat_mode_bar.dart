@@ -88,6 +88,8 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
 
     return AppGlassCard(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      backgroundColor: statSurfaceColor(context),
+      borderColor: statBorderColor(context),
       child: Row(
         children: [
           for (final mode in modes) ...[
@@ -148,12 +150,15 @@ class _ModeItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color fg = selected ? Colors.white : AppPalette.textSecondary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color fg = selected
+        ? (isDark ? Colors.white : const Color(0xFF0F172A))
+        : (isDark ? AppPalette.textSecondary : const Color(0xFF475569));
     final Color bg = selected
-        ? AppPalette.accentPrimary.withValues(alpha: 0.22)
+        ? AppPalette.accentPrimary.withValues(alpha: isDark ? 0.22 : 0.14)
         : Colors.transparent;
     final Color bd = selected
-        ? AppPalette.accentPrimary.withValues(alpha: 0.4)
+        ? AppPalette.accentPrimary.withValues(alpha: isDark ? 0.4 : 0.32)
         : Colors.transparent;
 
     return InkWell(

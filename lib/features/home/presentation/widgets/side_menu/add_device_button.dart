@@ -9,11 +9,14 @@ class AddDeviceButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? AppPalette.surface : Colors.white;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: AppSolidCard(
         padding: EdgeInsets.zero,
-        backgroundColor: AppPalette.surface,
+        backgroundColor: surface,
         child: ListTile(
           leading: const Icon(Icons.add, color: AppPalette.accentPrimary),
           title: Text(S.of(context).AddDevice),

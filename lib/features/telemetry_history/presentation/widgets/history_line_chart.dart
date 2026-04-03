@@ -49,6 +49,21 @@ class HistoryLineChart extends StatelessWidget {
     if (values.isEmpty) {
       return const SizedBox.expand();
     }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final axisMutedColor =
+        isDark ? AppPalette.textMuted : const Color(0xFF64748B);
+    final separatorColor =
+        isDark ? AppPalette.separator : const Color(0x1A0F172A);
+    final axisBorderColor = isDark
+        ? AppPalette.separator.withValues(alpha: 0.7)
+        : const Color(0x2A0F172A);
+    final tooltipBackground = isDark
+        ? const Color(0xFF141820).withValues(alpha: 0.96)
+        : Colors.white.withValues(alpha: 0.96);
+    final tooltipTextColor =
+        isDark ? AppPalette.textPrimary : const Color(0xFF0F172A);
+    final tooltipStrokeColor =
+        isDark ? Colors.white.withValues(alpha: 0.95) : const Color(0xFFE2E8F0);
 
     final resolvedTimestamps = _resolvedTimestamps(values.length);
     final xWindow = _resolveXWindow();
@@ -140,11 +155,11 @@ class HistoryLineChart extends StatelessWidget {
           horizontalInterval: yInterval,
           verticalInterval: xInterval,
           getDrawingHorizontalLine: (_) => FlLine(
-            color: AppPalette.separator.withValues(alpha: 0.5),
+            color: separatorColor.withValues(alpha: 0.5),
             strokeWidth: 1,
           ),
           getDrawingVerticalLine: (_) => FlLine(
-            color: AppPalette.separator.withValues(alpha: 0.35),
+            color: separatorColor.withValues(alpha: 0.35),
             strokeWidth: 1,
           ),
         ),
@@ -164,8 +179,8 @@ class HistoryLineChart extends StatelessWidget {
                 meta: meta,
                 child: Text(
                   _formatValueLabel(value),
-                  style: const TextStyle(
-                    color: AppPalette.textMuted,
+                  style: TextStyle(
+                    color: axisMutedColor,
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
@@ -211,8 +226,8 @@ class HistoryLineChart extends StatelessWidget {
                   ),
                   child: Text(
                     label,
-                    style: const TextStyle(
-                      color: AppPalette.textMuted,
+                    style: TextStyle(
+                      color: axisMutedColor,
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),
@@ -226,11 +241,11 @@ class HistoryLineChart extends StatelessWidget {
           show: showAxes,
           border: Border(
             left: BorderSide(
-              color: AppPalette.separator.withValues(alpha: 0.7),
+              color: axisBorderColor,
               width: 1,
             ),
             bottom: BorderSide(
-              color: AppPalette.separator.withValues(alpha: 0.7),
+              color: axisBorderColor,
               width: 1,
             ),
             right: const BorderSide(color: Colors.transparent, width: 0),
@@ -254,7 +269,7 @@ class HistoryLineChart extends StatelessWidget {
                     radius: 4,
                     color: color,
                     strokeWidth: 1.6,
-                    strokeColor: Colors.white.withValues(alpha: 0.95),
+                    strokeColor: tooltipStrokeColor,
                   ),
                 ),
               );
@@ -266,9 +281,7 @@ class HistoryLineChart extends StatelessWidget {
             tooltipPadding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             tooltipBorderRadius: BorderRadius.circular(10),
-            getTooltipColor: (_) => const Color(0xFF141820).withValues(
-              alpha: 0.96,
-            ),
+            getTooltipColor: (_) => tooltipBackground,
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
                 final index = spot.spotIndex;
@@ -285,8 +298,8 @@ class HistoryLineChart extends StatelessWidget {
                         '$title\n${_formatValueLabel(spot.y)}');
                 return LineTooltipItem(
                   valueText,
-                  const TextStyle(
-                    color: AppPalette.textPrimary,
+                  TextStyle(
+                    color: tooltipTextColor,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     height: 1.3,

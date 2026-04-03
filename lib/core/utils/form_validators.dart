@@ -7,11 +7,22 @@ class FormValidator {
     return (value == null || value.length < length) ? errorMessage : null;
   }
 
+  static String? lengthRange({
+    required String? value,
+    required String errorMessage,
+    int min = 3,
+    int max = 60,
+  }) {
+    final text = value?.trim() ?? '';
+    return (text.length < min || text.length > max) ? errorMessage : null;
+  }
+
   static String? email({
     required String? value,
     required String errorMessage,
   }) {
-    const String pattern = r'^[a-zA-Z0-9.a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
+    const String pattern =
+        r'^[a-zA-Z0-9.a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
     return regExpPattern(
       value: value,
       errorMessage: errorMessage,
@@ -25,7 +36,9 @@ class FormValidator {
     required String pattern,
   }) {
     final RegExp regex = RegExp(pattern);
-    return (value == null || value.isEmpty || !regex.hasMatch(value)) ? errorMessage : null;
+    return (value == null || value.isEmpty || !regex.hasMatch(value))
+        ? errorMessage
+        : null;
   }
 
   static String? same({

@@ -10,11 +10,14 @@ class LogoutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? AppPalette.surface : Colors.white;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: AppSolidCard(
         padding: EdgeInsets.zero,
-        backgroundColor: AppPalette.surface,
+        backgroundColor: surface,
         child: ListTile(
           leading: const Icon(
             Icons.power_settings_new,

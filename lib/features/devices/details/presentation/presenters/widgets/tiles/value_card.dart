@@ -42,8 +42,8 @@ class ValueCard extends StatelessWidget {
             maxLines: 1,
             softWrap: false,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white70,
+            style: TextStyle(
+              color: statTitleColor(context),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -55,8 +55,8 @@ class ValueCard extends StatelessWidget {
             child: Text(
               full,
               key: ValueKey(full),
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: statValueColor(context),
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
               ),

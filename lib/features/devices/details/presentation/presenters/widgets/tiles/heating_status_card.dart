@@ -32,12 +32,12 @@ class HeatingStatusCard extends StatelessWidget {
 
     final borderColor = isHeating
         ? AppPalette.accentWarning.withValues(alpha: 0.45)
-        : AppPalette.borderSoft;
+        : statBorderColor(context);
 
     return AppSolidCard(
       onTap: onTap,
       radius: AppPalette.radiusXl,
-      backgroundColor: AppPalette.surfaceRaised,
+      backgroundColor: statSurfaceColor(context),
       borderColor: borderColor,
       child: Stack(
         children: [
@@ -76,7 +76,7 @@ class HeatingStatusCard extends StatelessWidget {
                       shape: BoxShape.circle,
                       color: isHeating
                           ? AppPalette.accentWarning.withValues(alpha: 0.22)
-                          : AppPalette.surfaceAlt,
+                          : statSurfaceAltColor(context),
                     ),
                     child: Icon(
                       isHeating
@@ -84,7 +84,7 @@ class HeatingStatusCard extends StatelessWidget {
                           : Icons.power_settings_new_rounded,
                       color: isHeating
                           ? AppPalette.accentWarning
-                          : AppPalette.textSecondary,
+                          : statTitleColor(context),
                       size: 18,
                     ),
                   ),
@@ -94,17 +94,17 @@ class HeatingStatusCard extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppPalette.textSecondary,
+                      style: TextStyle(
+                        color: statTitleColor(context),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                   if (onTap != null)
-                    const Icon(
+                    Icon(
                       Icons.show_chart_rounded,
                       size: 16,
-                      color: AppPalette.textMuted,
+                      color: statMutedColor(context),
                     ),
                 ],
               ),
@@ -121,7 +121,7 @@ class HeatingStatusCard extends StatelessWidget {
                   style: TextStyle(
                     color: isHeating
                         ? AppPalette.accentWarning
-                        : AppPalette.textPrimary,
+                        : statValueColor(context),
                     fontWeight: FontWeight.w800,
                     fontSize: 30,
                     height: 1.0,

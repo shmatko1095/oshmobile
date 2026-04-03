@@ -7,6 +7,19 @@ import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/sensors/presentation/utils/sensors_patch_schema_validator.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
+bool _sensorCalibrationIsDark(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark;
+
+Color _sensorCalibrationPrimaryTextColor(BuildContext context) =>
+    _sensorCalibrationIsDark(context)
+        ? AppPalette.textPrimary
+        : const Color(0xFF0F172A);
+
+Color _sensorCalibrationSecondaryTextColor(BuildContext context) =>
+    _sensorCalibrationIsDark(context)
+        ? AppPalette.textSecondary
+        : const Color(0xFF475569);
+
 class SensorCalibrationPage extends StatefulWidget {
   final String sensorId;
   final double initialCalibration;
@@ -212,16 +225,16 @@ class _SensorCalibrationPageState extends State<SensorCalibrationPage> {
             children: [
               Text(
                 S.of(context).SensorCalibration,
-                style: const TextStyle(
-                  color: AppPalette.textSecondary,
+                style: TextStyle(
+                  color: _sensorCalibrationSecondaryTextColor(context),
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 '${_fmt(_currentValue)} °C',
-                style: const TextStyle(
-                  color: AppPalette.textPrimary,
+                style: TextStyle(
+                  color: _sensorCalibrationPrimaryTextColor(context),
                   fontSize: 40,
                   fontWeight: FontWeight.w300,
                   height: 1.0,
@@ -241,20 +254,24 @@ class _SensorCalibrationPageState extends State<SensorCalibrationPage> {
                   children: [
                     Text(
                       '${_fmt(constraints.min)} °C',
-                      style: const TextStyle(color: AppPalette.textSecondary),
+                      style: TextStyle(
+                        color: _sensorCalibrationSecondaryTextColor(context),
+                      ),
                     ),
                     const Spacer(),
                     Text(
                       '${_fmt(constraints.max)} °C',
-                      style: const TextStyle(color: AppPalette.textSecondary),
+                      style: TextStyle(
+                        color: _sensorCalibrationSecondaryTextColor(context),
+                      ),
                     ),
                   ],
                 ),
               ] else
-                const Text(
+                Text(
                   _missingLimitsMessage,
                   style: TextStyle(
-                    color: AppPalette.textSecondary,
+                    color: _sensorCalibrationSecondaryTextColor(context),
                     fontWeight: FontWeight.w500,
                   ),
                 ),

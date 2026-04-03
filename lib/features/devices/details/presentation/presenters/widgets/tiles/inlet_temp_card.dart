@@ -24,18 +24,25 @@ class InletTempCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: const [
-            Icon(Icons.water_drop, size: 16, color: Colors.white70),
-            SizedBox(width: 6),
-            Text('Inlet temperature',
-                style: TextStyle(
-                    color: Colors.white70, fontWeight: FontWeight.w600)),
+          Row(children: [
+            Icon(Icons.water_drop, size: 16, color: statTitleColor(context)),
+            const SizedBox(width: 6),
+            Text(
+              title,
+              style: TextStyle(
+                color: statTitleColor(context),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ]),
           const SizedBox(height: 8),
           Text(
             '${fmtNum(v)}$unit',
-            style: const TextStyle(
-                color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              color: statValueColor(context),
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),

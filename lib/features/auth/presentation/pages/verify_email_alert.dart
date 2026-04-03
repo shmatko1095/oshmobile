@@ -18,72 +18,52 @@ class VerifyEmailDialog extends StatefulWidget {
   State<VerifyEmailDialog> createState() => _VerifyEmailDialogState();
 }
 
-class _VerifyEmailDialogState extends State<VerifyEmailDialog>
-    with SingleTickerProviderStateMixin {
-  final TextStyle _titleStyle = const TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-  );
-  final TextStyle _contentStyle = const TextStyle(
-    fontSize: 16,
-    color: CupertinoColors.systemGrey,
-  );
-  final TextStyle _emailStyle = const TextStyle(
-    fontWeight: FontWeight.bold,
-    color: AppPalette.accentPrimary,
-  );
-
-  bool isEmailSent = false;
-  late AnimationController _animationController;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
+class _VerifyEmailDialogState extends State<VerifyEmailDialog> {
+  bool _isEmailSent = false;
 
   void _sendEmail(String email) {
     context.read<AuthBloc>().add(AuthSendVerifyEmail(email: email));
-    _animationController.forward(from: 0.0);
-    setState(() => isEmailSent = true);
+    setState(() => _isEmailSent = true);
   }
 
   @override
   Widget build(BuildContext context) {
+    final titleStyle = Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+        );
+    final contentStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: AppPalette.textSecondary,
+        );
+    const emailStyle = TextStyle(
+      fontWeight: FontWeight.w700,
+      color: AppPalette.accentPrimary,
+    );
+
     return CupertinoAlertDialog(
       title: Column(
         children: [
           AnimatedSwitcher(
-            duration: Duration(milliseconds: 800),
+            duration: const Duration(milliseconds: 240),
             transitionBuilder: (Widget child, Animation<double> animation) {
               return ScaleTransition(scale: animation, child: child);
             },
             child: Icon(
-              isEmailSent
+              _isEmailSent
                   ? CupertinoIcons.check_mark_circled
                   : CupertinoIcons.mail,
-              key: ValueKey<bool>(isEmailSent),
-              color: isEmailSent
+              key: ValueKey<bool>(_isEmailSent),
+              color: _isEmailSent
                   ? CupertinoColors.systemGreen
                   : AppPalette.accentPrimary,
-              size: 60.0,
+              size: 56,
             ),
           ),
           const SizedBox(height: 10),
           Text(
-            isEmailSent
+            _isEmailSent
                 ? S.of(context).CheckYourEmail
                 : S.of(context).VerifyYourEmail,
-            style: _titleStyle,
+            style: titleStyle,
           ),
         ],
       ),
@@ -92,15 +72,15 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog>
           const SizedBox(height: 10),
           Text.rich(
             TextSpan(
-              text: isEmailSent
+              text: _isEmailSent
                   ? S.of(context).WeHaveSentVerificationEmailTo
                   : S.of(context).YourEmailIsNotVerifiedYet,
-              style: _contentStyle,
-              children: isEmailSent
+              style: contentStyle,
+              children: _isEmailSent
                   ? [
                       TextSpan(
                         text: widget.email,
-                        style: _emailStyle,
+                        style: emailStyle,
                       ),
                       TextSpan(
                         text: S.of(context).PleaseCheckYourInbox,
@@ -113,7 +93,7 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog>
         ],
       ),
       actions: [
-        if (!isEmailSent)
+        if (!_isEmailSent)
           CupertinoDialogAction(
             onPressed: () => _sendEmail(widget.email),
             child: Text(
@@ -124,8 +104,8 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog>
         CupertinoDialogAction(
           onPressed: () => Navigator.pop(context),
           child: Text(
-            isEmailSent ? S.of(context).OK : S.of(context).Cancel,
-            style: isEmailSent
+            _isEmailSent ? S.of(context).OK : S.of(context).Cancel,
+            style: _isEmailSent
                 ? const TextStyle(color: AppPalette.accentPrimary)
                 : const TextStyle(color: CupertinoColors.systemRed),
           ),

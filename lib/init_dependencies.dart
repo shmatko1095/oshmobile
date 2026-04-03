@@ -8,6 +8,7 @@ import 'package:get_it/get_it.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:keycloak_wrapper/keycloak_wrapper.dart';
 import 'package:oshmobile/core/common/cubits/app/app_lifecycle_cubit.dart';
+import 'package:oshmobile/core/common/cubits/app/app_theme_cubit.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/configuration/configuration_bundle_repository.dart';
 import 'package:oshmobile/core/configuration/configuration_bundle_repository_impl.dart';
@@ -24,7 +25,10 @@ import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
 import 'package:oshmobile/core/permissions/ble_permission_service.dart';
 import 'package:oshmobile/core/secrets/app_secrets.dart';
+import 'package:oshmobile/core/theme/shared_prefs_theme_mode_storage.dart';
+import 'package:oshmobile/core/theme/theme_mode_storage.dart';
 import 'package:oshmobile/core/utils/app_config.dart';
+import 'package:oshmobile/features/account_settings/domain/usecases/request_my_account_deletion.dart';
 import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source_impl.dart';
 import 'package:oshmobile/features/auth/data/repositories/auth_repository_impl.dart';
@@ -80,6 +84,7 @@ Future<void> initDependencies() async {
   await _initMqttClient();
   _initAuthFeature();
   _initHomeFeature();
+  _initAccountSettingsFeature();
   _initDevicesFeature();
   _initTelemetryHistoryFeature();
   _initBleProvisioningFeature();
@@ -110,6 +115,12 @@ Future<void> _initCore() async {
 
   // App lifecycle (global). Updated by AppLifecycleObserver (UI-only widget).
   locator.registerLazySingleton<AppLifecycleCubit>(() => AppLifecycleCubit());
+  locator.registerLazySingleton<ThemeModeStorage>(
+    () => SharedPrefsThemeModeStorage(locator<SharedPreferences>()),
+  );
+  locator.registerLazySingleton<AppThemeCubit>(
+    () => AppThemeCubit(storage: locator<ThemeModeStorage>()),
+  );
 }
 
 Future<void> _initKeycloakWrapper() async {
@@ -202,6 +213,14 @@ void _initHomeFeature() {
     ..registerFactory<SelectedDeviceStorage>(
       () => SelectedDeviceStorage(locator<SharedPreferences>()),
     );
+}
+
+void _initAccountSettingsFeature() {
+  locator.registerFactory<RequestMyAccountDeletion>(
+    () => RequestMyAccountDeletion(
+      mobileApiClient: locator<MobileApiClient>(),
+    ),
+  );
 }
 
 void _initAuthFeature() {

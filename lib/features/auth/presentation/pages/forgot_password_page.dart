@@ -1,18 +1,19 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/theme/text_styles.dart';
+import 'package:oshmobile/core/utils/form_validators.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/auth_field.dart';
+import 'package:oshmobile/features/auth/presentation/widgets/auth_page_scaffold.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   final String email;
 
-  static CupertinoPageRoute route(String email) =>
-      CupertinoPageRoute(builder: (context) => ForgotPasswordPage(email: email));
+  static CupertinoPageRoute route(String email) => CupertinoPageRoute(
+      builder: (context) => ForgotPasswordPage(email: email));
 
   const ForgotPasswordPage({required this.email, super.key});
 
@@ -60,49 +61,44 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: BlocConsumer<AuthBloc, AuthState>(
-          listener: (context, state) => _onAuthStateChanged(context, state),
-          builder: (context, state) {
-            return SingleChildScrollView(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      S.of(context).ForgotPassword,
-                      style: TextStyles.titleStyle,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 30),
-                    Text(
-                      S.of(context).ForgotPasswordContent,
-                      style: TextStyles.contentStyle,
-                    ),
-                    const SizedBox(height: 30),
-                    AuthField(
-                      labelText: S.of(context).Email,
-                      controller: _emailController,
-                    ),
-                    const SizedBox(height: 50),
-                    (state is AuthLoading)
-                        ? const CupertinoActivityIndicator()
-                        : CustomElevatedButton(
-                            buttonText: S.of(context).ResetPassword,
-                            onPressed: () => _resetPassword(),
-                          ),
-                  ],
+    return BlocConsumer<AuthBloc, AuthState>(
+      listener: (context, state) => _onAuthStateChanged(context, state),
+      builder: (context, state) {
+        return AuthPageScaffold(
+          title: S.of(context).ForgotPassword,
+          subtitle: S.of(context).ForgotPasswordContent,
+          subtitleAlign: TextAlign.left,
+          body: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AuthField(
+                  labelText: S.of(context).Email,
+                  controller: _emailController,
+                  validator: (value) => FormValidator.email(
+                    value: value,
+                    errorMessage: S.of(context).InvalidEmailAddress,
+                  ),
                 ),
-              ),
-            );
-          },
-        ),
-        // ),
-      ),
+                const SizedBox(height: 28),
+                (state is AuthLoading)
+                    ? const Center(child: CupertinoActivityIndicator())
+                    : CustomElevatedButton(
+                        buttonText: S.of(context).ResetPassword,
+                        onPressed: _resetPassword,
+                      ),
+              ],
+            ),
+          ),
+          footer: Center(
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(S.of(context).GoToLogin),
+            ),
+          ),
+        );
+      },
     );
   }
 }

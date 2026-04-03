@@ -6,6 +6,24 @@ import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/theme/text_styles.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
+bool _compatIsDark(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark;
+
+Color _compatSurfaceColor(BuildContext context) =>
+    _compatIsDark(context) ? AppPalette.surface : Colors.white;
+
+Color _compatSurfaceAltColor(BuildContext context) =>
+    _compatIsDark(context) ? AppPalette.surfaceRaised : const Color(0xFFF8FAFC);
+
+Color _compatBorderColor(BuildContext context) =>
+    _compatIsDark(context) ? AppPalette.borderSoft : const Color(0x1A0F172A);
+
+Color _compatPrimaryTextColor(BuildContext context) =>
+    _compatIsDark(context) ? AppPalette.textPrimary : const Color(0xFF0F172A);
+
+Color _compatSecondaryTextColor(BuildContext context) =>
+    _compatIsDark(context) ? AppPalette.textSecondary : const Color(0xFF475569);
+
 enum DeviceCompatibilityVariant {
   updateRequired,
   compatibilityError,
@@ -40,8 +58,8 @@ class DeviceCompatibilityStatePage extends StatelessWidget {
               children: [
                 AppSolidCard(
                   padding: const EdgeInsets.all(AppPalette.spaceXl),
-                  backgroundColor: AppPalette.surface,
-                  borderColor: AppPalette.borderSoft,
+                  backgroundColor: _compatSurfaceColor(context),
+                  borderColor: _compatBorderColor(context),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -66,13 +84,15 @@ class DeviceCompatibilityStatePage extends StatelessWidget {
                                   spec.title,
                                   style: TextStyles.titleStyle.copyWith(
                                     fontSize: 28,
-                                    color: AppPalette.textPrimary,
+                                    color: _compatPrimaryTextColor(context),
                                   ),
                                 ),
                                 const SizedBox(height: AppPalette.spaceMd),
                                 Text(
                                   spec.subtitle,
-                                  style: TextStyles.contentStyle,
+                                  style: TextStyles.contentStyle.copyWith(
+                                    color: _compatSecondaryTextColor(context),
+                                  ),
                                 ),
                               ],
                             ),
@@ -90,14 +110,16 @@ class DeviceCompatibilityStatePage extends StatelessWidget {
                 ),
                 const SizedBox(height: AppPalette.spaceLg),
                 AppSolidCard(
-                  backgroundColor: AppPalette.surfaceRaised,
-                  borderColor: AppPalette.borderSoft,
+                  backgroundColor: _compatSurfaceAltColor(context),
+                  borderColor: _compatBorderColor(context),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         s.compatibilityNextStepsTitle,
-                        style: TextStyles.sectionTitle,
+                        style: TextStyles.sectionTitle.copyWith(
+                          color: _compatPrimaryTextColor(context),
+                        ),
                       ),
                       const SizedBox(height: AppPalette.spaceMd),
                       for (var i = 0; i < spec.steps.length; i++) ...[
@@ -114,14 +136,16 @@ class DeviceCompatibilityStatePage extends StatelessWidget {
                 ),
                 const SizedBox(height: AppPalette.spaceLg),
                 AppSolidCard(
-                  backgroundColor: AppPalette.surfaceRaised,
-                  borderColor: AppPalette.borderSoft,
+                  backgroundColor: _compatSurfaceAltColor(context),
+                  borderColor: _compatBorderColor(context),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         s.DeviceDetails,
-                        style: TextStyles.sectionTitle,
+                        style: TextStyles.sectionTitle.copyWith(
+                          color: _compatPrimaryTextColor(context),
+                        ),
                       ),
                       const SizedBox(height: AppPalette.spaceMd),
                       _MetaRow(
@@ -148,20 +172,22 @@ class DeviceCompatibilityStatePage extends StatelessWidget {
                 ),
                 const SizedBox(height: AppPalette.spaceLg),
                 AppSolidCard(
-                  backgroundColor: AppPalette.surfaceRaised,
-                  borderColor: AppPalette.borderSoft,
+                  backgroundColor: _compatSurfaceAltColor(context),
+                  borderColor: _compatBorderColor(context),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         s.compatibilityTechnicalDetailsTitle,
-                        style: TextStyles.sectionTitle,
+                        style: TextStyles.sectionTitle.copyWith(
+                          color: _compatPrimaryTextColor(context),
+                        ),
                       ),
                       const SizedBox(height: AppPalette.spaceMd),
                       Text(
                         details.trim().isEmpty ? s.UnknownError : details,
                         style: TextStyles.caption.copyWith(
-                          color: AppPalette.textSecondary,
+                          color: _compatSecondaryTextColor(context),
                         ),
                       ),
                     ],
@@ -327,7 +353,9 @@ class _StepRow extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: TextStyles.body,
+            style: TextStyles.body.copyWith(
+              color: _compatPrimaryTextColor(context),
+            ),
           ),
         ),
       ],
@@ -353,14 +381,18 @@ class _MetaRow extends StatelessWidget {
           width: 96,
           child: Text(
             label,
-            style: TextStyles.caption,
+            style: TextStyles.caption.copyWith(
+              color: _compatSecondaryTextColor(context),
+            ),
           ),
         ),
         const SizedBox(width: AppPalette.spaceMd),
         Expanded(
           child: Text(
             value.trim().isEmpty ? '—' : value,
-            style: TextStyles.bodyStrong,
+            style: TextStyles.bodyStrong.copyWith(
+              color: _compatPrimaryTextColor(context),
+            ),
           ),
         ),
       ],

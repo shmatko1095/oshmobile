@@ -20,26 +20,42 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'uk';
 
-  static String m0(length) =>
+  static String m0(min, max) =>
+      "Ім’я має містити від ${min} до ${max} символів";
+
+  static String m1(min, max) =>
+      "Прізвище має містити від ${min} до ${max} символів";
+
+  static String m2(length) =>
       "Пароль має містити щонайменше ${length} символів";
 
-  static String m1(time) => "Останнє оновлення: ${time}";
+  static String m3(time) => "Останнє оновлення: ${time}";
 
-  static String m2(temp, time) => "Наступне ${temp} о ${time}";
+  static String m4(temp, time) => "Наступне ${temp} о ${time}";
 
-  static String m3(temp) => "Ціль ${temp}";
+  static String m5(current, total) => "Крок ${current} з ${total}";
 
-  static String m4(resolution, points) =>
+  static String m6(temp) => "Ціль ${temp}";
+
+  static String m7(resolution, points) =>
       "Роздільність: ${resolution} • Точки: ${points}";
 
-  static String m5(index, total) => "Датчик ${index}/${total}";
+  static String m8(index, total) => "Датчик ${index}/${total}";
 
-  static String m6(lastSeenAt) => "Востаннє був онлайн: ${lastSeenAt}";
+  static String m9(lastSeenAt) => "Востаннє був онлайн: ${lastSeenAt}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "About": MessageLookupByLibrary.simpleMessage("Про пристрій"),
+    "Account": MessageLookupByLibrary.simpleMessage("Обліковий запис"),
+    "AccountSettings": MessageLookupByLibrary.simpleMessage(
+      "Налаштування акаунта",
+    ),
     "AddDevice": MessageLookupByLibrary.simpleMessage("Додати пристрій"),
+    "ApplicationSettings": MessageLookupByLibrary.simpleMessage(
+      "Налаштування застосунку",
+    ),
+    "Back": MessageLookupByLibrary.simpleMessage("Назад"),
     "Cancel": MessageLookupByLibrary.simpleMessage("Скасувати"),
     "CheckYourEmail": MessageLookupByLibrary.simpleMessage("Перевірте пошту"),
     "ChooseWiFi": MessageLookupByLibrary.simpleMessage("Вибрати Wi‑Fi"),
@@ -49,6 +65,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "Connect": MessageLookupByLibrary.simpleMessage("Підключити"),
     "ContinueWithGoogle": MessageLookupByLibrary.simpleMessage(
       "Продовжити з Google",
+    ),
+    "Delete": MessageLookupByLibrary.simpleMessage("Видалити"),
+    "DeleteAccount": MessageLookupByLibrary.simpleMessage("Видалити акаунт"),
+    "DeleteAccountConfirmMessage": MessageLookupByLibrary.simpleMessage(
+      "Цю дію неможливо скасувати.",
+    ),
+    "DeleteAccountConfirmTitle": MessageLookupByLibrary.simpleMessage(
+      "Видалити акаунт?",
+    ),
+    "DeleteAccountDescription": MessageLookupByLibrary.simpleMessage(
+      "Назавжди видалити акаунт і всі пов’язані дані.",
     ),
     "DeleteSensor": MessageLookupByLibrary.simpleMessage("Видалити датчик"),
     "Deleted": MessageLookupByLibrary.simpleMessage("Видалено"),
@@ -82,6 +109,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "FailedToLoadSettings": MessageLookupByLibrary.simpleMessage(
       "Не вдалося завантажити налаштування.",
     ),
+    "FirstName": MessageLookupByLibrary.simpleMessage("Ім’я"),
     "ForgotPassword": MessageLookupByLibrary.simpleMessage("Забули пароль?"),
     "ForgotPasswordContent": MessageLookupByLibrary.simpleMessage(
       "Введіть email, і ми надішлемо посилання для скидання пароля. Це швидко й безпечно.",
@@ -93,12 +121,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "InvalidEmailAddress": MessageLookupByLibrary.simpleMessage(
       "Неправильна email-адреса",
     ),
-    "InvalidPassword": m0,
+    "InvalidFirstName": m0,
+    "InvalidLastName": m1,
+    "InvalidPassword": m2,
     "InvalidUserCredentials": MessageLookupByLibrary.simpleMessage(
       "Неправильний email або пароль",
     ),
     "InvalidValue": MessageLookupByLibrary.simpleMessage("Недійсне значення"),
-    "LastUpdateAt": m1,
+    "LastName": MessageLookupByLibrary.simpleMessage("Прізвище"),
+    "LastUpdateAt": m3,
     "ManualTemperature": MessageLookupByLibrary.simpleMessage(
       "Ручна температура",
     ),
@@ -109,7 +140,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "ModeWeekly": MessageLookupByLibrary.simpleMessage("Щотижня"),
     "MonShort": MessageLookupByLibrary.simpleMessage("Пн"),
     "Name": MessageLookupByLibrary.simpleMessage("Назва"),
-    "NextAt": m2,
+    "Next": MessageLookupByLibrary.simpleMessage("Далі"),
+    "NextAt": m4,
     "No": MessageLookupByLibrary.simpleMessage("Ні"),
     "NoDataYet": MessageLookupByLibrary.simpleMessage("Дані ще не надійшли"),
     "NoDeviceSelected": MessageLookupByLibrary.simpleMessage(
@@ -134,6 +166,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "PointCameraToQR": MessageLookupByLibrary.simpleMessage(
       "Наведіть камеру на QR-код",
+    ),
+    "ProfileAndSettings": MessageLookupByLibrary.simpleMessage(
+      "Профіль і налаштування",
     ),
     "RegistrationSuccessful": MessageLookupByLibrary.simpleMessage(
       "Майже готово!",
@@ -168,9 +203,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "SignIn": MessageLookupByLibrary.simpleMessage("Увійти"),
     "SignOut": MessageLookupByLibrary.simpleMessage("Вийти"),
     "SignUp": MessageLookupByLibrary.simpleMessage("Зареєструватися"),
+    "StepOf": m5,
     "Successful": MessageLookupByLibrary.simpleMessage("Успішно"),
     "SunShort": MessageLookupByLibrary.simpleMessage("Нд"),
-    "Target": m3,
+    "Target": m6,
     "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Не вдалося завантажити графік",
     ),
@@ -202,14 +238,17 @@ class MessageLookup extends MessageLookupByLibrary {
       "Тиждень",
     ),
     "TelemetryHistoryRangeYear": MessageLookupByLibrary.simpleMessage("Рік"),
-    "TelemetryHistoryResolutionPoints": m4,
+    "TelemetryHistoryResolutionPoints": m7,
     "TelemetryHistorySensorLabel": MessageLookupByLibrary.simpleMessage(
       "Температурний датчик",
     ),
-    "TelemetryHistorySensorPosition": m5,
+    "TelemetryHistorySensorPosition": m8,
     "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Середнє"),
     "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Максимум"),
     "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Мінімум"),
+    "ThemeDark": MessageLookupByLibrary.simpleMessage("Темна"),
+    "ThemeLight": MessageLookupByLibrary.simpleMessage("Світла"),
+    "ThemeSystem": MessageLookupByLibrary.simpleMessage("Системна"),
     "ThuShort": MessageLookupByLibrary.simpleMessage("Чт"),
     "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
       "Перевірте, чи підключено пристрій до Wi‑Fi.",
@@ -288,7 +327,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "deviceOfflineHintBluetooth": MessageLookupByLibrary.simpleMessage(
       "Наблизьтеся до пристрою, щоб налаштувати Wi‑Fi через Bluetooth.",
     ),
-    "deviceOfflineSubtitleWithLastSeen": m6,
+    "deviceOfflineSubtitleWithLastSeen": m9,
     "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
       "Пристрій офлайн",
     ),

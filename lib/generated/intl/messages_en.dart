@@ -20,26 +20,40 @@ typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
 class MessageLookup extends MessageLookupByLibrary {
   String get localeName => 'en';
 
-  static String m0(length) =>
+  static String m0(min, max) =>
+      "First name must be between ${min} and ${max} characters";
+
+  static String m1(min, max) =>
+      "Last name must be between ${min} and ${max} characters";
+
+  static String m2(length) =>
       "Password must be at least ${length} characters long";
 
-  static String m1(time) => "Last update: ${time}";
+  static String m3(time) => "Last update: ${time}";
 
-  static String m2(temp, time) => "Next ${temp} at ${time}";
+  static String m4(temp, time) => "Next ${temp} at ${time}";
 
-  static String m3(temp) => "Target ${temp}";
+  static String m5(current, total) => "Step ${current} of ${total}";
 
-  static String m4(resolution, points) =>
+  static String m6(temp) => "Target ${temp}";
+
+  static String m7(resolution, points) =>
       "Resolution: ${resolution} • Points: ${points}";
 
-  static String m5(index, total) => "Sensor ${index}/${total}";
+  static String m8(index, total) => "Sensor ${index}/${total}";
 
-  static String m6(lastSeenAt) => "Last seen online: ${lastSeenAt}";
+  static String m9(lastSeenAt) => "Last seen online: ${lastSeenAt}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "About": MessageLookupByLibrary.simpleMessage("About"),
+    "Account": MessageLookupByLibrary.simpleMessage("Account"),
+    "AccountSettings": MessageLookupByLibrary.simpleMessage("Account settings"),
     "AddDevice": MessageLookupByLibrary.simpleMessage("Add device"),
+    "ApplicationSettings": MessageLookupByLibrary.simpleMessage(
+      "Application settings",
+    ),
+    "Back": MessageLookupByLibrary.simpleMessage("Back"),
     "Cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
     "CheckYourEmail": MessageLookupByLibrary.simpleMessage("Check your email"),
     "ChooseWiFi": MessageLookupByLibrary.simpleMessage("Choose Wi-Fi"),
@@ -49,6 +63,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "Connect": MessageLookupByLibrary.simpleMessage("Connect"),
     "ContinueWithGoogle": MessageLookupByLibrary.simpleMessage(
       "Continue with Google",
+    ),
+    "Delete": MessageLookupByLibrary.simpleMessage("Delete"),
+    "DeleteAccount": MessageLookupByLibrary.simpleMessage("Delete account"),
+    "DeleteAccountConfirmMessage": MessageLookupByLibrary.simpleMessage(
+      "This action is permanent and cannot be undone.",
+    ),
+    "DeleteAccountConfirmTitle": MessageLookupByLibrary.simpleMessage(
+      "Delete account?",
+    ),
+    "DeleteAccountDescription": MessageLookupByLibrary.simpleMessage(
+      "Permanently remove your account and all associated data.",
     ),
     "DeleteSensor": MessageLookupByLibrary.simpleMessage("Delete sensor"),
     "Deleted": MessageLookupByLibrary.simpleMessage("Deleted"),
@@ -82,6 +107,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "FailedToLoadSettings": MessageLookupByLibrary.simpleMessage(
       "Failed to load settings.",
     ),
+    "FirstName": MessageLookupByLibrary.simpleMessage("First name"),
     "ForgotPassword": MessageLookupByLibrary.simpleMessage("Forgot password?"),
     "ForgotPasswordContent": MessageLookupByLibrary.simpleMessage(
       "Enter your email address, and we’ll send you a link to reset your password. It’s quick and secure.",
@@ -95,12 +121,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "InvalidEmailAddress": MessageLookupByLibrary.simpleMessage(
       "Invalid email address",
     ),
-    "InvalidPassword": m0,
+    "InvalidFirstName": m0,
+    "InvalidLastName": m1,
+    "InvalidPassword": m2,
     "InvalidUserCredentials": MessageLookupByLibrary.simpleMessage(
       "Invalid user credentials",
     ),
     "InvalidValue": MessageLookupByLibrary.simpleMessage("Invalid value"),
-    "LastUpdateAt": m1,
+    "LastName": MessageLookupByLibrary.simpleMessage("Last name"),
+    "LastUpdateAt": m3,
     "ManualTemperature": MessageLookupByLibrary.simpleMessage(
       "Manual temperature",
     ),
@@ -111,7 +140,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "ModeWeekly": MessageLookupByLibrary.simpleMessage("Weekly"),
     "MonShort": MessageLookupByLibrary.simpleMessage("Mon"),
     "Name": MessageLookupByLibrary.simpleMessage("Name"),
-    "NextAt": m2,
+    "Next": MessageLookupByLibrary.simpleMessage("Next"),
+    "NextAt": m4,
     "No": MessageLookupByLibrary.simpleMessage("No"),
     "NoDataYet": MessageLookupByLibrary.simpleMessage("No data yet"),
     "NoDeviceSelected": MessageLookupByLibrary.simpleMessage(
@@ -136,6 +166,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "PointCameraToQR": MessageLookupByLibrary.simpleMessage(
       "Point the camera at the QR code",
+    ),
+    "ProfileAndSettings": MessageLookupByLibrary.simpleMessage(
+      "Profile & settings",
     ),
     "RegistrationSuccessful": MessageLookupByLibrary.simpleMessage(
       "Almost There!",
@@ -166,9 +199,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "SignIn": MessageLookupByLibrary.simpleMessage("Sign In"),
     "SignOut": MessageLookupByLibrary.simpleMessage("Sign Out"),
     "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
+    "StepOf": m5,
     "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
     "SunShort": MessageLookupByLibrary.simpleMessage("Sun"),
-    "Target": m3,
+    "Target": m6,
     "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Failed to load chart",
     ),
@@ -196,14 +230,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryRangeMonth": MessageLookupByLibrary.simpleMessage("Month"),
     "TelemetryHistoryRangeWeek": MessageLookupByLibrary.simpleMessage("Week"),
     "TelemetryHistoryRangeYear": MessageLookupByLibrary.simpleMessage("Year"),
-    "TelemetryHistoryResolutionPoints": m4,
+    "TelemetryHistoryResolutionPoints": m7,
     "TelemetryHistorySensorLabel": MessageLookupByLibrary.simpleMessage(
       "Temperature sensor",
     ),
-    "TelemetryHistorySensorPosition": m5,
+    "TelemetryHistorySensorPosition": m8,
     "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Average"),
     "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Maximum"),
     "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Minimum"),
+    "ThemeDark": MessageLookupByLibrary.simpleMessage("Dark"),
+    "ThemeLight": MessageLookupByLibrary.simpleMessage("Light"),
+    "ThemeSystem": MessageLookupByLibrary.simpleMessage("System"),
     "ThuShort": MessageLookupByLibrary.simpleMessage("Thu"),
     "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
       "Check the device\'s network connection.",
@@ -280,7 +317,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "deviceOfflineHintBluetooth": MessageLookupByLibrary.simpleMessage(
       "Move closer to the device to set up Wi-Fi over Bluetooth.",
     ),
-    "deviceOfflineSubtitleWithLastSeen": m6,
+    "deviceOfflineSubtitleWithLastSeen": m9,
     "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
       "Device is offline",
     ),

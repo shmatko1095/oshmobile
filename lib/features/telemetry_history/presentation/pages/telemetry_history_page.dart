@@ -13,6 +13,29 @@ import 'package:oshmobile/features/telemetry_history/presentation/widgets/histor
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_chart.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
+bool _historyIsDark(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark;
+
+Color _historySurfaceColor(BuildContext context) =>
+    _historyIsDark(context) ? AppPalette.surfaceRaised : Colors.white;
+
+Color _historySurfaceAltColor(BuildContext context) =>
+    _historyIsDark(context) ? AppPalette.surfaceAlt : const Color(0xFFF3F4F6);
+
+Color _historyBorderColor(BuildContext context) =>
+    _historyIsDark(context) ? AppPalette.borderSoft : const Color(0x1A0F172A);
+
+Color _historyPrimaryTextColor(BuildContext context) =>
+    _historyIsDark(context) ? AppPalette.textPrimary : const Color(0xFF0F172A);
+
+Color _historySecondaryTextColor(BuildContext context) =>
+    _historyIsDark(context)
+        ? AppPalette.textSecondary
+        : const Color(0xFF475569);
+
+Color _historyMutedTextColor(BuildContext context) =>
+    _historyIsDark(context) ? AppPalette.textMuted : const Color(0xFF64748B);
+
 class TelemetryHistoryPage extends StatefulWidget {
   const TelemetryHistoryPage({
     super.key,
@@ -699,7 +722,7 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
             .toList(growable: false);
 
         return Scaffold(
-          backgroundColor: AppPalette.canvas,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
             title: Text(state.metric.title),
           ),
@@ -777,9 +800,9 @@ class _SensorIdentityBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppPalette.surfaceRaised,
+        color: _historySurfaceColor(context),
         borderRadius: BorderRadius.circular(AppPalette.radiusLg),
-        border: Border.all(color: AppPalette.borderSoft),
+        border: Border.all(color: _historyBorderColor(context)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
@@ -807,8 +830,8 @@ class _SensorIdentityBar extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppPalette.textMuted,
+                  style: TextStyle(
+                    color: _historyMutedTextColor(context),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -821,8 +844,8 @@ class _SensorIdentityBar extends StatelessWidget {
                     key: ValueKey(sensorName),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppPalette.textPrimary,
+                    style: TextStyle(
+                      color: _historyPrimaryTextColor(context),
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -841,8 +864,8 @@ class _SensorIdentityBar extends StatelessWidget {
               ),
               child: Text(
                 mainLabel,
-                style: const TextStyle(
-                  color: AppPalette.textPrimary,
+                style: TextStyle(
+                  color: _historyPrimaryTextColor(context),
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                 ),
@@ -854,14 +877,14 @@ class _SensorIdentityBar extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: AppPalette.surfaceAlt,
+                color: _historySurfaceAltColor(context),
                 borderRadius: BorderRadius.circular(AppPalette.radiusPill),
-                border: Border.all(color: AppPalette.borderSoft),
+                border: Border.all(color: _historyBorderColor(context)),
               ),
               child: Text(
                 positionText!,
-                style: const TextStyle(
-                  color: AppPalette.textSecondary,
+                style: TextStyle(
+                  color: _historySecondaryTextColor(context),
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
@@ -893,7 +916,7 @@ class _SummaryPanel extends StatelessWidget {
               Container(
                 width: 1,
                 height: 44,
-                color: AppPalette.borderSoft.withValues(alpha: 0.9),
+                color: _historyBorderColor(context).withValues(alpha: 0.9),
               ),
           ],
         ],
@@ -916,8 +939,8 @@ class _SummaryCell extends StatelessWidget {
       children: [
         Text(
           item.label,
-          style: const TextStyle(
-            color: AppPalette.textSecondary,
+          style: TextStyle(
+            color: _historySecondaryTextColor(context),
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -927,8 +950,8 @@ class _SummaryCell extends StatelessWidget {
           item.value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: AppPalette.textPrimary,
+          style: TextStyle(
+            color: _historyPrimaryTextColor(context),
             fontSize: 22,
             fontWeight: FontWeight.w700,
             height: 1.05,
@@ -1020,8 +1043,9 @@ class _OverlaySeriesChip extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color:
-                      selected ? AppPalette.textPrimary : AppPalette.textMuted,
+                  color: selected
+                      ? _historyPrimaryTextColor(context)
+                      : _historyMutedTextColor(context),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1049,9 +1073,9 @@ class _RangeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF121317),
+        color: _historySurfaceColor(context),
         borderRadius: BorderRadius.circular(AppPalette.radiusLg),
-        border: Border.all(color: AppPalette.borderSoft),
+        border: Border.all(color: _historyBorderColor(context)),
       ),
       padding: const EdgeInsets.all(4),
       child: Row(
@@ -1092,7 +1116,11 @@ class _RangeChip extends StatelessWidget {
           duration: AppPalette.motionBase,
           curve: Curves.easeOutCubic,
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFF666A72) : Colors.transparent,
+            color: selected
+                ? AppPalette.accentPrimary.withValues(
+                    alpha: _historyIsDark(context) ? 0.36 : 0.14,
+                  )
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(AppPalette.radiusMd),
           ),
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1100,7 +1128,9 @@ class _RangeChip extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: selected ? AppPalette.textPrimary : AppPalette.textMuted,
+              color: selected
+                  ? _historyPrimaryTextColor(context)
+                  : _historyMutedTextColor(context),
               fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
@@ -1134,7 +1164,7 @@ class _PagerDots extends StatelessWidget {
             decoration: BoxDecoration(
               color: i == active
                   ? AppPalette.accentPrimary
-                  : AppPalette.textMuted.withValues(alpha: 0.45),
+                  : _historyMutedTextColor(context).withValues(alpha: 0.45),
               borderRadius: BorderRadius.circular(AppPalette.radiusPill),
             ),
           ),
@@ -1220,8 +1250,8 @@ class _ErrorState extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: AppPalette.textPrimary,
+            style: TextStyle(
+              color: _historyPrimaryTextColor(context),
               fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
@@ -1232,8 +1262,8 @@ class _ErrorState extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppPalette.textMuted,
+            style: TextStyle(
+              color: _historyMutedTextColor(context),
               fontSize: 12,
             ),
           ),
@@ -1264,13 +1294,13 @@ class _EmptyState extends StatelessWidget {
           Icon(
             Icons.stacked_line_chart_rounded,
             size: 92,
-            color: AppPalette.textMuted.withValues(alpha: 0.46),
+            color: _historyMutedTextColor(context).withValues(alpha: 0.46),
           ),
           const SizedBox(height: 10),
           Text(
             title,
-            style: const TextStyle(
-              color: AppPalette.textMuted,
+            style: TextStyle(
+              color: _historyMutedTextColor(context),
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),

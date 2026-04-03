@@ -17,13 +17,41 @@ class AppTheme {
   static final lightThemeMode = ThemeData.light().copyWith(
     colorScheme: _lightColorScheme,
     scaffoldBackgroundColor: AppPalette.backgroundColorLight,
+    canvasColor: AppPalette.backgroundColorLight,
     appBarTheme: const AppBarTheme(
       surfaceTintColor: AppPalette.backgroundColorLight,
       backgroundColor: AppPalette.backgroundColorLight,
+      foregroundColor: Color(0xFF0F172A),
+      elevation: 0,
     ),
     chipTheme: const ChipThemeData(
       color: WidgetStatePropertyAll(AppPalette.backgroundColorLight),
       side: BorderSide.none,
+    ),
+    textTheme: ThemeData.light()
+        .textTheme
+        .apply(
+          bodyColor: const Color(0xFF0F172A),
+          displayColor: const Color(0xFF0F172A),
+        )
+        .copyWith(
+          titleLarge:
+              const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+          titleMedium:
+              const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          titleSmall:
+              const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          bodyLarge: const TextStyle(fontSize: 16, color: Color(0xFF0F172A)),
+          bodyMedium: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+          bodySmall: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+          labelLarge:
+              const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+    dividerColor: const Color(0x1A0F172A),
+    dividerTheme: const DividerThemeData(
+      color: Color(0x1A0F172A),
+      thickness: 0.8,
+      space: 1,
     ),
     inputDecorationTheme: AppComponentThemes.lightInputDecoration,
     cardTheme: AppComponentThemes.lightCardTheme,
@@ -31,6 +59,43 @@ class AppTheme {
     outlinedButtonTheme: AppComponentThemes.lightOutlinedButtonTheme,
     textButtonTheme: AppComponentThemes.lightTextButtonTheme,
     listTileTheme: AppComponentThemes.lightListTileTheme,
+    drawerTheme: const DrawerThemeData(
+      backgroundColor: AppPalette.backgroundColorLight,
+      surfaceTintColor: AppPalette.backgroundColorLight,
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.disabled)) {
+          return const Color(0xFF94A3B8);
+        }
+        if (states.contains(WidgetState.selected)) {
+          return Colors.white;
+        }
+        return const Color(0xFFE5E7EB);
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.disabled)) {
+          return const Color(0xFFCBD5E1);
+        }
+        if (states.contains(WidgetState.selected)) {
+          return AppPalette.accentPrimary;
+        }
+        return const Color(0xFF94A3B8);
+      }),
+      trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+    ),
+    sliderTheme: SliderThemeData(
+      activeTrackColor: AppPalette.accentPrimary,
+      inactiveTrackColor: const Color(0xFFCBD5E1),
+      thumbColor: Colors.white,
+      overlayColor: AppPalette.accentPrimary.withValues(alpha: 0.18),
+      valueIndicatorColor: Colors.white,
+    ),
+    snackBarTheme: const SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: Colors.white,
+      contentTextStyle: TextStyle(color: Color(0xFF0F172A)),
+    ),
   );
 
   static ThemeData get darkTheme => darkThemeMode;

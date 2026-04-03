@@ -1,11 +1,48 @@
 {
   "SignIn": "Увійти",
   "SignUp": "Зареєструватися",
+  "Back": "Назад",
+  "Next": "Далі",
+  "StepOf": "Крок {current} з {total}",
+  "@StepOf": {
+    "placeholders": {
+      "current": {},
+      "total": {}
+    }
+  },
   "SignOut": "Вийти",
+  "ProfileAndSettings": "Профіль і налаштування",
+  "ApplicationSettings": "Налаштування застосунку",
+  "AccountSettings": "Налаштування акаунта",
+  "Account": "Обліковий запис",
+  "ThemeSystem": "Системна",
+  "ThemeDark": "Темна",
+  "ThemeLight": "Світла",
+  "Delete": "Видалити",
+  "DeleteAccount": "Видалити акаунт",
+  "DeleteAccountDescription": "Назавжди видалити акаунт і всі пов’язані дані.",
+  "DeleteAccountConfirmTitle": "Видалити акаунт?",
+  "DeleteAccountConfirmMessage": "Цю дію неможливо скасувати.",
   "InvalidUserCredentials": "Неправильний email або пароль",
   "UnknownError": "Сталася невідома помилка",
+  "FirstName": "Ім’я",
+  "LastName": "Прізвище",
   "Email": "Email",
   "Password": "Пароль",
+  "InvalidFirstName": "Ім’я має містити від {min} до {max} символів",
+  "@InvalidFirstName": {
+    "placeholders": {
+      "min": {},
+      "max": {}
+    }
+  },
+  "InvalidLastName": "Прізвище має містити від {min} до {max} символів",
+  "@InvalidLastName": {
+    "placeholders": {
+      "min": {},
+      "max": {}
+    }
+  },
   "InvalidEmailAddress": "Неправильна email-адреса",
   "InvalidPassword": "Пароль має містити щонайменше {length} символів",
   "ContinueWithGoogle": "Продовжити з Google",

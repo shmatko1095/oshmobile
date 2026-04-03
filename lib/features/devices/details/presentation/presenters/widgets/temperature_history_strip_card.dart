@@ -128,6 +128,9 @@ class _TemperatureHistoryStripCardViewState
     final s = S.of(context);
     final cardHeight = widget.height ?? widget.chartHeight;
     final effectiveChartHeight = math.min(widget.chartHeight, cardHeight);
+    final titleColor = statValueColor(context);
+    final subtitleColor = statTitleColor(context);
+    final mutedColor = statMutedColor(context);
 
     final controlState =
         context.select<DeviceSnapshotCubit, Map<String, dynamic>>(
@@ -140,8 +143,8 @@ class _TemperatureHistoryStripCardViewState
     if (target == null) {
       return AppSolidCard(
         radius: AppPalette.radiusXl,
-        backgroundColor: AppPalette.surfaceRaised,
-        borderColor: AppPalette.borderSoft,
+        backgroundColor: statSurfaceColor(context),
+        borderColor: statBorderColor(context),
         padding: EdgeInsets.zero,
         child: SizedBox(
           height: cardHeight,
@@ -150,7 +153,7 @@ class _TemperatureHistoryStripCardViewState
             child: Text(
               s.TelemetryHistoryPreviewNoSensorData,
               style: TextStyle(
-                color: AppPalette.textMuted,
+                color: mutedColor,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -177,8 +180,8 @@ class _TemperatureHistoryStripCardViewState
 
     return AppSolidCard(
       radius: AppPalette.radiusXl,
-      backgroundColor: AppPalette.surfaceRaised,
-      borderColor: AppPalette.borderSoft,
+      backgroundColor: statSurfaceColor(context),
+      borderColor: statBorderColor(context),
       padding: EdgeInsets.zero,
       onTap: () => widget.onOpenHistory
           ?.call(_toHistorySensors(sensors), target.id, target.name),
@@ -212,11 +215,11 @@ class _TemperatureHistoryStripCardViewState
                             fill: true,
                             showGrid: false,
                           )
-                        : const Center(
+                        : Center(
                             child: Text(
                               '—',
                               style: TextStyle(
-                                color: AppPalette.textMuted,
+                                color: mutedColor,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -239,8 +242,8 @@ class _TemperatureHistoryStripCardViewState
                             s.TelemetryHistoryPreviewTitle24h,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppPalette.textPrimary,
+                            style: TextStyle(
+                              color: titleColor,
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                             ),
@@ -250,8 +253,8 @@ class _TemperatureHistoryStripCardViewState
                             target.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppPalette.textSecondary,
+                            style: TextStyle(
+                              color: subtitleColor,
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                             ),
@@ -262,8 +265,8 @@ class _TemperatureHistoryStripCardViewState
                     const SizedBox(width: 8),
                     Text(
                       lastValueText == null ? '—' : '$lastValueText°C',
-                      style: const TextStyle(
-                        color: AppPalette.textPrimary,
+                      style: TextStyle(
+                        color: titleColor,
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),

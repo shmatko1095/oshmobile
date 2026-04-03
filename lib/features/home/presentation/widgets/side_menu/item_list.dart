@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
-import 'package:oshmobile/core/theme/text_styles.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/thing_item.dart';
@@ -44,7 +43,7 @@ class _ItemListState extends State<ItemList> {
               return Center(
                 child: Text(
                   S.of(context).NoDevicesYet,
-                  style: TextStyles.contentStyle,
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
               );
             } else {

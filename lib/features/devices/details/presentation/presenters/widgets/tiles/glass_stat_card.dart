@@ -16,12 +16,38 @@ class GlassStatCard extends StatelessWidget {
     return AppGlassCard(
       padding: padding ?? const EdgeInsets.all(AppPalette.spaceLg),
       onTap: onTap,
+      backgroundColor: statSurfaceColor(context),
+      borderColor: statBorderColor(context),
       child: child,
     );
   }
 }
 
 // ---------- Helpers ----------
+bool isDarkSurface(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark;
+
+Color statSurfaceColor(BuildContext context) =>
+    isDarkSurface(context) ? AppPalette.surfaceRaised : Colors.white;
+
+Color statSurfaceAltColor(BuildContext context) => isDarkSurface(context)
+    ? AppPalette.surfaceAlt
+    : const Color(0xFFF3F4F6);
+
+Color statBorderColor(BuildContext context) => isDarkSurface(context)
+    ? AppPalette.borderSoft
+    : const Color(0x1A0F172A);
+
+Color statTitleColor(BuildContext context) => isDarkSurface(context)
+    ? AppPalette.textSecondary
+    : const Color(0xFF475569);
+
+Color statValueColor(BuildContext context) =>
+    isDarkSurface(context) ? AppPalette.textPrimary : const Color(0xFF0F172A);
+
+Color statMutedColor(BuildContext context) =>
+    isDarkSurface(context) ? AppPalette.textMuted : const Color(0xFF6B7280);
+
 num? asNum(dynamic v) {
   if (v is num) return v;
   if (v is String) return num.tryParse(v);

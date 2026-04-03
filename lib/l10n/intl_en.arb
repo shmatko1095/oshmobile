@@ -1,11 +1,48 @@
 {
   "SignIn": "Sign In",
   "SignUp": "Sign Up",
+  "Back": "Back",
+  "Next": "Next",
+  "StepOf": "Step {current} of {total}",
+  "@StepOf": {
+    "placeholders": {
+      "current": {},
+      "total": {}
+    }
+  },
   "SignOut": "Sign Out",
+  "ProfileAndSettings": "Profile & settings",
+  "ApplicationSettings": "Application settings",
+  "AccountSettings": "Account settings",
+  "Account": "Account",
+  "ThemeSystem": "System",
+  "ThemeDark": "Dark",
+  "ThemeLight": "Light",
+  "Delete": "Delete",
+  "DeleteAccount": "Delete account",
+  "DeleteAccountDescription": "Permanently remove your account and all associated data.",
+  "DeleteAccountConfirmTitle": "Delete account?",
+  "DeleteAccountConfirmMessage": "This action is permanent and cannot be undone.",
   "InvalidUserCredentials": "Invalid user credentials",
   "UnknownError": "Unknown error",
+  "FirstName": "First name",
+  "LastName": "Last name",
   "Email": "Email",
   "Password": "Password",
+  "InvalidFirstName": "First name must be between {min} and {max} characters",
+  "@InvalidFirstName": {
+    "placeholders": {
+      "min": {},
+      "max": {}
+    }
+  },
+  "InvalidLastName": "Last name must be between {min} and {max} characters",
+  "@InvalidLastName": {
+    "placeholders": {
+      "min": {},
+      "max": {}
+    }
+  },
   "InvalidEmailAddress": "Invalid email address",
   "InvalidPassword": "Password must be at least {length} characters long",
   "ContinueWithGoogle": "Continue with Google",

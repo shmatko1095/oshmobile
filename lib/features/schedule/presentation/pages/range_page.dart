@@ -4,6 +4,21 @@ import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dar
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
+bool _rangeIsDark(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark;
+
+Color _rangeSurfaceColor(BuildContext context) =>
+    _rangeIsDark(context) ? AppPalette.glass : Colors.white;
+
+Color _rangeBorderColor(BuildContext context) =>
+    _rangeIsDark(context) ? AppPalette.borderSoft : const Color(0x1A0F172A);
+
+Color _rangePrimaryTextColor(BuildContext context) =>
+    _rangeIsDark(context) ? AppPalette.textPrimary : const Color(0xFF0F172A);
+
+Color _rangeSecondaryTextColor(BuildContext context) =>
+    _rangeIsDark(context) ? AppPalette.textSecondary : const Color(0xFF475569);
+
 class ScheduleRangePage extends StatefulWidget {
   const ScheduleRangePage({
     super.key,
@@ -131,9 +146,17 @@ class _ScheduleRangePageState extends State<ScheduleRangePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _pill('Min', '${_fmt(_values[_iMin])}${widget.unit}'),
+                _pill(
+                  context,
+                  'Min',
+                  '${_fmt(_values[_iMin])}${widget.unit}',
+                ),
                 const SizedBox(width: 12),
-                _pill('Max', '${_fmt(_values[_iMax])}${widget.unit}'),
+                _pill(
+                  context,
+                  'Max',
+                  '${_fmt(_values[_iMax])}${widget.unit}',
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -146,16 +169,23 @@ class _ScheduleRangePageState extends State<ScheduleRangePage> {
                       controller: _minCtrl,
                       values: _values,
                       onChanged: _setMinIndex,
+                      primaryTextColor: _rangePrimaryTextColor(context),
+                      secondaryTextColor: _rangeSecondaryTextColor(context),
                     ),
                   ),
-                  const VerticalDivider(
-                      width: 1, thickness: 0.5, color: AppPalette.borderSoft),
+                  VerticalDivider(
+                    width: 1,
+                    thickness: 0.5,
+                    color: _rangeBorderColor(context),
+                  ),
                   Expanded(
                     child: _PickerColumn(
                       label: 'Max',
                       controller: _maxCtrl,
                       values: _values,
                       onChanged: _setMaxIndex,
+                      primaryTextColor: _rangePrimaryTextColor(context),
+                      secondaryTextColor: _rangeSecondaryTextColor(context),
                     ),
                   ),
                 ],
@@ -175,22 +205,28 @@ class _ScheduleRangePageState extends State<ScheduleRangePage> {
     );
   }
 
-  Widget _pill(String label, String value) {
+  Widget _pill(BuildContext context, String label, String value) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppPalette.glass,
+        color: _rangeSurfaceColor(context),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppPalette.borderSoft),
+        border: Border.all(color: _rangeBorderColor(context)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label,
-              style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          Text(
+            label,
+            style: TextStyle(
+              color: _rangeSecondaryTextColor(context),
+              fontSize: 12,
+            ),
+          ),
           Text(value,
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.w800)),
+              style: TextStyle(
+                  color: _rangePrimaryTextColor(context),
+                  fontWeight: FontWeight.w800)),
         ],
       ),
     );
@@ -203,19 +239,23 @@ class _PickerColumn extends StatelessWidget {
     required this.controller,
     required this.values,
     required this.onChanged,
+    required this.primaryTextColor,
+    required this.secondaryTextColor,
   });
 
   final String label;
   final FixedExtentScrollController controller;
   final List<double> values;
   final ValueChanged<int> onChanged;
+  final Color primaryTextColor;
+  final Color secondaryTextColor;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         const SizedBox(height: 6),
-        Text(label, style: const TextStyle(color: Colors.white70)),
+        Text(label, style: TextStyle(color: secondaryTextColor)),
         Expanded(
           child: CupertinoPicker(
             itemExtent: 68,
@@ -230,10 +270,11 @@ class _PickerColumn extends StatelessWidget {
                 Center(
                   child: Text(
                     v.toStringAsFixed(1),
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: primaryTextColor,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
             ],

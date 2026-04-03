@@ -64,9 +64,124 @@ class S {
     return Intl.message('Sign Up', name: 'SignUp', desc: '', args: []);
   }
 
+  /// `Back`
+  String get Back {
+    return Intl.message('Back', name: 'Back', desc: '', args: []);
+  }
+
+  /// `Next`
+  String get Next {
+    return Intl.message('Next', name: 'Next', desc: '', args: []);
+  }
+
+  /// `Step {current} of {total}`
+  String StepOf(Object current, Object total) {
+    return Intl.message(
+      'Step $current of $total',
+      name: 'StepOf',
+      desc: '',
+      args: [current, total],
+    );
+  }
+
   /// `Sign Out`
   String get SignOut {
     return Intl.message('Sign Out', name: 'SignOut', desc: '', args: []);
+  }
+
+  /// `Profile & settings`
+  String get ProfileAndSettings {
+    return Intl.message(
+      'Profile & settings',
+      name: 'ProfileAndSettings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Application settings`
+  String get ApplicationSettings {
+    return Intl.message(
+      'Application settings',
+      name: 'ApplicationSettings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Account settings`
+  String get AccountSettings {
+    return Intl.message(
+      'Account settings',
+      name: 'AccountSettings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Account`
+  String get Account {
+    return Intl.message('Account', name: 'Account', desc: '', args: []);
+  }
+
+  /// `System`
+  String get ThemeSystem {
+    return Intl.message('System', name: 'ThemeSystem', desc: '', args: []);
+  }
+
+  /// `Dark`
+  String get ThemeDark {
+    return Intl.message('Dark', name: 'ThemeDark', desc: '', args: []);
+  }
+
+  /// `Light`
+  String get ThemeLight {
+    return Intl.message('Light', name: 'ThemeLight', desc: '', args: []);
+  }
+
+  /// `Delete`
+  String get Delete {
+    return Intl.message('Delete', name: 'Delete', desc: '', args: []);
+  }
+
+  /// `Delete account`
+  String get DeleteAccount {
+    return Intl.message(
+      'Delete account',
+      name: 'DeleteAccount',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Permanently remove your account and all associated data.`
+  String get DeleteAccountDescription {
+    return Intl.message(
+      'Permanently remove your account and all associated data.',
+      name: 'DeleteAccountDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete account?`
+  String get DeleteAccountConfirmTitle {
+    return Intl.message(
+      'Delete account?',
+      name: 'DeleteAccountConfirmTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This action is permanent and cannot be undone.`
+  String get DeleteAccountConfirmMessage {
+    return Intl.message(
+      'This action is permanent and cannot be undone.',
+      name: 'DeleteAccountConfirmMessage',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Invalid user credentials`
@@ -89,6 +204,16 @@ class S {
     );
   }
 
+  /// `First name`
+  String get FirstName {
+    return Intl.message('First name', name: 'FirstName', desc: '', args: []);
+  }
+
+  /// `Last name`
+  String get LastName {
+    return Intl.message('Last name', name: 'LastName', desc: '', args: []);
+  }
+
   /// `Email`
   String get Email {
     return Intl.message('Email', name: 'Email', desc: '', args: []);
@@ -97,6 +222,26 @@ class S {
   /// `Password`
   String get Password {
     return Intl.message('Password', name: 'Password', desc: '', args: []);
+  }
+
+  /// `First name must be between {min} and {max} characters`
+  String InvalidFirstName(Object min, Object max) {
+    return Intl.message(
+      'First name must be between $min and $max characters',
+      name: 'InvalidFirstName',
+      desc: '',
+      args: [min, max],
+    );
+  }
+
+  /// `Last name must be between {min} and {max} characters`
+  String InvalidLastName(Object min, Object max) {
+    return Intl.message(
+      'Last name must be between $min and $max characters',
+      name: 'InvalidLastName',
+      desc: '',
+      args: [min, max],
+    );
   }
 
   /// `Invalid email address`

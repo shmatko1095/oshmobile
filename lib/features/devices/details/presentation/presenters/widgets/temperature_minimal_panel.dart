@@ -210,12 +210,18 @@ class _FallbackCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final titleColor = statTitleColor(context);
+    final valueColor = statValueColor(context);
+    final mutedColor = statMutedColor(context);
+    final isDark = isDarkSurface(context);
+
     return AppSolidCard(
       onTap: onTap,
       radius: borderRadius,
       padding: EdgeInsets.zero,
-      backgroundColor: AppPalette.surfaceRaised,
-      borderColor: AppPalette.accentPrimary.withValues(alpha: 0.26),
+      backgroundColor: statSurfaceColor(context),
+      borderColor:
+          AppPalette.accentPrimary.withValues(alpha: isDark ? 0.26 : 0.22),
       child: Stack(
         children: [
           _MainCardAccentLayer(borderRadius: borderRadius),
@@ -224,10 +230,10 @@ class _FallbackCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Temperature',
                   style: TextStyle(
-                    color: AppPalette.textSecondary,
+                    color: titleColor,
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
                   ),
@@ -238,8 +244,8 @@ class _FallbackCard extends StatelessWidget {
                   children: [
                     Text(
                       temperatureText,
-                      style: const TextStyle(
-                        color: AppPalette.textPrimary,
+                      style: TextStyle(
+                        color: valueColor,
                         fontSize: 78,
                         fontWeight: FontWeight.w300,
                         height: 0.95,
@@ -250,8 +256,8 @@ class _FallbackCard extends StatelessWidget {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
                         unit,
-                        style: const TextStyle(
-                          color: AppPalette.textSecondary,
+                        style: TextStyle(
+                          color: titleColor,
                           fontSize: 24,
                           fontWeight: FontWeight.w500,
                         ),
@@ -262,6 +268,8 @@ class _FallbackCard extends StatelessWidget {
                 _ScheduleMetaBlock(
                   targetLine: targetLine,
                   nextLine: nextLine,
+                  titleColor: titleColor,
+                  mutedColor: mutedColor,
                 ),
               ],
             ),
@@ -380,14 +388,19 @@ class _SensorCard extends StatelessWidget {
     final hasAnyData = sensor.tempValid || sensor.humidityValid;
     final kindLabel = (sensor.kind ?? '').trim();
     final isMainCard = showScheduleMeta;
+    final titleColor = statTitleColor(context);
+    final valueColor = statValueColor(context);
+    final mutedColor = statMutedColor(context);
+    final isDark = isDarkSurface(context);
 
     return AppSolidCard(
       onTap: onTap,
       radius: borderRadius,
       padding: EdgeInsets.zero,
-      backgroundColor: AppPalette.surfaceRaised,
-      borderColor:
-          isMainCard ? AppPalette.accentPrimary.withValues(alpha: 0.24) : null,
+      backgroundColor: statSurfaceColor(context),
+      borderColor: isMainCard
+          ? AppPalette.accentPrimary.withValues(alpha: isDark ? 0.24 : 0.2)
+          : statBorderColor(context),
       child: Stack(
         children: [
           if (isMainCard) _MainCardAccentLayer(borderRadius: borderRadius),
@@ -403,8 +416,8 @@ class _SensorCard extends StatelessWidget {
                         sensor.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppPalette.textPrimary,
+                        style: TextStyle(
+                          color: valueColor,
                           fontWeight: FontWeight.w700,
                           fontSize: 20,
                         ),
@@ -417,8 +430,8 @@ class _SensorCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     kindLabel,
-                    style: const TextStyle(
-                      color: AppPalette.textMuted,
+                    style: TextStyle(
+                      color: mutedColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -431,8 +444,8 @@ class _SensorCard extends StatelessWidget {
                     children: [
                       Text(
                         formatNum(sensor.temp),
-                        style: const TextStyle(
-                          color: AppPalette.textPrimary,
+                        style: TextStyle(
+                          color: valueColor,
                           fontSize: 72,
                           fontWeight: FontWeight.w300,
                           height: 0.95,
@@ -443,8 +456,8 @@ class _SensorCard extends StatelessWidget {
                         padding: const EdgeInsets.only(bottom: 10),
                         child: Text(
                           unit,
-                          style: const TextStyle(
-                            color: AppPalette.textSecondary,
+                          style: TextStyle(
+                            color: titleColor,
                             fontSize: 22,
                             fontWeight: FontWeight.w500,
                           ),
@@ -453,10 +466,10 @@ class _SensorCard extends StatelessWidget {
                     ],
                   )
                 else
-                  const Text(
+                  Text(
                     'No temperature data',
                     style: TextStyle(
-                      color: AppPalette.textSecondary,
+                      color: titleColor,
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
                     ),
@@ -470,8 +483,8 @@ class _SensorCard extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         '${formatNum(sensor.humidity, fractionDigits: 0)}%',
-                        style: const TextStyle(
-                          color: AppPalette.textPrimary,
+                        style: TextStyle(
+                          color: valueColor,
                           fontWeight: FontWeight.w700,
                           fontSize: 18,
                         ),
@@ -479,10 +492,10 @@ class _SensorCard extends StatelessWidget {
                     ],
                   )
                 else if (!hasAnyData)
-                  const Text(
+                  Text(
                     'No sensor data',
                     style: TextStyle(
-                      color: AppPalette.textMuted,
+                      color: mutedColor,
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
                     ),
@@ -491,6 +504,8 @@ class _SensorCard extends StatelessWidget {
                   _ScheduleMetaBlock(
                     targetLine: targetLine,
                     nextLine: nextLine,
+                    titleColor: titleColor,
+                    mutedColor: mutedColor,
                   ),
               ],
             ),
@@ -512,6 +527,9 @@ class _SensorCardAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final valueColor = statValueColor(context);
+    final isDark = isDarkSurface(context);
+
     if (sensor.isReference) {
       return InkWell(
         borderRadius: BorderRadius.circular(AppPalette.radiusPill),
@@ -519,13 +537,15 @@ class _SensorCardAction extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: AppPalette.accentPrimary.withValues(alpha: 0.22),
+            color: AppPalette.accentPrimary.withValues(
+              alpha: isDark ? 0.22 : 0.14,
+            ),
             borderRadius: BorderRadius.circular(AppPalette.radiusPill),
           ),
           child: Text(
             S.of(context).SensorMainLabel,
-            style: const TextStyle(
-              color: AppPalette.textPrimary,
+            style: TextStyle(
+              color: valueColor,
               fontWeight: FontWeight.w700,
               fontSize: 12,
             ),
@@ -541,10 +561,10 @@ class _SensorCardAction extends StatelessWidget {
       visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
       padding: EdgeInsets.zero,
       splashRadius: 18,
-      icon: const Icon(
+      icon: Icon(
         Icons.more_horiz_rounded,
         size: 20,
-        color: AppPalette.textSecondary,
+        color: statTitleColor(context),
       ),
     );
   }
@@ -585,10 +605,14 @@ class _ScheduleMetaBlock extends StatelessWidget {
   const _ScheduleMetaBlock({
     required this.targetLine,
     required this.nextLine,
+    required this.titleColor,
+    required this.mutedColor,
   });
 
   final String? targetLine;
   final String? nextLine;
+  final Color titleColor;
+  final Color mutedColor;
 
   @override
   Widget build(BuildContext context) {
@@ -598,8 +622,10 @@ class _ScheduleMetaBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 10),
-        const Divider(
-          color: AppPalette.separator,
+        Divider(
+          color: isDarkSurface(context)
+              ? AppPalette.separator
+              : const Color(0x1A0F172A),
           thickness: 0.8,
           height: 1,
         ),
@@ -607,8 +633,8 @@ class _ScheduleMetaBlock extends StatelessWidget {
         if (targetLine != null)
           Text(
             targetLine!,
-            style: const TextStyle(
-              color: AppPalette.textSecondary,
+            style: TextStyle(
+              color: titleColor,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -617,8 +643,8 @@ class _ScheduleMetaBlock extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             nextLine!,
-            style: const TextStyle(
-              color: AppPalette.textMuted,
+            style: TextStyle(
+              color: mutedColor,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -652,7 +678,7 @@ class _Dots extends StatelessWidget {
             decoration: BoxDecoration(
               color: i == active
                   ? AppPalette.accentPrimary
-                  : AppPalette.textMuted.withValues(alpha: 0.45),
+                  : statMutedColor(context).withValues(alpha: 0.45),
               borderRadius: BorderRadius.circular(AppPalette.radiusPill),
             ),
           ),

@@ -8,7 +8,7 @@ class AppSolidCard extends StatelessWidget {
     this.padding,
     this.onTap,
     this.radius = AppPalette.radiusXl,
-    this.backgroundColor = AppPalette.surface,
+    this.backgroundColor,
     this.borderColor,
   });
 
@@ -16,7 +16,7 @@ class AppSolidCard extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final VoidCallback? onTap;
   final double radius;
-  final Color backgroundColor;
+  final Color? backgroundColor;
   final Color? borderColor;
 
   @override
@@ -24,7 +24,7 @@ class AppSolidCard extends StatelessWidget {
     final content = Ink(
       padding: padding ?? const EdgeInsets.all(AppPalette.spaceLg),
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: backgroundColor ?? Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(radius),
         border: borderColor == null ? null : Border.all(color: borderColor!),
       ),
@@ -64,16 +64,16 @@ class AppGlassCard extends StatelessWidget {
     this.padding,
     this.onTap,
     this.radius = AppPalette.radiusXl,
-    this.backgroundColor = AppPalette.surfaceRaised,
-    this.borderColor = Colors.transparent,
+    this.backgroundColor,
+    this.borderColor,
   });
 
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final VoidCallback? onTap;
   final double radius;
-  final Color backgroundColor;
-  final Color borderColor;
+  final Color? backgroundColor;
+  final Color? borderColor;
 
   @override
   Widget build(BuildContext context) {

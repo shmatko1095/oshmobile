@@ -1,9 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/common/widgets/colored_divider.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
-import 'package:oshmobile/core/theme/text_styles.dart';
 import 'package:oshmobile/core/utils/form_validators.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/core/utils/ui_utils.dart';
@@ -11,6 +9,7 @@ import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:oshmobile/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:oshmobile/features/auth/presentation/pages/signup_page.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/auth_field.dart';
+import 'package:oshmobile/features/auth/presentation/widgets/auth_page_scaffold.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
@@ -72,116 +71,97 @@ class _SignInPageState extends State<SignInPage> {
     }
   }
 
+  Widget _buildSignUpFooter(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          S.of(context).DontHaveAnAccount,
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        TextButton(
+          onPressed: () => Navigator.push(context, SignUpPage.route()),
+          child: Text(
+            S.of(context).SignUp,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: AppPalette.accentPrimary,
+                ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      body: Padding(
-          padding: const EdgeInsets.all(24),
-          child: BlocConsumer<AuthBloc, AuthState>(
-            listenWhen: (previous, current) =>
-                ModalRoute.of(context)?.isCurrent ?? true,
-            listener: (context, state) => _onAuthStateChanged(context, state),
-            builder: (context, state) {
-              return Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            Text(
-                              S.of(context).SignIn,
-                              style: TextStyles.titleStyle,
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 60),
-                            AuthField(
-                              labelText: S.of(context).Email,
-                              controller: _emailController,
-                              validator: (value) => FormValidator.email(
-                                value: value,
-                                errorMessage: S.of(context).InvalidEmailAddress,
-                              ),
-                            ),
-                            const SizedBox(height: 30),
-                            AuthField(
-                              labelText: S.of(context).Password,
-                              controller: _passwordController,
-                              isObscureText: true,
-                              validator: (value) => FormValidator.length(
-                                value: value,
-                                length: _minPasswordLen,
-                                errorMessage: S
-                                    .of(context)
-                                    .InvalidPassword(_minPasswordLen),
-                              ),
-                            ),
-                            const SizedBox(height: 40),
-                            (state is AuthLoading)
-                                ? CupertinoActivityIndicator()
-                                : CustomElevatedButton(
-                                    buttonText: S.of(context).SignIn,
-                                    onPressed: () => _signIn(),
-                                  ),
-                            const SizedBox(height: 20),
-                            CustomElevatedButton(
-                              icon: Image.asset("assets/images/google-icon.png",
-                                  height: 25),
-                              buttonText: S.of(context).ContinueWithGoogle,
-                              backgroundColor: getColorFromUiMode(context),
-                              onPressed: () => _signInWithGoogle(),
-                            ),
-                            const SizedBox(height: 30),
-                            GestureDetector(
-                              onTap: () => Navigator.push(
-                                  context,
-                                  ForgotPasswordPage.route(
-                                      _emailController.text.trim())),
-                              child: Text(
-                                S.of(context).ForgotYourPassword,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
-                                      decoration: TextDecoration.underline,
-                                    ),
-                              ),
-                            ),
-                          ],
+    return BlocConsumer<AuthBloc, AuthState>(
+      listenWhen: (previous, current) =>
+          ModalRoute.of(context)?.isCurrent ?? true,
+      listener: (context, state) => _onAuthStateChanged(context, state),
+      builder: (context, state) {
+        return AuthPageScaffold(
+          title: S.of(context).SignIn,
+          body: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AuthField(
+                  labelText: S.of(context).Email,
+                  controller: _emailController,
+                  validator: (value) => FormValidator.email(
+                    value: value,
+                    errorMessage: S.of(context).InvalidEmailAddress,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                AuthField(
+                  labelText: S.of(context).Password,
+                  controller: _passwordController,
+                  isObscureText: true,
+                  validator: (value) => FormValidator.length(
+                    value: value,
+                    length: _minPasswordLen,
+                    errorMessage:
+                        S.of(context).InvalidPassword(_minPasswordLen),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                (state is AuthLoading)
+                    ? const Center(child: CupertinoActivityIndicator())
+                    : CustomElevatedButton(
+                        buttonText: S.of(context).SignIn,
+                        onPressed: _signIn,
+                      ),
+                const SizedBox(height: 14),
+                CustomElevatedButton(
+                  icon: Image.asset(
+                    "assets/images/google-icon.png",
+                    height: 25,
+                  ),
+                  buttonText: S.of(context).ContinueWithGoogle,
+                  backgroundColor: getColorFromUiMode(context),
+                  onPressed: _signInWithGoogle,
+                ),
+                const SizedBox(height: 14),
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    ForgotPasswordPage.route(_emailController.text.trim()),
+                  ),
+                  child: Text(
+                    S.of(context).ForgotYourPassword,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          decoration: TextDecoration.underline,
                         ),
-                      ),
-                    ),
                   ),
-                  const ColoredDivider(thickness: 1.5),
-                  const SizedBox(height: 16),
-                  GestureDetector(
-                    onTap: () => Navigator.push(context, SignUpPage.route()),
-                    child: RichText(
-                      text: TextSpan(
-                        text: S.of(context).DontHaveAnAccount,
-                        style: Theme.of(context).textTheme.titleSmall,
-                        children: [
-                          TextSpan(text: "  "),
-                          TextSpan(
-                            text: S.of(context).SignUp,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(
-                                  color: AppPalette.accentPrimary,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                ],
-              );
-            },
-          )),
+                ),
+              ],
+            ),
+          ),
+          footer: _buildSignUpFooter(context),
+        );
+      },
     );
   }
 }

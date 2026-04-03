@@ -2,10 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 import '../cubit/device_page_cubit.dart';
 import 'device_presenter.dart';
+
+bool _unknownIsDark(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark;
+
+Color _unknownSurfaceColor(BuildContext context) => _unknownIsDark(context)
+    ? Colors.white.withValues(alpha: 0.04)
+    : Colors.white;
+
+Color _unknownSurfaceAltColor(BuildContext context) => _unknownIsDark(context)
+    ? Colors.white.withValues(alpha: 0.06)
+    : const Color(0xFFF8FAFC);
+
+Color _unknownBorderColor(BuildContext context) => _unknownIsDark(context)
+    ? Colors.white.withValues(alpha: 0.08)
+    : const Color(0x1A0F172A);
+
+Color _unknownPrimaryTextColor(BuildContext context) =>
+    _unknownIsDark(context) ? AppPalette.textPrimary : const Color(0xFF0F172A);
+
+Color _unknownSecondaryTextColor(BuildContext context) =>
+    _unknownIsDark(context)
+        ? AppPalette.textSecondary
+        : const Color(0xFF475569);
 
 class UnknownConfigPresenter implements DevicePresenter {
   const UnknownConfigPresenter();
@@ -67,7 +91,10 @@ class _ProblemCard extends StatelessWidget {
             Expanded(
               child: Text(
                 S.of(context).UnsupportedDeviceMessage,
-                style: TextStyle(color: Colors.white, height: 1.25),
+                style: TextStyle(
+                  color: _unknownPrimaryTextColor(context),
+                  height: 1.25,
+                ),
               ),
             ),
           ],
@@ -88,7 +115,7 @@ class _MetaCard extends StatelessWidget {
     final controlCount = bundle.configuration.oshmobile.controls.length;
     final widgetCount = bundle.configuration.oshmobile.widgets.length;
     return Card(
-      color: Colors.white.withValues(alpha: 0.04),
+      color: _unknownSurfaceColor(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
@@ -97,7 +124,8 @@ class _MetaCard extends StatelessWidget {
           children: [
             Text(S.of(context).DeviceDetails,
                 style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.w600)),
+                    color: _unknownPrimaryTextColor(context),
+                    fontWeight: FontWeight.w600)),
             _MetaRow(
               label: 'Status',
               value: device.connectionInfo.online
@@ -106,7 +134,11 @@ class _MetaCard extends StatelessWidget {
               trailing: device.connectionInfo.online
                   ? Icon(Icons.check_circle,
                       size: 16, color: Colors.green.withValues(alpha: 0.5))
-                  : Icon(Icons.offline_bolt, size: 16, color: Colors.white70),
+                  : Icon(
+                      Icons.offline_bolt,
+                      size: 16,
+                      color: _unknownSecondaryTextColor(context),
+                    ),
             ),
             _MetaRow(label: 'Serial', value: device.sn),
             _MetaRow(label: 'Model ID', value: device.modelId),
@@ -128,8 +160,11 @@ class _MetaCard extends StatelessWidget {
                   : Tooltip(
                       message: bundle.configuration.oshmobile.controls.keys
                           .join(', '),
-                      child: const Icon(Icons.list_alt,
-                          size: 18, color: Colors.white70),
+                      child: Icon(
+                        Icons.list_alt,
+                        size: 18,
+                        color: _unknownSecondaryTextColor(context),
+                      ),
                     ),
             ),
             _MetaRow(label: 'Widgets', value: widgetCount.toString()),
@@ -147,7 +182,7 @@ class _ActionsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = Colors.white;
+    final color = _unknownPrimaryTextColor(context);
     return Row(
       children: [
         Expanded(
@@ -167,7 +202,7 @@ class _TipsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: Colors.white.withValues(alpha: 0.04),
+      color: _unknownSurfaceColor(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
@@ -176,7 +211,8 @@ class _TipsCard extends StatelessWidget {
           children: [
             Text(S.of(context).Tips,
                 style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.w600)),
+                    color: _unknownPrimaryTextColor(context),
+                    fontWeight: FontWeight.w600)),
             SizedBox(height: 10),
             _TipItem(text: S.of(context).TipEnsureAppUpdated),
             _TipItem(text: S.of(context).TipCheckNetwork),
@@ -200,10 +236,16 @@ class _MetaRow extends StatelessWidget {
     return Row(children: [
       SizedBox(
         width: 120,
-        child: Text(label, style: const TextStyle(color: Colors.white70)),
+        child: Text(
+          label,
+          style: TextStyle(color: _unknownSecondaryTextColor(context)),
+        ),
       ),
       Expanded(
-        child: Text(value, style: const TextStyle(color: Colors.white)),
+        child: Text(
+          value,
+          style: TextStyle(color: _unknownPrimaryTextColor(context)),
+        ),
       ),
       if (trailing != null) trailing!,
     ]);
@@ -231,9 +273,9 @@ class _ActionButton extends StatelessWidget {
       child: Ink(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
+          color: _unknownSurfaceAltColor(context),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          border: Border.all(color: _unknownBorderColor(context)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -261,9 +303,15 @@ class _TipItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('•  ', style: TextStyle(color: Colors.white70)),
+          Text(
+            '•  ',
+            style: TextStyle(color: _unknownSecondaryTextColor(context)),
+          ),
           Expanded(
-              child: Text(text, style: const TextStyle(color: Colors.white70))),
+              child: Text(
+            text,
+            style: TextStyle(color: _unknownSecondaryTextColor(context)),
+          )),
         ],
       ),
     );

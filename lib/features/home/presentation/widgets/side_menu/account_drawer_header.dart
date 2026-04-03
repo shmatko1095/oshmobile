@@ -4,9 +4,16 @@ import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/entities/jwt_user_data.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
+import 'package:oshmobile/features/account_settings/presentation/pages/account_settings_page.dart';
 
 class AccountDrawerHeader extends StatelessWidget {
   const AccountDrawerHeader({super.key});
+
+  void _openAccountSettings(BuildContext context) {
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    Navigator.of(context).pop();
+    rootNavigator.push(AccountSettingsPage.route());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,11 +26,20 @@ class AccountDrawerHeader extends StatelessWidget {
     final name = userData.name.trim();
     final avatarText =
         name.isNotEmpty ? name.substring(0, 1).toUpperCase() : 'U';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? AppPalette.surface : Colors.white;
+    final avatarSurface =
+        isDark ? AppPalette.surfaceAlt : const Color(0xFFF1F3F5);
+    final titleColor =
+        isDark ? AppPalette.textPrimary : const Color(0xFF111827);
+    final subtitleColor =
+        isDark ? AppPalette.textSecondary : const Color(0xFF4B5563);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: AppSolidCard(
-        backgroundColor: AppPalette.surface,
+        onTap: () => _openAccountSettings(context),
+        backgroundColor: surface,
         padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
         child: Row(
           children: [
@@ -35,11 +51,11 @@ class AccountDrawerHeader extends StatelessWidget {
                     userData.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
                       height: 1.0,
-                      color: AppPalette.textPrimary,
+                      color: titleColor,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -47,9 +63,9 @@ class AccountDrawerHeader extends StatelessWidget {
                     userData.email,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: AppPalette.textSecondary,
+                      color: subtitleColor,
                     ),
                   ),
                 ],
@@ -58,13 +74,13 @@ class AccountDrawerHeader extends StatelessWidget {
             const SizedBox(width: 12),
             CircleAvatar(
               radius: 30,
-              backgroundColor: AppPalette.surfaceAlt,
+              backgroundColor: avatarSurface,
               child: Text(
                 avatarText,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  color: AppPalette.textPrimary,
+                  color: titleColor,
                 ),
               ),
             ),

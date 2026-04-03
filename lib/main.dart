@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:oshmobile/core/common/cubits/app/app_lifecycle_cubit.dart';
+import 'package:oshmobile/core/common/cubits/app/app_theme_cubit.dart';
 import 'package:oshmobile/core/common/widgets/app_lifecycle_observer.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart'
     as global_auth;
@@ -105,6 +106,7 @@ Future<void> main() async {
       MultiBlocProvider(
         providers: [
           BlocProvider(create: (_) => locator<AppLifecycleCubit>()),
+          BlocProvider(create: (_) => locator<AppThemeCubit>()),
           BlocProvider(create: (_) => locator<global_auth.GlobalAuthCubit>()),
           BlocProvider(create: (_) => locator<AuthBloc>()),
         ],
@@ -231,47 +233,52 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<global_auth.GlobalAuthCubit,
-        global_auth.GlobalAuthState>(
-      listener: (context, state) => _handleAuthTransition(state),
-      child: MaterialApp(
-        key: ValueKey('nav_$_sessionEpoch'),
-        title: 'Oshhome',
-        theme: AppTheme.darkTheme,
-        darkTheme: AppTheme.darkTheme,
-        debugShowCheckedModeBanner: false,
-        localizationsDelegates: const [
-          S.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: S.delegate.supportedLocales,
-        builder: (context, child) {
-          final nav = child ?? const SizedBox.shrink();
+    return BlocBuilder<AppThemeCubit, ThemeMode>(
+      builder: (context, themeMode) {
+        return BlocListener<global_auth.GlobalAuthCubit,
+            global_auth.GlobalAuthState>(
+          listener: (context, state) => _handleAuthTransition(state),
+          child: MaterialApp(
+            key: ValueKey('nav_$_sessionEpoch'),
+            title: 'Oshhome',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeMode,
+            debugShowCheckedModeBanner: false,
+            localizationsDelegates: const [
+              S.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: S.delegate.supportedLocales,
+            builder: (context, child) {
+              final nav = child ?? const SizedBox.shrink();
 
-          final authCubit = context.read<global_auth.GlobalAuthCubit>();
-          final isAuthed = authCubit.state is global_auth.AuthAuthenticated;
-          if (!isAuthed) return nav;
+              final authCubit = context.read<global_auth.GlobalAuthCubit>();
+              final isAuthed = authCubit.state is global_auth.AuthAuthenticated;
+              if (!isAuthed) return nav;
 
-          final userId = authCubit.getJwtUserData()?.uuid;
-          final token = authCubit.getAccessToken();
-          if (userId == null ||
-              token == null ||
-              userId.isEmpty ||
-              token.isEmpty) {
-            return nav;
-          }
+              final userId = authCubit.getJwtUserData()?.uuid;
+              final token = authCubit.getAccessToken();
+              if (userId == null ||
+                  token == null ||
+                  userId.isEmpty ||
+                  token.isEmpty) {
+                return nav;
+              }
 
-          return SessionScope(
-            key: ValueKey('session_$_sessionEpoch'),
-            userId: userId,
-            token: token,
-            child: nav,
-          );
-        },
-        home: _buildStartupHome(),
-      ),
+              return SessionScope(
+                key: ValueKey('session_$_sessionEpoch'),
+                userId: userId,
+                token: token,
+                child: nav,
+              );
+            },
+            home: _buildStartupHome(),
+          ),
+        );
+      },
     );
   }
 }

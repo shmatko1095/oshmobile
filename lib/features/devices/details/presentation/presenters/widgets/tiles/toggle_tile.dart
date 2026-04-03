@@ -34,7 +34,9 @@ class ToggleTile extends StatelessWidget {
             width: 10,
             height: 10,
             decoration: BoxDecoration(
-              color: value ? AppPalette.accentSuccess : Colors.white30,
+              color: value
+                  ? AppPalette.accentSuccess
+                  : statMutedColor(context).withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
           ),
@@ -45,8 +47,8 @@ class ToggleTile extends StatelessWidget {
               maxLines: 1,
               softWrap: false,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: statValueColor(context),
                 fontWeight: FontWeight.w600,
               ),
             ),

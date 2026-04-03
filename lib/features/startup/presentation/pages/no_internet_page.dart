@@ -4,6 +4,26 @@ import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
+bool _noInternetIsDark(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark;
+
+Color _noInternetSurfaceColor(BuildContext context) =>
+    _noInternetIsDark(context) ? AppPalette.surface : Colors.white;
+
+Color _noInternetBorderColor(BuildContext context) => _noInternetIsDark(context)
+    ? AppPalette.borderSoft
+    : const Color(0x1A0F172A);
+
+Color _noInternetPrimaryTextColor(BuildContext context) =>
+    _noInternetIsDark(context)
+        ? AppPalette.textPrimary
+        : const Color(0xFF0F172A);
+
+Color _noInternetSecondaryTextColor(BuildContext context) =>
+    _noInternetIsDark(context)
+        ? AppPalette.textSecondary
+        : const Color(0xFF475569);
+
 class NoInternetPage extends StatelessWidget {
   const NoInternetPage({
     super.key,
@@ -18,9 +38,10 @@ class NoInternetPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final s = S.of(context);
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
 
     return Scaffold(
-      backgroundColor: AppPalette.canvas,
+      backgroundColor: bgColor,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -44,21 +65,21 @@ class NoInternetPage extends StatelessWidget {
                         gradient: RadialGradient(
                           colors: [
                             AppPalette.accentPrimary.withValues(alpha: 0.30),
-                            AppPalette.canvas,
+                            bgColor,
                           ],
                           radius: 0.85,
                         ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.wifi_off_rounded,
                         size: 58,
-                        color: AppPalette.textPrimary,
+                        color: _noInternetPrimaryTextColor(context),
                       ),
                     ),
                     const SizedBox(height: AppPalette.spaceXl),
                     AppSolidCard(
-                      backgroundColor: AppPalette.surface,
-                      borderColor: AppPalette.borderSoft,
+                      backgroundColor: _noInternetSurfaceColor(context),
+                      borderColor: _noInternetBorderColor(context),
                       padding: const EdgeInsets.all(AppPalette.spaceXl),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -68,7 +89,7 @@ class NoInternetPage extends StatelessWidget {
                             textAlign: TextAlign.center,
                             style: textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: AppPalette.textPrimary,
+                              color: _noInternetPrimaryTextColor(context),
                             ),
                           ),
                           const SizedBox(height: AppPalette.spaceSm),
@@ -76,7 +97,7 @@ class NoInternetPage extends StatelessWidget {
                             s.startupNoInternetSubtitle,
                             textAlign: TextAlign.center,
                             style: textTheme.bodyMedium?.copyWith(
-                              color: AppPalette.textSecondary,
+                              color: _noInternetSecondaryTextColor(context),
                               height: 1.45,
                             ),
                           ),
@@ -131,7 +152,7 @@ class _HintRow extends StatelessWidget {
           child: Text(
             text,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppPalette.textSecondary,
+                  color: _noInternetSecondaryTextColor(context),
                   height: 1.35,
                 ),
           ),

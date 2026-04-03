@@ -50,17 +50,17 @@ class LoadFactorKpiCard extends StatelessWidget {
     return AppSolidCard(
       onTap: onTap,
       radius: AppPalette.radiusXl,
-      backgroundColor: AppPalette.surfaceRaised,
-      borderColor: AppPalette.borderSoft,
+      backgroundColor: statSurfaceColor(context),
+      borderColor: statBorderColor(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.insights_rounded,
                 size: 16,
-                color: AppPalette.textSecondary,
+                color: statTitleColor(context),
               ),
               const SizedBox(width: 6),
               Expanded(
@@ -69,16 +69,16 @@ class LoadFactorKpiCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: AppPalette.textSecondary,
+                    color: statTitleColor(context),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
               if (onTap != null)
-                const Icon(
+                Icon(
                   Icons.show_chart_rounded,
                   size: 16,
-                  color: AppPalette.textMuted,
+                  color: statMutedColor(context),
                 ),
             ],
           ),
@@ -87,8 +87,8 @@ class LoadFactorKpiCard extends StatelessWidget {
             percentTxt,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppPalette.textPrimary,
+            style: TextStyle(
+              color: statValueColor(context),
               fontSize: 30,
               fontWeight: FontWeight.w800,
               height: 1.0,
@@ -100,7 +100,9 @@ class LoadFactorKpiCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: p ?? 0,
               minHeight: 7,
-              backgroundColor: Colors.white.withValues(alpha: 0.14),
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.14)
+                  : const Color(0xFFE2E8F0),
               valueColor:
                   const AlwaysStoppedAnimation<Color>(AppPalette.accentPrimary),
             ),
@@ -110,11 +112,7 @@ class LoadFactorKpiCard extends StatelessWidget {
             alignment: Alignment.centerRight,
             child: Text(
               'last 24h',
-              style: TextStyle(
-                color: AppPalette.textMuted,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ),
         ],

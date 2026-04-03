@@ -3,6 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
+bool _manualTempIsDark(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark;
+
+Color _manualTempPrimaryTextColor(BuildContext context) =>
+    _manualTempIsDark(context)
+        ? const Color(0xFFF5F7FA)
+        : const Color(0xFF0F172A);
+
 class ManualTemperaturePage extends StatefulWidget {
   const ManualTemperaturePage({
     super.key,
@@ -33,7 +41,8 @@ class _ManualTemperaturePageState extends State<ManualTemperaturePage> {
   void initState() {
     super.initState();
     _values = [
-      for (double v = widget.min; v <= widget.max + 1e-6; v += widget.step) double.parse(v.toStringAsFixed(1)),
+      for (double v = widget.min; v <= widget.max + 1e-6; v += widget.step)
+        double.parse(v.toStringAsFixed(1)),
     ];
     _index = _closestIndex(widget.initial);
   }
@@ -73,7 +82,11 @@ class _ManualTemperaturePageState extends State<ManualTemperaturePage> {
             const SizedBox(height: 24),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 160),
-              style: const TextStyle(fontSize: 56, fontWeight: FontWeight.w600, color: Colors.white),
+              style: TextStyle(
+                fontSize: 56,
+                fontWeight: FontWeight.w600,
+                color: _manualTempPrimaryTextColor(context),
+              ),
               child: Text('${_fmt(_values[_index])}${widget.unit}'),
             ),
             const SizedBox(height: 12),
@@ -82,15 +95,21 @@ class _ManualTemperaturePageState extends State<ManualTemperaturePage> {
                 itemExtent: 68,
                 diameterRatio: 1.5,
                 magnification: 1.1,
-                scrollController: FixedExtentScrollController(initialItem: _index),
-                selectionOverlay: const CupertinoPickerDefaultSelectionOverlay(background: Colors.transparent),
+                scrollController:
+                    FixedExtentScrollController(initialItem: _index),
+                selectionOverlay: const CupertinoPickerDefaultSelectionOverlay(
+                    background: Colors.transparent),
                 onSelectedItemChanged: (i) => setState(() => _index = i),
                 children: [
                   for (final v in _values)
                     Center(
                       child: Text(
                         _fmt(v),
-                        style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: _manualTempPrimaryTextColor(context),
+                          fontSize: 36,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                 ],

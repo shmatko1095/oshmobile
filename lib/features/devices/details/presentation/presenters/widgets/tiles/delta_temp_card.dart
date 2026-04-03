@@ -48,7 +48,7 @@ class DeltaTCard extends StatelessWidget {
     final String outlet = '${_fmtNum(data.outT)}$unit';
 
     final Color accent = (data.dT == null)
-        ? Colors.white
+        ? statValueColor(context)
         : (data.dT! >= 0 ? Colors.orangeAccent : Colors.cyanAccent);
 
     return LayoutBuilder(
@@ -65,16 +65,16 @@ class DeltaTCard extends StatelessWidget {
           child: Ink(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
+              color: statSurfaceColor(context),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(color: statBorderColor(context)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.sync_alt, size: 16, color: Colors.white70),
+                    Icon(Icons.sync_alt, size: 16, color: statTitleColor(context)),
                     SizedBox(width: gap),
                     Expanded(
                       child: Text(
@@ -82,8 +82,10 @@ class DeltaTCard extends StatelessWidget {
                         maxLines: 1,
                         softWrap: false,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                            color: Colors.white70, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: statTitleColor(context),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -108,8 +110,11 @@ class DeltaTCard extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.call_received,
-                            size: 14, color: Colors.white54),
+                        Icon(
+                          Icons.call_received,
+                          size: 14,
+                          color: statMutedColor(context),
+                        ),
                         const SizedBox(width: 4),
                         ConstrainedBox(
                           constraints:
@@ -119,7 +124,7 @@ class DeltaTCard extends StatelessWidget {
                             maxLines: 1,
                             softWrap: false,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.white60),
+                            style: TextStyle(color: statMutedColor(context)),
                           ),
                         ),
                       ],
@@ -127,8 +132,11 @@ class DeltaTCard extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.call_made,
-                            size: 14, color: Colors.white54),
+                        Icon(
+                          Icons.call_made,
+                          size: 14,
+                          color: statMutedColor(context),
+                        ),
                         const SizedBox(width: 4),
                         ConstrainedBox(
                           constraints:
@@ -138,7 +146,7 @@ class DeltaTCard extends StatelessWidget {
                             maxLines: 1,
                             softWrap: false,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.white60),
+                            style: TextStyle(color: statMutedColor(context)),
                           ),
                         ),
                       ],
