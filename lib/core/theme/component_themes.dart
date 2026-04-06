@@ -14,12 +14,20 @@ class AppComponentThemes {
   static InputDecorationTheme get lightInputDecoration => InputDecorationTheme(
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        floatingLabelStyle: const TextStyle(color: AppPalette.accentPrimary),
-        enabledBorder: border(AppPalette.textMuted),
+        filled: true,
+        fillColor: AppPalette.white,
+        hintStyle: const TextStyle(color: AppPalette.lightTextSubtle),
+        labelStyle: const TextStyle(color: AppPalette.lightTextSecondary),
+        floatingLabelStyle: const TextStyle(
+          color: AppPalette.accentPrimary,
+          fontWeight: FontWeight.w600,
+        ),
+        enabledBorder: border(AppPalette.lightBorderStrong),
+        disabledBorder: border(AppPalette.lightBorderSubtle),
         focusedBorder: border(AppPalette.accentPrimary),
         errorBorder: border(AppPalette.accentError),
         focusedErrorBorder: border(AppPalette.accentError),
-        border: border(),
+        border: border(AppPalette.lightBorderStrong),
       );
 
   static InputDecorationTheme get darkInputDecoration => InputDecorationTheme(
@@ -60,8 +68,12 @@ class AppComponentThemes {
   static ElevatedButtonThemeData get lightElevatedButtonTheme =>
       ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
+          backgroundColor: AppPalette.accentPrimary,
+          foregroundColor: AppPalette.white,
+          disabledBackgroundColor: AppPalette.lightSurfaceMuted,
+          disabledForegroundColor: AppPalette.lightTextDisabled,
           elevation: 0,
-          minimumSize: const Size.fromHeight(50),
+          minimumSize: const Size.fromHeight(52),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppPalette.radiusMd),
@@ -88,6 +100,8 @@ class AppComponentThemes {
   static OutlinedButtonThemeData get lightOutlinedButtonTheme =>
       OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
+          foregroundColor: AppPalette.lightTextPrimary,
+          side: const BorderSide(color: AppPalette.lightBorderSubtle),
           minimumSize: const Size.fromHeight(50),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(
@@ -111,6 +125,8 @@ class AppComponentThemes {
 
   static TextButtonThemeData get lightTextButtonTheme => TextButtonThemeData(
         style: TextButton.styleFrom(
+          foregroundColor: AppPalette.accentPrimary,
+          disabledForegroundColor: AppPalette.lightTextDisabled,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppPalette.radiusSm),
           ),

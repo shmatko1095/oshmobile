@@ -225,6 +225,10 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   Widget _buildStepIndicator(BuildContext context) {
+    final trackColor = Theme.of(context).brightness == Brightness.dark
+        ? AppPalette.separator
+        : AppPalette.lightBorderSubtle;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -240,7 +244,7 @@ class _SignUpPageState extends State<SignUpPage> {
             minHeight: 6,
             value: (_currentStep + 1) / _totalSteps,
             color: AppPalette.accentPrimary,
-            backgroundColor: AppPalette.separator,
+            backgroundColor: trackColor,
           ),
         ),
       ],

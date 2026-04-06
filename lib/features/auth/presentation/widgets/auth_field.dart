@@ -36,11 +36,19 @@ class _AuthFieldState extends State<AuthField> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final inactiveIconColor =
+        isDark ? AppPalette.obscureIconColor : AppPalette.lightTextSubtle;
+
     return TextFormField(
       controller: widget.controller,
       validator: widget.validator,
+      cursorColor: theme.colorScheme.primary,
+      style: theme.textTheme.bodyLarge?.copyWith(
+        color: theme.colorScheme.onSurface,
+      ),
       decoration: InputDecoration(
-        focusColor: AppPalette.textMuted,
         hintText: widget.hintText,
         labelText: widget.labelText,
         errorText: widget.errorText,
@@ -52,8 +60,8 @@ class _AuthFieldState extends State<AuthField> {
                 icon: Icon(
                   widget.obscureIcon,
                   color: _isObscure
-                      ? AppPalette.obscureIconColor
-                      : AppPalette.nonObscureIconColor,
+                      ? inactiveIconColor
+                      : theme.colorScheme.primary,
                 ),
               )
             : null,

@@ -28,15 +28,20 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final titleStyle = Theme.of(context).textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w700,
+          color: theme.colorScheme.onSurface,
         );
     final contentStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: AppPalette.textSecondary,
+          color:
+              isDark ? AppPalette.textSecondary : AppPalette.lightTextSecondary,
+          height: 1.4,
         );
-    const emailStyle = TextStyle(
+    final emailStyle = theme.textTheme.bodyMedium?.copyWith(
       fontWeight: FontWeight.w700,
-      color: AppPalette.accentPrimary,
+      color: theme.colorScheme.primary,
     );
 
     return CupertinoAlertDialog(

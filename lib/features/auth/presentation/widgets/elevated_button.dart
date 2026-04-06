@@ -9,10 +9,12 @@ class CustomElevatedButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final String buttonText;
   final Color? backgroundColor;
+  final Color? foregroundColor;
 
   const CustomElevatedButton({
     super.key,
     this.backgroundColor,
+    this.foregroundColor,
     required this.onPressed,
     required this.buttonText,
     this.borderRadius,
@@ -29,6 +31,7 @@ class CustomElevatedButton extends StatelessWidget {
       width: width,
       height: height,
       backgroundColor: backgroundColor,
+      foregroundColor: foregroundColor,
       borderRadius: borderRadius,
       icon: icon,
     );

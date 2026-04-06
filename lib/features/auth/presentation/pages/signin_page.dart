@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/utils/form_validators.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
-import 'package:oshmobile/core/utils/ui_utils.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:oshmobile/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:oshmobile/features/auth/presentation/pages/signup_page.dart';
@@ -26,6 +25,8 @@ class SignInPage extends StatefulWidget {
 }
 
 class _SignInPageState extends State<SignInPage> {
+  static const _demoEmail = 'oshhome.test1@gmail.com';
+  static const _demoPassword = '11111111';
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -55,6 +56,17 @@ class _SignInPageState extends State<SignInPage> {
     context.read<AuthBloc>().add(AuthSignInWithGoogle());
   }
 
+  void _signInDemo() {
+    _emailController.text = _demoEmail;
+    _passwordController.text = _demoPassword;
+    context.read<AuthBloc>().add(
+          AuthSignIn(
+            email: _demoEmail,
+            password: _demoPassword,
+          ),
+        );
+  }
+
   void _onAuthStateChanged(BuildContext context, AuthState state) {
     if (state is AuthFailedEmailNotVerified) {
       _showVerifyDialog(context, _emailController.text.trim());
@@ -71,21 +83,65 @@ class _SignInPageState extends State<SignInPage> {
     }
   }
 
-  Widget _buildSignUpFooter(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+  Color _secondaryTextColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? AppPalette.textSecondary
+        : AppPalette.lightTextSecondary;
+  }
+
+  Color _secondaryButtonBackground(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? AppPalette.surfaceRaised
+        : AppPalette.white;
+  }
+
+  Color _secondaryButtonForeground(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? AppPalette.textPrimary
+        : AppPalette.lightTextPrimary;
+  }
+
+  Widget _buildFooter(BuildContext context, AuthState state) {
+    final isLoading = state is AuthLoading;
+    final theme = Theme.of(context);
+    final secondaryTextColor = _secondaryTextColor(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          S.of(context).DontHaveAnAccount,
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
-        TextButton(
-          onPressed: () => Navigator.push(context, SignUpPage.route()),
-          child: Text(
-            S.of(context).SignUp,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppPalette.accentPrimary,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              S.of(context).DontHaveAnAccount,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: secondaryTextColor,
+              ),
+            ),
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () => Navigator.push(context, SignUpPage.route()),
+              child: Text(
+                S.of(context).SignUp,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: theme.colorScheme.primary,
                 ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Center(
+          child: TextButton(
+            onPressed: isLoading ? null : _signInDemo,
+            child: Text(
+              S.of(context).TryDemo,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: secondaryTextColor,
+              ),
+            ),
           ),
         ),
       ],
@@ -101,6 +157,7 @@ class _SignInPageState extends State<SignInPage> {
       builder: (context, state) {
         return AuthPageScaffold(
           title: S.of(context).SignIn,
+          pinFooterToBottom: true,
           body: Form(
             key: _formKey,
             child: Column(
@@ -140,7 +197,8 @@ class _SignInPageState extends State<SignInPage> {
                     height: 25,
                   ),
                   buttonText: S.of(context).ContinueWithGoogle,
-                  backgroundColor: getColorFromUiMode(context),
+                  backgroundColor: _secondaryButtonBackground(context),
+                  foregroundColor: _secondaryButtonForeground(context),
                   onPressed: _signInWithGoogle,
                 ),
                 const SizedBox(height: 14),
@@ -152,6 +210,7 @@ class _SignInPageState extends State<SignInPage> {
                   child: Text(
                     S.of(context).ForgotYourPassword,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: _secondaryTextColor(context),
                           decoration: TextDecoration.underline,
                         ),
                   ),
@@ -159,7 +218,7 @@ class _SignInPageState extends State<SignInPage> {
               ],
             ),
           ),
-          footer: _buildSignUpFooter(context),
+          footer: _buildFooter(context, state),
         );
       },
     );
