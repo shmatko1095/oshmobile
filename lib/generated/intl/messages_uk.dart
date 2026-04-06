@@ -49,415 +49,384 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
-        "About": MessageLookupByLibrary.simpleMessage("Про пристрій"),
-        "Account": MessageLookupByLibrary.simpleMessage("Обліковий запис"),
-        "AccountSettings": MessageLookupByLibrary.simpleMessage(
-          "Налаштування акаунта",
-        ),
-        "AddDevice": MessageLookupByLibrary.simpleMessage("Додати пристрій"),
-        "ApplicationSettings": MessageLookupByLibrary.simpleMessage(
-          "Налаштування застосунку",
-        ),
-        "Back": MessageLookupByLibrary.simpleMessage("Назад"),
-        "Cancel": MessageLookupByLibrary.simpleMessage("Скасувати"),
-        "CheckYourEmail":
-            MessageLookupByLibrary.simpleMessage("Перевірте пошту"),
-        "ChooseWiFi": MessageLookupByLibrary.simpleMessage("Вибрати Wi‑Fi"),
-        "ChooseWifiToConnect": MessageLookupByLibrary.simpleMessage(
-          "Виберіть мережу Wi‑Fi, до якої потрібно підключити пристрій.",
-        ),
-        "Connect": MessageLookupByLibrary.simpleMessage("Підключити"),
-        "ContinueWithGoogle": MessageLookupByLibrary.simpleMessage(
-          "Продовжити з Google",
-        ),
-        "Delete": MessageLookupByLibrary.simpleMessage("Видалити"),
-        "DeleteAccount":
-            MessageLookupByLibrary.simpleMessage("Видалити акаунт"),
-        "DeleteAccountConfirmMessage": MessageLookupByLibrary.simpleMessage(
-          "Цю дію неможливо скасувати.",
-        ),
-        "DeleteAccountConfirmTitle": MessageLookupByLibrary.simpleMessage(
-          "Видалити акаунт?",
-        ),
-        "DeleteAccountDescription": MessageLookupByLibrary.simpleMessage(
-          "Назавжди видалити акаунт і всі пов’язані дані.",
-        ),
-        "DeleteAccountEmailFlowDescription":
-            MessageLookupByLibrary.simpleMessage(
-          "Для безпеки ми надішлемо лист для підтвердження. Акаунт залишатиметься активним, доки ви не підтвердите видалення у пошті.",
-        ),
-        "DeleteAccountEmailFlowPendingNote":
-            MessageLookupByLibrary.simpleMessage(
-          "Після підтвердження в листі акаунт і пов\'язані дані буде заплановано до видалення.",
-        ),
-        "DeleteAccountEmailFlowSendButton":
-            MessageLookupByLibrary.simpleMessage(
-          "Надіслати лист підтвердження",
-        ),
-        "DeleteAccountEmailFlowSuccessDescription": m0,
-        "DeleteAccountEmailFlowSuccessHint":
-            MessageLookupByLibrary.simpleMessage(
-          "Не запитували видалення? Просто проігноруйте цей лист.",
-        ),
-        "DeleteAccountEmailFlowTitle": MessageLookupByLibrary.simpleMessage(
-          "Підтвердьте видалення акаунта",
-        ),
-        "DeleteSensor": MessageLookupByLibrary.simpleMessage("Видалити датчик"),
-        "Deleted": MessageLookupByLibrary.simpleMessage("Видалено"),
-        "DeviceDetails":
-            MessageLookupByLibrary.simpleMessage("Деталі пристрою"),
-        "DeviceEditTitle": MessageLookupByLibrary.simpleMessage(
-          "Інформація про пристрій",
-        ),
-        "DeviceNoSettingsYet": MessageLookupByLibrary.simpleMessage(
-          "Цей пристрій поки що не має доступних налаштувань.",
-        ),
-        "DeviceOfflineOrNotResponding": MessageLookupByLibrary.simpleMessage(
-          "Схоже, пристрій офлайн або не відповідає.",
-        ),
-        "DeviceScopeUnavailableInContext": MessageLookupByLibrary.simpleMessage(
-          "Контекст пристрою недоступний у поточному місці.",
-        ),
-        "DeviceUnlinkAlertContent1": MessageLookupByLibrary.simpleMessage(
-          "Пристрій ",
-        ),
-        "DeviceUnlinkAlertContent2": MessageLookupByLibrary.simpleMessage(
-          " буде видалено з вашого списку. Ви зможете додати його знову, відсканувавши QR-код.",
-        ),
-        "Discard": MessageLookupByLibrary.simpleMessage("Скасувати зміни"),
-        "Done": MessageLookupByLibrary.simpleMessage("Готово"),
-        "DontHaveAnAccount": MessageLookupByLibrary.simpleMessage(
-          "Ще немає облікового запису?",
-        ),
-        "Email": MessageLookupByLibrary.simpleMessage("Email"),
-        "EmptyPayload": MessageLookupByLibrary.simpleMessage("Порожні дані"),
-        "Failed": MessageLookupByLibrary.simpleMessage("Не вдалося"),
-        "FailedToLoadSettings": MessageLookupByLibrary.simpleMessage(
-          "Не вдалося завантажити налаштування.",
-        ),
-        "FirstName": MessageLookupByLibrary.simpleMessage("Ім’я"),
-        "ForgotPassword":
-            MessageLookupByLibrary.simpleMessage("Забули пароль?"),
-        "ForgotPasswordContent": MessageLookupByLibrary.simpleMessage(
-          "Введіть email, і ми надішлемо посилання для скидання пароля. Це швидко й безпечно.",
-        ),
-        "ForgotYourPassword":
-            MessageLookupByLibrary.simpleMessage("Забули пароль"),
-        "FriShort": MessageLookupByLibrary.simpleMessage("Пт"),
-        "GoToLogin": MessageLookupByLibrary.simpleMessage("Перейти до входу"),
-        "Heating": MessageLookupByLibrary.simpleMessage("Нагрів"),
-        "InvalidEmailAddress": MessageLookupByLibrary.simpleMessage(
-          "Неправильна email-адреса",
-        ),
-        "InvalidFirstName": m1,
-        "InvalidLastName": m2,
-        "InvalidPassword": m3,
-        "InvalidUserCredentials": MessageLookupByLibrary.simpleMessage(
-          "Неправильний email або пароль",
-        ),
-        "InvalidValue":
-            MessageLookupByLibrary.simpleMessage("Недійсне значення"),
-        "LastName": MessageLookupByLibrary.simpleMessage("Прізвище"),
-        "LastUpdateAt": m4,
-        "ManualTemperature": MessageLookupByLibrary.simpleMessage(
-          "Ручна температура",
-        ),
-        "ModeDaily": MessageLookupByLibrary.simpleMessage("Щоденно"),
-        "ModeOff": MessageLookupByLibrary.simpleMessage("Вимкн."),
-        "ModeOn": MessageLookupByLibrary.simpleMessage("Увімкн."),
-        "ModeRange": MessageLookupByLibrary.simpleMessage("Діапазон"),
-        "ModeWeekly": MessageLookupByLibrary.simpleMessage("Щотижня"),
-        "MonShort": MessageLookupByLibrary.simpleMessage("Пн"),
-        "Name": MessageLookupByLibrary.simpleMessage("Назва"),
-        "Next": MessageLookupByLibrary.simpleMessage("Далі"),
-        "NextAt": m5,
-        "No": MessageLookupByLibrary.simpleMessage("Ні"),
-        "NoDataYet":
-            MessageLookupByLibrary.simpleMessage("Дані ще не надійшли"),
-        "NoDeviceSelected": MessageLookupByLibrary.simpleMessage(
-          "Пристрій не вибрано",
-        ),
-        "NoDevicesYet":
-            MessageLookupByLibrary.simpleMessage("Пристроїв ще немає"),
-        "NoNetworksFound": MessageLookupByLibrary.simpleMessage(
-          "Мереж не знайдено",
-        ),
-        "OK": MessageLookupByLibrary.simpleMessage("OK"),
-        "Offline": MessageLookupByLibrary.simpleMessage("Офлайн"),
-        "Online": MessageLookupByLibrary.simpleMessage("Онлайн"),
-        "Password": MessageLookupByLibrary.simpleMessage("Пароль"),
-        "PasswordConfirmation": MessageLookupByLibrary.simpleMessage(
-          "Підтвердження пароля",
-        ),
-        "PasswordsDoNotMatch": MessageLookupByLibrary.simpleMessage(
-          "Паролі не збігаються",
-        ),
-        "PleaseCheckYourInbox": MessageLookupByLibrary.simpleMessage(
-          ". Перевірте вхідні та виконайте інструкції, щоб завершити реєстрацію.",
-        ),
-        "PointCameraToQR": MessageLookupByLibrary.simpleMessage(
-          "Наведіть камеру на QR-код",
-        ),
-        "ProfileAndSettings": MessageLookupByLibrary.simpleMessage(
-          "Профіль і налаштування",
-        ),
-        "RegistrationSuccessful": MessageLookupByLibrary.simpleMessage(
-          "Майже готово!",
-        ),
-        "RegistrationSuccessfulContent": MessageLookupByLibrary.simpleMessage(
-          "Останній крок — підтвердіть email. Перевірте вхідні та виконайте інструкції, щоб завершити реєстрацію.",
-        ),
-        "ResetPassword": MessageLookupByLibrary.simpleMessage("Скинути пароль"),
-        "Retry": MessageLookupByLibrary.simpleMessage("Спробувати знову"),
-        "Room": MessageLookupByLibrary.simpleMessage("Кімната"),
-        "SatShort": MessageLookupByLibrary.simpleMessage("Сб"),
-        "Save": MessageLookupByLibrary.simpleMessage("Зберегти"),
-        "Search": MessageLookupByLibrary.simpleMessage("Пошук"),
-        "SecureCode": MessageLookupByLibrary.simpleMessage("Захисний код"),
-        "SendEmail": MessageLookupByLibrary.simpleMessage("Надіслати лист"),
-        "SensorCalibration":
-            MessageLookupByLibrary.simpleMessage("Калібрування"),
-        "SensorConditions": MessageLookupByLibrary.simpleMessage(
-          "Показники датчика",
-        ),
-        "SensorMainLabel": MessageLookupByLibrary.simpleMessage("Основний"),
-        "SensorMakeMain":
-            MessageLookupByLibrary.simpleMessage("Зробити основним"),
-        "SensorMoreActions":
-            MessageLookupByLibrary.simpleMessage("Дії датчика"),
-        "SensorNameHint": MessageLookupByLibrary.simpleMessage("Назва датчика"),
-        "SensorRename": MessageLookupByLibrary.simpleMessage(
-          "Перейменувати датчик",
-        ),
-        "SerialNumber": MessageLookupByLibrary.simpleMessage("Серійний номер"),
-        "SetTemperature": MessageLookupByLibrary.simpleMessage(
-          "Встановити температуру",
-        ),
-        "Settings": MessageLookupByLibrary.simpleMessage("Налаштування"),
-        "SignIn": MessageLookupByLibrary.simpleMessage("Увійти"),
-        "SignOut": MessageLookupByLibrary.simpleMessage("Вийти"),
-        "SignUp": MessageLookupByLibrary.simpleMessage("Зареєструватися"),
-        "StepOf": m6,
-        "Successful": MessageLookupByLibrary.simpleMessage("Успішно"),
-        "SunShort": MessageLookupByLibrary.simpleMessage("Нд"),
-        "Target": m7,
-        "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
-          "Не вдалося завантажити графік",
-        ),
-        "TelemetryHistoryMetricHeatingActivity":
-            MessageLookupByLibrary.simpleMessage("Активність нагріву"),
-        "TelemetryHistoryMetricLoadFactor":
-            MessageLookupByLibrary.simpleMessage(
-          "Коефіцієнт навантаження",
-        ),
-        "TelemetryHistoryMetricTarget": MessageLookupByLibrary.simpleMessage(
-          "Ціль",
-        ),
-        "TelemetryHistoryMetricTemperature":
-            MessageLookupByLibrary.simpleMessage(
-          "Температура",
-        ),
-        "TelemetryHistoryNoData": MessageLookupByLibrary.simpleMessage(
-          "Даних ще немає.",
-        ),
-        "TelemetryHistoryPreviewNoSensorData":
-            MessageLookupByLibrary.simpleMessage(
-          "Історія температури (24 год): немає даних датчиків",
-        ),
-        "TelemetryHistoryPreviewTitle24h": MessageLookupByLibrary.simpleMessage(
-          "Історія температури (24 год)",
-        ),
-        "TelemetryHistoryRangeDay":
-            MessageLookupByLibrary.simpleMessage("День"),
-        "TelemetryHistoryRangeMonth": MessageLookupByLibrary.simpleMessage(
-          "Місяць",
-        ),
-        "TelemetryHistoryRangeWeek": MessageLookupByLibrary.simpleMessage(
-          "Тиждень",
-        ),
-        "TelemetryHistoryRangeYear":
-            MessageLookupByLibrary.simpleMessage("Рік"),
-        "TelemetryHistoryResolutionPoints": m8,
-        "TelemetryHistorySensorLabel": MessageLookupByLibrary.simpleMessage(
-          "Температурний датчик",
-        ),
-        "TelemetryHistorySensorPosition": m9,
-        "TelemetryHistoryStatAvg":
-            MessageLookupByLibrary.simpleMessage("Середнє"),
-        "TelemetryHistoryStatMax":
-            MessageLookupByLibrary.simpleMessage("Максимум"),
-        "TelemetryHistoryStatMin":
-            MessageLookupByLibrary.simpleMessage("Мінімум"),
-        "ThemeDark": MessageLookupByLibrary.simpleMessage("Темна"),
-        "ThemeLight": MessageLookupByLibrary.simpleMessage("Світла"),
-        "ThemeSystem": MessageLookupByLibrary.simpleMessage("Системна"),
-        "ThuShort": MessageLookupByLibrary.simpleMessage("Чт"),
-        "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
-          "Перевірте, чи підключено пристрій до Wi‑Fi.",
-        ),
-        "TipContactSupport": MessageLookupByLibrary.simpleMessage(
-          "Зверніться в підтримку та вкажіть Model ID і Device ID.",
-        ),
-        "TipEnsureAppUpdated": MessageLookupByLibrary.simpleMessage(
-          "Переконайтеся, що застосунок оновлено до останньої версії.",
-        ),
-        "Tips": MessageLookupByLibrary.simpleMessage("Поради"),
-        "TryDemo": MessageLookupByLibrary.simpleMessage("Спробувати демо"),
-        "TueShort": MessageLookupByLibrary.simpleMessage("Вт"),
-        "Undo": MessageLookupByLibrary.simpleMessage("Скасувати"),
-        "UnknownDeviceType": MessageLookupByLibrary.simpleMessage(
-          "Невідомий тип пристрою",
-        ),
-        "UnknownError": MessageLookupByLibrary.simpleMessage(
-          "Сталася невідома помилка",
-        ),
-        "UnlinkDevice":
-            MessageLookupByLibrary.simpleMessage("Відвʼязати пристрій"),
-        "UnsavedChanges":
-            MessageLookupByLibrary.simpleMessage("Незбережені зміни"),
-        "UnsavedChangesDiscardPrompt": MessageLookupByLibrary.simpleMessage(
-          "У вас є незбережені зміни. Скасувати їх і вийти зі сторінки?",
-        ),
-        "UnsupportedDeviceMessage": MessageLookupByLibrary.simpleMessage(
-          "Ця модель пристрою поки не підтримується поточною версією застосунку. Спробуйте оновити дані, відкрити налаштування пристрою або надіслати звіт.",
-        ),
-        "Update": MessageLookupByLibrary.simpleMessage("Оновити"),
-        "UserAlreadyExist": MessageLookupByLibrary.simpleMessage(
-          "Користувач уже існує",
-        ),
-        "VerifyYourEmail": MessageLookupByLibrary.simpleMessage(
-          "Підтвердьте email",
-        ),
-        "WeHaveSentVerificationEmailTo": MessageLookupByLibrary.simpleMessage(
-          "Ми надіслали лист для підтвердження на ",
-        ),
-        "WedShort": MessageLookupByLibrary.simpleMessage("Ср"),
-        "Yes": MessageLookupByLibrary.simpleMessage("Так"),
-        "YourEmailIsNotVerifiedYet": MessageLookupByLibrary.simpleMessage(
-          "Ваш email ще не підтверджено. Натисніть кнопку нижче, щоб надіслати лист повторно.",
-        ),
-        "bleConnectingToDevice": MessageLookupByLibrary.simpleMessage(
-          "Підключення до пристрою…",
-        ),
-        "compatibilityErrorBadge": MessageLookupByLibrary.simpleMessage(
-          "Помилка сумісності",
-        ),
-        "compatibilityErrorStepCheckConnection":
-            MessageLookupByLibrary.simpleMessage(
-          "Переконайтеся, що пристрій онлайн і bootstrap-контракт бекенду доступний.",
-        ),
-        "compatibilityErrorStepContactSupport":
-            MessageLookupByLibrary.simpleMessage(
-          "Якщо проблема не зникає, зверніться в підтримку та додайте серійний номер, Model ID і технічні деталі нижче.",
-        ),
-        "compatibilityErrorStepRetry": MessageLookupByLibrary.simpleMessage(
-          "Спробуйте ще раз після перепідключення пристрою або усунення проблеми сумісності на бекенді.",
-        ),
-        "compatibilityErrorSubtitle": MessageLookupByLibrary.simpleMessage(
-          "Застосунку зараз не вдалося встановити сумісний протокольний контракт для цього пристрою.",
-        ),
-        "compatibilityErrorTitle": MessageLookupByLibrary.simpleMessage(
-          "Не вдається відкрити пристрій",
-        ),
-        "compatibilityNextStepsTitle": MessageLookupByLibrary.simpleMessage(
-          "Що робити далі",
-        ),
-        "compatibilityTechnicalDetailsTitle":
-            MessageLookupByLibrary.simpleMessage(
-          "Технічні деталі",
-        ),
-        "control": MessageLookupByLibrary.simpleMessage("Керування нагрівом"),
-        "controlModel":
-            MessageLookupByLibrary.simpleMessage("Модель керування"),
-        "deviceConnectedToWifi": MessageLookupByLibrary.simpleMessage(
-          "Пристрій підключено до Wi‑Fi",
-        ),
-        "deviceOfflineHintBluetooth": MessageLookupByLibrary.simpleMessage(
-          "Наблизьтеся до пристрою, щоб налаштувати Wi‑Fi через Bluetooth.",
-        ),
-        "deviceOfflineSubtitleWithLastSeen": m10,
-        "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
-          "Пристрій офлайн",
-        ),
-        "display": MessageLookupByLibrary.simpleMessage("Екран"),
-        "displayActiveBrightness": MessageLookupByLibrary.simpleMessage(
-          "Яскравість у роботі",
-        ),
-        "displayDimOnIdle": MessageLookupByLibrary.simpleMessage(
-          "Затемнювати у простої",
-        ),
-        "displayIdleBrightness": MessageLookupByLibrary.simpleMessage(
-          "Яскравість у простої",
-        ),
-        "displayIdleTime": MessageLookupByLibrary.simpleMessage(
-          "Затримка затемнення",
-        ),
-        "displayLanguage": MessageLookupByLibrary.simpleMessage("Мова"),
-        "maxFloorTempFailSafe": MessageLookupByLibrary.simpleMessage(
-          "Аварійний режим датчика підлоги",
-        ),
-        "maxFloorTempLimitEnabled": MessageLookupByLibrary.simpleMessage(
-          "Обмеження температури підлоги",
-        ),
-        "maxFloorTemperature": MessageLookupByLibrary.simpleMessage(
-          "Макс. температура підлоги",
-        ),
-        "offlineBleNotNearbyHint": MessageLookupByLibrary.simpleMessage(
-          "Підійдіть ближче до пристрою, щоб налаштувати Wi‑Fi.",
-        ),
-        "offlineBlePermissionHint": MessageLookupByLibrary.simpleMessage(
-          "Щоб змінити налаштування Wi‑Fi, потрібен доступ до Bluetooth.",
-        ),
-        "startupCheckingInternet": MessageLookupByLibrary.simpleMessage(
-          "Перевіряємо підключення до інтернету...",
-        ),
-        "startupNoInternetHintNetwork": MessageLookupByLibrary.simpleMessage(
-          "Перевірте, чи доступна мережа.",
-        ),
-        "startupNoInternetHintRetry": MessageLookupByLibrary.simpleMessage(
-          "За потреби перепідключіться і натисніть «Спробувати знову».",
-        ),
-        "startupNoInternetScreenSemantics":
-            MessageLookupByLibrary.simpleMessage(
-          "Екран без підключення до інтернету",
-        ),
-        "startupNoInternetSubtitle": MessageLookupByLibrary.simpleMessage(
-          "Підключіться до Wi‑Fi або мобільного інтернету, щоб продовжити користуватися Oshhome.",
-        ),
-        "startupNoInternetTitle": MessageLookupByLibrary.simpleMessage(
-          "Немає підключення до інтернету",
-        ),
-        "time": MessageLookupByLibrary.simpleMessage("Час"),
-        "timeAuto": MessageLookupByLibrary.simpleMessage("Автоматичний час"),
-        "timeZone": MessageLookupByLibrary.simpleMessage("Часовий пояс"),
-        "updateAppRequiredBadge": MessageLookupByLibrary.simpleMessage(
-          "Потрібне оновлення",
-        ),
-        "updateAppRequiredStepContactSupport":
-            MessageLookupByLibrary.simpleMessage(
-          "Якщо проблема не зникне після оновлення, зверніться в підтримку та вкажіть серійний номер і Model ID.",
-        ),
-        "updateAppRequiredStepReopen": MessageLookupByLibrary.simpleMessage(
-          "Відкрийте пристрій знову після завершення оновлення та повторного підключення сесії.",
-        ),
-        "updateAppRequiredStepUpdate": MessageLookupByLibrary.simpleMessage(
-          "Оновіть застосунок до останньої доступної версії на цьому пристрої.",
-        ),
-        "updateAppRequiredSubtitle": MessageLookupByLibrary.simpleMessage(
-          "Цей пристрій використовує обовʼязкові домени протоколу, новіші за ті, що підтримує поточна версія застосунку.",
-        ),
-        "updateAppRequiredTitle": MessageLookupByLibrary.simpleMessage(
-          "Оновіть застосунок, щоб продовжити",
-        ),
-        "updateAtMidnight": MessageLookupByLibrary.simpleMessage(
-          "Оновлювати опівночі",
-        ),
-        "updateAutoUpdateEnabled": MessageLookupByLibrary.simpleMessage(
-          "Автооновлення",
-        ),
-        "updates": MessageLookupByLibrary.simpleMessage("Оновлення"),
-        "wifiConnectFailed": MessageLookupByLibrary.simpleMessage(
-          "Не вдалося підключитися до Wi‑Fi",
-        ),
-      };
+    "About": MessageLookupByLibrary.simpleMessage("Про пристрій"),
+    "Account": MessageLookupByLibrary.simpleMessage("Обліковий запис"),
+    "AccountSettings": MessageLookupByLibrary.simpleMessage(
+      "Налаштування акаунта",
+    ),
+    "AddDevice": MessageLookupByLibrary.simpleMessage("Додати пристрій"),
+    "ApplicationSettings": MessageLookupByLibrary.simpleMessage(
+      "Налаштування застосунку",
+    ),
+    "Back": MessageLookupByLibrary.simpleMessage("Назад"),
+    "Cancel": MessageLookupByLibrary.simpleMessage("Скасувати"),
+    "CheckYourEmail": MessageLookupByLibrary.simpleMessage("Перевірте пошту"),
+    "ChooseWiFi": MessageLookupByLibrary.simpleMessage("Вибрати Wi‑Fi"),
+    "ChooseWifiToConnect": MessageLookupByLibrary.simpleMessage(
+      "Виберіть мережу Wi‑Fi, до якої потрібно підключити пристрій.",
+    ),
+    "Connect": MessageLookupByLibrary.simpleMessage("Підключити"),
+    "ContinueWithGoogle": MessageLookupByLibrary.simpleMessage(
+      "Продовжити через Google",
+    ),
+    "Delete": MessageLookupByLibrary.simpleMessage("Видалити"),
+    "DeleteAccount": MessageLookupByLibrary.simpleMessage("Видалити акаунт"),
+    "DeleteAccountConfirmMessage": MessageLookupByLibrary.simpleMessage(
+      "Цю дію неможливо скасувати.",
+    ),
+    "DeleteAccountConfirmTitle": MessageLookupByLibrary.simpleMessage(
+      "Видалити акаунт?",
+    ),
+    "DeleteAccountDescription": MessageLookupByLibrary.simpleMessage(
+      "Назавжди видалити акаунт і всі пов’язані дані.",
+    ),
+    "DeleteAccountEmailFlowDescription": MessageLookupByLibrary.simpleMessage(
+      "Для безпеки ми надішлемо лист для підтвердження. Акаунт залишатиметься активним, доки ви не підтвердите видалення у пошті.",
+    ),
+    "DeleteAccountEmailFlowPendingNote": MessageLookupByLibrary.simpleMessage(
+      "Після підтвердження в листі акаунт і пов\'язані дані буде заплановано до видалення.",
+    ),
+    "DeleteAccountEmailFlowSendButton": MessageLookupByLibrary.simpleMessage(
+      "Надіслати лист підтвердження",
+    ),
+    "DeleteAccountEmailFlowSuccessDescription": m0,
+    "DeleteAccountEmailFlowSuccessHint": MessageLookupByLibrary.simpleMessage(
+      "Не запитували видалення? Просто проігноруйте цей лист.",
+    ),
+    "DeleteAccountEmailFlowTitle": MessageLookupByLibrary.simpleMessage(
+      "Підтвердьте видалення акаунта",
+    ),
+    "DeleteSensor": MessageLookupByLibrary.simpleMessage("Видалити датчик"),
+    "Deleted": MessageLookupByLibrary.simpleMessage("Видалено"),
+    "DeviceDetails": MessageLookupByLibrary.simpleMessage("Деталі пристрою"),
+    "DeviceEditTitle": MessageLookupByLibrary.simpleMessage(
+      "Інформація про пристрій",
+    ),
+    "DeviceNoSettingsYet": MessageLookupByLibrary.simpleMessage(
+      "Для цього пристрою налаштування ще недоступні.",
+    ),
+    "DeviceOfflineOrNotResponding": MessageLookupByLibrary.simpleMessage(
+      "Схоже, пристрій не в мережі або не відповідає.",
+    ),
+    "DeviceScopeUnavailableInContext": MessageLookupByLibrary.simpleMessage(
+      "Контекст пристрою недоступний у поточному місці.",
+    ),
+    "DeviceUnlinkAlertContent1": MessageLookupByLibrary.simpleMessage(
+      "Пристрій ",
+    ),
+    "DeviceUnlinkAlertContent2": MessageLookupByLibrary.simpleMessage(
+      " буде видалено з вашого списку. Ви зможете додати його знову, відсканувавши QR-код.",
+    ),
+    "Discard": MessageLookupByLibrary.simpleMessage("Скасувати зміни"),
+    "Done": MessageLookupByLibrary.simpleMessage("Готово"),
+    "DontHaveAnAccount": MessageLookupByLibrary.simpleMessage(
+      "Ще немає облікового запису?",
+    ),
+    "Email": MessageLookupByLibrary.simpleMessage("Email"),
+    "EmptyPayload": MessageLookupByLibrary.simpleMessage("Порожні дані"),
+    "Failed": MessageLookupByLibrary.simpleMessage("Не вдалося"),
+    "FailedToLoadSettings": MessageLookupByLibrary.simpleMessage(
+      "Не вдалося завантажити налаштування.",
+    ),
+    "FirstName": MessageLookupByLibrary.simpleMessage("Ім’я"),
+    "ForgotPassword": MessageLookupByLibrary.simpleMessage("Забули пароль?"),
+    "ForgotPasswordContent": MessageLookupByLibrary.simpleMessage(
+      "Введіть email, і ми надішлемо посилання для скидання пароля. Це швидко й безпечно.",
+    ),
+    "ForgotYourPassword": MessageLookupByLibrary.simpleMessage("Забули пароль"),
+    "FriShort": MessageLookupByLibrary.simpleMessage("Пт"),
+    "GoToLogin": MessageLookupByLibrary.simpleMessage("Перейти до входу"),
+    "Heating": MessageLookupByLibrary.simpleMessage("Нагрів"),
+    "InvalidEmailAddress": MessageLookupByLibrary.simpleMessage(
+      "Неправильна адреса електронної пошти",
+    ),
+    "InvalidFirstName": m1,
+    "InvalidLastName": m2,
+    "InvalidPassword": m3,
+    "InvalidUserCredentials": MessageLookupByLibrary.simpleMessage(
+      "Неправильна адреса електронної пошти або пароль",
+    ),
+    "InvalidValue": MessageLookupByLibrary.simpleMessage("Недійсне значення"),
+    "LastName": MessageLookupByLibrary.simpleMessage("Прізвище"),
+    "LastUpdateAt": m4,
+    "ManualTemperature": MessageLookupByLibrary.simpleMessage(
+      "Ручна температура",
+    ),
+    "ModeDaily": MessageLookupByLibrary.simpleMessage("Щоденно"),
+    "ModeOff": MessageLookupByLibrary.simpleMessage("Вимкн."),
+    "ModeOn": MessageLookupByLibrary.simpleMessage("Увімкн."),
+    "ModeRange": MessageLookupByLibrary.simpleMessage("Діапазон"),
+    "ModeWeekly": MessageLookupByLibrary.simpleMessage("Щотижня"),
+    "MonShort": MessageLookupByLibrary.simpleMessage("Пн"),
+    "Name": MessageLookupByLibrary.simpleMessage("Назва"),
+    "Next": MessageLookupByLibrary.simpleMessage("Далі"),
+    "NextAt": m5,
+    "No": MessageLookupByLibrary.simpleMessage("Ні"),
+    "NoDataYet": MessageLookupByLibrary.simpleMessage("Дані ще не надійшли"),
+    "NoDeviceSelected": MessageLookupByLibrary.simpleMessage(
+      "Пристрій не вибрано",
+    ),
+    "NoDevicesYet": MessageLookupByLibrary.simpleMessage("Пристроїв ще немає"),
+    "NoNetworksFound": MessageLookupByLibrary.simpleMessage(
+      "Мереж не знайдено",
+    ),
+    "OK": MessageLookupByLibrary.simpleMessage("OK"),
+    "Offline": MessageLookupByLibrary.simpleMessage("Офлайн"),
+    "Online": MessageLookupByLibrary.simpleMessage("Онлайн"),
+    "Password": MessageLookupByLibrary.simpleMessage("Пароль"),
+    "PasswordConfirmation": MessageLookupByLibrary.simpleMessage(
+      "Підтвердження пароля",
+    ),
+    "PasswordsDoNotMatch": MessageLookupByLibrary.simpleMessage(
+      "Паролі не збігаються",
+    ),
+    "PleaseCheckYourInbox": MessageLookupByLibrary.simpleMessage(
+      ". Перевірте вхідні та виконайте інструкції, щоб завершити реєстрацію.",
+    ),
+    "PointCameraToQR": MessageLookupByLibrary.simpleMessage(
+      "Наведіть камеру на QR-код",
+    ),
+    "ProfileAndSettings": MessageLookupByLibrary.simpleMessage(
+      "Профіль і налаштування",
+    ),
+    "RegistrationSuccessful": MessageLookupByLibrary.simpleMessage(
+      "Майже готово!",
+    ),
+    "RegistrationSuccessfulContent": MessageLookupByLibrary.simpleMessage(
+      "Останній крок — підтвердіть email. Перевірте вхідні та виконайте інструкції, щоб завершити реєстрацію.",
+    ),
+    "ResetPassword": MessageLookupByLibrary.simpleMessage("Скинути пароль"),
+    "Retry": MessageLookupByLibrary.simpleMessage("Спробувати знову"),
+    "Room": MessageLookupByLibrary.simpleMessage("Кімната"),
+    "SatShort": MessageLookupByLibrary.simpleMessage("Сб"),
+    "Save": MessageLookupByLibrary.simpleMessage("Зберегти"),
+    "Search": MessageLookupByLibrary.simpleMessage("Пошук"),
+    "SecureCode": MessageLookupByLibrary.simpleMessage("Захисний код"),
+    "SendEmail": MessageLookupByLibrary.simpleMessage("Надіслати лист"),
+    "SensorCalibration": MessageLookupByLibrary.simpleMessage("Калібрування"),
+    "SensorConditions": MessageLookupByLibrary.simpleMessage(
+      "Показники датчика",
+    ),
+    "SensorMainLabel": MessageLookupByLibrary.simpleMessage("Основний"),
+    "SensorMakeMain": MessageLookupByLibrary.simpleMessage("Зробити основним"),
+    "SensorMoreActions": MessageLookupByLibrary.simpleMessage("Дії датчика"),
+    "SensorNameHint": MessageLookupByLibrary.simpleMessage("Назва датчика"),
+    "SensorRename": MessageLookupByLibrary.simpleMessage(
+      "Перейменувати датчик",
+    ),
+    "SerialNumber": MessageLookupByLibrary.simpleMessage("Серійний номер"),
+    "SetTemperature": MessageLookupByLibrary.simpleMessage(
+      "Встановити температуру",
+    ),
+    "Settings": MessageLookupByLibrary.simpleMessage("Налаштування"),
+    "SignIn": MessageLookupByLibrary.simpleMessage("Увійти"),
+    "SignOut": MessageLookupByLibrary.simpleMessage("Вийти"),
+    "SignUp": MessageLookupByLibrary.simpleMessage("Зареєструватися"),
+    "StepOf": m6,
+    "Successful": MessageLookupByLibrary.simpleMessage("Успішно"),
+    "SunShort": MessageLookupByLibrary.simpleMessage("Нд"),
+    "Target": m7,
+    "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
+      "Не вдалося завантажити графік",
+    ),
+    "TelemetryHistoryMetricHeatingActivity":
+        MessageLookupByLibrary.simpleMessage("Активність нагріву"),
+    "TelemetryHistoryMetricLoadFactor": MessageLookupByLibrary.simpleMessage(
+      "Коефіцієнт навантаження",
+    ),
+    "TelemetryHistoryMetricTarget": MessageLookupByLibrary.simpleMessage(
+      "Ціль",
+    ),
+    "TelemetryHistoryMetricTemperature": MessageLookupByLibrary.simpleMessage(
+      "Температура",
+    ),
+    "TelemetryHistoryNoData": MessageLookupByLibrary.simpleMessage(
+      "Даних ще немає.",
+    ),
+    "TelemetryHistoryPreviewNoSensorData": MessageLookupByLibrary.simpleMessage(
+      "Історія температури (24 год): немає даних датчиків",
+    ),
+    "TelemetryHistoryPreviewTitle24h": MessageLookupByLibrary.simpleMessage(
+      "Історія температури (24 год)",
+    ),
+    "TelemetryHistoryRangeDay": MessageLookupByLibrary.simpleMessage("День"),
+    "TelemetryHistoryRangeMonth": MessageLookupByLibrary.simpleMessage(
+      "Місяць",
+    ),
+    "TelemetryHistoryRangeWeek": MessageLookupByLibrary.simpleMessage(
+      "Тиждень",
+    ),
+    "TelemetryHistoryRangeYear": MessageLookupByLibrary.simpleMessage("Рік"),
+    "TelemetryHistoryResolutionPoints": m8,
+    "TelemetryHistorySensorLabel": MessageLookupByLibrary.simpleMessage(
+      "Температурний датчик",
+    ),
+    "TelemetryHistorySensorPosition": m9,
+    "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Середнє"),
+    "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Максимум"),
+    "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Мінімум"),
+    "ThemeDark": MessageLookupByLibrary.simpleMessage("Темна"),
+    "ThemeLight": MessageLookupByLibrary.simpleMessage("Світла"),
+    "ThemeSystem": MessageLookupByLibrary.simpleMessage("Системна"),
+    "ThuShort": MessageLookupByLibrary.simpleMessage("Чт"),
+    "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
+      "Перевірте, чи підключено пристрій до Wi‑Fi.",
+    ),
+    "TipContactSupport": MessageLookupByLibrary.simpleMessage(
+      "Зверніться в підтримку та вкажіть Model ID і Device ID.",
+    ),
+    "TipEnsureAppUpdated": MessageLookupByLibrary.simpleMessage(
+      "Переконайтеся, що застосунок оновлено до останньої версії.",
+    ),
+    "Tips": MessageLookupByLibrary.simpleMessage("Поради"),
+    "TryDemo": MessageLookupByLibrary.simpleMessage("Спробувати демо"),
+    "TueShort": MessageLookupByLibrary.simpleMessage("Вт"),
+    "Undo": MessageLookupByLibrary.simpleMessage("Скасувати"),
+    "UnknownDeviceType": MessageLookupByLibrary.simpleMessage(
+      "Невідомий тип пристрою",
+    ),
+    "UnknownError": MessageLookupByLibrary.simpleMessage(
+      "Сталася невідома помилка",
+    ),
+    "UnlinkDevice": MessageLookupByLibrary.simpleMessage("Відвʼязати пристрій"),
+    "UnsavedChanges": MessageLookupByLibrary.simpleMessage("Незбережені зміни"),
+    "UnsavedChangesDiscardPrompt": MessageLookupByLibrary.simpleMessage(
+      "У вас є незбережені зміни. Скасувати їх і вийти зі сторінки?",
+    ),
+    "UnsupportedDeviceMessage": MessageLookupByLibrary.simpleMessage(
+      "Ця модель пристрою поки не підтримується поточною версією застосунку. Спробуйте оновити дані, відкрити налаштування пристрою або надіслати звіт.",
+    ),
+    "Update": MessageLookupByLibrary.simpleMessage("Оновити"),
+    "UserAlreadyExist": MessageLookupByLibrary.simpleMessage(
+      "Користувач уже існує",
+    ),
+    "VerifyYourEmail": MessageLookupByLibrary.simpleMessage(
+      "Підтвердьте email",
+    ),
+    "WeHaveSentVerificationEmailTo": MessageLookupByLibrary.simpleMessage(
+      "Ми надіслали лист для підтвердження на ",
+    ),
+    "WedShort": MessageLookupByLibrary.simpleMessage("Ср"),
+    "Yes": MessageLookupByLibrary.simpleMessage("Так"),
+    "YourEmailIsNotVerifiedYet": MessageLookupByLibrary.simpleMessage(
+      "Ваш email ще не підтверджено. Натисніть кнопку нижче, щоб надіслати лист повторно.",
+    ),
+    "bleConnectingToDevice": MessageLookupByLibrary.simpleMessage(
+      "Підключення до пристрою…",
+    ),
+    "compatibilityErrorBadge": MessageLookupByLibrary.simpleMessage(
+      "Помилка сумісності",
+    ),
+    "compatibilityErrorStepCheckConnection": MessageLookupByLibrary.simpleMessage(
+      "Переконайтеся, що пристрій онлайн і bootstrap-контракт бекенду доступний.",
+    ),
+    "compatibilityErrorStepContactSupport": MessageLookupByLibrary.simpleMessage(
+      "Якщо проблема не зникає, зверніться в підтримку та додайте серійний номер, Model ID і технічні деталі нижче.",
+    ),
+    "compatibilityErrorStepRetry": MessageLookupByLibrary.simpleMessage(
+      "Спробуйте ще раз після перепідключення пристрою або усунення проблеми сумісності на бекенді.",
+    ),
+    "compatibilityErrorSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Застосунку зараз не вдалося встановити сумісний протокольний контракт для цього пристрою.",
+    ),
+    "compatibilityErrorTitle": MessageLookupByLibrary.simpleMessage(
+      "Не вдається відкрити пристрій",
+    ),
+    "compatibilityNextStepsTitle": MessageLookupByLibrary.simpleMessage(
+      "Що робити далі",
+    ),
+    "compatibilityTechnicalDetailsTitle": MessageLookupByLibrary.simpleMessage(
+      "Технічні деталі",
+    ),
+    "control": MessageLookupByLibrary.simpleMessage("Керування нагрівом"),
+    "controlModel": MessageLookupByLibrary.simpleMessage("Модель керування"),
+    "deviceConnectedToWifi": MessageLookupByLibrary.simpleMessage(
+      "Пристрій підключено до Wi‑Fi",
+    ),
+    "deviceOfflineHintBluetooth": MessageLookupByLibrary.simpleMessage(
+      "Наблизьтеся до пристрою, щоб налаштувати Wi‑Fi через Bluetooth.",
+    ),
+    "deviceOfflineSubtitleWithLastSeen": m10,
+    "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
+      "Пристрій офлайн",
+    ),
+    "display": MessageLookupByLibrary.simpleMessage("Екран"),
+    "displayActiveBrightness": MessageLookupByLibrary.simpleMessage(
+      "Яскравість екрану",
+    ),
+    "displayDimOnIdle": MessageLookupByLibrary.simpleMessage(
+      "Затемнювати в режимі очікування",
+    ),
+    "displayIdleBrightness": MessageLookupByLibrary.simpleMessage(
+      "Яскравість у режимі очікування",
+    ),
+    "displayIdleTime": MessageLookupByLibrary.simpleMessage(
+      "Час до затемнення",
+    ),
+    "displayLanguage": MessageLookupByLibrary.simpleMessage("Мова"),
+    "maxFloorTempFailSafe": MessageLookupByLibrary.simpleMessage(
+      "Дія при збої датчика підлоги",
+    ),
+    "maxFloorTempLimitEnabled": MessageLookupByLibrary.simpleMessage(
+      "Обмеження температури підлоги",
+    ),
+    "maxFloorTemperature": MessageLookupByLibrary.simpleMessage(
+      "Макс. температура підлоги",
+    ),
+    "offlineBleNotNearbyHint": MessageLookupByLibrary.simpleMessage(
+      "Підійдіть ближче до пристрою, щоб налаштувати Wi‑Fi.",
+    ),
+    "offlineBlePermissionHint": MessageLookupByLibrary.simpleMessage(
+      "Щоб змінити налаштування Wi‑Fi, потрібен доступ до Bluetooth.",
+    ),
+    "startupCheckingInternet": MessageLookupByLibrary.simpleMessage(
+      "Перевіряємо підключення до інтернету...",
+    ),
+    "startupNoInternetHintNetwork": MessageLookupByLibrary.simpleMessage(
+      "Перевірте, чи доступна мережа.",
+    ),
+    "startupNoInternetHintRetry": MessageLookupByLibrary.simpleMessage(
+      "За потреби перепідключіться і натисніть «Спробувати знову».",
+    ),
+    "startupNoInternetScreenSemantics": MessageLookupByLibrary.simpleMessage(
+      "Екран без підключення до інтернету",
+    ),
+    "startupNoInternetSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Підключіться до Wi‑Fi або мобільного інтернету, щоб продовжити користуватися Oshhome.",
+    ),
+    "startupNoInternetTitle": MessageLookupByLibrary.simpleMessage(
+      "Немає підключення до інтернету",
+    ),
+    "time": MessageLookupByLibrary.simpleMessage("Час"),
+    "timeAuto": MessageLookupByLibrary.simpleMessage("Автоматичний час"),
+    "timeZone": MessageLookupByLibrary.simpleMessage("Часовий пояс"),
+    "updateAppRequiredBadge": MessageLookupByLibrary.simpleMessage(
+      "Потрібне оновлення",
+    ),
+    "updateAppRequiredStepContactSupport": MessageLookupByLibrary.simpleMessage(
+      "Якщо проблема не зникне після оновлення, зверніться в підтримку та вкажіть серійний номер і Model ID.",
+    ),
+    "updateAppRequiredStepReopen": MessageLookupByLibrary.simpleMessage(
+      "Відкрийте пристрій знову після завершення оновлення та повторного підключення сесії.",
+    ),
+    "updateAppRequiredStepUpdate": MessageLookupByLibrary.simpleMessage(
+      "Оновіть застосунок до останньої доступної версії на цьому пристрої.",
+    ),
+    "updateAppRequiredSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Цей пристрій використовує обовʼязкові домени протоколу, новіші за ті, що підтримує поточна версія застосунку.",
+    ),
+    "updateAppRequiredTitle": MessageLookupByLibrary.simpleMessage(
+      "Оновіть застосунок, щоб продовжити",
+    ),
+    "updateAtMidnight": MessageLookupByLibrary.simpleMessage(
+      "Оновлювати опівночі",
+    ),
+    "updateAutoUpdateEnabled": MessageLookupByLibrary.simpleMessage(
+      "Автооновлення",
+    ),
+    "updates": MessageLookupByLibrary.simpleMessage("Оновлення"),
+    "wifiConnectFailed": MessageLookupByLibrary.simpleMessage(
+      "Не вдалося підключитися до Wi‑Fi",
+    ),
+  };
 }
