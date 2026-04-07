@@ -251,6 +251,12 @@ class _MyAppState extends State<MyApp> {
               GlobalCupertinoLocalizations.delegate,
             ],
             supportedLocales: S.delegate.supportedLocales,
+            localeResolutionCallback: (locale, supportedLocales) {
+              if (locale?.languageCode == 'ru') {
+                return const Locale.fromSubtags(languageCode: 'uk');
+              }
+              return null;
+            },
             builder: (context, child) {
               final nav = child ?? const SizedBox.shrink();
 
