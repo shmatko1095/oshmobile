@@ -7,6 +7,7 @@ import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/usecase/usecase.dart';
 import 'package:oshmobile/features/auth/domain/usecases/reset_password.dart';
 import 'package:oshmobile/features/auth/domain/usecases/sign_in.dart';
+import 'package:oshmobile/features/auth/domain/usecases/sign_in_demo.dart';
 import 'package:oshmobile/features/auth/domain/usecases/sign_in_google.dart';
 import 'package:oshmobile/features/auth/domain/usecases/sign_up.dart';
 import 'package:oshmobile/features/auth/domain/usecases/verify_email.dart';
@@ -17,6 +18,7 @@ part 'auth_state.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final SignUp _signUp;
   final SignIn _signIn;
+  final SignInDemo _signInDemo;
   final SignInWithGoogle _signInWithGoogle;
   final VerifyEmail _verifyEmail;
   final ResetPassword _resetPassword;
@@ -25,12 +27,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc({
     required SignUp signUp,
     required SignIn signIn,
+    required SignInDemo signInDemo,
     required SignInWithGoogle signInWithGoogle,
     required VerifyEmail verifyEmail,
     required ResetPassword resetPassword,
     required GlobalAuthCubit globalAuthCubit,
   })  : _signUp = signUp,
         _signIn = signIn,
+        _signInDemo = signInDemo,
         _signInWithGoogle = signInWithGoogle,
         _verifyEmail = verifyEmail,
         _resetPassword = resetPassword,
@@ -38,6 +42,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         super(const AuthInitial()) {
     on<AuthSignUp>(_onAuthSignUp);
     on<AuthSignIn>(_onAuthSignIn);
+    on<AuthSignInDemo>(_onSignInDemo);
     on<AuthSignInWithGoogle>(_onSignInWithGoogle);
     on<AuthSendVerifyEmail>(_onAuthSendVerifyEmail);
     on<AuthSendResetPasswordEmail>(_onSendResetPasswordEmail);
@@ -77,6 +82,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AuthSignInWithGoogle event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
     final result = await _signInWithGoogle(NoParams());
+    result.fold(
+      (l) => _emitAuthFailure(emit, l),
+      (r) => _emitAuthSuccess(emit, r),
+    );
+  }
+
+  Future<void> _onSignInDemo(
+      AuthSignInDemo event, Emitter<AuthState> emit) async {
+    emit(const AuthLoading());
+    final result = await _signInDemo(NoParams());
     result.fold(
       (l) => _emitAuthFailure(emit, l),
       (r) => _emitAuthSuccess(emit, r),

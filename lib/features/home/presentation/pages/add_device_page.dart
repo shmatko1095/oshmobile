@@ -103,7 +103,10 @@ class _AddDevicePageState extends State<AddDevicePage>
       if (!context.mounted) return;
       Navigator.of(context).pop();
     } else if (state is HomeAssignFailed) {
-      SnackBarUtils.showFail(context: context, content: S.of(context).Failed);
+      SnackBarUtils.showFail(
+        context: context,
+        content: state.message ?? S.of(context).Failed,
+      );
     }
   }
 
@@ -114,63 +117,64 @@ class _AddDevicePageState extends State<AddDevicePage>
         title: Text(S.of(context).AddDevice),
       ),
       body: Padding(
-          padding: const EdgeInsets.all(24),
-          child: BlocConsumer<HomeCubit, HomeState>(
-            listenWhen: (previous, current) =>
-                ModalRoute.of(context)?.isCurrent ?? true,
-            listener: (context, state) => _onStateChanged(context, state),
-            builder: (context, state) {
-              return Column(
-                children: [
-                  Text(
-                    S.of(context).PointCameraToQR,
-                    style: TextStyles.contentStyle,
-                    textAlign: TextAlign.center,
+        padding: const EdgeInsets.all(24),
+        child: BlocConsumer<HomeCubit, HomeState>(
+          listenWhen: (previous, current) =>
+              ModalRoute.of(context)?.isCurrent ?? true,
+          listener: (context, state) => _onStateChanged(context, state),
+          builder: (context, state) {
+            return Column(
+              children: [
+                Text(
+                  S.of(context).PointCameraToQR,
+                  style: TextStyles.contentStyle,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: MobileScanner(
+                      controller: _scanner,
+                      onDetect: _onScan,
+                    ),
                   ),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: MobileScanner(
-                        controller: _scanner,
-                        onDetect: _onScan,
+                ),
+                const SizedBox(height: 20),
+                const ColoredDivider(thickness: 1.5),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 20),
+                          DeviceFormField(
+                            labelText: S.of(context).SerialNumber,
+                            controller: _serialCtrl,
+                          ),
+                          const SizedBox(height: 20),
+                          DeviceFormField(
+                            labelText: S.of(context).SecureCode,
+                            controller: _secureCtrl,
+                          ),
+                          const SizedBox(height: 30),
+                          (state is HomeLoading)
+                              ? CupertinoActivityIndicator()
+                              : CustomElevatedButton(
+                                  buttonText: S.of(context).AddDevice,
+                                  onPressed: () => _submitManual(),
+                                ),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  const ColoredDivider(thickness: 1.5),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            const SizedBox(height: 20),
-                            DeviceFormField(
-                              labelText: S.of(context).SerialNumber,
-                              controller: _serialCtrl,
-                            ),
-                            const SizedBox(height: 20),
-                            DeviceFormField(
-                              labelText: S.of(context).SecureCode,
-                              controller: _secureCtrl,
-                            ),
-                            const SizedBox(height: 30),
-                            (state is HomeLoading)
-                                ? CupertinoActivityIndicator()
-                                : CustomElevatedButton(
-                                    buttonText: S.of(context).AddDevice,
-                                    onPressed: () => _submitManual(),
-                                  ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          )),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }

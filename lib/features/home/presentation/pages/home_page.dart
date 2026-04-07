@@ -85,6 +85,29 @@ class _HomePageState extends State<HomePage> {
     return _defaultTitle;
   }
 
+  Widget _buildSelectedDeviceOrFallback(HomeCubit homeCubit, String? deviceId) {
+    if (deviceId == null) {
+      _setTitleSafe(null);
+      _openSettingsAction = null;
+      return const NoSelectedDevicePage();
+    }
+
+    final device = homeCubit.getDeviceById(deviceId);
+    if (device == null) {
+      _setTitleSafe(null);
+      _openSettingsAction = null;
+      return const NoSelectedDevicePage();
+    }
+
+    _setTitleSafe(_resolveDeviceTitle(device));
+    return DeviceScope(
+      key: ValueKey(device.id),
+      device: device,
+      onTitleChanged: _setTitleSafe,
+      onSettingsActionChanged: (cb) => _openSettingsAction = cb,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -129,35 +152,11 @@ class _HomePageState extends State<HomePage> {
               _openSettingsAction = null;
               return const Loader();
 
-            case HomeFailed(:final message):
-              _setTitleSafe(null);
-              _openSettingsAction = null;
-              return Center(child: Text(message ?? ""));
+            case HomeFailed(:final selectedDeviceId):
+              return _buildSelectedDeviceOrFallback(homeCubit, selectedDeviceId);
 
             case HomeReady(:final selectedDeviceId):
-              {
-                if (selectedDeviceId == null) {
-                  _setTitleSafe(null);
-                  _openSettingsAction = null;
-                  return const NoSelectedDevicePage();
-                }
-
-                final device = homeCubit.getDeviceById(selectedDeviceId);
-
-                if (device == null) {
-                  _setTitleSafe(null);
-                  _openSettingsAction = null;
-                  return const NoSelectedDevicePage();
-                }
-
-                _setTitleSafe(_resolveDeviceTitle(device));
-                return DeviceScope(
-                  key: ValueKey(device.id),
-                  device: device,
-                  onTitleChanged: _setTitleSafe,
-                  onSettingsActionChanged: (cb) => _openSettingsAction = cb,
-                );
-              }
+              return _buildSelectedDeviceOrFallback(homeCubit, selectedDeviceId);
           }
 
           _setTitleSafe(null);

@@ -1,5 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/core/error/exceptions.dart';
 import 'package:oshmobile/core/error/failures.dart';
 import 'package:oshmobile/features/home/data/datasources/device_remote_data_source.dart';
 import 'package:oshmobile/features/home/domain/repositories/device_repository.dart';
@@ -16,6 +17,8 @@ class DeviceRepositoryImpl implements DeviceRepository {
     try {
       final result = await dataSource.get(serial: serial);
       return right(result);
+    } on ServerException catch (e) {
+      return left(Failure.unexpected(e.message));
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
     }
@@ -34,6 +37,8 @@ class DeviceRepositoryImpl implements DeviceRepository {
         description: description,
       );
       return right(result);
+    } on ServerException catch (e) {
+      return left(Failure.unexpected(e.message));
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
     }

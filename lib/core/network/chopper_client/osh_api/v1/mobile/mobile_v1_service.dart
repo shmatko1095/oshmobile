@@ -19,6 +19,9 @@ abstract class MobileV1Service extends ChopperService {
   @GET(path: '/me/devices')
   Future<Response> listMyDevices();
 
+  @POST(path: '/demo/session')
+  Future<Response> createDemoSession();
+
   @GET(path: '/devices/{serial}')
   Future<Response> getMyDevice({
     @Path('serial') required String serial,

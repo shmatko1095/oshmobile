@@ -73,11 +73,17 @@ final class HomeFailed extends HomeState {
 }
 
 final class HomeAssignFailed extends HomeState {
-  const HomeAssignFailed({required super.selectedDeviceId});
+  final String? message;
+
+  const HomeAssignFailed({
+    this.message,
+    required super.selectedDeviceId,
+  });
 
   @override
   HomeAssignFailed copyWith({String? selectedDeviceId}) {
     return HomeAssignFailed(
+      message: message,
       selectedDeviceId: selectedDeviceId ?? this.selectedDeviceId,
     );
   }
@@ -95,11 +101,17 @@ final class HomeAssignDone extends HomeState {
 }
 
 final class HomeUpdateDeviceUserDataFailed extends HomeState {
-  const HomeUpdateDeviceUserDataFailed({required super.selectedDeviceId});
+  final String? message;
+
+  const HomeUpdateDeviceUserDataFailed({
+    this.message,
+    required super.selectedDeviceId,
+  });
 
   @override
   HomeUpdateDeviceUserDataFailed copyWith({String? selectedDeviceId}) {
     return HomeUpdateDeviceUserDataFailed(
+      message: message,
       selectedDeviceId: selectedDeviceId ?? this.selectedDeviceId,
     );
   }

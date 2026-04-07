@@ -12,7 +12,10 @@ class MobileV1ResponseMapper {
   static List<Device> requireDeviceList(Response<dynamic> response) {
     final body = _decodeList(response.body);
     if (!response.isSuccessful || body == null) {
-      throw ServerException(_errorMessage(response));
+      throw ServerException(
+        _errorMessage(response),
+        code: _errorCode(response),
+      );
     }
 
     return body
@@ -29,14 +32,20 @@ class MobileV1ResponseMapper {
   static Map<String, dynamic> requireJsonMap(Response<dynamic> response) {
     final body = _decodeMap(response.body);
     if (!response.isSuccessful || body == null) {
-      throw ServerException(_errorMessage(response));
+      throw ServerException(
+        _errorMessage(response),
+        code: _errorCode(response),
+      );
     }
     return body;
   }
 
   static void ensureSuccess(Response<dynamic> response) {
     if (!response.isSuccessful) {
-      throw ServerException(_errorMessage(response));
+      throw ServerException(
+        _errorMessage(response),
+        code: _errorCode(response),
+      );
     }
   }
 
@@ -121,10 +130,14 @@ class MobileV1ResponseMapper {
       return raw.map((key, value) => MapEntry(key.toString(), value));
     }
     if (raw is String && raw.isNotEmpty) {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) return decoded;
-      if (decoded is Map) {
-        return decoded.map((key, value) => MapEntry(key.toString(), value));
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map<String, dynamic>) return decoded;
+        if (decoded is Map) {
+          return decoded.map((key, value) => MapEntry(key.toString(), value));
+        }
+      } on FormatException {
+        return null;
       }
     }
     return null;
@@ -133,8 +146,12 @@ class MobileV1ResponseMapper {
   static List<dynamic>? _decodeList(dynamic raw) {
     if (raw is List) return raw;
     if (raw is String && raw.isNotEmpty) {
-      final decoded = jsonDecode(raw);
-      if (decoded is List) return decoded;
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) return decoded;
+      } on FormatException {
+        return null;
+      }
     }
     return null;
   }
@@ -157,5 +174,12 @@ class MobileV1ResponseMapper {
       }
     }
     return 'HTTP ${response.statusCode}';
+  }
+
+  static String? _errorCode(Response<dynamic> response) {
+    final map = _decodeMap(response.body) ?? _decodeMap(response.error);
+    final value = map?['code']?.toString().trim();
+    if (value == null || value.isEmpty) return null;
+    return value;
   }
 }

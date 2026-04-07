@@ -35,6 +35,7 @@ import 'package:oshmobile/features/auth/data/repositories/auth_repository_impl.d
 import 'package:oshmobile/features/auth/domain/repository/auth_repository.dart';
 import 'package:oshmobile/features/auth/domain/usecases/reset_password.dart';
 import 'package:oshmobile/features/auth/domain/usecases/sign_in.dart';
+import 'package:oshmobile/features/auth/domain/usecases/sign_in_demo.dart';
 import 'package:oshmobile/features/auth/domain/usecases/sign_in_google.dart';
 import 'package:oshmobile/features/auth/domain/usecases/sign_up.dart';
 import 'package:oshmobile/features/auth/domain/usecases/verify_email.dart';
@@ -184,8 +185,8 @@ void _initHomeFeature() {
       () => UserRepositoryImpl(dataSource: locator<UserRemoteDataSource>()),
     )
     ..registerFactory<DeviceRemoteDataSource>(
-      () => DeviceRemoteDataSourceImpl(
-          mobileService: locator<MobileV1Service>()),
+      () =>
+          DeviceRemoteDataSourceImpl(mobileService: locator<MobileV1Service>()),
     )
     ..registerFactory<DeviceRepository>(
       () => DeviceRepositoryImpl(dataSource: locator<DeviceRemoteDataSource>()),
@@ -229,6 +230,7 @@ void _initAuthFeature() {
     ..registerFactory<IAuthRemoteDataSource>(
       () => OshAuthRemoteDataSourceImpl(
         authClient: locator<AuthService>(),
+        mobileService: locator<MobileV1Service>(),
         usersService: locator<UsersV1Service>(),
       ),
     )
@@ -247,6 +249,9 @@ void _initAuthFeature() {
     ..registerFactory<SignIn>(
       () => SignIn(authRepository: locator()),
     )
+    ..registerFactory<SignInDemo>(
+      () => SignInDemo(authRepository: locator()),
+    )
     ..registerFactory<SignInWithGoogle>(
       () => SignInWithGoogle(authRepository: locator()),
     )
@@ -261,6 +266,7 @@ void _initAuthFeature() {
       () => AuthBloc(
         signUp: locator(),
         signIn: locator(),
+        signInDemo: locator(),
         signInWithGoogle: locator(),
         verifyEmail: locator(),
         resetPassword: locator(),
@@ -374,6 +380,7 @@ Future<void> _initWebClient() async {
       () => GlobalAuthCubit(
           sessionStorage: locator<SessionStorage>(),
           authService: locator<AuthService>(),
+          mobileService: locator<MobileV1Service>(),
           keycloakWrapper: locator<KeycloakWrapper>()),
     )
     ..registerLazySingleton<ApiAuthenticator>(

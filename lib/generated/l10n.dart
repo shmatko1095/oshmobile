@@ -349,6 +349,11 @@ class S {
     return Intl.message('Try Demo', name: 'TryDemo', desc: '', args: []);
   }
 
+  /// `Demo mode`
+  String get DemoMode {
+    return Intl.message('Demo mode', name: 'DemoMode', desc: '', args: []);
+  }
+
   /// `Don't have an account?`
   String get DontHaveAnAccount {
     return Intl.message(

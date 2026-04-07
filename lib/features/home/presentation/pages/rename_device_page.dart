@@ -87,7 +87,10 @@ class _RenameDevicePageState extends State<RenameDevicePage> {
       if (!context.mounted) return;
       Navigator.of(context).pop();
     } else if (state is HomeUpdateDeviceUserDataFailed) {
-      SnackBarUtils.showFail(context: context, content: S.of(context).Failed);
+      SnackBarUtils.showFail(
+        context: context,
+        content: state.message ?? S.of(context).Failed,
+      );
     }
   }
 

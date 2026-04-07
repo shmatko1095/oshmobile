@@ -25,8 +25,6 @@ class SignInPage extends StatefulWidget {
 }
 
 class _SignInPageState extends State<SignInPage> {
-  static const _demoEmail = 'oshhome.test1@gmail.com';
-  static const _demoPassword = '11111111';
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -57,14 +55,7 @@ class _SignInPageState extends State<SignInPage> {
   }
 
   void _signInDemo() {
-    _emailController.text = _demoEmail;
-    _passwordController.text = _demoPassword;
-    context.read<AuthBloc>().add(
-          AuthSignIn(
-            email: _demoEmail,
-            password: _demoPassword,
-          ),
-        );
+    context.read<AuthBloc>().add(AuthSignInDemo());
   }
 
   void _onAuthStateChanged(BuildContext context, AuthState state) {

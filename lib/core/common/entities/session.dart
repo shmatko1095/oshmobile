@@ -1,3 +1,5 @@
+import 'package:oshmobile/core/common/entities/session_mode.dart';
+
 class Session {
   final String accessToken;
   final String refreshToken;
@@ -7,6 +9,7 @@ class Session {
   final String? sessionState;
   final int? notBeforePolicy;
   final String? scope;
+  final SessionMode? mode;
 
   Session({
     required this.accessToken,
@@ -17,9 +20,18 @@ class Session {
     this.sessionState,
     this.notBeforePolicy,
     this.scope,
+    this.mode,
   });
 
-  String get typedAccessToken => "$tokenType $accessToken";
+  String get typedAccessToken {
+    final normalizedType = tokenType?.trim() ?? '';
+    if (normalizedType.isEmpty) {
+      return accessToken;
+    }
+    return '$normalizedType $accessToken';
+  }
+
+  bool get isDemoMode => mode == SessionMode.demo;
 
   /// Factory method to parse from JSON.
   factory Session.fromJson(Map<String, dynamic> json) {
@@ -28,15 +40,12 @@ class Session {
       accessToken: json['access_token'] ?? "",
       refreshToken: json['refresh_token'] ?? "",
       tokenType: json['token_type'] ?? "",
-      accessTokenExpiry: now.add(
-        Duration(seconds: json['expires_in'] ?? 0),
-      ),
-      refreshTokenExpiry: now.add(
-        Duration(seconds: json['refresh_expires_in'] ?? 0),
-      ),
+      accessTokenExpiry: _expiryFromNow(now, json['expires_in']),
+      refreshTokenExpiry: _expiryFromNow(now, json['refresh_expires_in']),
       sessionState: json['session_state'] ?? "",
       notBeforePolicy: json['not-before-policy'] ?? 0,
       scope: json['scope'] ?? "",
+      mode: SessionMode.fromJsonValue(json['mode']),
     );
   }
 
@@ -54,6 +63,7 @@ class Session {
         'session_state': sessionState,
         'not-before-policy': notBeforePolicy,
         'scope': scope,
+        'mode': mode?.jsonValue,
       };
 
   /// Validate if access token is still valid.
@@ -80,6 +90,7 @@ class Session {
     String? sessionState,
     int? notBeforePolicy,
     String? scope,
+    SessionMode? mode,
   }) {
     return Session(
       accessToken: accessToken ?? this.accessToken,
@@ -90,6 +101,38 @@ class Session {
       sessionState: sessionState ?? this.sessionState,
       notBeforePolicy: notBeforePolicy ?? this.notBeforePolicy,
       scope: scope ?? this.scope,
+      mode: mode ?? this.mode,
     );
+  }
+
+  static DateTime? _expiryFromNow(DateTime now, dynamic rawSeconds) {
+    final seconds = _readPositiveInt(rawSeconds);
+    if (seconds == null) {
+      return null;
+    }
+    return now.add(Duration(seconds: seconds));
+  }
+
+  static int? _readPositiveInt(dynamic raw) {
+    if (raw is int) {
+      return raw > 0 ? raw : null;
+    }
+    if (raw is num) {
+      final rounded = raw.round();
+      return rounded > 0 ? rounded : null;
+    }
+    if (raw is String) {
+      final normalized = raw.trim();
+      if (normalized.isEmpty) {
+        return null;
+      }
+      final parsed =
+          int.tryParse(normalized) ?? num.tryParse(normalized)?.round();
+      if (parsed == null || parsed <= 0) {
+        return null;
+      }
+      return parsed;
+    }
+    return null;
   }
 }

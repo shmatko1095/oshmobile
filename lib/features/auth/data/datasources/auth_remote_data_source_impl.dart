@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/core/error/exceptions.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_response_mapper.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_service.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/users/requests/register_user_request.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/users/requests/send_reset_password_email_request.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/users/requests/send_verification_email_request.dart';
@@ -12,12 +14,15 @@ import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source
 
 class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
   final AuthService _authClient;
+  final MobileV1Service _mobileService;
   final UsersV1Service _usersService;
 
   OshAuthRemoteDataSourceImpl({
     required AuthService authClient,
+    required MobileV1Service mobileService,
     required UsersV1Service usersService,
   })  : _authClient = authClient,
+        _mobileService = mobileService,
         _usersService = usersService;
 
   @override
@@ -63,6 +68,13 @@ class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
     } else {
       throw ServerException(response.error as String);
     }
+  }
+
+  @override
+  Future<Session> signInDemo() async {
+    final response = await _mobileService.createDemoSession();
+    final payload = MobileV1ResponseMapper.requireJsonMap(response);
+    return Session.fromJson(payload);
   }
 
   @override

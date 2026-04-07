@@ -70,7 +70,6 @@ class ThingItem extends StatelessWidget {
     return Dismissible(
       confirmDismiss: (_) async => _confirmUnassign(context),
       key: ValueKey('drawer_device_$id'),
-      //Key("thing_item_$sn")
       onDismissed: (dir) => context.read<HomeCubit>().unassignDevice(id),
       direction: DismissDirection.endToStart,
       background: _buildDismissBackground(),

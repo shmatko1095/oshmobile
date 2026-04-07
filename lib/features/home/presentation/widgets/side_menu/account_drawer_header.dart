@@ -5,6 +5,7 @@ import 'package:oshmobile/core/common/entities/jwt_user_data.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/account_settings/presentation/pages/account_settings_page.dart';
+import 'package:oshmobile/generated/l10n.dart';
 
 class AccountDrawerHeader extends StatelessWidget {
   const AccountDrawerHeader({super.key});
@@ -17,8 +18,13 @@ class AccountDrawerHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     final JwtUserData? userData =
-        context.read<GlobalAuthCubit>().getJwtUserData();
+        context.select<GlobalAuthCubit, JwtUserData?>((cubit) {
+      return cubit.getJwtUserData();
+    });
+    final isDemoMode =
+        context.select<GlobalAuthCubit, bool>((cubit) => cubit.isDemoMode);
     if (userData == null) {
       return const SizedBox.shrink();
     }
@@ -68,6 +74,28 @@ class AccountDrawerHeader extends StatelessWidget {
                       color: subtitleColor,
                     ),
                   ),
+                  if (isDemoMode) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppPalette.accentPrimary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        s.DemoMode,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: titleColor,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

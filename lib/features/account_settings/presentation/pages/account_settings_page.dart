@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/cubits/app/app_theme_cubit.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
+import 'package:oshmobile/core/common/entities/jwt_user_data.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/account_settings/domain/usecases/request_my_account_deletion.dart';
@@ -39,7 +40,11 @@ class _AccountSettingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
-    final userData = context.read<GlobalAuthCubit>().getJwtUserData();
+    final userData = context.select<GlobalAuthCubit, JwtUserData?>((cubit) {
+      return cubit.getJwtUserData();
+    });
+    final isDemoMode =
+        context.select<GlobalAuthCubit, bool>((cubit) => cubit.isDemoMode);
     final userName = userData?.name.trim() ?? '';
     final email = userData?.email.trim() ?? '';
 
@@ -54,7 +59,7 @@ class _AccountSettingsView extends StatelessWidget {
             return ListView(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
               children: [
-                _buildProfileCard(context, userName, email),
+                _buildProfileCard(context, userName, email, isDemoMode),
                 const SizedBox(height: 12),
                 _buildApplicationSettingsCard(context, state),
                 const SizedBox(height: 12),
@@ -71,6 +76,7 @@ class _AccountSettingsView extends StatelessWidget {
     BuildContext context,
     String userName,
     String email,
+    bool isDemoMode,
   ) {
     final s = S.of(context);
     final safeName = userName.isEmpty ? s.Account : userName;
@@ -111,6 +117,27 @@ class _AccountSettingsView extends StatelessWidget {
                         color: subtitleColor,
                       ),
                 ),
+                if (isDemoMode) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppPalette.accentPrimary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      s.DemoMode,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
+                            color: titleColor,
+                          ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

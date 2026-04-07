@@ -96,6 +96,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "DeleteSensor": MessageLookupByLibrary.simpleMessage("Delete sensor"),
     "Deleted": MessageLookupByLibrary.simpleMessage("Deleted"),
+    "DemoMode": MessageLookupByLibrary.simpleMessage("Demo mode"),
     "DeviceDetails": MessageLookupByLibrary.simpleMessage("Device details"),
     "DeviceEditTitle": MessageLookupByLibrary.simpleMessage(
       "Device information",

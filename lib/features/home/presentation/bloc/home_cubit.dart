@@ -137,7 +137,10 @@ class HomeCubit extends Cubit<HomeState> {
       (l) {
         OshCrashReporter.log(
             "Failed to assignDevice, user: $_userUuid device: $sn");
-        emit(HomeAssignFailed(selectedDeviceId: state.selectedDeviceId));
+        emit(HomeAssignFailed(
+          message: l.message,
+          selectedDeviceId: state.selectedDeviceId,
+        ));
       },
       (r) {
         emit(HomeAssignDone(selectedDeviceId: state.selectedDeviceId));
@@ -169,7 +172,9 @@ class HomeCubit extends Cubit<HomeState> {
         OshCrashReporter.log(
             "Failed to updateDeviceUserData, user: $_userUuid device: $deviceId");
         emit(HomeUpdateDeviceUserDataFailed(
-            selectedDeviceId: state.selectedDeviceId));
+          message: l.message,
+          selectedDeviceId: state.selectedDeviceId,
+        ));
       },
       (r) {
         emit(HomeUpdateDeviceUserDataDone(

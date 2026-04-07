@@ -77,6 +77,18 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failure, Session>> signInDemo() async {
+    try {
+      final session = await authRemoteDataSource.signInDemo();
+      return right(session);
+    } on ServerException catch (e) {
+      return left(Failure.unexpected(e.message));
+    } on Exception catch (e) {
+      return left(Failure.unexpected(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> signUp({
     required String firstName,
     required String lastName,

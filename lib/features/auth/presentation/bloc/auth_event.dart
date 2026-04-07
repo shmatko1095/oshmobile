@@ -31,6 +31,10 @@ final class AuthSignInWithGoogle extends AuthEvent {
   AuthSignInWithGoogle();
 }
 
+final class AuthSignInDemo extends AuthEvent {
+  AuthSignInDemo();
+}
+
 final class AuthSendVerifyEmail extends AuthEvent {
   final String email;
 
