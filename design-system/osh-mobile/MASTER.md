@@ -1,34 +1,38 @@
 # OSH Mobile UI Design System (Master)
 
-> Global source of truth for UI unification.
-> Goal: make all screens consistent and visually close to Samsung One UI (dark), without changing core flows.
+> Global source of truth for the current OSH Mobile UI as implemented in Flutter.
+> Goal: document the existing visual system so page docs match the running app.
 
 ---
 
 ## Scope
 
 - Platform: **mobile only** (Flutter).
-- Use only mobile interaction rules and mobile layout constraints.
+- This folder describes the **current implementation baseline**, not a future redesign target.
 - Keep existing information architecture, navigation, and business logic.
-- Improve visual consistency, spacing, states, and readability.
+- When code and docs diverge, update the docs only after verifying the current implementation.
 
 ---
 
 ## Product Context
 
 - Product type: smart home / thermostat control.
-- UX mode: operational dashboard (quick checks, quick actions).
-- Priority: clarity, touch comfort, predictable controls.
+- UX mode: operational dashboard with quick checks and quick actions.
+- Visual priority: dark-first readability, clear status communication, comfortable touch targets on primary flows.
 
 ---
 
-## Visual Direction (Samsung One UI Dark)
+## Visual Direction
 
-- Canvas is pure black.
-- Surfaces are dark graphite cards with large rounded corners.
-- No visible gray outer card frames by default.
-- Internal separators are subtle (inside grouped cards).
-- Accent blue is used only for active controls (switches, primary action, links).
+- The app is **dark-first**, built around a pure black canvas.
+- Main surfaces are dark charcoal cards with large rounded corners.
+- Shared controls rely on a bright blue primary accent for CTAs, selected states, and focused controls.
+- Subtle white borders and separators are used in several flows, especially device details, schedule, and secondary state screens.
+- Status colors are more expressive than in the previous One UI draft:
+  - green for online/success,
+  - blue for active controls and selection,
+  - red for warning/hot/destructive emphasis,
+  - amber/orange/cyan as utility accents in some metric cards and info states.
 
 ---
 
@@ -38,19 +42,33 @@
 
 | Token | Value | Usage |
 |---|---|---|
-| `color.bg.canvas` | `#000000` | App background |
-| `color.bg.surface` | `#111217` | Primary cards, groups, drawers |
-| `color.bg.surfaceRaised` | `#151821` | Elevated content blocks |
-| `color.bg.surfacePressed` | `#1B202A` | Pressed/selected states |
-| `color.border.subtle` | `rgba(255,255,255,0.06)` | Optional rare outline |
-| `color.separator` | `rgba(255,255,255,0.10)` | Internal dividers |
+| `color.bg.canvas` | `#000000` | App background, drawer background, main dark canvas |
+| `color.bg.surface` | `#181818` | Default dark card surface |
+| `color.bg.surfaceRaised` | `#1B1B1B` | Raised cards, inputs, secondary button backgrounds |
+| `color.bg.surfaceAlt` | `#242424` | Alternate dark surface, disabled button background, secondary emphasis |
+| `color.border.soft` | `rgba(255,255,255,0.07)` | Subtle card/input outline |
+| `color.border.glass` | `rgba(255,255,255,0.08)` | Rare slightly stronger outline |
+| `color.separator` | `rgba(255,255,255,0.09)` | Internal dividers |
 | `color.text.primary` | `#F5F7FA` | Main text |
-| `color.text.secondary` | `#B5BAC8` | Secondary labels |
-| `color.text.muted` | `#8D94A5` | Hint/disabled text |
-| `color.accent.primary` | `#2B7CFF` | Primary actions, active toggles |
+| `color.text.secondary` | `#B8BDCC` | Secondary text and labels |
+| `color.text.muted` | `#8D94A5` | Muted text, hints, disabled supporting text |
+| `color.accent.primary` | `#3779FC` | Primary actions, selected states, focused inputs, links |
 | `color.accent.success` | `#34C759` | Online/success state |
-| `color.accent.warning` | `#F59E0B` | Warning |
-| `color.accent.error` | `#EF4444` | Errors/destructive |
+| `color.accent.warning` | `#FF5252` | Hot/warning emphasis in current implementation |
+| `color.accent.error` | `#EF4444` | Error/destructive state |
+| `color.destructive.bg` | `rgba(239,68,68,0.12)` | Swipe-to-delete background |
+| `color.destructive.fg` | `#F87171` | Destructive foreground/icon color |
+
+### Utility Accent Tokens
+
+These are not global semantics, but they are currently used in metric/status cards:
+
+| Token | Value | Usage |
+|---|---|---|
+| `color.utility.orange` | `#FFAB40` | Delta/heating/power accents |
+| `color.utility.cyan` | `#18FFFF` | Cool/negative delta accent |
+| `color.utility.amber` | `#FFC107` | Informational warning card/background |
+| `color.utility.amberStrong` | `#FFD740` | Power icon accent |
 
 ### Spacing Tokens
 
@@ -79,25 +97,31 @@
 |---|---|---|
 | `motion.fast` | `120ms` | Press/toggle feedback |
 | `motion.base` | `180ms` | Default transitions |
-| `motion.slow` | `240ms` | Sheets/modals |
-| `motion.curve` | `easeOutCubic` | Default easing |
+| `motion.slow` | `240ms` | Slower state/sheet transitions |
 
 ---
 
 ## Typography
 
-Use current app type scale, but enforce consistency by token role.
+The app mixes theme-level text styles with a few explicit metric sizes. Use these as the documentation baseline:
 
 | Role | Size | Weight | Line Height |
 |---|---|---|---|
 | `display` | `34` | `700` | `1.15` |
 | `screenTitle` | `24` | `700` | `1.2` |
+| `bodyLarge` | `16` | `400-600` | `1.4` |
+| `bodyMedium` | `14` | `400-600` | default Material |
+| `bodySmall` | `12-13` | `500` | `1.35` |
 | `sectionTitle` | `18` | `600` | `1.3` |
-| `body` | `16` | `400` | `1.4` |
-| `bodyStrong` | `16` | `600` | `1.4` |
-| `caption` | `13` | `500` | `1.35` |
-| `metricLarge` | `28` | `700` | `1.1` |
-| `metricXL` | `56` | `300-600` | `1.0` |
+| `metricLarge` | `28-30` | `700-800` | `1.0-1.1` |
+| `metricHero` | `56-78` | `300-600` | `0.95-1.0` |
+
+Notes:
+
+- Auth titles use `34 / 700`.
+- App bars and major headings use `24 / 700`.
+- Device hero/picker screens use the largest metric scale.
+- Secondary labels usually sit on `text.secondary` or `text.muted`.
 
 ---
 
@@ -105,77 +129,79 @@ Use current app type scale, but enforce consistency by token role.
 
 ### App Background & AppBar
 
-- App background must be `color.bg.canvas`.
-- AppBar uses transparent or canvas background, no blue tint.
-- Title center + ellipsis for long names.
+- Dark theme uses `color.bg.canvas` for scaffold and drawer backgrounds.
+- Primary app bars are centered and inherit canvas styling.
+- Several secondary pages use a transparent app bar over the same dark canvas.
+- Long titles are truncated with ellipsis.
 
 ### Cards
 
-- Default card = solid dark surface with large radius.
-- No mandatory outer border.
-- Use separators **inside** grouped cards instead of card outlines.
+- Shared card wrappers are `AppSolidCard` and `AppGlassCard`.
+- Default dark card surfaces use `color.bg.surface` or `color.bg.surfaceRaised`.
+- Large radii (`24-28`) are standard across drawer cards, settings groups, hero panels, and metric tiles.
+- Current implementation **does allow outlines**:
+  - settings groups are mostly borderless,
+  - details and schedule cards often use a subtle soft border,
+  - selected or active cards may use a blue or red-tinted border.
 
 ### Buttons
 
-- Primary button height `50-52`, radius `radius.md`, horizontal padding `16`.
-- Disabled state uses muted foreground + pressed surface background.
-- Loading state keeps width/height fixed.
+- Primary buttons are accent-blue filled, height `50-52`, radius `16`, horizontal padding `16`.
+- Disabled buttons use `surfaceAlt` with muted text.
+- Secondary buttons are often implemented by overriding the shared button background to a surface color.
+- Floating action buttons currently use a surface background plus shadow, not an accent fill.
 
 ### Inputs
 
-- One input style across auth/settings/forms.
-- Dark filled field with subtle border and clear focus accent.
-- Avoid bright/light field backgrounds in dark mode.
+- Shared input shape: dark filled field, radius `16`, subtle border, blue focus border.
+- Dark filled input background is `surfaceRaised`.
+- Error border uses `accentError`.
+- Password visibility icons switch between muted and primary accent colors.
 
 ### Switches / Sliders / Chips
 
-- Switch ON = `color.accent.primary`, OFF = muted gray.
-- Slider active track follows accent color.
-- Chips/segments require clear selected state (background + text weight).
+- Switch ON = blue track with white thumb.
+- Switch OFF = dark gray track and light thumb.
+- Slider active track follows primary accent blue.
+- Selected chips/segments typically use translucent blue fill plus a blue border.
+- Unselected chips are often transparent with secondary text.
 
-### Lists / Settings Groups
+### Lists / Groups
 
-- Settings groups are big rounded cards.
-- Rows inside groups separated by subtle internal divider.
-- Icons, paddings, and row density are unified.
+- Drawer menus are composed of individual rounded cards on a black canvas.
+- Settings groups use rounded card containers with internal `Divider`s between rows.
+- List tiles generally use `16` horizontal padding.
+- Destructive swipe states use the shared red destructive palette.
 
----
+### Status Treatment
 
-## Mobile-Only Interaction Rules
-
-- Minimum touch target: `44x44`.
-- Minimum spacing between adjacent touch targets: `8`.
-- Respect safe areas and gesture/navigation bars.
-- Keep one-handed reach in mind for primary actions.
-- Keep animations short and purposeful.
-
----
-
-## Rollout Plan
-
-1. **P0 Foundation**
-- Finalize color/surface/radius tokens for One UI dark.
-- Align ThemeData component themes.
-
-2. **P1 Shared Components**
-- Consolidate button/input/card style usage.
-- Remove ad-hoc borders and blue backgrounds.
-
-3. **P2 Screen Unification**
-- Home drawer/list and settings groups first.
-- Device details and schedule second.
-- Auth/secondary pages third.
-
-4. **P3 Visual QA**
-- Validate on common phone widths and dark mode only.
-- Check contrast, divider consistency, and state colors.
+- Online: green.
+- Offline or urgent state emphasis: current implementation frequently uses red.
+- Heating active: warm gradient, red/orange accent.
+- Informational device compatibility / unsupported states may use amber surfaces or accent badges.
 
 ---
 
-## Definition of Done
+## Interaction Patterns
 
-- Black canvas everywhere in app dark theme.
-- No blue-tinted page backgrounds.
-- No gray card outlines in side menu/settings.
-- Shared styles drive buttons/inputs/cards/switches.
-- Major screens feel like one product family and align with One UI dark language.
+- Safe areas are respected across primary flows.
+- Pull-to-refresh is used on drawer lists, settings, and device detail hosts.
+- Swipe-to-delete is used in schedule and device list flows.
+- Animated optimistic state is used in thermostat mode switching.
+- Motion is short and functional, mostly fades, opacity changes, progress bars, and simple transform transitions.
+
+---
+
+## Shared Implementation References
+
+- Theme tokens: `lib/core/theme/app_palette.dart`
+- ThemeData and component themes: `lib/core/theme/theme.dart`, `lib/core/theme/component_themes.dart`
+- Shared cards/buttons: `lib/core/common/widgets/app_card.dart`, `lib/core/common/widgets/app_button.dart`
+
+---
+
+## Documentation Rules
+
+- Treat this file as the baseline for **what exists today**.
+- Page files in `design-system/osh-mobile/pages/` describe screen-specific behavior and visual deviations.
+- If a screen intentionally differs from this master, document that difference in the page override instead of changing the master.

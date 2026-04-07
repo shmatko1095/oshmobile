@@ -1,26 +1,40 @@
 # Home Page Overrides
 
-Use `MASTER.md` as base. This file defines only home-specific adjustments.
+Use `MASTER.md` as the base. This file describes the current home implementation.
 
 ## Layout
 
-- Keep current structure: AppBar + Drawer + content host.
-- Keep current device-config-driven home composition (hero temperature + mode selector + sensor/info cards).
+- Structure stays `AppBar + Drawer + selected-device content host`.
+- App bar title is centered and truncated with ellipsis.
+- App bar actions currently include MQTT activity status and a settings icon.
 
 ## Drawer / Device Menu
 
-- Drawer background uses `color.bg.canvas`.
-- Header and item blocks use solid dark cards (`color.bg.surface`) with large radius.
-- Remove visible outer gray borders from item cards.
-- Keep online/offline status indicator semantic (`success`/muted).
+- Drawer background uses the global black canvas.
+- Header, device items, add-device, and logout rows are rendered as separate rounded cards placed directly on the canvas.
+- Normal cards are surface-based and borderless.
+- Selected device rows use:
+  - translucent blue background,
+  - blue border,
+  - stronger white title color.
 
 ## Device Items
 
-- One density for all rows: same paddings, icon size, title/subtitle typography.
-- Long-press and swipe-to-unassign behavior stays unchanged.
-- Destructive swipe uses shared destructive token pair.
+- Row density is compact and consistent:
+  - `16` horizontal / `12` vertical inner padding,
+  - `18` status icon,
+  - `17` title size with medium-to-bold weight.
+- Room/secondary text uses muted styling.
+- Long press opens rename.
+- Swipe-to-unassign keeps the red destructive background and delete icon.
+
+## Status Treatment
+
+- Online indicator is green.
+- Offline indicator currently uses the app warning/status red.
+- Chevron stays visible on each row, with stronger contrast on the selected device.
 
 ## Keep As-Is
 
-- Existing navigation and selection behavior.
+- Existing drawer navigation, device selection, and content host composition.
 - Existing MQTT activity icon behavior.

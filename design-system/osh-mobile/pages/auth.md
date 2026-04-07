@@ -1,25 +1,37 @@
 # Auth Page Overrides
 
-Use `MASTER.md` as base. This file defines only auth-specific adjustments.
+Use `MASTER.md` as the base. This file describes the current auth implementation.
 
 ## Layout
 
-- Centered single-column form.
-- Content horizontal padding: `24`.
-- Vertical rhythm between fields/buttons: `16-24`.
+- Centered single-column form via `AuthPageScaffold`.
+- Content padding is `24` on all sides.
+- Vertical rhythm is intentionally loose:
+  - `24` between title/subtitle and form body,
+  - `24-30` between fields,
+  - `14-28` between actions.
+- Footer can be pinned to the bottom on sign-in.
 
 ## Visual Rules
 
-- Use shared dark filled field style.
-- Primary and secondary auth actions share same geometry (height/radius).
-- Link color uses accent token only; no custom ad-hoc blues.
+- Auth titles use the display scale (`34 / 700`) and are centered.
+- Inputs use the shared dark filled field style from the global theme.
+- Primary CTA uses the shared blue filled button.
+- Google sign-in uses the same button geometry with a surface-colored background override.
+- Secondary links are mixed in the current implementation:
+  - sign-up inline CTA uses the primary accent,
+  - `Try demo` uses secondary text styling,
+  - `Forgot your password` uses underlined secondary text,
+  - `Go to login` uses the default text button accent color.
 
 ## Interaction
 
-- Loading state keeps button size stable.
-- Password visibility icon follows shared icon color tokens.
+- Keyboard dismisses on drag.
+- Password visibility icon is muted while hidden and blue while revealed.
+- Loading treatment currently swaps the main CTA for a centered `CupertinoActivityIndicator` instead of keeping the button shell visible.
+- Sign-up uses a two-step flow with `AnimatedSwitcher` and a compact progress indicator.
 
 ## Keep As-Is
 
-- Existing flow and form order.
-- Existing validation logic and bloc events.
+- Existing form order, validation, and bloc events.
+- Existing sign-in / sign-up / forgot password navigation.

@@ -1,29 +1,37 @@
 # Schedule Page Overrides
 
-Use `MASTER.md` as base. This file defines only schedule-specific adjustments.
+Use `MASTER.md` as the base. This file describes the current schedule implementation.
 
 ## Layout
 
-- Keep existing list-based editor and day filter bar.
-- Keep current picker-based editing flow.
+- Keep the list-based editor with swipe-to-delete rows.
+- Weekly mode adds a bottom weekday filter bar.
+- Secondary editors for time, temperature, and range use picker-based pages with transparent app bars.
 
 ## Visual Rules
 
-- Schedule tiles reuse the same dark card language as details/settings.
-- Day chips use one selected style token set (not ad-hoc per screen).
-- FAB and action buttons follow shared accent + radius tokens.
+- Schedule entries are raised dark cards with large radius and a subtle outer border.
+- Time and temperature values are the visual anchors of each tile (`28 / 700`).
+- Day chips use the current local pattern:
+  - selected = translucent blue fill + blue border,
+  - unselected = transparent background + secondary text.
+- FAB is intentionally surface-colored with shadow and large rounding, not a solid accent button.
+- Temperature stepper uses blue for decrement and current warning red for increment.
 
 ## Interaction
 
-- Preserve swipe-to-delete gesture.
-- Keep time/temp edit flow unchanged.
-- Ensure chip and stepper targets stay at least `44x44`.
+- Swipe-to-delete is preserved.
+- Tapping time/value opens dedicated picker pages.
+- Weekly day toggles use dense chips in both tile rows and the bottom filter bar.
+- Controls in this screen are visually compact; the current implementation does not enforce a single global chip token beyond the local schedule styling.
 
 ## Feedback
 
-- Error/retry view follows shared status component style.
+- Error / retry state is simple:
+  - centered message text,
+  - outlined retry button.
 
 ## Keep As-Is
 
-- Existing cubit logic.
-- Existing weekly/day filtering model.
+- Existing cubit logic and schedule data model.
+- Existing weekly/day filtering and edit flow.
