@@ -271,10 +271,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "ThemeSystem": MessageLookupByLibrary.simpleMessage("Системна"),
     "ThuShort": MessageLookupByLibrary.simpleMessage("Чт"),
     "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
-      "Перевірте, чи підключено пристрій до Wi‑Fi.",
+      "Перевірте, чи підключено пристрій до Wi-Fi.",
     ),
     "TipContactSupport": MessageLookupByLibrary.simpleMessage(
-      "Зверніться в підтримку та вкажіть Model ID і Device ID.",
+      "Зверніться в підтримку та вкажіть Model ID та Device ID.",
     ),
     "TipEnsureAppUpdated": MessageLookupByLibrary.simpleMessage(
       "Переконайтеся, що застосунок оновлено до останньої версії.",
@@ -359,7 +359,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Затемнювати в режимі очікування",
     ),
     "displayIdleBrightness": MessageLookupByLibrary.simpleMessage(
-      "Яскравість у режимі очікування",
+      "Яскравість в режимі очікування",
     ),
     "displayIdleTime": MessageLookupByLibrary.simpleMessage(
       "Час до затемнення",

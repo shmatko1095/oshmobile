@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -81,7 +80,7 @@ Future<void> main() async {
       if (kDebugMode) {
         FlutterError.dumpErrorToConsole(details);
       }
-      FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+      unawaited(OshCrashReporter.logFlutterFatalError(details));
     };
     PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
       _reportUncaughtError(
