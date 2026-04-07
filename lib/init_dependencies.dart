@@ -18,8 +18,8 @@ import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/core/api_authenticator.dart';
 import 'package:oshmobile/core/network/chopper_client/core/auth_interceptor.dart';
 import 'package:oshmobile/core/network/chopper_client/core/session_storage.dart';
-import 'package:oshmobile/core/network/chopper_client/osh_api_user/osh_api_user_service.dart';
-import 'package:oshmobile/core/network/mobile/mobile_api_client.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_service.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api/v1/users/users_v1_service.dart';
 import 'package:oshmobile/core/network/mqtt/app_device_id_provider.dart';
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
@@ -179,13 +179,13 @@ Future<void> _initKeycloakWrapper() async {
 void _initHomeFeature() {
   locator
     ..registerFactory<UserRemoteDataSource>(() =>
-        UserRemoteDataSourceImpl(mobileApiClient: locator<MobileApiClient>()))
+        UserRemoteDataSourceImpl(mobileService: locator<MobileV1Service>()))
     ..registerFactory<UserRepository>(
       () => UserRepositoryImpl(dataSource: locator<UserRemoteDataSource>()),
     )
     ..registerFactory<DeviceRemoteDataSource>(
       () => DeviceRemoteDataSourceImpl(
-          mobileApiClient: locator<MobileApiClient>()),
+          mobileService: locator<MobileV1Service>()),
     )
     ..registerFactory<DeviceRepository>(
       () => DeviceRepositoryImpl(dataSource: locator<DeviceRemoteDataSource>()),
@@ -218,7 +218,7 @@ void _initHomeFeature() {
 void _initAccountSettingsFeature() {
   locator.registerFactory<RequestMyAccountDeletion>(
     () => RequestMyAccountDeletion(
-      mobileApiClient: locator<MobileApiClient>(),
+      mobileService: locator<MobileV1Service>(),
     ),
   );
 }
@@ -229,7 +229,7 @@ void _initAuthFeature() {
     ..registerFactory<IAuthRemoteDataSource>(
       () => OshAuthRemoteDataSourceImpl(
         authClient: locator<AuthService>(),
-        oshApiUserService: locator<ApiUserService>(),
+        usersService: locator<UsersV1Service>(),
       ),
     )
     //Repository
@@ -292,7 +292,7 @@ void _initTelemetryHistoryFeature() {
   locator
     ..registerFactory<TelemetryHistoryRemoteDataSource>(
       () => TelemetryHistoryRemoteDataSourceImpl(
-        mobileApiClient: locator<MobileApiClient>(),
+        mobileService: locator<MobileV1Service>(),
       ),
     )
     ..registerFactory<TelemetryHistoryRepository>(
@@ -364,8 +364,11 @@ Future<void> _initWebClient() async {
     ..registerLazySingleton<AuthService>(
       () => AuthService.create(),
     )
-    ..registerLazySingleton<ApiUserService>(
-      () => ApiUserService.create(),
+    ..registerLazySingleton<UsersV1Service>(
+      () => UsersV1Service.create(),
+    )
+    ..registerLazySingleton<MobileV1Service>(
+      () => MobileV1Service.create(),
     )
     ..registerLazySingleton<GlobalAuthCubit>(
       () => GlobalAuthCubit(
@@ -384,7 +387,8 @@ Future<void> _initWebClient() async {
     authenticator: locator<ApiAuthenticator>(),
     services: [
       locator<AuthService>(),
-      locator<ApiUserService>(),
+      locator<UsersV1Service>(),
+      locator<MobileV1Service>(),
     ],
     interceptors: [
       AuthInterceptor(globalAuthCubit: locator<GlobalAuthCubit>()),
@@ -397,12 +401,10 @@ Future<void> _initWebClient() async {
     ],
   );
   locator<AuthService>().updateClient(chopperClient);
-  locator<ApiUserService>().updateClient(chopperClient);
+  locator<UsersV1Service>().updateClient(chopperClient);
+  locator<MobileV1Service>().updateClient(chopperClient);
 
   locator.registerSingleton<ChopperClient>(chopperClient);
-  locator.registerLazySingleton<MobileApiClient>(
-    () => MobileApiClient(client: locator<ChopperClient>()),
-  );
 }
 
 Future<void> _initMqttClient() async {

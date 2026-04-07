@@ -1,19 +1,21 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:oshmobile/core/error/failures.dart';
-import 'package:oshmobile/core/network/mobile/mobile_api_client.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_response_mapper.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_service.dart';
 import 'package:oshmobile/core/usecase/usecase.dart';
 
 class RequestMyAccountDeletion implements UseCase<void, NoParams> {
   const RequestMyAccountDeletion({
-    required MobileApiClient mobileApiClient,
-  }) : _mobileApiClient = mobileApiClient;
+    required MobileV1Service mobileService,
+  }) : _mobileService = mobileService;
 
-  final MobileApiClient _mobileApiClient;
+  final MobileV1Service _mobileService;
 
   @override
   Future<Either<Failure, void>> call(NoParams params) async {
     try {
-      await _mobileApiClient.requestMyAccountDeletion();
+      final response = await _mobileService.requestMyAccountDeletion();
+      MobileV1ResponseMapper.ensureSuccess(response);
       return right(null);
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));

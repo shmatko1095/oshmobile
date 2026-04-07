@@ -1,6 +1,6 @@
-import 'package:oshmobile/core/network/mobile/mobile_api_client.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_response_mapper.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_service.dart';
 import 'package:oshmobile/features/telemetry_history/data/datasources/telemetry_history_remote_data_source.dart';
-import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_point.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_query.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
@@ -8,33 +8,26 @@ import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_his
 class TelemetryHistoryRemoteDataSourceImpl
     implements TelemetryHistoryRemoteDataSource {
   const TelemetryHistoryRemoteDataSourceImpl({
-    required MobileApiClient mobileApiClient,
-  }) : _mobileApiClient = mobileApiClient;
+    required MobileV1Service mobileService,
+  }) : _mobileService = mobileService;
 
-  final MobileApiClient _mobileApiClient;
+  final MobileV1Service _mobileService;
 
   @override
   Future<TelemetryHistorySeries> getSeries({
     required String serial,
     required TelemetryHistoryQuery query,
   }) async {
-    final raw = await _mobileApiClient.getMyDeviceTelemetryHistoryRaw(
+    final response = await _mobileService.getMyDeviceTelemetryHistory(
       serial: serial,
-      seriesKeys: <String>[query.seriesKey],
-      from: query.from,
-      to: query.to,
+      seriesKeys: query.seriesKey,
+      from: query.from.toUtc().toIso8601String(),
+      to: query.to.toUtc().toIso8601String(),
       resolution: query.preferredResolution,
-      apiVersion: _apiVersionLabel(query.apiVersion),
     );
+    final raw = MobileV1ResponseMapper.requireJsonMap(response);
 
     return _parse(raw, fallbackSerial: serial, fallbackQuery: query);
-  }
-
-  String _apiVersionLabel(TelemetryHistoryApiVersion version) {
-    return switch (version) {
-      TelemetryHistoryApiVersion.v1 => 'v1',
-      TelemetryHistoryApiVersion.v2 => 'v2',
-    };
   }
 
   TelemetryHistorySeries _parse(

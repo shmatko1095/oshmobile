@@ -1,28 +1,69 @@
 import 'package:chopper/chopper.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:oshmobile/core/network/mobile/mobile_api_client.dart';
+import 'package:http/http.dart' as http;
+import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/requests/claim_my_device_request.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/requests/update_my_device_user_data_request.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_service.dart';
 import 'package:oshmobile/features/telemetry_history/data/datasources/telemetry_history_remote_data_source_impl.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_query.dart';
 
-class _FakeMobileApiClient extends MobileApiClient {
-  _FakeMobileApiClient(this._payload)
-      : super(
-          client: ChopperClient(baseUrl: Uri.parse('https://example.org')),
-        );
+class _FakeMobileV1Service extends MobileV1Service {
+  _FakeMobileV1Service(this._payload);
 
   final Map<String, dynamic> _payload;
 
   @override
-  Future<Map<String, dynamic>> getMyDeviceTelemetryHistoryRaw({
+  Type get definitionType => MobileV1Service;
+
+  @override
+  Future<Response<dynamic>> getMyDeviceTelemetryHistory({
     required String serial,
-    required List<String> seriesKeys,
-    required DateTime from,
-    required DateTime to,
+    required String seriesKeys,
+    required String from,
+    required String to,
     String resolution = 'auto',
-    String apiVersion = 'v1',
   }) async {
-    return _payload;
+    return Response<dynamic>(http.Response('', 200), _payload);
   }
+
+  @override
+  Future<Response<dynamic>> claimMyDevice({
+    required String serial,
+    required ClaimMyDeviceRequest request,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Response<dynamic>> getMyDevice({required String serial}) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Response<dynamic>> listMyDevices() {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Response<dynamic>> requestMyAccountDeletion() {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Response<dynamic>> unassignMyDevice({required String serial}) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Response<dynamic>> updateMyDeviceUserData({
+    required String serial,
+    required UpdateMyDeviceUserDataRequest request,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  void updateClient(ChopperClient client) {}
 }
 
 void main() {
@@ -60,7 +101,7 @@ void main() {
     };
 
     final source = TelemetryHistoryRemoteDataSourceImpl(
-      mobileApiClient: _FakeMobileApiClient(payload),
+      mobileService: _FakeMobileV1Service(payload),
     );
 
     final series = await source.getSeries(
@@ -103,7 +144,7 @@ void main() {
     };
 
     final source = TelemetryHistoryRemoteDataSourceImpl(
-      mobileApiClient: _FakeMobileApiClient(payload),
+      mobileService: _FakeMobileV1Service(payload),
     );
 
     final series = await source.getSeries(
