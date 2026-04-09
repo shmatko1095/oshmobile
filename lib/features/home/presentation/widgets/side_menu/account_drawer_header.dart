@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/entities/jwt_user_data.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
@@ -13,6 +17,7 @@ class AccountDrawerHeader extends StatelessWidget {
   void _openAccountSettings(BuildContext context) {
     final rootNavigator = Navigator.of(context, rootNavigator: true);
     Navigator.of(context).pop();
+    unawaited(OshAnalytics.logEvent(OshAnalyticsEvents.accountSettingsOpened));
     rootNavigator.push(AccountSettingsPage.route());
   }
 

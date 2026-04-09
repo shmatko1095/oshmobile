@@ -4,6 +4,8 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
@@ -102,11 +104,21 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
                     ? null
                     : () {
                         if (effective == mode) return;
+                        unawaited(
+                          OshAnalytics.logEvent(
+                            OshAnalyticsEvents.scheduleModeSelected,
+                            parameters: {
+                              'from_mode': current.id,
+                              'to_mode': mode.id,
+                              'source': 'mode_bar',
+                            },
+                          ),
+                        );
                         _startOptimistic(mode);
                         unawaited(context
                             .read<DeviceFacade>()
                             .schedule
-                            .commandSetMode(mode));
+                            .commandSetMode(mode, source: 'mode_bar'));
                       },
               ),
             ),

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/services/mqtt_op_runner.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
@@ -212,7 +214,10 @@ class DeviceScheduleApiImpl implements DeviceScheduleApi {
   }
 
   @override
-  Future<void> commandSetMode(CalendarMode mode) {
+  Future<void> commandSetMode(
+    CalendarMode mode, {
+    String source = 'unknown',
+  }) {
     if (_base == null) return Future<void>.value();
 
     final effectiveMode = (_modeOverride ?? _base!.mode);
@@ -220,7 +225,7 @@ class DeviceScheduleApiImpl implements DeviceScheduleApi {
 
     if (_savingKind != null) {
       if (_savingKind == _ScheduleSavingKind.mode) {
-        return _runModeOp(mode, serialized: false);
+        return _runModeOp(mode, serialized: false, source: source);
       }
 
       _modeOverride = mode;
@@ -230,12 +235,17 @@ class DeviceScheduleApiImpl implements DeviceScheduleApi {
       return Future<void>.value();
     }
 
-    return _runModeOp(mode, serialized: true);
+    return _runModeOp(mode, serialized: true, source: source);
   }
 
-  Future<void> _runModeOp(CalendarMode next, {required bool serialized}) {
+  Future<void> _runModeOp(
+    CalendarMode next, {
+    required bool serialized,
+    required String source,
+  }) {
     final reqId = newReqId();
     _comm.start(reqId: reqId, deviceSn: _deviceSn);
+    final previousMode = _base?.mode;
 
     _modeOverride = next;
     _savingKind = _ScheduleSavingKind.mode;
@@ -260,6 +270,16 @@ class DeviceScheduleApiImpl implements DeviceScheduleApi {
         _savingKind = null;
         _flash = null;
         _emit();
+        unawaited(
+          OshAnalytics.logEvent(
+            OshAnalyticsEvents.scheduleModeChanged,
+            parameters: {
+              'from_mode': previousMode?.id,
+              'to_mode': next.id,
+              'source': source,
+            },
+          ),
+        );
       },
       onTimeout: _onTimeout,
       onError: (_) => _onFailed('Failed to set mode'),
@@ -349,6 +369,8 @@ class DeviceScheduleApiImpl implements DeviceScheduleApi {
     final desired = _snapshotOrNull();
     if (desired == null) return Future<void>.value();
     if (!_dirty) return Future<void>.value();
+    final currentMode = desired.mode;
+    final pointCount = desired.pointsFor(currentMode).length;
 
     if (_savingKind != null) {
       _queued = _queued.withSaveAll();
@@ -377,6 +399,15 @@ class DeviceScheduleApiImpl implements DeviceScheduleApi {
         _savingKind = null;
         _flash = null;
         _emit();
+        unawaited(
+          OshAnalytics.logEvent(
+            OshAnalyticsEvents.scheduleSaved,
+            parameters: {
+              'mode': currentMode.id,
+              'point_count': pointCount,
+            },
+          ),
+        );
       },
       onTimeout: _onTimeout,
       onError: (_) => _onFailed('Failed to save schedule'),

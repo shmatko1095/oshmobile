@@ -1,5 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/domain/models/device_temperature_sensor_ref.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
@@ -120,6 +125,16 @@ class TelemetryHistoryNavigator {
     if (metrics.isEmpty) return;
     if (!hostContext.mounted) return;
     final s = S.of(hostContext);
+    final effectiveIndex = initialMetricIndex.clamp(0, metrics.length - 1);
+    unawaited(
+      OshAnalytics.logEvent(
+        OshAnalyticsEvents.telemetryHistoryOpened,
+        parameters: {
+          'metric_key': _analyticsMetricKey(metrics[effectiveIndex]),
+          'comparison_count': comparisonMetrics.length,
+        },
+      ),
+    );
 
     late final DeviceFacade facade;
     late final DeviceSnapshotCubit snapshotCubit;
@@ -136,6 +151,9 @@ class TelemetryHistoryNavigator {
 
     Navigator.of(hostContext).push(
       MaterialPageRoute(
+        settings: const RouteSettings(
+          name: OshAnalyticsScreens.telemetryHistory,
+        ),
         builder: (_) => DeviceRouteScope.provide(
           facade: facade,
           snapshotCubit: snapshotCubit,
@@ -144,12 +162,25 @@ class TelemetryHistoryNavigator {
               seriesReader: facade.telemetryHistory,
               metrics: metrics,
               comparisonMetrics: comparisonMetrics,
-              initialMetricIndex: initialMetricIndex,
+              initialMetricIndex: effectiveIndex,
             )..load(),
             child: const TelemetryHistoryPage(),
           ),
         ),
       ),
     );
+  }
+
+  static String _analyticsMetricKey(TelemetryHistoryMetric metric) {
+    if (metric.sensorId != null && metric.sensorId!.trim().isNotEmpty) {
+      return 'temperature';
+    }
+
+    return switch (metric.seriesKey) {
+      'load_factor' => 'load_factor',
+      'heater_enabled' => 'heater_enabled',
+      'target_temp' => 'target_temp',
+      _ => 'metric',
+    };
   }
 }

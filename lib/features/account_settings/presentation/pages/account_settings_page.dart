@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/cubits/app/app_theme_cubit.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/entities/jwt_user_data.dart';
@@ -18,6 +19,7 @@ class AccountSettingsPage extends StatelessWidget {
 
   static MaterialPageRoute<void> route() {
     return MaterialPageRoute<void>(
+      settings: const RouteSettings(name: OshAnalyticsScreens.accountSettings),
       builder: (_) => const AccountSettingsPage(),
     );
   }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/app/device_session/scopes/device_route_scope.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
@@ -27,6 +30,7 @@ class ThermostatModeNavigator {
   }
 
   static Future<void> _openOn(BuildContext context) async {
+    final s = S.of(context);
     final facade = context.read<DeviceFacade>();
     final snapshotCubit = context.read<DeviceSnapshotCubit>();
     var initial = 21.0;
@@ -39,22 +43,33 @@ class ThermostatModeNavigator {
     }
     if (!context.mounted) return;
 
+    await OshAnalytics.logEvent(
+      OshAnalyticsEvents.scheduleEditorOpened,
+      parameters: {'mode': CalendarMode.on.id},
+    );
+    if (!context.mounted) return;
     await Navigator.of(context)
         .push(
           MaterialPageRoute(
+            settings: const RouteSettings(
+              name: OshAnalyticsScreens.manualTemperature,
+            ),
             builder: (_) => DeviceRouteScope.provide(
               facade: facade,
               snapshotCubit: snapshotCubit,
               child: ManualTemperaturePage(
                 initial: initial,
-                title: S.of(context).ManualTemperature,
+                title: s.ManualTemperature,
                 onSave: (value) {
                   final point = SchedulePoint(
                     time: const TimeOfDay(hour: 0, minute: 0),
                     daysMask: WeekdayMask.all,
                     temp: value,
                   );
-                  facade.schedule.commandSetMode(CalendarMode.on);
+                  facade.schedule.commandSetMode(
+                    CalendarMode.on,
+                    source: 'mode_editor',
+                  );
                   facade.schedule.patchList(CalendarMode.on, [point]);
                 },
               ),
@@ -65,6 +80,7 @@ class ThermostatModeNavigator {
   }
 
   static Future<void> _openRange(BuildContext context) async {
+    final s = S.of(context);
     final facade = context.read<DeviceFacade>();
     final snapshotCubit = context.read<DeviceSnapshotCubit>();
     final snap = facade.schedule.current ?? await facade.schedule.get();
@@ -73,16 +89,24 @@ class ThermostatModeNavigator {
     double minInit = snap.range.min;
     double maxInit = snap.range.max;
 
+    await OshAnalytics.logEvent(
+      OshAnalyticsEvents.scheduleEditorOpened,
+      parameters: {'mode': CalendarMode.range.id},
+    );
+    if (!context.mounted) return;
     await Navigator.of(context)
         .push(
           MaterialPageRoute(
+            settings: const RouteSettings(
+              name: OshAnalyticsScreens.scheduleRange,
+            ),
             builder: (_) => DeviceRouteScope.provide(
               facade: facade,
               snapshotCubit: snapshotCubit,
               child: ScheduleRangePage(
                 initialMin: minInit,
                 initialMax: maxInit,
-                title: S.of(context).ModeRange,
+                title: s.ModeRange,
                 onSave: (minValue, maxValue) {
                   final lo = (minValue <= maxValue) ? minValue : maxValue;
                   final hi = (maxValue >= minValue) ? maxValue : minValue;
@@ -92,7 +116,10 @@ class ThermostatModeNavigator {
                       max: double.parse(hi.toStringAsFixed(1)),
                     ),
                   );
-                  facade.schedule.commandSetMode(CalendarMode.range);
+                  facade.schedule.commandSetMode(
+                    CalendarMode.range,
+                    source: 'mode_editor',
+                  );
                 },
               ),
             ),
@@ -105,18 +132,26 @@ class ThermostatModeNavigator {
     BuildContext context, {
     required CalendarMode mode,
   }) async {
+    final s = S.of(context);
     final facade = context.read<DeviceFacade>();
     final snapshotCubit = context.read<DeviceSnapshotCubit>();
-    final title = (mode.id == CalendarMode.weekly.id)
-        ? S.of(context).ModeWeekly
-        : S.of(context).ModeDaily;
+    final title =
+        (mode.id == CalendarMode.weekly.id) ? s.ModeWeekly : s.ModeDaily;
 
-    await facade.schedule.commandSetMode(mode);
+    await facade.schedule.commandSetMode(mode, source: 'mode_editor');
     if (!context.mounted) return;
 
+    await OshAnalytics.logEvent(
+      OshAnalyticsEvents.scheduleEditorOpened,
+      parameters: {'mode': mode.id},
+    );
+    if (!context.mounted) return;
     await Navigator.of(context)
         .push(
           MaterialPageRoute(
+            settings: const RouteSettings(
+              name: OshAnalyticsScreens.scheduleEditor,
+            ),
             builder: (_) => DeviceRouteScope.provide(
               facade: facade,
               snapshotCubit: snapshotCubit,

@@ -1,9 +1,13 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
@@ -127,7 +131,15 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                       child: const Icon(Icons.delete,
                           color: AppPalette.destructiveFg),
                     ),
-                    onDismissed: (_) => facade.schedule.removePoint(idx),
+                    onDismissed: (_) {
+                      unawaited(
+                        OshAnalytics.logEvent(
+                          OshAnalyticsEvents.schedulePointRemoved,
+                          parameters: {'mode': schedule.mode.id},
+                        ),
+                      );
+                      facade.schedule.removePoint(idx);
+                    },
                     child: _ScheduleTile(
                       timeText: _fmtTime(p.time),
                       valueText: '${_fmtTemp(p.temp)}°C',
@@ -135,7 +147,10 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                       showDays: showDays,
                       onTapTime: () async {
                         Navigator.of(context).push(
-                          CupertinoPageRoute(
+                          MaterialPageRoute<void>(
+                            settings: const RouteSettings(
+                              name: OshAnalyticsScreens.manualTime,
+                            ),
                             builder: (_) => ManualTimePage(
                               title: S.of(context).time,
                               initial: p.time,
@@ -169,7 +184,10 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                       },
                       onTapValue: () {
                         Navigator.of(context).push(
-                          CupertinoPageRoute(
+                          MaterialPageRoute<void>(
+                            settings: const RouteSettings(
+                              name: OshAnalyticsScreens.manualTemperature,
+                            ),
                             builder: (_) => ManualTemperaturePage(
                               title: S.of(context).SetTemperature,
                               initial: p.temp,
@@ -195,7 +213,19 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(right: 6, bottom: 10),
-        child: _AddPointFab(onPressed: () => facade.schedule.addPoint()),
+        child: _AddPointFab(
+          onPressed: () {
+            unawaited(
+              OshAnalytics.logEvent(
+                OshAnalyticsEvents.schedulePointAdded,
+                parameters: {
+                  'mode': facade.schedule.current?.mode.id,
+                },
+              ),
+            );
+            facade.schedule.addPoint();
+          },
+        ),
       ),
       bottomNavigationBar: BlocBuilder<DeviceSnapshotCubit, DeviceSnapshot>(
         builder: (context, snap) {

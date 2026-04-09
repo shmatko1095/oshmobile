@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meta/meta.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/permissions/ble_permission_service.dart';
 import 'package:oshmobile/features/ble_provisioning/domain/entities/wifi_connect_status.dart';
@@ -46,6 +48,10 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
   }) async {
     final hasPerms = await _permissions.ensureBlePermissions();
     if (!hasPerms) {
+      await OshAnalytics.logEvent(
+        OshAnalyticsEvents.bleNearbyCheckFailed,
+        parameters: {'reason': 'permission_denied'},
+      );
       emit(state.copyWith(
         status: ProvisioningStatus.permissionDenied,
         deviceNearby: null,
@@ -73,6 +79,12 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
       },
       onError: (e, st) {
         OshCrashReporter.logNonFatal(e, st, reason: "Nearby check failed");
+        unawaited(
+          OshAnalytics.logEvent(
+            OshAnalyticsEvents.bleNearbyCheckFailed,
+            parameters: {'reason': 'observe_failed'},
+          ),
+        );
         emit(state.copyWith(
           status: ProvisioningStatus.error,
           deviceNearby: null,
@@ -97,6 +109,7 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
     required String serialNumber,
     required String secureCode,
   }) async {
+    await OshAnalytics.logEvent(OshAnalyticsEvents.bleProvisionStarted);
     await _nearbySub?.cancel();
     _nearbySub = null;
 
@@ -104,6 +117,10 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
 
     final hasPerms = await _permissions.ensureBlePermissions();
     if (!hasPerms) {
+      await OshAnalytics.logEvent(
+        OshAnalyticsEvents.bleConnectFailed,
+        parameters: {'reason': 'permission_denied'},
+      );
       emit(state.copyWith(
         status: ProvisioningStatus.permissionDenied,
         error: 'BLE permissions not granted',
@@ -116,11 +133,16 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
     try {
       await _connectBleDevice(
           serialNumber: serialNumber, secureCode: secureCode);
+      await OshAnalytics.logEvent(OshAnalyticsEvents.bleConnectSucceeded);
       emit(
           state.copyWith(status: ProvisioningStatus.wifiScanIdle, error: null));
       await refreshScan();
     } catch (e, st) {
       OshCrashReporter.logNonFatal(e, st, reason: "Failed to connect via BLE");
+      await OshAnalytics.logEvent(
+        OshAnalyticsEvents.bleConnectFailed,
+        parameters: {'reason': 'connect_failed'},
+      );
       emit(state.copyWith(
           status: ProvisioningStatus.error,
           error: 'Failed to connect via BLE: $e'));
@@ -179,12 +201,39 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
       password: password,
     ).listen(
       (status) {
+        if (status.state == WifiConnectState.success) {
+          unawaited(
+            OshAnalytics.logEvent(
+              OshAnalyticsEvents.bleWifiConnectSucceeded,
+              parameters: {'auth_type': network.auth.name},
+            ),
+          );
+        } else if (status.state == WifiConnectState.failed) {
+          unawaited(
+            OshAnalytics.logEvent(
+              OshAnalyticsEvents.bleWifiConnectFailed,
+              parameters: {
+                'stage': 'wifi_connect',
+                'auth_type': network.auth.name,
+              },
+            ),
+          );
+        }
         emit(state.copyWith(
           lastConnectStatus: status,
           status: _mapConnectState(status),
         ));
       },
       onError: (e) {
+        unawaited(
+          OshAnalytics.logEvent(
+            OshAnalyticsEvents.bleWifiConnectFailed,
+            parameters: {
+              'stage': 'wifi_connect',
+              'auth_type': network.auth.name,
+            },
+          ),
+        );
         emit(state.copyWith(
           status: ProvisioningStatus.error,
           error: 'Wi-Fi connect failed: $e',

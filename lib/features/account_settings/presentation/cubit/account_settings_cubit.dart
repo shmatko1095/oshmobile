@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/common/cubits/app/app_theme_cubit.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/usecase/usecase.dart';
@@ -31,6 +33,12 @@ class AccountSettingsCubit extends Cubit<AccountSettingsState> {
 
   void changeTheme(AppThemePreference preference) {
     emit(state.copyWith(selectedTheme: preference));
+    unawaited(
+      OshAnalytics.logEvent(
+        OshAnalyticsEvents.themeChanged,
+        parameters: {'theme': preference.name},
+      ),
+    );
     onThemeChanged(preference);
   }
 
@@ -58,11 +66,11 @@ class AccountSettingsCubit extends Cubit<AccountSettingsState> {
 
   Future<void> onDeleteAccountConfirmed() async {
     final result = await _requestMyAccountDeletion(NoParams());
-    result.fold(
+    await result.fold(
       (failure) => throw StateError(
         failure.message ?? 'Account deletion request failed',
       ),
-      (_) {},
+      (_) => OshAnalytics.logEvent(OshAnalyticsEvents.accountDeletionRequested),
     );
   }
 

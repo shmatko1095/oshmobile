@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
@@ -11,12 +12,13 @@ class RenameDevicePage extends StatefulWidget {
   final String name;
   final String room;
 
-  static CupertinoPageRoute route({
+  static MaterialPageRoute<void> route({
     required String deviceId,
     required String name,
     required String room,
   }) =>
-      CupertinoPageRoute(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: OshAnalyticsScreens.renameDevice),
         builder: (context) => RenameDevicePage(
           deviceId: deviceId,
           name: name,
@@ -100,53 +102,56 @@ class _RenameDevicePageState extends State<RenameDevicePage> {
       appBar: AppBar(
         title: Text(S.of(context).DeviceEditTitle),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: BlocConsumer<HomeCubit, HomeState>(
-          listenWhen: (previous, current) =>
-              ModalRoute.of(context)?.isCurrent ?? true,
-          listener: (context, state) => _onStateChanged(context, state),
-          builder: (context, state) {
-            final isLoading = state is HomeLoading;
+      body: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: BlocConsumer<HomeCubit, HomeState>(
+            listenWhen: (previous, current) =>
+                ModalRoute.of(context)?.isCurrent ?? true,
+            listener: (context, state) => _onStateChanged(context, state),
+            builder: (context, state) {
+              final isLoading = state is HomeLoading;
 
-            return Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 20),
-                          TextFormField(
-                            controller: _aliasCtrl,
-                            decoration: InputDecoration(
-                              labelText: S.of(context).Name,
+              return Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 20),
+                            TextFormField(
+                              controller: _aliasCtrl,
+                              decoration: InputDecoration(
+                                labelText: S.of(context).Name,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 20),
-                          TextFormField(
-                            controller: _descriptionCtrl,
-                            decoration: InputDecoration(
-                              labelText: S.of(context).Room,
+                            const SizedBox(height: 20),
+                            TextFormField(
+                              controller: _descriptionCtrl,
+                              decoration: InputDecoration(
+                                labelText: S.of(context).Room,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 30),
-                          if (isLoading)
-                            const CupertinoActivityIndicator()
-                          else
-                            CustomElevatedButton(
-                              buttonText: S.of(context).OK,
-                              onPressed: _canSave ? _submit : null,
-                            ),
-                        ],
+                            const SizedBox(height: 30),
+                            if (isLoading)
+                              const CupertinoActivityIndicator()
+                            else
+                              CustomElevatedButton(
+                                buttonText: S.of(context).OK,
+                                onPressed: _canSave ? _submit : null,
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            );
-          },
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

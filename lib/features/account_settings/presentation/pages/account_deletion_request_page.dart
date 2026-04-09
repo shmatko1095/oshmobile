@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/widgets/app_button.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
@@ -22,6 +23,9 @@ class AccountDeletionRequestPage extends StatefulWidget {
     required String email,
   }) {
     return MaterialPageRoute<void>(
+      settings: const RouteSettings(
+        name: OshAnalyticsScreens.accountDeletionRequest,
+      ),
       builder: (_) => BlocProvider.value(
         value: cubit,
         child: AccountDeletionRequestPage(email: email),

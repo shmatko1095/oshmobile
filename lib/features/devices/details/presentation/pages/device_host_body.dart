@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:oshmobile/core/analytics/osh_analytics_screen_view.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_host_state.dart';
@@ -132,9 +134,12 @@ class DeviceHostBody extends StatelessWidget {
                         ),
                       );
                       final presenter = presenters.resolve(bundle.layout);
-                      return RefreshIndicator(
-                        onRefresh: () => _refreshAll(context),
-                        child: presenter.build(context, liveDevice, bundle),
+                      return OshAnalyticsScreenView(
+                        screenName: OshAnalyticsScreens.deviceDashboard,
+                        child: RefreshIndicator(
+                          onRefresh: () => _refreshAll(context),
+                          child: presenter.build(context, liveDevice, bundle),
+                        ),
                       );
                     }
                 }

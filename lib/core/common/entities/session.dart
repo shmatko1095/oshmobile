@@ -3,6 +3,7 @@ import 'package:oshmobile/core/common/entities/session_mode.dart';
 class Session {
   final String accessToken;
   final String refreshToken;
+  final String? authProvider;
   final String? tokenType;
   final DateTime? accessTokenExpiry;
   final DateTime? refreshTokenExpiry;
@@ -14,6 +15,7 @@ class Session {
   Session({
     required this.accessToken,
     required this.refreshToken,
+    this.authProvider,
     this.tokenType,
     this.accessTokenExpiry,
     this.refreshTokenExpiry,
@@ -39,6 +41,7 @@ class Session {
     return Session(
       accessToken: json['access_token'] ?? "",
       refreshToken: json['refresh_token'] ?? "",
+      authProvider: json['auth_provider']?.toString(),
       tokenType: json['token_type'] ?? "",
       accessTokenExpiry: _expiryFromNow(now, json['expires_in']),
       refreshTokenExpiry: _expiryFromNow(now, json['refresh_expires_in']),
@@ -53,6 +56,7 @@ class Session {
   Map<String, dynamic> toJson() => {
         'access_token': accessToken,
         'refresh_token': refreshToken,
+        'auth_provider': authProvider,
         'token_type': tokenType,
         'expires_in': accessTokenExpiry != null
             ? accessTokenExpiry!.difference(DateTime.now()).inSeconds
@@ -84,6 +88,7 @@ class Session {
   Session copyWith({
     String? accessToken,
     String? refreshToken,
+    String? authProvider,
     String? tokenType,
     DateTime? accessTokenExpiry,
     DateTime? refreshTokenExpiry,
@@ -95,6 +100,7 @@ class Session {
     return Session(
       accessToken: accessToken ?? this.accessToken,
       refreshToken: refreshToken ?? this.refreshToken,
+      authProvider: authProvider ?? this.authProvider,
       tokenType: tokenType ?? this.tokenType,
       accessTokenExpiry: accessTokenExpiry ?? this.accessTokenExpiry,
       refreshTokenExpiry: refreshTokenExpiry ?? this.refreshTokenExpiry,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screen_view.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/widgets/app_button.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
@@ -41,86 +43,89 @@ class NoInternetPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: bgColor,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppPalette.spaceXl,
-                vertical: AppPalette.spaceLg,
-              ),
-              child: Semantics(
-                liveRegion: true,
-                label: s.startupNoInternetScreenSemantics,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 124,
-                      height: 124,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            AppPalette.accentPrimary.withValues(alpha: 0.30),
-                            bgColor,
-                          ],
-                          radius: 0.85,
+      body: OshAnalyticsScreenView(
+        screenName: OshAnalyticsScreens.startupNoInternet,
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppPalette.spaceXl,
+                  vertical: AppPalette.spaceLg,
+                ),
+                child: Semantics(
+                  liveRegion: true,
+                  label: s.startupNoInternetScreenSemantics,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 124,
+                        height: 124,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              AppPalette.accentPrimary.withValues(alpha: 0.30),
+                              bgColor,
+                            ],
+                            radius: 0.85,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.wifi_off_rounded,
+                          size: 58,
+                          color: _noInternetPrimaryTextColor(context),
                         ),
                       ),
-                      child: Icon(
-                        Icons.wifi_off_rounded,
-                        size: 58,
-                        color: _noInternetPrimaryTextColor(context),
-                      ),
-                    ),
-                    const SizedBox(height: AppPalette.spaceXl),
-                    AppSolidCard(
-                      backgroundColor: _noInternetSurfaceColor(context),
-                      borderColor: _noInternetBorderColor(context),
-                      padding: const EdgeInsets.all(AppPalette.spaceXl),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            s.startupNoInternetTitle,
-                            textAlign: TextAlign.center,
-                            style: textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: _noInternetPrimaryTextColor(context),
+                      const SizedBox(height: AppPalette.spaceXl),
+                      AppSolidCard(
+                        backgroundColor: _noInternetSurfaceColor(context),
+                        borderColor: _noInternetBorderColor(context),
+                        padding: const EdgeInsets.all(AppPalette.spaceXl),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              s.startupNoInternetTitle,
+                              textAlign: TextAlign.center,
+                              style: textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: _noInternetPrimaryTextColor(context),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: AppPalette.spaceSm),
-                          Text(
-                            s.startupNoInternetSubtitle,
-                            textAlign: TextAlign.center,
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: _noInternetSecondaryTextColor(context),
-                              height: 1.45,
+                            const SizedBox(height: AppPalette.spaceSm),
+                            Text(
+                              s.startupNoInternetSubtitle,
+                              textAlign: TextAlign.center,
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: _noInternetSecondaryTextColor(context),
+                                height: 1.45,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: AppPalette.spaceLg),
-                          _HintRow(
-                            icon: Icons.wifi,
-                            text: s.startupNoInternetHintNetwork,
-                          ),
-                          const SizedBox(height: AppPalette.spaceSm),
-                          _HintRow(
-                            icon: Icons.router,
-                            text: s.startupNoInternetHintRetry,
-                          ),
-                          const SizedBox(height: AppPalette.spaceXl),
-                          AppButton(
-                            text: s.Retry,
-                            onPressed: isChecking ? null : onRetry,
-                            isLoading: isChecking,
-                            icon: const Icon(Icons.refresh_rounded, size: 18),
-                          ),
-                        ],
+                            const SizedBox(height: AppPalette.spaceLg),
+                            _HintRow(
+                              icon: Icons.wifi,
+                              text: s.startupNoInternetHintNetwork,
+                            ),
+                            const SizedBox(height: AppPalette.spaceSm),
+                            _HintRow(
+                              icon: Icons.router,
+                              text: s.startupNoInternetHintRetry,
+                            ),
+                            const SizedBox(height: AppPalette.spaceXl),
+                            AppButton(
+                              text: s.Retry,
+                              onPressed: isChecking ? null : onRetry,
+                              isLoading: isChecking,
+                              icon: const Icon(Icons.refresh_rounded, size: 18),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

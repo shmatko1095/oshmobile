@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/di/device_context.dart';
 import 'package:oshmobile/app/device_session/di/device_di.dart';
@@ -107,6 +109,12 @@ class _DeviceScopeState extends State<DeviceScope> {
       _presenters = sl<DevicePresenterRegistry>();
 
       await _page.load(_ctx.deviceSn);
+      if (_page.state case DevicePageReady(:final bundle)) {
+        await OshAnalytics.logEvent(
+          OshAnalyticsEvents.deviceDashboardOpened,
+          parameters: {'device_layout': bundle.layout},
+        );
+      }
 
       // Start the reactive stream only after negotiation and configuration bootstrap complete.
       _snapshot.start();

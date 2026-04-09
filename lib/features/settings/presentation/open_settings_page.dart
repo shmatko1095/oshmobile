@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/app/device_session/scopes/device_route_scope.dart';
 
 import 'package:oshmobile/core/common/entities/device/device.dart';
@@ -39,9 +42,17 @@ class DeviceSettingsNavigator {
 
     // Ensure settings are actively fetched when opening the screen.
     unawaited(facade.settings.get(force: true));
+    final deviceLayout = snapshotCubit.state.details.data?.layout;
+    unawaited(
+      OshAnalytics.logEvent(
+        OshAnalyticsEvents.deviceSettingsOpened,
+        parameters: {'device_layout': deviceLayout},
+      ),
+    );
 
     Navigator.of(hostContext).push(
       MaterialPageRoute(
+        settings: const RouteSettings(name: OshAnalyticsScreens.deviceSettings),
         builder: (_) => DeviceRouteScope.provide(
           facade: facade,
           snapshotCubit: snapshotCubit,

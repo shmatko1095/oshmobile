@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/widgets/colored_divider.dart';
 import 'package:oshmobile/core/theme/text_styles.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
@@ -13,8 +14,10 @@ import 'package:oshmobile/features/home/presentation/widgets/add_device/device_f
 import 'package:oshmobile/generated/l10n.dart';
 
 class AddDevicePage extends StatefulWidget {
-  static CupertinoPageRoute route() =>
-      CupertinoPageRoute(builder: (context) => const AddDevicePage());
+  static MaterialPageRoute<void> route() => MaterialPageRoute<void>(
+        settings: const RouteSettings(name: OshAnalyticsScreens.addDevice),
+        builder: (context) => const AddDevicePage(),
+      );
 
   const AddDevicePage({super.key});
 
@@ -116,63 +119,66 @@ class _AddDevicePageState extends State<AddDevicePage>
       appBar: AppBar(
         title: Text(S.of(context).AddDevice),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: BlocConsumer<HomeCubit, HomeState>(
-          listenWhen: (previous, current) =>
-              ModalRoute.of(context)?.isCurrent ?? true,
-          listener: (context, state) => _onStateChanged(context, state),
-          builder: (context, state) {
-            return Column(
-              children: [
-                Text(
-                  S.of(context).PointCameraToQR,
-                  style: TextStyles.contentStyle,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: MobileScanner(
-                      controller: _scanner,
-                      onDetect: _onScan,
-                    ),
+      body: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: BlocConsumer<HomeCubit, HomeState>(
+            listenWhen: (previous, current) =>
+                ModalRoute.of(context)?.isCurrent ?? true,
+            listener: (context, state) => _onStateChanged(context, state),
+            builder: (context, state) {
+              return Column(
+                children: [
+                  Text(
+                    S.of(context).PointCameraToQR,
+                    style: TextStyles.contentStyle,
+                    textAlign: TextAlign.center,
                   ),
-                ),
-                const SizedBox(height: 20),
-                const ColoredDivider(thickness: 1.5),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 20),
-                          DeviceFormField(
-                            labelText: S.of(context).SerialNumber,
-                            controller: _serialCtrl,
-                          ),
-                          const SizedBox(height: 20),
-                          DeviceFormField(
-                            labelText: S.of(context).SecureCode,
-                            controller: _secureCtrl,
-                          ),
-                          const SizedBox(height: 30),
-                          (state is HomeLoading)
-                              ? CupertinoActivityIndicator()
-                              : CustomElevatedButton(
-                                  buttonText: S.of(context).AddDevice,
-                                  onPressed: () => _submitManual(),
-                                ),
-                        ],
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: MobileScanner(
+                        controller: _scanner,
+                        onDetect: _onScan,
                       ),
                     ),
                   ),
-                ),
-              ],
-            );
-          },
+                  const SizedBox(height: 20),
+                  const ColoredDivider(thickness: 1.5),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 20),
+                            DeviceFormField(
+                              labelText: S.of(context).SerialNumber,
+                              controller: _serialCtrl,
+                            ),
+                            const SizedBox(height: 20),
+                            DeviceFormField(
+                              labelText: S.of(context).SecureCode,
+                              controller: _secureCtrl,
+                            ),
+                            const SizedBox(height: 30),
+                            (state is HomeLoading)
+                                ? CupertinoActivityIndicator()
+                                : CustomElevatedButton(
+                                    buttonText: S.of(context).AddDevice,
+                                    onPressed: () => _submitManual(),
+                                  ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

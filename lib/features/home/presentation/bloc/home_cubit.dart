@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
@@ -44,9 +48,20 @@ class HomeCubit extends Cubit<HomeState> {
 
   void selectDevice(String deviceId) {
     final prevDeviceId = state.selectedDeviceId;
+    final device = getDeviceById(deviceId);
     emit(state.copyWith(selectedDeviceId: deviceId));
     _selectedDeviceStorage.saveSelectedDevice(_userUuid, deviceId);
     _comm.dropForDevice(prevDeviceId);
+    if (device != null) {
+      unawaited(
+        OshAnalytics.logEvent(
+          OshAnalyticsEvents.deviceSelected,
+          parameters: {
+            'online': device.connectionInfo.online,
+          },
+        ),
+      );
+    }
   }
 
   Future<void> updateDeviceList() async {
@@ -77,6 +92,12 @@ class HomeCubit extends Cubit<HomeState> {
       },
       (devices) {
         _updateDeviceList(devices);
+        unawaited(
+          OshAnalytics.logEvent(
+            OshAnalyticsEvents.deviceListLoaded,
+            parameters: {'device_count': devices.length},
+          ),
+        );
         final stillExists =
             savedSelected != null && devices.any((d) => d.id == savedSelected);
         final selectedId = stillExists ? savedSelected : null;
@@ -122,12 +143,14 @@ class HomeCubit extends Cubit<HomeState> {
           _selectedDeviceStorage.clearSelectedDevice(_userUuid);
           _comm.dropForDevice(deviceId);
         }
+        unawaited(OshAnalytics.logEvent(OshAnalyticsEvents.deviceUnassigned));
         updateDeviceList();
       },
     );
   }
 
   Future<void> assignDevice(String sn, String sc) async {
+    await OshAnalytics.logEvent(OshAnalyticsEvents.deviceAssignStarted);
     emit(HomeLoading(selectedDeviceId: state.selectedDeviceId));
     final result = await _assignDevice(AssignDeviceParams(
       sn: sn,
@@ -137,12 +160,22 @@ class HomeCubit extends Cubit<HomeState> {
       (l) {
         OshCrashReporter.log(
             "Failed to assignDevice, user: $_userUuid device: $sn");
+        unawaited(
+          OshAnalytics.logEvent(
+            OshAnalyticsEvents.deviceAssignFailed,
+            parameters: {
+              'reason': _analyticsReason(l.message),
+            },
+          ),
+        );
         emit(HomeAssignFailed(
           message: l.message,
           selectedDeviceId: state.selectedDeviceId,
         ));
       },
       (r) {
+        unawaited(
+            OshAnalytics.logEvent(OshAnalyticsEvents.deviceAssignSucceeded));
         emit(HomeAssignDone(selectedDeviceId: state.selectedDeviceId));
         updateDeviceList();
       },
@@ -177,6 +210,7 @@ class HomeCubit extends Cubit<HomeState> {
         ));
       },
       (r) {
+        unawaited(OshAnalytics.logEvent(OshAnalyticsEvents.deviceRenameSaved));
         emit(HomeUpdateDeviceUserDataDone(
             selectedDeviceId: state.selectedDeviceId));
         updateDeviceList();
@@ -194,6 +228,19 @@ class HomeCubit extends Cubit<HomeState> {
 
   void _updateDeviceList(List<Device> list) {
     userDevices = list;
+  }
+
+  String _analyticsReason(String? message) {
+    final value = (message ?? '').toLowerCase();
+    if (value.contains('timeout')) return 'timeout';
+    if (value.contains('conflict')) return 'conflict';
+    if (value.contains('invalid')) return 'invalid';
+    if (value.contains('permission')) return 'permission_denied';
+    if (value.contains('internet') || value.contains('offline')) {
+      return 'no_internet';
+    }
+    if (value.contains('not found')) return 'not_found';
+    return 'error';
   }
 
   String get _userUuid => globalAuthCubit.getJwtUserData()!.uuid;

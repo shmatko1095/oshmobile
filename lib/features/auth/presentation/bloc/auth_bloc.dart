@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/core/error/failures.dart';
@@ -48,7 +50,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthSendResetPasswordEmail>(_onSendResetPasswordEmail);
   }
 
-  void _onAuthSignUp(AuthSignUp event, Emitter<AuthState> emit) async {
+  Future<void> _onAuthSignUp(AuthSignUp event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
     final response = await _signUp(
       UserSignUpParams(
@@ -58,13 +60,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         lastName: event.lastName,
       ),
     );
-    response.fold(
-      (l) => _emitAuthFailure(emit, l),
-      (r) => emit(AuthSuccess("Success")),
+    await response.fold(
+      (l) async => _emitFailureState(emit, l),
+      (r) async {
+        await OshAnalytics.logEvent(OshAnalyticsEvents.authSignUpSucceeded);
+        emit(AuthSuccess("Success"));
+      },
     );
   }
 
-  void _onAuthSignIn(AuthSignIn event, Emitter<AuthState> emit) async {
+  Future<void> _onAuthSignIn(AuthSignIn event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
     final response = await _signIn(
       SignInParams(
@@ -72,9 +77,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
       ),
     );
-    response.fold(
-      (l) => _emitAuthFailure(emit, l),
-      (r) => _emitAuthSuccess(emit, r),
+    await response.fold(
+      (l) => _emitAuthFailure(emit, l, provider: 'password'),
+      (r) => _emitAuthSuccess(emit, r, provider: 'password'),
     );
   }
 
@@ -82,9 +87,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AuthSignInWithGoogle event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
     final result = await _signInWithGoogle(NoParams());
-    result.fold(
-      (l) => _emitAuthFailure(emit, l),
-      (r) => _emitAuthSuccess(emit, r),
+    await result.fold(
+      (l) => _emitAuthFailure(emit, l, provider: 'google'),
+      (r) => _emitAuthSuccess(emit, r, provider: 'google'),
     );
   }
 
@@ -92,48 +97,95 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AuthSignInDemo event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
     final result = await _signInDemo(NoParams());
-    result.fold(
-      (l) => _emitAuthFailure(emit, l),
-      (r) => _emitAuthSuccess(emit, r),
+    await result.fold(
+      (l) => _emitAuthFailure(emit, l, provider: 'demo'),
+      (r) => _emitAuthSuccess(emit, r, provider: 'demo'),
     );
   }
 
-  void _onAuthSendVerifyEmail(
+  Future<void> _onAuthSendVerifyEmail(
       AuthSendVerifyEmail event, Emitter<AuthState> emit) async {
     final response = await _verifyEmail(VerifyEmailParams(email: event.email));
-    response.fold((l) => _emitAuthFailure(emit, l), (r) {});
+    await response.fold(
+      (l) async => _emitFailureState(emit, l),
+      (r) async {},
+    );
   }
 
-  void _onSendResetPasswordEmail(
+  Future<void> _onSendResetPasswordEmail(
       AuthSendResetPasswordEmail event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
     final response =
         await _resetPassword(ResetPasswordParams(email: event.email));
-    response.fold(
-      (l) => _emitAuthFailure(emit, l),
-      (r) => emit(AuthSuccess("Success")),
+    await response.fold(
+      (l) async => _emitFailureState(emit, l),
+      (r) async {
+        await OshAnalytics.logEvent(
+          OshAnalyticsEvents.authPasswordResetRequested,
+        );
+        emit(AuthSuccess("Success"));
+      },
     );
   }
 
-  void _emitAuthSuccess(Emitter<AuthState> emit, Session session) {
-    _globalAuthCubit.signedIn(session);
+  Future<void> _emitAuthSuccess(
+    Emitter<AuthState> emit,
+    Session session, {
+    required String provider,
+  }) async {
+    await _globalAuthCubit.signedIn(session);
+    await OshAnalytics.logEvent(
+      OshAnalyticsEvents.authSignInSucceeded,
+      parameters: {'provider': provider},
+    );
     emit(AuthSuccess("Success"));
   }
 
-  void _emitAuthFailure(Emitter<AuthState> emit, Failure failure) {
+  Future<void> _emitAuthFailure(
+    Emitter<AuthState> emit,
+    Failure failure, {
+    required String provider,
+  }) async {
+    await OshAnalytics.logEvent(
+      OshAnalyticsEvents.authSignInFailed,
+      parameters: {
+        'provider': provider,
+        'reason': _analyticsReasonForFailure(failure),
+      },
+    );
+
+    _emitFailureState(emit, failure);
+  }
+
+  void _emitFailureState(Emitter<AuthState> emit, Failure failure) {
     switch (failure.type) {
       case FailureType.emailNotVerified:
         emit(const AuthFailedEmailNotVerified());
+        return;
       case FailureType.noInternetConnection:
         emit(const AuthFailedNoInternetConnection());
+        return;
       case FailureType.invalidUserCredentials:
         emit(const AuthFailedInvalidUserCredentials());
+        return;
       case FailureType.unexpected:
         OshCrashReporter.log(
             "AuthBloc: Unexpected failure: ${failure.message}");
         emit(AuthFailedUnexpected(failure.message));
+        return;
       case FailureType.conflict:
         emit(const AuthConflict());
+        return;
     }
+  }
+
+  String _analyticsReasonForFailure(Failure failure) {
+    return switch (failure.type) {
+      FailureType.emailNotVerified => 'email_not_verified',
+      FailureType.noInternetConnection => 'no_internet',
+      FailureType.invalidUserCredentials => 'invalid_credentials',
+      FailureType.unexpected => 'unexpected',
+      FailureType.conflict => 'conflict',
+    };
   }
 }

@@ -38,7 +38,7 @@ class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
     );
 
     if (response.isSuccessful && response.body != null) {
-      return Session.fromJson(response.body);
+      return Session.fromJson(response.body).copyWith(authProvider: 'password');
     } else {
       final error = jsonDecode(response.error as String);
       final errorDescription = error["error_description"] as String;
@@ -74,7 +74,7 @@ class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
   Future<Session> signInDemo() async {
     final response = await _mobileService.createDemoSession();
     final payload = MobileV1ResponseMapper.requireJsonMap(response);
-    return Session.fromJson(payload);
+    return Session.fromJson(payload).copyWith(authProvider: 'demo');
   }
 
   @override

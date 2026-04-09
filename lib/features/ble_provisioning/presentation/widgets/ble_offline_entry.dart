@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/widgets/app_button.dart';
 import 'package:oshmobile/features/ble_provisioning/presentation/cubit/ble_provisioning_cubit.dart';
 import 'package:oshmobile/features/ble_provisioning/presentation/pages/ble_wifi_scan_page.dart';
@@ -109,6 +110,7 @@ class _BleOfflineEntryBody extends StatelessWidget {
 
     final connected = await navigator.push<bool>(
       MaterialPageRoute(
+        settings: const RouteSettings(name: OshAnalyticsScreens.bleWifiScan),
         builder: (_) => BlocProvider.value(
           value: cubit,
           child: BleWifiScanPage(

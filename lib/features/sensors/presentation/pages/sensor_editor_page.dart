@@ -4,6 +4,7 @@ import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/app/device_session/scopes/device_route_scope.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/widgets/app_button.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
@@ -182,183 +183,199 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          body: BlocBuilder<DeviceSnapshotCubit, DeviceSnapshot>(
-            buildWhen: (previous, current) {
-              return previous.telemetry != current.telemetry ||
-                  previous.details != current.details;
-            },
-            builder: (context, snapshot) {
-              final telemetry = _findTelemetry(snapshot.telemetry.data);
+          body: SafeArea(
+            top: false,
+            child: BlocBuilder<DeviceSnapshotCubit, DeviceSnapshot>(
+              buildWhen: (previous, current) {
+                return previous.telemetry != current.telemetry ||
+                    previous.details != current.details;
+              },
+              builder: (context, snapshot) {
+                final telemetry = _findTelemetry(snapshot.telemetry.data);
 
-              final tempValid = telemetry?.tempValid ?? widget.sensor.tempValid;
-              final humidityValid =
-                  telemetry?.humidityValid ?? widget.sensor.humidityValid;
-              final temp = telemetry?.temp ?? widget.sensor.temp;
-              final humidity = telemetry?.humidity ?? widget.sensor.humidity;
+                final tempValid =
+                    telemetry?.tempValid ?? widget.sensor.tempValid;
+                final humidityValid =
+                    telemetry?.humidityValid ?? widget.sensor.humidityValid;
+                final temp = telemetry?.temp ?? widget.sensor.temp;
+                final humidity = telemetry?.humidity ?? widget.sensor.humidity;
 
-              return RefreshIndicator(
-                onRefresh: () => facade.refreshAll(forceGet: true),
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                  children: [
-                    AppSolidCard(
-                      radius: AppPalette.radiusXl,
-                      backgroundColor: _sensorEditorSurfaceColor(context),
-                      borderColor: _sensorEditorBorderColor(context),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            S.of(context).SensorConditions,
-                            style: TextStyle(
-                              color: _sensorEditorSecondaryTextColor(context),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
+                return RefreshIndicator(
+                  onRefresh: () => facade.refreshAll(forceGet: true),
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    children: [
+                      AppSolidCard(
+                        radius: AppPalette.radiusXl,
+                        backgroundColor: _sensorEditorSurfaceColor(context),
+                        borderColor: _sensorEditorBorderColor(context),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              S.of(context).SensorConditions,
+                              style: TextStyle(
+                                color: _sensorEditorSecondaryTextColor(context),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 18),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                tempValid ? _fmtTemperature(temp) : '--',
-                                style: TextStyle(
-                                  color: _sensorEditorPrimaryTextColor(context),
-                                  fontSize: 68,
-                                  fontWeight: FontWeight.w300,
-                                  height: 0.95,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Padding(
-                                padding: EdgeInsets.only(bottom: 11),
-                                child: Text(
-                                  '°C',
+                            const SizedBox(height: 18),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  tempValid ? _fmtTemperature(temp) : '--',
                                   style: TextStyle(
-                                    color: _sensorEditorSecondaryTextColor(
-                                        context),
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w500,
+                                    color:
+                                        _sensorEditorPrimaryTextColor(context),
+                                    fontSize: 68,
+                                    fontWeight: FontWeight.w300,
+                                    height: 0.95,
                                   ),
                                 ),
-                              ),
-                              const Spacer(),
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.water_drop_rounded,
-                                    size: 18,
-                                    color: AppPalette.accentPrimary,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    humidityValid
-                                        ? '${_fmtHumidity(humidity)}%'
-                                        : '--',
+                                const SizedBox(width: 6),
+                                Padding(
+                                  padding: EdgeInsets.only(bottom: 11),
+                                  child: Text(
+                                    '°C',
                                     style: TextStyle(
-                                      color: _sensorEditorPrimaryTextColor(
+                                      color: _sensorEditorSecondaryTextColor(
                                           context),
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 18,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
+                                ),
+                                const Spacer(),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.water_drop_rounded,
+                                      size: 18,
+                                      color: AppPalette.accentPrimary,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      humidityValid
+                                          ? '${_fmtHumidity(humidity)}%'
+                                          : '--',
+                                      style: TextStyle(
+                                        color: _sensorEditorPrimaryTextColor(
+                                            context),
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppPalette.radiusXl),
-                      ),
-                      child: Column(
-                        children: [
-                          ListTile(
-                            title: Text(S.of(context).Name),
-                            subtitle: Text(title),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: sensor == null
-                                ? null
-                                : () {
-                                    final facade = context.read<DeviceFacade>();
-                                    final snapshotCubit =
-                                        context.read<DeviceSnapshotCubit>();
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            DeviceRouteScope.provide(
-                                          facade: facade,
-                                          snapshotCubit: snapshotCubit,
-                                          child: SensorRenamePage(
-                                            sensorId: sensor.id,
-                                            initialName: title,
+                      const SizedBox(height: 12),
+                      Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppPalette.radiusXl),
+                        ),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              title: Text(S.of(context).Name),
+                              subtitle: Text(title),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: sensor == null
+                                  ? null
+                                  : () {
+                                      final facade =
+                                          context.read<DeviceFacade>();
+                                      final snapshotCubit =
+                                          context.read<DeviceSnapshotCubit>();
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          settings: const RouteSettings(
+                                            name: OshAnalyticsScreens
+                                                .sensorRename,
+                                          ),
+                                          builder: (_) =>
+                                              DeviceRouteScope.provide(
+                                            facade: facade,
+                                            snapshotCubit: snapshotCubit,
+                                            child: SensorRenamePage(
+                                              sensorId: sensor.id,
+                                              initialName: title,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    );
-                                  },
-                          ),
-                          const Divider(height: 1),
-                          ListTile(
-                            title: Text(S.of(context).SensorCalibration),
-                            subtitle: Text(_calibrationSubtitle(sensor)),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: sensor == null
-                                ? null
-                                : () async {
-                                    final facade = context.read<DeviceFacade>();
-                                    final snapshotCubit =
-                                        context.read<DeviceSnapshotCubit>();
-                                    final saved =
-                                        await Navigator.of(context).push<bool>(
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            DeviceRouteScope.provide(
-                                          facade: facade,
-                                          snapshotCubit: snapshotCubit,
-                                          child: SensorCalibrationPage(
-                                            sensorId: sensor.id,
-                                            initialCalibration:
-                                                sensor.tempCalibration,
+                                      );
+                                    },
+                            ),
+                            const Divider(height: 1),
+                            ListTile(
+                              title: Text(S.of(context).SensorCalibration),
+                              subtitle: Text(_calibrationSubtitle(sensor)),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: sensor == null
+                                  ? null
+                                  : () async {
+                                      final facade =
+                                          context.read<DeviceFacade>();
+                                      final snapshotCubit =
+                                          context.read<DeviceSnapshotCubit>();
+                                      final saved = await Navigator.of(context)
+                                          .push<bool>(
+                                        MaterialPageRoute(
+                                          settings: const RouteSettings(
+                                            name: OshAnalyticsScreens
+                                                .sensorCalibration,
+                                          ),
+                                          builder: (_) =>
+                                              DeviceRouteScope.provide(
+                                            facade: facade,
+                                            snapshotCubit: snapshotCubit,
+                                            child: SensorCalibrationPage(
+                                              sensorId: sensor.id,
+                                              initialCalibration:
+                                                  sensor.tempCalibration,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    );
-                                    if (!mounted || saved != true) return;
-                                    SnackBarUtils.showSuccess(
-                                      context: this.context,
-                                      content: S.of(this.context).Done,
-                                    );
-                                  },
-                          ),
-                        ],
+                                      );
+                                      if (!mounted || saved != true) return;
+                                      SnackBarUtils.showSuccess(
+                                        context: this.context,
+                                        content: S.of(this.context).Done,
+                                      );
+                                    },
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    AppButton(
-                      text: S.of(context).SensorMakeMain,
-                      onPressed:
-                          (sensor == null || sensor.ref || _isSettingReference)
-                              ? null
-                              : () => _setReference(sensor),
-                      isLoading: _isSettingReference,
-                    ),
-                    const SizedBox(height: 10),
-                    AppButton(
-                      text: S.of(context).DeleteSensor,
-                      onPressed: null,
-                      backgroundColor: AppPalette.destructiveBg,
-                      foregroundColor: AppPalette.destructiveFg,
-                    ),
-                  ],
-                ),
-              );
-            },
+                      const SizedBox(height: 12),
+                      AppButton(
+                        text: S.of(context).SensorMakeMain,
+                        onPressed: (sensor == null ||
+                                sensor.ref ||
+                                _isSettingReference)
+                            ? null
+                            : () => _setReference(sensor),
+                        isLoading: _isSettingReference,
+                      ),
+                      const SizedBox(height: 10),
+                      AppButton(
+                        text: S.of(context).DeleteSensor,
+                        onPressed: null,
+                        backgroundColor: AppPalette.destructiveBg,
+                        foregroundColor: AppPalette.destructiveFg,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         );
       },

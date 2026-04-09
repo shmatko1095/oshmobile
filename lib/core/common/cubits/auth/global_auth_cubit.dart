@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:keycloak_wrapper/keycloak_wrapper.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_user_properties.dart';
 import 'package:oshmobile/core/common/entities/jwt_user_data.dart';
 import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
@@ -49,7 +52,7 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
 
   Future<void> signedIn(Session session) async {
     await _sessionStorage.setSession(session);
-    _syncCrashReporterUser();
+    await _syncTelemetryIdentity();
     _emitAuthenticated();
   }
 
@@ -64,6 +67,8 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
     }
 
     await _sessionStorage.clearSession();
+    await OshAnalytics.logEvent(OshAnalyticsEvents.authSignedOut);
+    await OshAnalytics.resetSessionContext();
     _emitAuthInitial();
   }
 
@@ -71,6 +76,7 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
     try {
       final currentSession = _sessionStorage.getSession();
       if (currentSession == null) {
+        await OshAnalytics.resetSessionContext();
         _emitAuthInitial();
         return false;
       }
@@ -84,15 +90,21 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
       );
 
       if (!response.isSuccessful || response.body == null) {
+        await OshAnalytics.resetSessionContext();
         _emitAuthInitial();
         log(response.bodyString);
         return false;
       }
 
-      await _applySession(Session.fromJson(response.body));
+      await _applySession(
+        Session.fromJson(response.body).copyWith(
+          authProvider: currentSession.authProvider,
+        ),
+      );
       return true;
     } catch (error, st) {
       OshCrashReporter.logNonFatal(error, st, reason: 'Token refresh failed');
+      await OshAnalytics.resetSessionContext();
       _emitAuthInitial();
       return false;
     }
@@ -123,23 +135,40 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
       return false;
     }
 
-    await _applySession(Session.fromJson(response.body));
+    await _applySession(
+      Session.fromJson(response.body).copyWith(authProvider: 'demo'),
+    );
     return true;
   }
 
   Future<void> _applySession(Session session) async {
     await _sessionStorage.setSession(session);
-    _syncCrashReporterUser();
+    await _syncTelemetryIdentity();
     _emitAuthenticated();
   }
 
-  void _syncCrashReporterUser() {
+  Future<void> _syncTelemetryIdentity() async {
     final userData = getJwtUserData();
     final userId =
         userData?.email ?? userData?.uuid ?? (isDemoMode ? 'demo' : null);
     if (userId != null && userId.isNotEmpty) {
-      OshCrashReporter.setUserId(userId);
+      await OshCrashReporter.setUserId(userId);
     }
+
+    final analyticsUserId = userData?.uuid;
+    if (analyticsUserId != null && analyticsUserId.isNotEmpty) {
+      await OshAnalytics.setUserId(analyticsUserId);
+    }
+
+    await OshAnalytics.setUserProperty(
+      name: OshAnalyticsUserProperties.sessionMode,
+      value: isDemoMode ? 'demo' : 'real',
+    );
+    await OshAnalytics.setUserProperty(
+      name: OshAnalyticsUserProperties.authProvider,
+      value: _sessionStorage.getSession()?.authProvider ??
+          (isDemoMode ? 'demo' : null),
+    );
   }
 
   String _extractResponseMessage(dynamic response) {

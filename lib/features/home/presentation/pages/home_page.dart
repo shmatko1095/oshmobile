@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:oshmobile/core/analytics/osh_analytics_screen_view.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
@@ -110,59 +112,72 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text(_title ?? _defaultTitle, overflow: TextOverflow.ellipsis),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: BlocSelector<HomeCubit, HomeState, String?>(
-              selector: (state) => state.selectedDeviceId,
-              builder: (context, deviceId) {
-                return MqttActivityIcon(key: ValueKey(deviceId));
-              },
+    return OshAnalyticsScreenView(
+      screenName: OshAnalyticsScreens.home,
+      child: Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          title: Text(_title ?? _defaultTitle, overflow: TextOverflow.ellipsis),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: BlocSelector<HomeCubit, HomeState, String?>(
+                selector: (state) => state.selectedDeviceId,
+                builder: (context, deviceId) {
+                  return MqttActivityIcon(key: ValueKey(deviceId));
+                },
+              ),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: _onIconPressed,
-          ),
-        ],
-      ),
-      drawer: const SideMenu(),
-      body: BlocBuilder<HomeCubit, HomeState>(
-        buildWhen: (previous, current) {
-          if (previous is HomeReady && current is HomeRefreshing) return false;
-          if (previous is HomeRefreshing && current is HomeReady) return false;
-          if (previous is HomeReady && current is HomeReady) {
-            return previous.selectedDeviceId != current.selectedDeviceId;
-          }
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: _onIconPressed,
+            ),
+          ],
+        ),
+        drawer: const SideMenu(),
+        body: BlocBuilder<HomeCubit, HomeState>(
+          buildWhen: (previous, current) {
+            if (previous is HomeReady && current is HomeRefreshing) {
+              return false;
+            }
+            if (previous is HomeRefreshing && current is HomeReady) {
+              return false;
+            }
+            if (previous is HomeReady && current is HomeReady) {
+              return previous.selectedDeviceId != current.selectedDeviceId;
+            }
 
-          return true;
-        },
-        builder: (context, state) {
-          final homeCubit = context.read<HomeCubit>();
+            return true;
+          },
+          builder: (context, state) {
+            final homeCubit = context.read<HomeCubit>();
 
-          switch (state) {
-            case HomeInitial():
-            case HomeLoading():
-            case HomeRefreshing():
-              _setTitleSafe(null);
-              _openSettingsAction = null;
-              return const Loader();
+            switch (state) {
+              case HomeInitial():
+              case HomeLoading():
+              case HomeRefreshing():
+                _setTitleSafe(null);
+                _openSettingsAction = null;
+                return const Loader();
 
-            case HomeFailed(:final selectedDeviceId):
-              return _buildSelectedDeviceOrFallback(homeCubit, selectedDeviceId);
+              case HomeFailed(:final selectedDeviceId):
+                return _buildSelectedDeviceOrFallback(
+                  homeCubit,
+                  selectedDeviceId,
+                );
 
-            case HomeReady(:final selectedDeviceId):
-              return _buildSelectedDeviceOrFallback(homeCubit, selectedDeviceId);
-          }
+              case HomeReady(:final selectedDeviceId):
+                return _buildSelectedDeviceOrFallback(
+                  homeCubit,
+                  selectedDeviceId,
+                );
+            }
 
-          _setTitleSafe(null);
-          _openSettingsAction = null;
-          return const NoSelectedDevicePage();
-        },
+            _setTitleSafe(null);
+            _openSettingsAction = null;
+            return const NoSelectedDevicePage();
+          },
+        ),
       ),
     );
   }

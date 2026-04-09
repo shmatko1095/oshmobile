@@ -50,82 +50,85 @@ class ThermostatBasicPresenter implements DevicePresenter {
     final modeBind = _widgetControl(bundle, 'modeBar', 0);
 
     return Scaffold(
-      body: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          if (showHero)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
-                child: TemperatureMinimalPanel(
-                  currentBind: heroCurrentBind,
-                  sensorsBind: heroSensorsBind,
-                  currentTargetBind: heroCurrentTargetBind,
-                  nextTargetBind: heroNextTargetBind,
-                  unit: '°C',
-                  height: MediaQuery.sizeOf(context).height * 0.38,
-                  onTap: scheduleWritable
-                      ? () =>
-                          ThermostatModeNavigator.openForCurrentMode(context)
-                      : null,
-                  onSensorActionTap: (sensor) {
-                    SensorEditorNavigator.openFromHost(
-                      context,
-                      sensor: sensor,
-                    );
-                  },
+      body: SafeArea(
+        top: false,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            if (showHero)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
+                  child: TemperatureMinimalPanel(
+                    currentBind: heroCurrentBind,
+                    sensorsBind: heroSensorsBind,
+                    currentTargetBind: heroCurrentTargetBind,
+                    nextTargetBind: heroNextTargetBind,
+                    unit: '°C',
+                    height: MediaQuery.sizeOf(context).height * 0.38,
+                    onTap: scheduleWritable
+                        ? () =>
+                            ThermostatModeNavigator.openForCurrentMode(context)
+                        : null,
+                    onSensorActionTap: (sensor) {
+                      SensorEditorNavigator.openFromHost(
+                        context,
+                        sensor: sensor,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            if (showModeBar)
+              SliverToBoxAdapter(
+                child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+                    child: ThermostatModeBar(
+                      modeBind: modeBind,
+                      visibleModes: visibleModes,
+                      writable: scheduleWritable,
+                    )),
+              ),
+            if (showHero && heroSensorsBind.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      horizontalPadding, 12, horizontalPadding, 0),
+                  child: TemperatureHistoryStripCard(
+                    sensorsBind: heroSensorsBind,
+                    height: statTileHeight,
+                    onOpenHistory: (sensors, sensorId, sensorName) {
+                      TelemetryHistoryNavigator.openTemperatureFromHost(
+                        context,
+                        sensors: sensors,
+                        sensorId: sensorId,
+                        sensorName: sensorName,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                horizontalPadding,
+                14,
+                horizontalPadding,
+                18,
+              ),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: gridCrossAxisCount,
+                  crossAxisSpacing: gridCrossAxisSpacing,
+                  mainAxisSpacing: gridMainAxisSpacing,
+                  childAspectRatio: gridChildAspectRatio,
+                ),
+                delegate: SliverChildListDelegate(
+                  [for (final tile in tiles) tile.builder()],
                 ),
               ),
             ),
-          if (showModeBar)
-            SliverToBoxAdapter(
-              child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-                  child: ThermostatModeBar(
-                    modeBind: modeBind,
-                    visibleModes: visibleModes,
-                    writable: scheduleWritable,
-                  )),
-            ),
-          if (showHero && heroSensorsBind.isNotEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    horizontalPadding, 12, horizontalPadding, 0),
-                child: TemperatureHistoryStripCard(
-                  sensorsBind: heroSensorsBind,
-                  height: statTileHeight,
-                  onOpenHistory: (sensors, sensorId, sensorName) {
-                    TelemetryHistoryNavigator.openTemperatureFromHost(
-                      context,
-                      sensors: sensors,
-                      sensorId: sensorId,
-                      sensorName: sensorName,
-                    );
-                  },
-                ),
-              ),
-            ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              horizontalPadding,
-              14,
-              horizontalPadding,
-              18,
-            ),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: gridCrossAxisCount,
-                crossAxisSpacing: gridCrossAxisSpacing,
-                mainAxisSpacing: gridMainAxisSpacing,
-                childAspectRatio: gridChildAspectRatio,
-              ),
-              delegate: SliverChildListDelegate(
-                [for (final tile in tiles) tile.builder()],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

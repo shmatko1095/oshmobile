@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/ble_provisioning/domain/entities/wifi_network.dart';
 import 'package:oshmobile/features/ble_provisioning/presentation/cubit/ble_provisioning_cubit.dart';
@@ -93,7 +98,10 @@ class _BleWifiScanPageState extends State<BleWifiScanPage> {
 
         return Scaffold(
           appBar: AppBar(title: Text(s.ChooseWiFi)),
-          body: body,
+          body: SafeArea(
+            top: false,
+            child: body,
+          ),
         );
       },
     );
@@ -102,6 +110,12 @@ class _BleWifiScanPageState extends State<BleWifiScanPage> {
   Future<void> _onNetworkSelected(
       BuildContext context, WifiNetwork network) async {
     final cubit = context.read<BleProvisioningCubit>();
+    unawaited(
+      OshAnalytics.logEvent(
+        OshAnalyticsEvents.bleWifiNetworkSelected,
+        parameters: {'auth_type': network.auth.name},
+      ),
+    );
     cubit.selectNetwork(network);
 
     if (network.auth == WifiAuthType.open) {
@@ -111,6 +125,9 @@ class _BleWifiScanPageState extends State<BleWifiScanPage> {
 
     final connected = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
+        settings: const RouteSettings(
+          name: OshAnalyticsScreens.bleWifiPassword,
+        ),
         builder: (_) => BlocProvider.value(
           value: cubit,
           child: const BleWifiPasswordPage(),
@@ -118,6 +135,7 @@ class _BleWifiScanPageState extends State<BleWifiScanPage> {
       ),
     );
 
+    if (!context.mounted) return;
     if (connected == true) {
       Navigator.of(context).pop(true);
     }

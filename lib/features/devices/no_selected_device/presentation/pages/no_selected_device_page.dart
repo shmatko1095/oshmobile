@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screen_view.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
@@ -10,33 +12,36 @@ class NoSelectedDevicePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.question_mark,
-              size: 150.0,
-              color: (_noDeviceIsDark(context)
-                      ? AppPalette.textMuted
-                      : AppPalette.lightTextSubtle)
-                  .withValues(alpha: 0.22),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              S.of(context).NoDeviceSelected,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: _noDeviceIsDark(context)
-                    ? AppPalette.textSecondary
-                    : AppPalette.lightTextSecondary,
+    return OshAnalyticsScreenView(
+      screenName: OshAnalyticsScreens.homeNoDevice,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.question_mark,
+                size: 150.0,
+                color: (_noDeviceIsDark(context)
+                        ? AppPalette.textMuted
+                        : AppPalette.lightTextSubtle)
+                    .withValues(alpha: 0.22),
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              const SizedBox(height: 20),
+              Text(
+                S.of(context).NoDeviceSelected,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: _noDeviceIsDark(context)
+                      ? AppPalette.textSecondary
+                      : AppPalette.lightTextSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

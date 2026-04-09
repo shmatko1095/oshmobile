@@ -39,7 +39,10 @@ abstract interface class DeviceScheduleApi {
 
   Future<CalendarSnapshot> get({bool force = false});
 
-  Future<void> commandSetMode(CalendarMode mode);
+  Future<void> commandSetMode(
+    CalendarMode mode, {
+    String source = 'unknown',
+  });
 
   void patchRange(ScheduleRange range);
 

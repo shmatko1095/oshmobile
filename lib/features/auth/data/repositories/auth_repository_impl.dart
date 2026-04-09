@@ -67,7 +67,7 @@ class AuthRepositoryImpl implements AuthRepository {
         refreshToken: refreshToken,
       );
 
-      return right(session);
+      return right(session.copyWith(authProvider: 'google'));
     } on ServerException catch (e) {
       return left(Failure.unexpected(e.message));
     } catch (e, st) {

@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/app/device_session/scopes/device_route_scope.dart';
@@ -323,8 +328,18 @@ class DeviceSettingsPage extends StatelessWidget {
         title: Text(S.of(context).About),
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
+          final deviceLayout = snapshotCubit.state.details.data?.layout;
+          unawaited(
+            OshAnalytics.logEvent(
+              OshAnalyticsEvents.deviceAboutOpened,
+              parameters: {'device_layout': deviceLayout},
+            ),
+          );
           Navigator.of(context).push(
             MaterialPageRoute(
+              settings: const RouteSettings(
+                name: OshAnalyticsScreens.deviceAbout,
+              ),
               builder: (_) => DeviceRouteScope.provide(
                 facade: facade,
                 snapshotCubit: snapshotCubit,

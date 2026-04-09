@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/services/mqtt_op_runner.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
@@ -235,6 +237,7 @@ class DeviceSettingsApiImpl implements DeviceSettingsApi {
     if (desired == null) return Future<void>.value();
     if (!_dirty) return Future<void>.value();
     final patch = _buildNestedPatch(_overrides);
+    final dirtyFieldCount = _overrides.length;
 
     if (_saving) {
       _queuedSaveAll = true;
@@ -265,6 +268,12 @@ class DeviceSettingsApiImpl implements DeviceSettingsApi {
         _flash = null;
         _loadError = null;
         _emit();
+        unawaited(
+          OshAnalytics.logEvent(
+            OshAnalyticsEvents.deviceSettingsSaved,
+            parameters: {'dirty_field_count': dirtyFieldCount},
+          ),
+        );
       },
       onTimeout: () {
         _saving = false;

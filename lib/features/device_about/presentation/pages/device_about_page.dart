@@ -34,36 +34,39 @@ class _DeviceAboutPageState extends State<DeviceAboutPage> {
         centerTitle: true,
         title: Text(S.of(context).About),
       ),
-      body: BlocBuilder<DeviceSnapshotCubit, DeviceSnapshot>(
-        buildWhen: (prev, next) =>
-            prev.about != next.about || prev.updatedAt != next.updatedAt,
-        builder: (context, snap) {
-          final about = snap.about;
-          final data = about.data;
-          if ((about.status == DeviceSliceStatus.loading ||
-                  about.status == DeviceSliceStatus.idle) &&
-              data == null) {
-            return const Loader();
-          }
+      body: SafeArea(
+        top: false,
+        child: BlocBuilder<DeviceSnapshotCubit, DeviceSnapshot>(
+          buildWhen: (prev, next) =>
+              prev.about != next.about || prev.updatedAt != next.updatedAt,
+          builder: (context, snap) {
+            final about = snap.about;
+            final data = about.data;
+            if ((about.status == DeviceSliceStatus.loading ||
+                    about.status == DeviceSliceStatus.idle) &&
+                data == null) {
+              return const Loader();
+            }
 
-          final payload = _extractDataPayload(data);
+            final payload = _extractDataPayload(data);
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _Header(
-                deviceSn: widget.deviceSn,
-                receivedAt: snap.updatedAt,
-                error: about.error,
-              ),
-              Expanded(
-                child: payload == null
-                    ? Center(child: Text(S.of(context).NoDataYet))
-                    : _FlatList(data: payload),
-              ),
-            ],
-          );
-        },
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Header(
+                  deviceSn: widget.deviceSn,
+                  receivedAt: snap.updatedAt,
+                  error: about.error,
+                ),
+                Expanded(
+                  child: payload == null
+                      ? Center(child: Text(S.of(context).NoDataYet))
+                      : _FlatList(data: payload),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

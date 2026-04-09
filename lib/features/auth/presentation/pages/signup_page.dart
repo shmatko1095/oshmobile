@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/utils/form_validators.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
@@ -12,8 +13,10 @@ import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dar
 import 'package:oshmobile/generated/l10n.dart';
 
 class SignUpPage extends StatefulWidget {
-  static CupertinoPageRoute route() =>
-      CupertinoPageRoute(builder: (context) => const SignUpPage());
+  static MaterialPageRoute<void> route() => MaterialPageRoute<void>(
+        settings: const RouteSettings(name: OshAnalyticsScreens.signUp),
+        builder: (context) => const SignUpPage(),
+      );
 
   const SignUpPage({super.key});
 

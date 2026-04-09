@@ -1,12 +1,16 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/auth_page_scaffold.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class SignUpSuccessPage extends StatelessWidget {
-  static CupertinoPageRoute route() =>
-      CupertinoPageRoute(builder: (context) => const SignUpSuccessPage());
+  static MaterialPageRoute<void> route() => MaterialPageRoute<void>(
+        settings: const RouteSettings(name: OshAnalyticsScreens.signUpSuccess),
+        builder: (context) => const SignUpSuccessPage(),
+      );
 
   const SignUpSuccessPage({super.key});
 

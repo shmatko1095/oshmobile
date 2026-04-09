@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/utils/form_validators.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
@@ -12,8 +13,13 @@ import 'package:oshmobile/generated/l10n.dart';
 class ForgotPasswordPage extends StatefulWidget {
   final String email;
 
-  static CupertinoPageRoute route(String email) => CupertinoPageRoute(
-      builder: (context) => ForgotPasswordPage(email: email));
+  static MaterialPageRoute<void> route(String email) =>
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(
+          name: OshAnalyticsScreens.forgotPassword,
+        ),
+        builder: (context) => ForgotPasswordPage(email: email),
+      );
 
   const ForgotPasswordPage({required this.email, super.key});
 

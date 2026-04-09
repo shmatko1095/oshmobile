@@ -34,7 +34,10 @@ class BleWifiPasswordPage extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(title: Text(title)),
-          body: WifiPasswordStep(isConnecting: isConnecting),
+          body: SafeArea(
+            top: false,
+            child: WifiPasswordStep(isConnecting: isConnecting),
+          ),
         );
       },
     );

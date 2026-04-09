@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
 import 'package:oshmobile/core/common/cubits/app/app_lifecycle_cubit.dart';
 import 'package:oshmobile/core/common/cubits/app/app_theme_cubit.dart';
 import 'package:oshmobile/core/common/widgets/app_lifecycle_observer.dart';
@@ -26,6 +28,9 @@ import 'package:oshmobile/firebase_options.dart';
 import 'package:oshmobile/generated/l10n.dart';
 import 'package:oshmobile/init_dependencies.dart';
 import 'package:oshmobile/startup_error_app.dart';
+
+const _enableAnalyticsDebug =
+    bool.fromEnvironment('ENABLE_ANALYTICS_DEBUG', defaultValue: false);
 
 bool _isBackgroundSocketAbort(Object error) {
   if (error is! SocketException) return false;
@@ -73,6 +78,8 @@ Future<void> main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
+    await OshAnalytics.setCollectionEnabled(
+        kReleaseMode || _enableAnalyticsDebug);
     await OshCrashReporter.setCollectionEnabled(kReleaseMode);
     Bloc.observer = OshBlocObserver();
 
@@ -129,6 +136,10 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  final _analyticsRouteObserver = FirebaseAnalyticsObserver(
+    analytics: FirebaseAnalytics.instance,
+  );
+
   /// Changes only when a *login session* starts/ends or the user identity changes.
   int _sessionEpoch = 0;
 
@@ -257,6 +268,7 @@ class _MyAppState extends State<MyApp> {
               }
               return null;
             },
+            navigatorObservers: [_analyticsRouteObserver],
             builder: (context, child) {
               final nav = child ?? const SizedBox.shrink();
 
