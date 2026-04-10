@@ -261,6 +261,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "ThemeDark": MessageLookupByLibrary.simpleMessage("Dark"),
     "ThemeLight": MessageLookupByLibrary.simpleMessage("Light"),
     "ThemeSystem": MessageLookupByLibrary.simpleMessage("System"),
+    "ThermostatModeBarHint": MessageLookupByLibrary.simpleMessage(
+      "Tap active mode to edit. Hold any mode to configure without switching.",
+    ),
+    "ThermostatModeBarSemanticsActiveEditable":
+        MessageLookupByLibrary.simpleMessage(
+          "Tap to edit. Long press to edit without switching.",
+        ),
+    "ThermostatModeBarSemanticsInactiveEditable":
+        MessageLookupByLibrary.simpleMessage(
+          "Tap to switch. Long press to edit.",
+        ),
+    "ThermostatModeBarSemanticsOff": MessageLookupByLibrary.simpleMessage(
+      "Tap to switch off.",
+    ),
     "ThuShort": MessageLookupByLibrary.simpleMessage("Thu"),
     "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
       "Check the device\'s network connection.",

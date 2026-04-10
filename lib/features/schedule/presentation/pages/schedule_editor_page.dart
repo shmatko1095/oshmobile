@@ -12,6 +12,7 @@ import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
+import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
 import 'package:oshmobile/features/schedule/presentation/pages/manual_time_page.dart';
 import 'package:oshmobile/features/schedule/presentation/pages/manual_temperature_page.dart';
 import 'package:oshmobile/features/schedule/presentation/utils.dart';
@@ -42,9 +43,11 @@ class ScheduleEditorPage extends StatefulWidget {
   const ScheduleEditorPage({
     super.key,
     required this.title,
+    this.mode,
   });
 
   final String title;
+  final CalendarMode? mode;
 
   @override
   State<ScheduleEditorPage> createState() => _ScheduleEditorPageState();
@@ -60,6 +63,91 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
 
   bool _passesFilter(int mask) =>
       _filterMask == 0 ? true : (mask & _filterMask) != 0;
+
+  CalendarMode _targetMode(CalendarSnapshot schedule) =>
+      widget.mode ?? schedule.mode;
+
+  void _patchPoint(
+    DeviceFacade facade,
+    CalendarSnapshot schedule,
+    CalendarMode mode,
+    int index,
+    SchedulePoint point,
+  ) {
+    final current = List<SchedulePoint>.from(schedule.pointsFor(mode));
+    if (index < 0 || index >= current.length) return;
+    current[index] = point;
+    facade.schedule.patchList(mode, current);
+  }
+
+  void _removePoint(
+    DeviceFacade facade,
+    CalendarSnapshot schedule,
+    CalendarMode mode,
+    int index,
+  ) {
+    final current = List<SchedulePoint>.from(schedule.pointsFor(mode));
+    if (index < 0 || index >= current.length) return;
+    current.removeAt(index);
+    facade.schedule.patchList(mode, current);
+  }
+
+  void _addPoint(
+    DeviceFacade facade,
+    CalendarSnapshot schedule,
+    CalendarMode mode,
+  ) {
+    final current = List<SchedulePoint>.from(schedule.pointsFor(mode));
+    current.add(_makeDefaultPoint(current, mode));
+    facade.schedule.patchList(mode, current);
+  }
+
+  SchedulePoint _makeDefaultPoint(
+    List<SchedulePoint> current,
+    CalendarMode mode, [
+    int stepMinutes = 15,
+  ]) {
+    final now = TimeOfDay.now();
+    final time = _nextFreeTime(current, now, stepMinutes);
+    final last = current.isNotEmpty ? current.last : null;
+    final daysMask = mode == CalendarMode.weekly
+        ? (last?.daysMask ?? WeekdayMask.all)
+        : WeekdayMask.all;
+    final temp = last?.temp ?? 21.0;
+
+    return SchedulePoint(
+      time: time,
+      daysMask: daysMask & WeekdayMask.all,
+      temp: temp,
+    );
+  }
+
+  TimeOfDay _nextFreeTime(
+    List<SchedulePoint> points,
+    TimeOfDay start,
+    int stepMinutes,
+  ) {
+    final used = <int>{};
+    for (final point in points) {
+      used.add(point.time.hour * 60 + point.time.minute);
+    }
+
+    final startMinutes = start.hour * 60 + start.minute;
+    final candidate =
+        ((startMinutes + stepMinutes - 1) ~/ stepMinutes) * stepMinutes;
+
+    for (var i = 0; i < 1440 ~/ stepMinutes; i++) {
+      final minuteOfDay = (candidate + i * stepMinutes) % 1440;
+      if (!used.contains(minuteOfDay)) {
+        return TimeOfDay(
+          hour: minuteOfDay ~/ 60,
+          minute: minuteOfDay % 60,
+        );
+      }
+    }
+
+    return start;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,9 +188,10 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
               }
               if (schedule == null) return const Loader();
 
-              final showDays = schedule.mode.id == CalendarMode.weekly.id;
+              final targetMode = _targetMode(schedule);
+              final showDays = targetMode == CalendarMode.weekly;
               final items = schedule
-                  .pointsFor(schedule.mode)
+                  .pointsFor(targetMode)
                   .asMap()
                   .entries
                   .where((e) => _passesFilter(e.value.daysMask))
@@ -135,10 +224,10 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                       unawaited(
                         OshAnalytics.logEvent(
                           OshAnalyticsEvents.schedulePointRemoved,
-                          parameters: {'mode': schedule.mode.id},
+                          parameters: {'mode': targetMode.id},
                         ),
                       );
-                      facade.schedule.removePoint(idx);
+                      _removePoint(facade, schedule, targetMode, idx);
                     },
                     child: _ScheduleTile(
                       timeText: _fmtTime(p.time),
@@ -154,7 +243,10 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                             builder: (_) => ManualTimePage(
                               title: S.of(context).time,
                               initial: p.time,
-                              onSave: (v) => facade.schedule.patchPoint(
+                              onSave: (v) => _patchPoint(
+                                facade,
+                                schedule,
+                                targetMode,
                                 idx,
                                 p.copyWith(time: v),
                               ),
@@ -165,19 +257,32 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                       onDecTemp: () {
                         final next = (p.temp - 0.5).clamp(5.0, 35.0);
                         final newTemp = double.parse(next.toStringAsFixed(1));
-                        facade.schedule
-                            .patchPoint(idx, p.copyWith(temp: newTemp));
+                        _patchPoint(
+                          facade,
+                          schedule,
+                          targetMode,
+                          idx,
+                          p.copyWith(temp: newTemp),
+                        );
                       },
                       onIncTemp: () {
                         final next = (p.temp + 0.5).clamp(5.0, 35.0);
                         final newTemp = double.parse(next.toStringAsFixed(1));
-                        facade.schedule
-                            .patchPoint(idx, p.copyWith(temp: newTemp));
+                        _patchPoint(
+                          facade,
+                          schedule,
+                          targetMode,
+                          idx,
+                          p.copyWith(temp: newTemp),
+                        );
                       },
                       onToggleDay: (d) {
                         if (!showDays) return;
                         final newMask = WeekdayMask.toggle(p.daysMask, d);
-                        facade.schedule.patchPoint(
+                        _patchPoint(
+                          facade,
+                          schedule,
+                          targetMode,
                           idx,
                           p.copyWith(daysMask: newMask),
                         );
@@ -193,7 +298,10 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                               initial: p.temp,
                               onSave: (v) {
                                 final vv = double.parse(v.toStringAsFixed(1));
-                                facade.schedule.patchPoint(
+                                _patchPoint(
+                                  facade,
+                                  schedule,
+                                  targetMode,
                                   idx,
                                   p.copyWith(temp: vv),
                                 );
@@ -219,17 +327,25 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
               OshAnalytics.logEvent(
                 OshAnalyticsEvents.schedulePointAdded,
                 parameters: {
-                  'mode': facade.schedule.current?.mode.id,
+                  'mode': widget.mode?.id ?? facade.schedule.current?.mode.id,
                 },
               ),
             );
-            facade.schedule.addPoint();
+            final schedule =
+                context.read<DeviceSnapshotCubit>().state.schedule.data;
+            if (schedule == null) return;
+            _addPoint(
+              facade,
+              schedule,
+              _targetMode(schedule),
+            );
           },
         ),
       ),
       bottomNavigationBar: BlocBuilder<DeviceSnapshotCubit, DeviceSnapshot>(
         builder: (context, snap) {
-          final mode = snap.schedule.data?.mode ?? CalendarMode.off;
+          final mode =
+              widget.mode ?? snap.schedule.data?.mode ?? CalendarMode.off;
           if (mode != CalendarMode.weekly) {
             return const SizedBox.shrink();
           }

@@ -994,6 +994,46 @@ class S {
     return Intl.message('Weekly', name: 'ModeWeekly', desc: '', args: []);
   }
 
+  /// `Tap active mode to edit. Hold any mode to configure without switching.`
+  String get ThermostatModeBarHint {
+    return Intl.message(
+      'Tap active mode to edit. Hold any mode to configure without switching.',
+      name: 'ThermostatModeBarHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tap to edit. Long press to edit without switching.`
+  String get ThermostatModeBarSemanticsActiveEditable {
+    return Intl.message(
+      'Tap to edit. Long press to edit without switching.',
+      name: 'ThermostatModeBarSemanticsActiveEditable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tap to switch. Long press to edit.`
+  String get ThermostatModeBarSemanticsInactiveEditable {
+    return Intl.message(
+      'Tap to switch. Long press to edit.',
+      name: 'ThermostatModeBarSemanticsInactiveEditable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tap to switch off.`
+  String get ThermostatModeBarSemanticsOff {
+    return Intl.message(
+      'Tap to switch off.',
+      name: 'ThermostatModeBarSemanticsOff',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Save`
   String get Save {
     return Intl.message('Save', name: 'Save', desc: '', args: []);

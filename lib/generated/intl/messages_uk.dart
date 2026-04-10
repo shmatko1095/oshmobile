@@ -269,6 +269,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "ThemeDark": MessageLookupByLibrary.simpleMessage("Темна"),
     "ThemeLight": MessageLookupByLibrary.simpleMessage("Світла"),
     "ThemeSystem": MessageLookupByLibrary.simpleMessage("Системна"),
+    "ThermostatModeBarHint": MessageLookupByLibrary.simpleMessage(
+      "Торкніться активного режиму, щоб редагувати. Утримуйте будь-який режим, щоб налаштувати його без перемикання.",
+    ),
+    "ThermostatModeBarSemanticsActiveEditable":
+        MessageLookupByLibrary.simpleMessage(
+          "Торкніться, щоб редагувати. Утримуйте, щоб редагувати без перемикання.",
+        ),
+    "ThermostatModeBarSemanticsInactiveEditable":
+        MessageLookupByLibrary.simpleMessage(
+          "Торкніться, щоб перемкнути. Утримуйте, щоб редагувати.",
+        ),
+    "ThermostatModeBarSemanticsOff": MessageLookupByLibrary.simpleMessage(
+      "Торкніться, щоб вимкнути.",
+    ),
     "ThuShort": MessageLookupByLibrary.simpleMessage("Чт"),
     "TipCheckNetwork": MessageLookupByLibrary.simpleMessage(
       "Перевірте, чи підключено пристрій до Wi-Fi.",

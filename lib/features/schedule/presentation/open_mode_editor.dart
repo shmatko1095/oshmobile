@@ -17,19 +17,34 @@ class ThermostatModeNavigator {
   static Future<void> openForCurrentMode(BuildContext context) async {
     final facade = context.read<DeviceFacade>();
     final mode = facade.schedule.current?.mode ?? CalendarMode.off;
+    return openForMode(
+      context,
+      mode,
+      source: 'hero_panel',
+    );
+  }
 
+  static Future<void> openForMode(
+    BuildContext context,
+    CalendarMode mode, {
+    required String source,
+  }) async {
+    if (mode == CalendarMode.off) return;
     if (mode == CalendarMode.on) {
-      return _openOn(context);
+      return _openOn(context, source: source);
     }
     if (mode == CalendarMode.range) {
-      return _openRange(context);
+      return _openRange(context, source: source);
     }
     if (mode == CalendarMode.daily || mode == CalendarMode.weekly) {
-      return _openSchedule(context, mode: mode);
+      return _openSchedule(context, mode: mode, source: source);
     }
   }
 
-  static Future<void> _openOn(BuildContext context) async {
+  static Future<void> _openOn(
+    BuildContext context, {
+    required String source,
+  }) async {
     final s = S.of(context);
     final facade = context.read<DeviceFacade>();
     final snapshotCubit = context.read<DeviceSnapshotCubit>();
@@ -45,7 +60,10 @@ class ThermostatModeNavigator {
 
     await OshAnalytics.logEvent(
       OshAnalyticsEvents.scheduleEditorOpened,
-      parameters: {'mode': CalendarMode.on.id},
+      parameters: {
+        'mode': CalendarMode.on.id,
+        'source': source,
+      },
     );
     if (!context.mounted) return;
     await Navigator.of(context)
@@ -79,7 +97,10 @@ class ThermostatModeNavigator {
         .then((_) => facade.schedule.save());
   }
 
-  static Future<void> _openRange(BuildContext context) async {
+  static Future<void> _openRange(
+    BuildContext context, {
+    required String source,
+  }) async {
     final s = S.of(context);
     final facade = context.read<DeviceFacade>();
     final snapshotCubit = context.read<DeviceSnapshotCubit>();
@@ -91,7 +112,10 @@ class ThermostatModeNavigator {
 
     await OshAnalytics.logEvent(
       OshAnalyticsEvents.scheduleEditorOpened,
-      parameters: {'mode': CalendarMode.range.id},
+      parameters: {
+        'mode': CalendarMode.range.id,
+        'source': source,
+      },
     );
     if (!context.mounted) return;
     await Navigator.of(context)
@@ -131,6 +155,7 @@ class ThermostatModeNavigator {
   static Future<void> _openSchedule(
     BuildContext context, {
     required CalendarMode mode,
+    required String source,
   }) async {
     final s = S.of(context);
     final facade = context.read<DeviceFacade>();
@@ -138,12 +163,12 @@ class ThermostatModeNavigator {
     final title =
         (mode.id == CalendarMode.weekly.id) ? s.ModeWeekly : s.ModeDaily;
 
-    await facade.schedule.commandSetMode(mode, source: 'mode_editor');
-    if (!context.mounted) return;
-
     await OshAnalytics.logEvent(
       OshAnalyticsEvents.scheduleEditorOpened,
-      parameters: {'mode': mode.id},
+      parameters: {
+        'mode': mode.id,
+        'source': source,
+      },
     );
     if (!context.mounted) return;
     await Navigator.of(context)
@@ -155,20 +180,31 @@ class ThermostatModeNavigator {
             builder: (_) => DeviceRouteScope.provide(
               facade: facade,
               snapshotCubit: snapshotCubit,
-              child: ScheduleEditorPage(title: title),
+              child: ScheduleEditorPage(
+                title: title,
+                mode: mode,
+              ),
             ),
           ),
         )
         .then((_) => facade.schedule.save());
   }
 
-  static Future<void> openOn(BuildContext context) => _openOn(context);
+  static Future<void> openOn(BuildContext context) =>
+      _openOn(context, source: 'unknown');
 
-  static Future<void> openRange(BuildContext context) => _openRange(context);
+  static Future<void> openRange(BuildContext context) =>
+      _openRange(context, source: 'unknown');
 
-  static Future<void> openWeekly(BuildContext context) =>
-      _openSchedule(context, mode: CalendarMode.weekly);
+  static Future<void> openWeekly(BuildContext context) => _openSchedule(
+        context,
+        mode: CalendarMode.weekly,
+        source: 'unknown',
+      );
 
-  static Future<void> openDaily(BuildContext context) =>
-      _openSchedule(context, mode: CalendarMode.daily);
+  static Future<void> openDaily(BuildContext context) => _openSchedule(
+        context,
+        mode: CalendarMode.daily,
+        source: 'unknown',
+      );
 }
