@@ -176,7 +176,6 @@ class _TemperatureHistoryStripCardViewState
     final hasData = values.isNotEmpty;
     final loading = preview == null ||
         preview.status == TemperatureHistoryPreviewStatus.loading;
-    final lastValueText = preview?.lastValue?.toStringAsFixed(1);
 
     return AppSolidCard(
       radius: AppPalette.radiusXl,
@@ -263,15 +262,33 @@ class _TemperatureHistoryStripCardViewState
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      lastValueText == null ? '—' : '$lastValueText°C',
-                      style: TextStyle(
-                        color: titleColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              size: 16,
+                              color: subtitleColor,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
+                ),
+              ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Semantics(
+                    button: true,
+                    label: s.TelemetryHistoryPreviewTitle24h,
+                    hint: s.TelemetryHistoryPreviewOpenHint,
+                    child: const SizedBox.expand(),
+                  ),
                 ),
               ),
             ],

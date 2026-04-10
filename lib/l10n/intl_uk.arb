@@ -81,13 +81,20 @@
   "GoToLogin": "Перейти до входу",
   "AddDevice": "Додати пристрій",
   "NoDevicesYet": "Пристроїв ще немає",
-  "UnlinkDevice": "Відвʼязати пристрій",
+  "OpenDevices": "Відкрити пристрої",
+  "RemoveDeviceConfirmTitle": "Видалити пристрій?",
+  "RemoveDeviceConfirmMessage": "Пристрій {deviceName} буде видалено з вашого списку. Ви зможете додати його знову, відсканувавши QR-код.",
+  "@RemoveDeviceConfirmMessage": {
+    "placeholders": {
+      "deviceName": {}
+    }
+  },
   "Yes": "Так",
   "No": "Ні",
-  "DeviceUnlinkAlertContent1": "Пристрій ",
-  "DeviceUnlinkAlertContent2": " буде видалено з вашого списку. Ви зможете додати його знову, відсканувавши QR-код.",
   "UnknownDeviceType": "Невідомий тип пристрою",
   "NoDeviceSelected": "Пристрій не вибрано",
+  "NoDeviceSelectedChooseDeviceSubtitle": "Виберіть пристрій.",
+  "NoDeviceSelectedNoDevicesSubtitle": "Додайте перший пристрій.",
   "SerialNumber": "Серійний номер",
   "SecureCode": "Захисний код",
   "InvalidValue": "Недійсне значення",
@@ -101,6 +108,11 @@
   "SensorCalibration": "Калібрування",
   "SensorMakeMain": "Зробити основним",
   "DeleteSensor": "Видалити датчик",
+  "DeletePoint": "Видалити точку",
+  "DeviceActions": "Дії пристрою",
+  "RenameDeviceAction": "Перейменувати пристрій",
+  "RemoveDeviceAction": "Видалити пристрій",
+  "SchedulePointActions": "Дії точки розкладу",
   "SensorMainLabel": "Основний",
   "SensorMoreActions": "Дії датчика",
   "SensorConditions": "Показники датчика",
@@ -221,6 +233,8 @@
   "TelemetryHistoryMetricTarget": "Ціль",
   "TelemetryHistoryPreviewTitle24h": "Історія температури (24 год)",
   "TelemetryHistoryPreviewNoSensorData": "Історія температури (24 год): немає даних датчиків",
+  "TelemetryHistoryPreviewOpenAction": "Відкрити історію",
+  "TelemetryHistoryPreviewOpenHint": "Відкрити детальну історію температури.",
   "TelemetryHistoryResolutionPoints": "Роздільність: {resolution} • Точки: {points}",
   "@TelemetryHistoryResolutionPoints": {
     "placeholders": {
@@ -235,6 +249,8 @@
   "startupNoInternetSubtitle": "Підключіться до Wi‑Fi або мобільного інтернету, щоб продовжити користуватися Oshhome.",
   "startupNoInternetHintNetwork": "Перевірте, чи доступна мережа.",
   "startupNoInternetHintRetry": "За потреби перепідключіться і натисніть «Спробувати знову».",
+  "MqttStatusUpdating": "Оновлення",
+  "MqttStatusError": "Помилка",
   "LastUpdateAt": "Останнє оновлення: {time}",
   "@LastUpdateAt": {
     "placeholders": {

@@ -36,16 +36,19 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(temp, time) => "Next ${temp} at ${time}";
 
-  static String m6(current, total) => "Step ${current} of ${total}";
+  static String m6(deviceName) =>
+      "The device ${deviceName} will be removed from your list. You can re-add it anytime by scanning the QR code again.";
 
-  static String m7(temp) => "Target ${temp}";
+  static String m7(current, total) => "Step ${current} of ${total}";
 
-  static String m8(resolution, points) =>
+  static String m8(temp) => "Target ${temp}";
+
+  static String m9(resolution, points) =>
       "Resolution: ${resolution} • Points: ${points}";
 
-  static String m9(index, total) => "Sensor ${index}/${total}";
+  static String m10(index, total) => "Sensor ${index}/${total}";
 
-  static String m10(lastSeenAt) => "Last seen online: ${lastSeenAt}";
+  static String m11(lastSeenAt) => "Last seen online: ${lastSeenAt}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -94,9 +97,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "DeleteAccountEmailFlowTitle": MessageLookupByLibrary.simpleMessage(
       "Confirm account deletion",
     ),
+    "DeletePoint": MessageLookupByLibrary.simpleMessage("Delete point"),
     "DeleteSensor": MessageLookupByLibrary.simpleMessage("Delete sensor"),
     "Deleted": MessageLookupByLibrary.simpleMessage("Deleted"),
     "DemoMode": MessageLookupByLibrary.simpleMessage("Demo mode"),
+    "DeviceActions": MessageLookupByLibrary.simpleMessage("Device actions"),
     "DeviceDetails": MessageLookupByLibrary.simpleMessage("Device details"),
     "DeviceEditTitle": MessageLookupByLibrary.simpleMessage(
       "Device information",
@@ -109,12 +114,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "DeviceScopeUnavailableInContext": MessageLookupByLibrary.simpleMessage(
       "Device scope is not available in the current context.",
-    ),
-    "DeviceUnlinkAlertContent1": MessageLookupByLibrary.simpleMessage(
-      "The device ",
-    ),
-    "DeviceUnlinkAlertContent2": MessageLookupByLibrary.simpleMessage(
-      " will be removed from your list. You can re-add it anytime by scanning the QR code again.",
     ),
     "Discard": MessageLookupByLibrary.simpleMessage("Discard"),
     "Done": MessageLookupByLibrary.simpleMessage("Done"),
@@ -159,6 +158,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "ModeRange": MessageLookupByLibrary.simpleMessage("Range"),
     "ModeWeekly": MessageLookupByLibrary.simpleMessage("Weekly"),
     "MonShort": MessageLookupByLibrary.simpleMessage("Mon"),
+    "MqttStatusError": MessageLookupByLibrary.simpleMessage("Error"),
+    "MqttStatusUpdating": MessageLookupByLibrary.simpleMessage("Updating"),
     "Name": MessageLookupByLibrary.simpleMessage("Name"),
     "Next": MessageLookupByLibrary.simpleMessage("Next"),
     "NextAt": m5,
@@ -167,6 +168,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "NoDeviceSelected": MessageLookupByLibrary.simpleMessage(
       "No device selected",
     ),
+    "NoDeviceSelectedChooseDeviceSubtitle":
+        MessageLookupByLibrary.simpleMessage("Choose a device."),
+    "NoDeviceSelectedNoDevicesSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Add your first device.",
+    ),
     "NoDevicesYet": MessageLookupByLibrary.simpleMessage("No devices yet"),
     "NoNetworksFound": MessageLookupByLibrary.simpleMessage(
       "No networks found",
@@ -174,6 +180,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "OK": MessageLookupByLibrary.simpleMessage("OK"),
     "Offline": MessageLookupByLibrary.simpleMessage("Offline"),
     "Online": MessageLookupByLibrary.simpleMessage("Online"),
+    "OpenDevices": MessageLookupByLibrary.simpleMessage("Open devices"),
     "Password": MessageLookupByLibrary.simpleMessage("Password"),
     "PasswordConfirmation": MessageLookupByLibrary.simpleMessage(
       "Password confirmation",
@@ -196,11 +203,20 @@ class MessageLookup extends MessageLookupByLibrary {
     "RegistrationSuccessfulContent": MessageLookupByLibrary.simpleMessage(
       "The last step is to verify your email address. Please check your inbox and follow the instructions to complete your registration.",
     ),
+    "RemoveDeviceAction": MessageLookupByLibrary.simpleMessage("Remove device"),
+    "RemoveDeviceConfirmMessage": m6,
+    "RemoveDeviceConfirmTitle": MessageLookupByLibrary.simpleMessage(
+      "Remove device?",
+    ),
+    "RenameDeviceAction": MessageLookupByLibrary.simpleMessage("Rename device"),
     "ResetPassword": MessageLookupByLibrary.simpleMessage("Reset password"),
     "Retry": MessageLookupByLibrary.simpleMessage("Retry"),
     "Room": MessageLookupByLibrary.simpleMessage("Room"),
     "SatShort": MessageLookupByLibrary.simpleMessage("Sat"),
     "Save": MessageLookupByLibrary.simpleMessage("Save"),
+    "SchedulePointActions": MessageLookupByLibrary.simpleMessage(
+      "Schedule point actions",
+    ),
     "Search": MessageLookupByLibrary.simpleMessage("Search"),
     "SecureCode": MessageLookupByLibrary.simpleMessage("Secure code"),
     "SendEmail": MessageLookupByLibrary.simpleMessage("Send email"),
@@ -209,7 +225,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Sensor conditions",
     ),
     "SensorMainLabel": MessageLookupByLibrary.simpleMessage("Main"),
-    "SensorMakeMain": MessageLookupByLibrary.simpleMessage("Make main sensor"),
+    "SensorMakeMain": MessageLookupByLibrary.simpleMessage("Set as reference."),
     "SensorMoreActions": MessageLookupByLibrary.simpleMessage("Sensor actions"),
     "SensorNameHint": MessageLookupByLibrary.simpleMessage("Sensor name"),
     "SensorRename": MessageLookupByLibrary.simpleMessage("Rename sensor"),
@@ -219,10 +235,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "SignIn": MessageLookupByLibrary.simpleMessage("Sign In"),
     "SignOut": MessageLookupByLibrary.simpleMessage("Sign Out"),
     "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
-    "StepOf": m6,
+    "StepOf": m7,
     "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
     "SunShort": MessageLookupByLibrary.simpleMessage("Sun"),
-    "Target": m7,
+    "Target": m8,
     "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Failed to load chart",
     ),
@@ -243,6 +259,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryPreviewNoSensorData": MessageLookupByLibrary.simpleMessage(
       "Temperature trend (24h): no sensor data",
     ),
+    "TelemetryHistoryPreviewOpenAction": MessageLookupByLibrary.simpleMessage(
+      "Open history",
+    ),
+    "TelemetryHistoryPreviewOpenHint": MessageLookupByLibrary.simpleMessage(
+      "Open detailed temperature history.",
+    ),
     "TelemetryHistoryPreviewTitle24h": MessageLookupByLibrary.simpleMessage(
       "Temperature trend (24h)",
     ),
@@ -250,11 +272,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryRangeMonth": MessageLookupByLibrary.simpleMessage("Month"),
     "TelemetryHistoryRangeWeek": MessageLookupByLibrary.simpleMessage("Week"),
     "TelemetryHistoryRangeYear": MessageLookupByLibrary.simpleMessage("Year"),
-    "TelemetryHistoryResolutionPoints": m8,
+    "TelemetryHistoryResolutionPoints": m9,
     "TelemetryHistorySensorLabel": MessageLookupByLibrary.simpleMessage(
       "Temperature sensor",
     ),
-    "TelemetryHistorySensorPosition": m9,
+    "TelemetryHistorySensorPosition": m10,
     "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Average"),
     "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Maximum"),
     "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Minimum"),
@@ -293,7 +315,6 @@ class MessageLookup extends MessageLookupByLibrary {
       "Unknown device type",
     ),
     "UnknownError": MessageLookupByLibrary.simpleMessage("Unknown error"),
-    "UnlinkDevice": MessageLookupByLibrary.simpleMessage("Unlink Device"),
     "UnsavedChanges": MessageLookupByLibrary.simpleMessage("Unsaved changes"),
     "UnsavedChangesDiscardPrompt": MessageLookupByLibrary.simpleMessage(
       "You have unsaved changes. Do you want to discard them and leave this page?",
@@ -351,7 +372,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "deviceOfflineHintBluetooth": MessageLookupByLibrary.simpleMessage(
       "Move closer to the device to set up Wi-Fi over Bluetooth.",
     ),
-    "deviceOfflineSubtitleWithLastSeen": m10,
+    "deviceOfflineSubtitleWithLastSeen": m11,
     "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
       "Device is offline",
     ),

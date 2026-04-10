@@ -530,42 +530,43 @@ class _SensorCardAction extends StatelessWidget {
     final valueColor = statValueColor(context);
     final isDark = isDarkSurface(context);
 
-    if (sensor.isReference) {
-      return InkWell(
-        borderRadius: BorderRadius.circular(AppPalette.radiusPill),
-        onTap: onTap,
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppPalette.accentPrimary.withValues(
-              alpha: isDark ? 0.22 : 0.14,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (sensor.isReference) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppPalette.accentPrimary.withValues(
+                alpha: isDark ? 0.22 : 0.14,
+              ),
+              borderRadius: BorderRadius.circular(AppPalette.radiusPill),
             ),
-            borderRadius: BorderRadius.circular(AppPalette.radiusPill),
+            child: Text(
+              S.of(context).SensorMainLabel,
+              style: TextStyle(
+                color: valueColor,
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+            ),
           ),
-          child: Text(
-            S.of(context).SensorMainLabel,
-            style: TextStyle(
-              color: valueColor,
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-            ),
+          const SizedBox(width: 4),
+        ],
+        IconButton(
+          onPressed: onTap,
+          tooltip: S.of(context).SensorMoreActions,
+          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+          padding: EdgeInsets.zero,
+          splashRadius: 18,
+          icon: Icon(
+            Icons.more_horiz_rounded,
+            size: 20,
+            color: statTitleColor(context),
           ),
         ),
-      );
-    }
-
-    return IconButton(
-      onPressed: onTap,
-      tooltip: S.of(context).SensorMoreActions,
-      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-      visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
-      padding: EdgeInsets.zero,
-      splashRadius: 18,
-      icon: Icon(
-        Icons.more_horiz_rounded,
-        size: 20,
-        color: statTitleColor(context),
-      ),
+      ],
     );
   }
 }

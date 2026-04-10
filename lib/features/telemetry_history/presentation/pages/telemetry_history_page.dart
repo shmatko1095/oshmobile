@@ -183,6 +183,12 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
     };
   }
 
+  String _metricSelectorLabel(TelemetryHistoryMetric metric) {
+    final subtitle = (metric.subtitle ?? '').trim();
+    if (subtitle.isNotEmpty) return subtitle;
+    return metric.title;
+  }
+
   String _xAxisLabel({
     required DateTime timestamp,
     required TelemetryHistoryRange range,
@@ -428,6 +434,19 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
       if (current == state.selectedMetricIndex) return;
       _pageController.jumpToPage(state.selectedMetricIndex);
     });
+  }
+
+  void _selectMetric(int index) {
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        index,
+        duration: AppPalette.motionBase,
+        curve: Curves.easeOutCubic,
+      );
+      return;
+    }
+
+    context.read<TelemetryHistoryCubit>().selectMetricIndex(index);
   }
 
   Widget _buildMetricSlide(
@@ -730,6 +749,17 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
           ),
           body: Column(
             children: [
+              if (state.hasMultipleMetrics)
+                SafeArea(
+                  bottom: false,
+                  minimum: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: _MetricSelector(
+                    metrics: state.metrics,
+                    selectedIndex: state.selectedMetricIndex,
+                    labelBuilder: _metricSelectorLabel,
+                    onSelected: _selectMetric,
+                  ),
+                ),
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
@@ -766,19 +796,93 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
                   },
                 ),
               ),
-              if (state.hasMultipleMetrics)
-                SafeArea(
-                  top: false,
-                  minimum: const EdgeInsets.fromLTRB(0, 0, 0, 8),
-                  child: _PagerDots(
-                    count: state.metrics.length,
-                    active: state.selectedMetricIndex,
-                  ),
-                ),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _MetricSelector extends StatelessWidget {
+  const _MetricSelector({
+    required this.metrics,
+    required this.selectedIndex,
+    required this.labelBuilder,
+    required this.onSelected,
+  });
+
+  final List<TelemetryHistoryMetric> metrics;
+  final int selectedIndex;
+  final String Function(TelemetryHistoryMetric metric) labelBuilder;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: metrics.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          return _MetricChip(
+            label: labelBuilder(metrics[index]),
+            selected: selectedIndex == index,
+            onTap: () => onSelected(index),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _MetricChip extends StatelessWidget {
+  const _MetricChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: AppPalette.motionBase,
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppPalette.accentPrimary.withValues(
+                  alpha: _historyIsDark(context) ? 0.28 : 0.12,
+                )
+              : _historySurfaceColor(context),
+          borderRadius: BorderRadius.circular(AppPalette.radiusPill),
+          border: Border.all(
+            color: selected
+                ? AppPalette.accentPrimary.withValues(alpha: 0.42)
+                : _historyBorderColor(context),
+          ),
+        ),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: selected
+                ? _historyPrimaryTextColor(context)
+                : _historyMutedTextColor(context),
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
     );
   }
 }

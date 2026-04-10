@@ -534,13 +534,33 @@ class S {
     );
   }
 
-  /// `Unlink Device`
-  String get UnlinkDevice {
+  /// `Open devices`
+  String get OpenDevices {
     return Intl.message(
-      'Unlink Device',
-      name: 'UnlinkDevice',
+      'Open devices',
+      name: 'OpenDevices',
       desc: '',
       args: [],
+    );
+  }
+
+  /// `Remove device?`
+  String get RemoveDeviceConfirmTitle {
+    return Intl.message(
+      'Remove device?',
+      name: 'RemoveDeviceConfirmTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The device {deviceName} will be removed from your list. You can re-add it anytime by scanning the QR code again.`
+  String RemoveDeviceConfirmMessage(Object deviceName) {
+    return Intl.message(
+      'The device $deviceName will be removed from your list. You can re-add it anytime by scanning the QR code again.',
+      name: 'RemoveDeviceConfirmMessage',
+      desc: '',
+      args: [deviceName],
     );
   }
 
@@ -552,26 +572,6 @@ class S {
   /// `No`
   String get No {
     return Intl.message('No', name: 'No', desc: '', args: []);
-  }
-
-  /// `The device `
-  String get DeviceUnlinkAlertContent1 {
-    return Intl.message(
-      'The device ',
-      name: 'DeviceUnlinkAlertContent1',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// ` will be removed from your list. You can re-add it anytime by scanning the QR code again.`
-  String get DeviceUnlinkAlertContent2 {
-    return Intl.message(
-      ' will be removed from your list. You can re-add it anytime by scanning the QR code again.',
-      name: 'DeviceUnlinkAlertContent2',
-      desc: '',
-      args: [],
-    );
   }
 
   /// `Unknown device type`
@@ -589,6 +589,26 @@ class S {
     return Intl.message(
       'No device selected',
       name: 'NoDeviceSelected',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Choose a device.`
+  String get NoDeviceSelectedChooseDeviceSubtitle {
+    return Intl.message(
+      'Choose a device.',
+      name: 'NoDeviceSelectedChooseDeviceSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add your first device.`
+  String get NoDeviceSelectedNoDevicesSubtitle {
+    return Intl.message(
+      'Add your first device.',
+      name: 'NoDeviceSelectedNoDevicesSubtitle',
       desc: '',
       args: [],
     );
@@ -684,10 +704,10 @@ class S {
     );
   }
 
-  /// `Make main sensor`
+  /// `Set as reference.`
   String get SensorMakeMain {
     return Intl.message(
-      'Make main sensor',
+      'Set as reference.',
       name: 'SensorMakeMain',
       desc: '',
       args: [],
@@ -699,6 +719,56 @@ class S {
     return Intl.message(
       'Delete sensor',
       name: 'DeleteSensor',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete point`
+  String get DeletePoint {
+    return Intl.message(
+      'Delete point',
+      name: 'DeletePoint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Device actions`
+  String get DeviceActions {
+    return Intl.message(
+      'Device actions',
+      name: 'DeviceActions',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rename device`
+  String get RenameDeviceAction {
+    return Intl.message(
+      'Rename device',
+      name: 'RenameDeviceAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Remove device`
+  String get RemoveDeviceAction {
+    return Intl.message(
+      'Remove device',
+      name: 'RemoveDeviceAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Schedule point actions`
+  String get SchedulePointActions {
+    return Intl.message(
+      'Schedule point actions',
+      name: 'SchedulePointActions',
       desc: '',
       args: [],
     );
@@ -1609,6 +1679,26 @@ class S {
     );
   }
 
+  /// `Open history`
+  String get TelemetryHistoryPreviewOpenAction {
+    return Intl.message(
+      'Open history',
+      name: 'TelemetryHistoryPreviewOpenAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open detailed temperature history.`
+  String get TelemetryHistoryPreviewOpenHint {
+    return Intl.message(
+      'Open detailed temperature history.',
+      name: 'TelemetryHistoryPreviewOpenHint',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Resolution: {resolution} • Points: {points}`
   String TelemetryHistoryResolutionPoints(Object resolution, Object points) {
     return Intl.message(
@@ -1687,6 +1777,21 @@ class S {
       desc: '',
       args: [],
     );
+  }
+
+  /// `Updating`
+  String get MqttStatusUpdating {
+    return Intl.message(
+      'Updating',
+      name: 'MqttStatusUpdating',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Error`
+  String get MqttStatusError {
+    return Intl.message('Error', name: 'MqttStatusError', desc: '', args: []);
   }
 
   /// `Last update: {time}`

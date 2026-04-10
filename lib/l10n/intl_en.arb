@@ -81,13 +81,20 @@
   "GoToLogin": "Go to Login",
   "AddDevice": "Add device",
   "NoDevicesYet": "No devices yet",
-  "UnlinkDevice": "Unlink Device",
+  "OpenDevices": "Open devices",
+  "RemoveDeviceConfirmTitle": "Remove device?",
+  "RemoveDeviceConfirmMessage": "The device {deviceName} will be removed from your list. You can re-add it anytime by scanning the QR code again.",
+  "@RemoveDeviceConfirmMessage": {
+    "placeholders": {
+      "deviceName": {}
+    }
+  },
   "Yes": "Yes",
   "No": "No",
-  "DeviceUnlinkAlertContent1": "The device ",
-  "DeviceUnlinkAlertContent2": " will be removed from your list. You can re-add it anytime by scanning the QR code again.",
   "UnknownDeviceType": "Unknown device type",
   "NoDeviceSelected": "No device selected",
+  "NoDeviceSelectedChooseDeviceSubtitle": "Choose a device.",
+  "NoDeviceSelectedNoDevicesSubtitle": "Add your first device.",
   "SerialNumber": "Serial number",
   "SecureCode": "Secure code",
   "InvalidValue": "Invalid value",
@@ -99,8 +106,13 @@
   "SensorRename": "Rename sensor",
   "SensorNameHint": "Sensor name",
   "SensorCalibration": "Calibration",
-  "SensorMakeMain": "Make main sensor",
+  "SensorMakeMain": "Set as reference.",
   "DeleteSensor": "Delete sensor",
+  "DeletePoint": "Delete point",
+  "DeviceActions": "Device actions",
+  "RenameDeviceAction": "Rename device",
+  "RemoveDeviceAction": "Remove device",
+  "SchedulePointActions": "Schedule point actions",
   "SensorMainLabel": "Main",
   "SensorMoreActions": "Sensor actions",
   "SensorConditions": "Sensor conditions",
@@ -221,6 +233,8 @@
   "TelemetryHistoryMetricTarget": "Target",
   "TelemetryHistoryPreviewTitle24h": "Temperature trend (24h)",
   "TelemetryHistoryPreviewNoSensorData": "Temperature trend (24h): no sensor data",
+  "TelemetryHistoryPreviewOpenAction": "Open history",
+  "TelemetryHistoryPreviewOpenHint": "Open detailed temperature history.",
   "TelemetryHistoryResolutionPoints": "Resolution: {resolution} • Points: {points}",
   "@TelemetryHistoryResolutionPoints": {
     "placeholders": {
@@ -235,6 +249,8 @@
   "startupNoInternetSubtitle": "Connect to Wi-Fi or mobile data to continue using Oshhome.",
   "startupNoInternetHintNetwork": "Check that your network is available.",
   "startupNoInternetHintRetry": "If needed, reconnect and tap Retry.",
+  "MqttStatusUpdating": "Updating",
+  "MqttStatusError": "Error",
   "LastUpdateAt": "Last update: {time}",
   "@LastUpdateAt": {
     "placeholders": {

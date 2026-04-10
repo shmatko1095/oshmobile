@@ -49,6 +49,7 @@ class SensorEditorPage extends StatefulWidget {
 }
 
 class _SensorEditorPageState extends State<SensorEditorPage> {
+  static const bool _showDeleteSensorAction = false;
   bool _isSettingReference = false;
 
   SensorMeta? _findSensor(SensorsState? state) {
@@ -364,13 +365,15 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
                             : () => _setReference(sensor),
                         isLoading: _isSettingReference,
                       ),
-                      const SizedBox(height: 10),
-                      AppButton(
-                        text: S.of(context).DeleteSensor,
-                        onPressed: null,
-                        backgroundColor: AppPalette.destructiveBg,
-                        foregroundColor: AppPalette.destructiveFg,
-                      ),
+                      if (_showDeleteSensorAction) ...[
+                        const SizedBox(height: 10),
+                        AppButton(
+                          text: S.of(context).DeleteSensor,
+                          onPressed: null,
+                          backgroundColor: AppPalette.destructiveBg,
+                          foregroundColor: AppPalette.destructiveFg,
+                        ),
+                      ],
                     ],
                   ),
                 );

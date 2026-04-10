@@ -36,16 +36,19 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m5(temp, time) => "Наступне ${temp} о ${time}";
 
-  static String m6(current, total) => "Крок ${current} з ${total}";
+  static String m6(deviceName) =>
+      "Пристрій ${deviceName} буде видалено з вашого списку. Ви зможете додати його знову, відсканувавши QR-код.";
 
-  static String m7(temp) => "Ціль ${temp}";
+  static String m7(current, total) => "Крок ${current} з ${total}";
 
-  static String m8(resolution, points) =>
+  static String m8(temp) => "Ціль ${temp}";
+
+  static String m9(resolution, points) =>
       "Роздільність: ${resolution} • Точки: ${points}";
 
-  static String m9(index, total) => "Датчик ${index}/${total}";
+  static String m10(index, total) => "Датчик ${index}/${total}";
 
-  static String m10(lastSeenAt) => "Востаннє був онлайн: ${lastSeenAt}";
+  static String m11(lastSeenAt) => "Востаннє був онлайн: ${lastSeenAt}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -96,9 +99,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "DeleteAccountEmailFlowTitle": MessageLookupByLibrary.simpleMessage(
       "Підтвердьте видалення акаунта",
     ),
+    "DeletePoint": MessageLookupByLibrary.simpleMessage("Видалити точку"),
     "DeleteSensor": MessageLookupByLibrary.simpleMessage("Видалити датчик"),
     "Deleted": MessageLookupByLibrary.simpleMessage("Видалено"),
     "DemoMode": MessageLookupByLibrary.simpleMessage("Демо-режим"),
+    "DeviceActions": MessageLookupByLibrary.simpleMessage("Дії пристрою"),
     "DeviceDetails": MessageLookupByLibrary.simpleMessage("Деталі пристрою"),
     "DeviceEditTitle": MessageLookupByLibrary.simpleMessage(
       "Інформація про пристрій",
@@ -111,12 +116,6 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "DeviceScopeUnavailableInContext": MessageLookupByLibrary.simpleMessage(
       "Контекст пристрою недоступний у поточному місці.",
-    ),
-    "DeviceUnlinkAlertContent1": MessageLookupByLibrary.simpleMessage(
-      "Пристрій ",
-    ),
-    "DeviceUnlinkAlertContent2": MessageLookupByLibrary.simpleMessage(
-      " буде видалено з вашого списку. Ви зможете додати його знову, відсканувавши QR-код.",
     ),
     "Discard": MessageLookupByLibrary.simpleMessage("Скасувати зміни"),
     "Done": MessageLookupByLibrary.simpleMessage("Готово"),
@@ -159,6 +158,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "ModeRange": MessageLookupByLibrary.simpleMessage("Діапазон"),
     "ModeWeekly": MessageLookupByLibrary.simpleMessage("Щотижня"),
     "MonShort": MessageLookupByLibrary.simpleMessage("Пн"),
+    "MqttStatusError": MessageLookupByLibrary.simpleMessage("Помилка"),
+    "MqttStatusUpdating": MessageLookupByLibrary.simpleMessage("Оновлення"),
     "Name": MessageLookupByLibrary.simpleMessage("Назва"),
     "Next": MessageLookupByLibrary.simpleMessage("Далі"),
     "NextAt": m5,
@@ -167,6 +168,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "NoDeviceSelected": MessageLookupByLibrary.simpleMessage(
       "Пристрій не вибрано",
     ),
+    "NoDeviceSelectedChooseDeviceSubtitle":
+        MessageLookupByLibrary.simpleMessage("Виберіть пристрій."),
+    "NoDeviceSelectedNoDevicesSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Додайте перший пристрій.",
+    ),
     "NoDevicesYet": MessageLookupByLibrary.simpleMessage("Пристроїв ще немає"),
     "NoNetworksFound": MessageLookupByLibrary.simpleMessage(
       "Мереж не знайдено",
@@ -174,6 +180,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "OK": MessageLookupByLibrary.simpleMessage("OK"),
     "Offline": MessageLookupByLibrary.simpleMessage("Офлайн"),
     "Online": MessageLookupByLibrary.simpleMessage("Онлайн"),
+    "OpenDevices": MessageLookupByLibrary.simpleMessage("Відкрити пристрої"),
     "Password": MessageLookupByLibrary.simpleMessage("Пароль"),
     "PasswordConfirmation": MessageLookupByLibrary.simpleMessage(
       "Підтвердження пароля",
@@ -196,11 +203,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "RegistrationSuccessfulContent": MessageLookupByLibrary.simpleMessage(
       "Останній крок — підтвердіть email. Перевірте вхідні та виконайте інструкції, щоб завершити реєстрацію.",
     ),
+    "RemoveDeviceAction": MessageLookupByLibrary.simpleMessage(
+      "Видалити пристрій",
+    ),
+    "RemoveDeviceConfirmMessage": m6,
+    "RemoveDeviceConfirmTitle": MessageLookupByLibrary.simpleMessage(
+      "Видалити пристрій?",
+    ),
+    "RenameDeviceAction": MessageLookupByLibrary.simpleMessage(
+      "Перейменувати пристрій",
+    ),
     "ResetPassword": MessageLookupByLibrary.simpleMessage("Скинути пароль"),
     "Retry": MessageLookupByLibrary.simpleMessage("Спробувати знову"),
     "Room": MessageLookupByLibrary.simpleMessage("Кімната"),
     "SatShort": MessageLookupByLibrary.simpleMessage("Сб"),
     "Save": MessageLookupByLibrary.simpleMessage("Зберегти"),
+    "SchedulePointActions": MessageLookupByLibrary.simpleMessage(
+      "Дії точки розкладу",
+    ),
     "Search": MessageLookupByLibrary.simpleMessage("Пошук"),
     "SecureCode": MessageLookupByLibrary.simpleMessage("Захисний код"),
     "SendEmail": MessageLookupByLibrary.simpleMessage("Надіслати лист"),
@@ -223,10 +243,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "SignIn": MessageLookupByLibrary.simpleMessage("Увійти"),
     "SignOut": MessageLookupByLibrary.simpleMessage("Вийти"),
     "SignUp": MessageLookupByLibrary.simpleMessage("Зареєструватися"),
-    "StepOf": m6,
+    "StepOf": m7,
     "Successful": MessageLookupByLibrary.simpleMessage("Успішно"),
     "SunShort": MessageLookupByLibrary.simpleMessage("Нд"),
-    "Target": m7,
+    "Target": m8,
     "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Не вдалося завантажити графік",
     ),
@@ -247,6 +267,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryPreviewNoSensorData": MessageLookupByLibrary.simpleMessage(
       "Історія температури (24 год): немає даних датчиків",
     ),
+    "TelemetryHistoryPreviewOpenAction": MessageLookupByLibrary.simpleMessage(
+      "Відкрити історію",
+    ),
+    "TelemetryHistoryPreviewOpenHint": MessageLookupByLibrary.simpleMessage(
+      "Відкрити детальну історію температури.",
+    ),
     "TelemetryHistoryPreviewTitle24h": MessageLookupByLibrary.simpleMessage(
       "Історія температури (24 год)",
     ),
@@ -258,11 +284,11 @@ class MessageLookup extends MessageLookupByLibrary {
       "Тиждень",
     ),
     "TelemetryHistoryRangeYear": MessageLookupByLibrary.simpleMessage("Рік"),
-    "TelemetryHistoryResolutionPoints": m8,
+    "TelemetryHistoryResolutionPoints": m9,
     "TelemetryHistorySensorLabel": MessageLookupByLibrary.simpleMessage(
       "Температурний датчик",
     ),
-    "TelemetryHistorySensorPosition": m9,
+    "TelemetryHistorySensorPosition": m10,
     "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Середнє"),
     "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Максимум"),
     "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Мінімум"),
@@ -303,7 +329,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "UnknownError": MessageLookupByLibrary.simpleMessage(
       "Сталася невідома помилка",
     ),
-    "UnlinkDevice": MessageLookupByLibrary.simpleMessage("Відвʼязати пристрій"),
     "UnsavedChanges": MessageLookupByLibrary.simpleMessage("Незбережені зміни"),
     "UnsavedChangesDiscardPrompt": MessageLookupByLibrary.simpleMessage(
       "У вас є незбережені зміни. Скасувати їх і вийти зі сторінки?",
@@ -361,7 +386,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "deviceOfflineHintBluetooth": MessageLookupByLibrary.simpleMessage(
       "Наблизьтеся до пристрою, щоб налаштувати Wi‑Fi через Bluetooth.",
     ),
-    "deviceOfflineSubtitleWithLastSeen": m10,
+    "deviceOfflineSubtitleWithLastSeen": m11,
     "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
       "Пристрій офлайн",
     ),

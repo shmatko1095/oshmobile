@@ -6,12 +6,13 @@ import 'package:oshmobile/core/analytics/osh_analytics_screen_view.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
-import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/app/device_session/scopes/device_scope.dart';
 import 'package:oshmobile/features/devices/no_selected_device/presentation/pages/no_selected_device_page.dart';
+import 'package:oshmobile/features/home/presentation/pages/add_device_page.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/home/presentation/widgets/mqtt_activity_icon.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/side_menu.dart';
+import 'package:oshmobile/generated/l10n.dart';
 
 class HomePage extends StatefulWidget {
   static MaterialPageRoute route() =>
@@ -25,6 +26,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   static const _defaultTitle = 'Osh App';
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   VoidCallback? _openSettingsAction;
   String? _title;
 
@@ -52,29 +54,45 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _setSettingsActionSafe(VoidCallback? cb) {
+    if (!mounted) return;
+    final shouldRebuild = (_openSettingsAction == null) != (cb == null);
+    if (!shouldRebuild) {
+      _openSettingsAction = cb;
+      return;
+    }
+
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.transientCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() => _openSettingsAction = cb);
+        }
+      });
+    } else {
+      setState(() => _openSettingsAction = cb);
+    }
+  }
+
+  bool _canOpenSettings(HomeCubit homeCubit, HomeState state) {
+    if (_openSettingsAction == null) return false;
+    if (state is HomeInitial ||
+        state is HomeLoading ||
+        state is HomeRefreshing) {
+      return false;
+    }
+
+    final selectedId = state.selectedDeviceId;
+    if (selectedId == null) return false;
+
+    return homeCubit.getDeviceById(selectedId) != null;
+  }
+
   void _onIconPressed() {
     final homeCubit = context.read<HomeCubit>();
     final state = homeCubit.state;
-    final selectedId = state.selectedDeviceId;
-    if (selectedId == null) {
-      SnackBarUtils.showFail(
-          context: context, content: 'Select a device first.');
-      return;
-    }
-
-    final device = homeCubit.getDeviceById(selectedId);
-    if (device == null) {
-      SnackBarUtils.showFail(
-          context: context, content: 'Selected device not found.');
-      return;
-    }
-
-    if (_openSettingsAction == null) {
-      SnackBarUtils.showFail(
-          context: context, content: 'Device view is not ready yet.');
-      return;
-    }
-
+    if (!_canOpenSettings(homeCubit, state)) return;
     _openSettingsAction!.call();
   }
 
@@ -88,17 +106,37 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildSelectedDeviceOrFallback(HomeCubit homeCubit, String? deviceId) {
+    final userDevices = homeCubit.getUserDevices();
+
     if (deviceId == null) {
       _setTitleSafe(null);
-      _openSettingsAction = null;
-      return const NoSelectedDevicePage();
+      _setSettingsActionSafe(null);
+      return NoSelectedDevicePage(
+        title: userDevices.isEmpty
+            ? S.of(context).NoDevicesYet
+            : S.of(context).NoDeviceSelected,
+        subtitle: userDevices.isEmpty
+            ? S.of(context).NoDeviceSelectedNoDevicesSubtitle
+            : S.of(context).NoDeviceSelectedChooseDeviceSubtitle,
+        actionLabel: userDevices.isEmpty
+            ? S.of(context).AddDevice
+            : S.of(context).OpenDevices,
+        onActionPressed: userDevices.isEmpty
+            ? () => Navigator.of(context).push(AddDevicePage.route())
+            : () => _scaffoldKey.currentState?.openDrawer(),
+      );
     }
 
     final device = homeCubit.getDeviceById(deviceId);
     if (device == null) {
       _setTitleSafe(null);
-      _openSettingsAction = null;
-      return const NoSelectedDevicePage();
+      _setSettingsActionSafe(null);
+      return NoSelectedDevicePage(
+        title: S.of(context).NoDeviceSelected,
+        subtitle: S.of(context).NoDeviceSelectedChooseDeviceSubtitle,
+        actionLabel: S.of(context).OpenDevices,
+        onActionPressed: () => _scaffoldKey.currentState?.openDrawer(),
+      );
     }
 
     _setTitleSafe(_resolveDeviceTitle(device));
@@ -106,7 +144,7 @@ class _HomePageState extends State<HomePage> {
       key: ValueKey(device.id),
       device: device,
       onTitleChanged: _setTitleSafe,
-      onSettingsActionChanged: (cb) => _openSettingsAction = cb,
+      onSettingsActionChanged: _setSettingsActionSafe,
     );
   }
 
@@ -115,6 +153,7 @@ class _HomePageState extends State<HomePage> {
     return OshAnalyticsScreenView(
       screenName: OshAnalyticsScreens.home,
       child: Scaffold(
+        key: _scaffoldKey,
         appBar: AppBar(
           centerTitle: true,
           title: Text(_title ?? _defaultTitle, overflow: TextOverflow.ellipsis),
@@ -128,9 +167,16 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: _onIconPressed,
+            BlocBuilder<HomeCubit, HomeState>(
+              builder: (context, state) {
+                final enabled =
+                    _canOpenSettings(context.read<HomeCubit>(), state);
+                return IconButton(
+                  icon: const Icon(Icons.settings),
+                  tooltip: S.of(context).Settings,
+                  onPressed: enabled ? _onIconPressed : null,
+                );
+              },
             ),
           ],
         ),
@@ -157,7 +203,7 @@ class _HomePageState extends State<HomePage> {
               case HomeLoading():
               case HomeRefreshing():
                 _setTitleSafe(null);
-                _openSettingsAction = null;
+                _setSettingsActionSafe(null);
                 return const Loader();
 
               case HomeFailed(:final selectedDeviceId):
@@ -174,8 +220,13 @@ class _HomePageState extends State<HomePage> {
             }
 
             _setTitleSafe(null);
-            _openSettingsAction = null;
-            return const NoSelectedDevicePage();
+            _setSettingsActionSafe(null);
+            return NoSelectedDevicePage(
+              title: S.of(context).NoDeviceSelected,
+              subtitle: S.of(context).NoDeviceSelectedChooseDeviceSubtitle,
+              actionLabel: S.of(context).OpenDevices,
+              onActionPressed: () => _scaffoldKey.currentState?.openDrawer(),
+            );
           },
         ),
       ),

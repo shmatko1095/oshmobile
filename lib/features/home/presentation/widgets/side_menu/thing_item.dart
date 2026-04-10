@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
@@ -7,6 +6,7 @@ import 'package:oshmobile/core/theme/text_styles.dart';
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/home/presentation/pages/rename_device_page.dart';
 import 'package:oshmobile/features/home/presentation/pages/unassign_device_dialog.dart';
+import 'package:oshmobile/generated/l10n.dart';
 
 class ThingItem extends StatelessWidget {
   final bool online;
@@ -26,6 +26,23 @@ class ThingItem extends StatelessWidget {
     // required this.type,
     required this.id,
   });
+
+  Future<void> _onActionSelected(
+    BuildContext context,
+    _ThingItemAction action,
+  ) async {
+    switch (action) {
+      case _ThingItemAction.rename:
+        _onDeviceRename(context);
+        return;
+      case _ThingItemAction.remove:
+        final approved = await _confirmUnassign(context);
+        if (approved == true && context.mounted) {
+          context.read<HomeCubit>().unassignDevice(id);
+        }
+        return;
+    }
+  }
 
   void _onDeviceRename(BuildContext context) {
     Navigator.push(
@@ -57,7 +74,7 @@ class ThingItem extends StatelessWidget {
   }
 
   Future<bool?> _showUnassignDialog(BuildContext context) async {
-    return await showCupertinoDialog<bool>(
+    return await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return UnassignDeviceDialog(deviceName: name);
@@ -147,9 +164,23 @@ class ThingItem extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: selected ? titleColor : AppPalette.textMuted,
+                PopupMenuButton<_ThingItemAction>(
+                  tooltip: S.of(context).DeviceActions,
+                  onSelected: (action) => _onActionSelected(context, action),
+                  itemBuilder: (context) => [
+                    PopupMenuItem<_ThingItemAction>(
+                      value: _ThingItemAction.rename,
+                      child: Text(S.of(context).RenameDeviceAction),
+                    ),
+                    PopupMenuItem<_ThingItemAction>(
+                      value: _ThingItemAction.remove,
+                      child: Text(S.of(context).RemoveDeviceAction),
+                    ),
+                  ],
+                  icon: Icon(
+                    Icons.more_horiz_rounded,
+                    color: selected ? titleColor : AppPalette.textMuted,
+                  ),
                 ),
               ],
             ),
@@ -158,4 +189,9 @@ class ThingItem extends StatelessWidget {
       ),
     );
   }
+}
+
+enum _ThingItemAction {
+  rename,
+  remove,
 }
