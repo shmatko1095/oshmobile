@@ -17,13 +17,10 @@ import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart'
 import 'package:oshmobile/app/session/scopes/session_scope.dart';
 import 'package:oshmobile/core/logging/osh_bloc_observer.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
-import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
-import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/theme/theme.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:oshmobile/features/auth/presentation/pages/signin_page.dart';
-import 'package:oshmobile/features/home/presentation/pages/home_page.dart';
-import 'package:oshmobile/features/startup/presentation/pages/no_internet_page.dart';
+import 'package:oshmobile/features/startup/presentation/cubit/startup_cubit.dart';
+import 'package:oshmobile/features/startup/presentation/widgets/startup_gate.dart';
 import 'package:oshmobile/firebase_options.dart';
 import 'package:oshmobile/generated/l10n.dart';
 import 'package:oshmobile/init_dependencies.dart';
@@ -115,6 +112,13 @@ Future<void> main() async {
           BlocProvider(create: (_) => locator<AppThemeCubit>()),
           BlocProvider(create: (_) => locator<global_auth.GlobalAuthCubit>()),
           BlocProvider(create: (_) => locator<AuthBloc>()),
+          BlocProvider(
+            create: (_) {
+              final cubit = locator<StartupCubit>();
+              unawaited(cubit.start());
+              return cubit;
+            },
+          ),
         ],
         child: AppLifecycleObserver(child: const MyApp()),
       ),
@@ -145,16 +149,6 @@ class _MyAppState extends State<MyApp> {
 
   bool _inSession = false;
   String? _sessionUserKey;
-  bool _internetCheckResolved = false;
-  bool _hasInternetAtStartup = false;
-  bool _isRetryingInternetCheck = false;
-  bool _authBootstrapStarted = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkInternetBeforeStartup();
-  }
 
   void _handleAuthTransition(global_auth.GlobalAuthState next) {
     final auth = context.read<global_auth.GlobalAuthCubit>();
@@ -180,65 +174,6 @@ class _MyAppState extends State<MyApp> {
         _sessionEpoch++;
       });
     }
-  }
-
-  Future<void> _checkInternetBeforeStartup({bool fromRetry = false}) async {
-    if (fromRetry) {
-      if (!mounted) return;
-      setState(() {
-        _isRetryingInternetCheck = true;
-      });
-    } else {
-      if (!mounted) return;
-      setState(() {
-        _internetCheckResolved = false;
-        _isRetryingInternetCheck = false;
-      });
-    }
-
-    bool isConnected = false;
-    try {
-      isConnected = await locator<InternetConnectionChecker>().isConnected;
-    } catch (e, st) {
-      OshCrashReporter.logNonFatal(
-        e,
-        st,
-        reason: 'Startup internet check failed',
-      );
-    }
-
-    if (!mounted) return;
-
-    if (isConnected && !_authBootstrapStarted) {
-      _authBootstrapStarted = true;
-      context.read<global_auth.GlobalAuthCubit>().checkAuthStatus();
-    }
-
-    setState(() {
-      _internetCheckResolved = true;
-      _hasInternetAtStartup = isConnected;
-      _isRetryingInternetCheck = false;
-    });
-  }
-
-  Widget _buildStartupHome() {
-    if (!_internetCheckResolved) {
-      return const _StartupBootstrapLoader();
-    }
-
-    if (!_hasInternetAtStartup) {
-      return NoInternetPage(
-        onRetry: () => _checkInternetBeforeStartup(fromRetry: true),
-        isChecking: _isRetryingInternetCheck,
-      );
-    }
-
-    return BlocBuilder<global_auth.GlobalAuthCubit,
-        global_auth.GlobalAuthState>(
-      builder: (_, state) => (state is global_auth.AuthAuthenticated)
-          ? const HomePage()
-          : const SignInPage(),
-    );
   }
 
   @override
@@ -292,46 +227,10 @@ class _MyAppState extends State<MyApp> {
                 child: nav,
               );
             },
-            home: _buildStartupHome(),
+            home: const StartupGate(),
           ),
         );
       },
-    );
-  }
-}
-
-class _StartupBootstrapLoader extends StatelessWidget {
-  const _StartupBootstrapLoader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppPalette.canvas,
-      body: const SafeArea(
-        child: Center(
-          child: _StartupBootstrapLoaderBody(),
-        ),
-      ),
-    );
-  }
-}
-
-class _StartupBootstrapLoaderBody extends StatelessWidget {
-  const _StartupBootstrapLoaderBody();
-
-  @override
-  Widget build(BuildContext context) {
-    final s = S.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const CircularProgressIndicator(),
-        const SizedBox(height: AppPalette.spaceLg),
-        Text(
-          s.startupCheckingInternet,
-          style: const TextStyle(color: AppPalette.textSecondary),
-        ),
-      ],
     );
   }
 }

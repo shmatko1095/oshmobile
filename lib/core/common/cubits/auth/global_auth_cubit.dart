@@ -14,10 +14,12 @@ import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_service.dart';
 import 'package:oshmobile/core/network/chopper_client/core/session_storage.dart';
+import 'package:oshmobile/features/startup/domain/contracts/startup_auth_bootstrapper.dart';
 
 part 'global_auth_state.dart';
 
-class GlobalAuthCubit extends Cubit<GlobalAuthState> {
+class GlobalAuthCubit extends Cubit<GlobalAuthState>
+    implements StartupAuthBootstrapper {
   final AuthService _authService;
   final MobileV1Service _mobileService;
   final SessionStorage _sessionStorage;
@@ -35,6 +37,7 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
         super(const AuthInitial(0));
 
   int _revision = 0;
+  Future<bool>? _authBootstrapFuture;
 
   void _emitAuthInitial() {
     _revision++;
@@ -46,8 +49,19 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
     emit(AuthAuthenticated(_revision));
   }
 
-  Future<void> checkAuthStatus() async {
-    await refreshToken();
+  @override
+  Future<bool> checkAuthStatus() {
+    final inFlight = _authBootstrapFuture;
+    if (inFlight != null) return inFlight;
+
+    final future = _refreshTokenInternal();
+    _authBootstrapFuture = future;
+    future.whenComplete(() {
+      if (identical(_authBootstrapFuture, future)) {
+        _authBootstrapFuture = null;
+      }
+    });
+    return future;
   }
 
   Future<void> signedIn(Session session) async {
@@ -73,6 +87,10 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState> {
   }
 
   Future<bool> refreshToken() async {
+    return _refreshTokenInternal();
+  }
+
+  Future<bool> _refreshTokenInternal() async {
     try {
       final currentSession = _sessionStorage.getSession();
       if (currentSession == null) {

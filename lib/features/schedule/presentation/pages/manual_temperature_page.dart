@@ -18,8 +18,8 @@ class ManualTemperaturePage extends StatefulWidget {
     required this.initial,
     required this.onSave,
     required this.title,
-    this.min = 5.0,
-    this.max = 35.0,
+    this.min = 10.0,
+    this.max = 40.0,
     this.step = 0.5,
     this.unit = '°C',
   });

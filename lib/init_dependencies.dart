@@ -72,6 +72,8 @@ import 'package:oshmobile/features/telemetry_history/data/datasources/telemetry_
 import 'package:oshmobile/features/telemetry_history/data/repositories/telemetry_history_repository_impl.dart';
 import 'package:oshmobile/features/telemetry_history/domain/repositories/telemetry_history_repository.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_history.dart';
+import 'package:oshmobile/features/startup/domain/contracts/startup_auth_bootstrapper.dart';
+import 'package:oshmobile/features/startup/presentation/cubit/startup_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final locator = GetIt.instance;
@@ -82,6 +84,7 @@ Future<void> initDependencies() async {
   await _initCore();
   await _initKeycloakWrapper();
   await _initWebClient();
+  _initStartupFeature();
   await _initMqttClient();
   _initAuthFeature();
   _initHomeFeature();
@@ -213,6 +216,19 @@ void _initHomeFeature() {
     )
     ..registerFactory<SelectedDeviceStorage>(
       () => SelectedDeviceStorage(locator<SharedPreferences>()),
+    );
+}
+
+void _initStartupFeature() {
+  locator
+    ..registerLazySingleton<StartupAuthBootstrapper>(
+      () => locator<GlobalAuthCubit>(),
+    )
+    ..registerFactory<StartupCubit>(
+      () => StartupCubit(
+        connectionChecker: locator<InternetConnectionChecker>(),
+        authBootstrapper: locator<StartupAuthBootstrapper>(),
+      ),
     );
 }
 
