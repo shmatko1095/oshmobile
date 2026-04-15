@@ -101,6 +101,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "DeleteSensor": MessageLookupByLibrary.simpleMessage("Delete sensor"),
     "Deleted": MessageLookupByLibrary.simpleMessage("Deleted"),
     "DemoMode": MessageLookupByLibrary.simpleMessage("Demo mode"),
+    "DeviceAboutUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Available when the device is online and the device session is ready.",
+    ),
     "DeviceActions": MessageLookupByLibrary.simpleMessage("Device actions"),
     "DeviceDetails": MessageLookupByLibrary.simpleMessage("Device details"),
     "DeviceEditTitle": MessageLookupByLibrary.simpleMessage(

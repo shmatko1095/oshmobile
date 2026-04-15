@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:get_it/get_it.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/selected_device_session_cubit.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/services/mqtt_session_controller.dart';
@@ -8,8 +9,9 @@ import 'package:oshmobile/core/network/mqtt/app_device_id_provider.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo.dart';
 import 'package:oshmobile/core/network/mqtt/device_mqtt_repo_impl.dart';
 import 'package:oshmobile/core/utils/app_config.dart';
-import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
-import 'package:oshmobile/features/home/utils/selected_device_storage.dart';
+import 'package:oshmobile/features/device_catalog/data/selected_device_storage.dart';
+import 'package:oshmobile/features/device_catalog/domain/contracts/device_catalog_sync.dart';
+import 'package:oshmobile/features/device_catalog/presentation/cubit/device_catalog_cubit.dart';
 
 /// Session DI scope.
 ///
@@ -144,17 +146,22 @@ class SessionDi {
       dispose: (c) => unawaited(c.dispose()),
     );
 
-    // ---------- HomeCubit must be session-scoped ----------
-    getIt.registerLazySingleton<HomeCubit>(
-      () => HomeCubit(
+    getIt.registerLazySingleton<DeviceCatalogCubit>(
+      () => DeviceCatalogCubit(
         globalAuthCubit: getIt(),
-        getUserDevices: getIt(),
-        unassignDevice: getIt(),
-        assignDevice: getIt(),
-        updateDeviceUserData: getIt(),
+        getDevices: getIt(),
         selectedDeviceStorage: getIt<SelectedDeviceStorage>(),
         comm: getIt<MqttCommCubit>(),
       ),
+      dispose: (c) => unawaited(c.close()),
+    );
+
+    getIt.registerLazySingleton<DeviceCatalogSync>(
+      () => getIt<DeviceCatalogCubit>(),
+    );
+
+    getIt.registerLazySingleton<SelectedDeviceSessionCubit>(
+      () => SelectedDeviceSessionCubit(),
       dispose: (c) => unawaited(c.close()),
     );
   }

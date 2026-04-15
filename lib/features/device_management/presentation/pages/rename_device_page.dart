@@ -2,35 +2,31 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
+import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
-import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
+import 'package:oshmobile/features/device_catalog/presentation/cubit/device_catalog_cubit.dart';
+import 'package:oshmobile/features/device_management/presentation/cubit/device_management_cubit.dart';
 import 'package:oshmobile/generated/l10n.dart';
+import 'package:oshmobile/init_dependencies.dart';
 
 class RenameDevicePage extends StatefulWidget {
   final String deviceId;
-  final String name;
-  final String room;
 
   static MaterialPageRoute<void> route({
     required String deviceId,
-    required String name,
-    required String room,
   }) =>
       MaterialPageRoute<void>(
         settings: const RouteSettings(name: OshAnalyticsScreens.renameDevice),
-        builder: (context) => RenameDevicePage(
-          deviceId: deviceId,
-          name: name,
-          room: room,
+        builder: (_) => BlocProvider<DeviceManagementCubit>(
+          create: (_) => locator<DeviceManagementCubit>(),
+          child: RenameDevicePage(deviceId: deviceId),
         ),
       );
 
   const RenameDevicePage({
     super.key,
     required this.deviceId,
-    required this.name,
-    required this.room,
   });
 
   @override
@@ -42,23 +38,27 @@ class _RenameDevicePageState extends State<RenameDevicePage> {
   final _descriptionCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  late final String _serial;
   late final String _initialAlias;
-  late final String _initialDesc;
+  late final String _initialDescription;
 
-  String _norm(String? s) => (s ?? '').trim().replaceAll(RegExp(r'\s+'), ' ');
+  String _norm(String? value) =>
+      (value ?? '').trim().replaceAll(RegExp(r'\s+'), ' ');
 
   bool get _canSave =>
       _norm(_aliasCtrl.text) != _initialAlias ||
-      _norm(_descriptionCtrl.text) != _initialDesc;
+      _norm(_descriptionCtrl.text) != _initialDescription;
 
   @override
   void initState() {
     super.initState();
-    _initialAlias = _norm(widget.name);
-    _initialDesc = _norm(widget.room);
+    final device = context.read<DeviceCatalogCubit>().getById(widget.deviceId);
+    _serial = device?.sn ?? '';
+    _initialAlias = _norm(device?.userData.alias);
+    _initialDescription = _norm(device?.userData.description);
 
-    _aliasCtrl.text = widget.name;
-    _descriptionCtrl.text = widget.room;
+    _aliasCtrl.text = device?.userData.alias ?? '';
+    _descriptionCtrl.text = device?.userData.description ?? '';
 
     _aliasCtrl.addListener(() => setState(() {}));
     _descriptionCtrl.addListener(() => setState(() {}));
@@ -72,32 +72,41 @@ class _RenameDevicePageState extends State<RenameDevicePage> {
   }
 
   void _submit() {
-    if (!_canSave) return;
+    if (!_canSave || _serial.isEmpty) return;
     if (_formKey.currentState!.validate()) {
-      context.read<HomeCubit>().updateDeviceUserData(
-            widget.deviceId,
-            _norm(_aliasCtrl.text),
-            _norm(_descriptionCtrl.text),
+      context.read<DeviceManagementCubit>().renameDevice(
+            serial: _serial,
+            alias: _norm(_aliasCtrl.text),
+            description: _norm(_descriptionCtrl.text),
           );
     }
   }
 
-  Future<void> _onStateChanged(BuildContext context, HomeState state) async {
-    if (state is HomeUpdateDeviceUserDataDone) {
+  Future<void> _onStateChanged(
+    BuildContext context,
+    DeviceManagementState state,
+  ) async {
+    if (state.action != DeviceManagementAction.rename) return;
+
+    if (state.status == DeviceManagementStatus.success) {
       SnackBarUtils.showSuccess(context: context, content: S.of(context).Done);
       await Future.delayed(const Duration(milliseconds: 1000));
       if (!context.mounted) return;
       Navigator.of(context).pop();
-    } else if (state is HomeUpdateDeviceUserDataFailed) {
+    } else if (state.status == DeviceManagementStatus.failure) {
       SnackBarUtils.showFail(
         context: context,
-        content: state.message ?? S.of(context).Failed,
+        content: state.errorMessage ?? S.of(context).Failed,
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final device = context.select<DeviceCatalogCubit, Device?>(
+      (cubit) => cubit.getById(widget.deviceId),
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: Text(S.of(context).DeviceEditTitle),
@@ -106,12 +115,19 @@ class _RenameDevicePageState extends State<RenameDevicePage> {
         top: false,
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: BlocConsumer<HomeCubit, HomeState>(
+          child: BlocConsumer<DeviceManagementCubit, DeviceManagementState>(
             listenWhen: (previous, current) =>
                 ModalRoute.of(context)?.isCurrent ?? true,
-            listener: (context, state) => _onStateChanged(context, state),
+            listener: _onStateChanged,
             builder: (context, state) {
-              final isLoading = state is HomeLoading;
+              if (device == null && _serial.isEmpty) {
+                return Center(
+                  child: Text(S.of(context).NoDeviceSelected),
+                );
+              }
+
+              final isLoading =
+                  state.status == DeviceManagementStatus.submitting;
 
               return Column(
                 children: [

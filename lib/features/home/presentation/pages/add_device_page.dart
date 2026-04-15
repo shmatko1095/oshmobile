@@ -9,14 +9,18 @@ import 'package:oshmobile/core/common/widgets/colored_divider.dart';
 import 'package:oshmobile/core/theme/text_styles.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
-import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
+import 'package:oshmobile/features/device_catalog/presentation/cubit/add_device_cubit.dart';
 import 'package:oshmobile/features/home/presentation/widgets/add_device/device_form_field.dart';
 import 'package:oshmobile/generated/l10n.dart';
+import 'package:oshmobile/init_dependencies.dart';
 
 class AddDevicePage extends StatefulWidget {
   static MaterialPageRoute<void> route() => MaterialPageRoute<void>(
         settings: const RouteSettings(name: OshAnalyticsScreens.addDevice),
-        builder: (context) => const AddDevicePage(),
+        builder: (_) => BlocProvider<AddDeviceCubit>(
+          create: (_) => locator<AddDeviceCubit>(),
+          child: const AddDevicePage(),
+        ),
       );
 
   const AddDevicePage({super.key});
@@ -95,20 +99,21 @@ class _AddDevicePageState extends State<AddDevicePage>
     final sc = _secureCtrl.text.trim();
 
     if (_formKey.currentState!.validate()) {
-      context.read<HomeCubit>().assignDevice(serial, sc);
+      context.read<AddDeviceCubit>().assignDevice(serial, sc);
     }
   }
 
-  Future<void> _onStateChanged(BuildContext context, HomeState state) async {
-    if (state is HomeAssignDone) {
+  Future<void> _onStateChanged(
+      BuildContext context, AddDeviceState state) async {
+    if (state.status == AddDeviceStatus.success) {
       SnackBarUtils.showSuccess(context: context, content: S.of(context).Done);
       await Future.delayed(const Duration(milliseconds: 1000));
       if (!context.mounted) return;
       Navigator.of(context).pop();
-    } else if (state is HomeAssignFailed) {
+    } else if (state.status == AddDeviceStatus.failure) {
       SnackBarUtils.showFail(
         context: context,
-        content: state.message ?? S.of(context).Failed,
+        content: state.errorMessage ?? S.of(context).Failed,
       );
     }
   }
@@ -123,7 +128,7 @@ class _AddDevicePageState extends State<AddDevicePage>
         top: false,
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: BlocConsumer<HomeCubit, HomeState>(
+          child: BlocConsumer<AddDeviceCubit, AddDeviceState>(
             listenWhen: (previous, current) =>
                 ModalRoute.of(context)?.isCurrent ?? true,
             listener: (context, state) => _onStateChanged(context, state),
@@ -164,7 +169,7 @@ class _AddDevicePageState extends State<AddDevicePage>
                               controller: _secureCtrl,
                             ),
                             const SizedBox(height: 30),
-                            (state is HomeLoading)
+                            (state.status == AddDeviceStatus.submitting)
                                 ? CupertinoActivityIndicator()
                                 : CustomElevatedButton(
                                     buttonText: S.of(context).AddDevice,

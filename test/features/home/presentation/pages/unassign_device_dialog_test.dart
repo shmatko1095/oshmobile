@@ -1,12 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart' show Either, right;
+import 'package:oshmobile/core/error/failures.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/theme/theme.dart';
-import 'package:oshmobile/features/home/presentation/pages/unassign_device_dialog.dart';
+import 'package:oshmobile/features/device_catalog/domain/contracts/device_catalog_sync.dart';
+import 'package:oshmobile/features/device_management/domain/repositories/device_management_repository.dart';
+import 'package:oshmobile/features/device_management/domain/usecases/remove_device.dart';
+import 'package:oshmobile/features/device_management/domain/usecases/rename_device.dart';
+import 'package:oshmobile/features/device_management/presentation/cubit/device_management_cubit.dart';
+import 'package:oshmobile/features/device_management/presentation/widgets/remove_device_dialog.dart';
 import 'package:oshmobile/generated/l10n.dart';
+import 'package:oshmobile/init_dependencies.dart';
 
 void main() {
+  setUp(() {
+    locator.allowReassignment = true;
+    locator.registerFactory<DeviceManagementCubit>(
+      () => DeviceManagementCubit(
+        renameDevice: RenameDevice(
+          deviceManagementRepository: _FakeDeviceManagementRepository(),
+        ),
+        removeDevice: RemoveDevice(
+          deviceManagementRepository: _FakeDeviceManagementRepository(),
+        ),
+        deviceCatalogSync: _FakeDeviceCatalogSync(),
+      ),
+    );
+  });
+
+  tearDown(() async {
+    await locator.reset();
+  });
+
   testWidgets('renders styled material dialog content in dark theme',
       (tester) async {
     const deviceName = 'Very long thermostat name for the hallway controller';
@@ -32,7 +59,7 @@ void main() {
     expect(find.text('Remove device'), findsOneWidget);
 
     final surface = tester.widget<Material>(
-      find.byKey(const ValueKey('unassign_device_dialog_surface')),
+      find.byKey(const ValueKey('remove_device_dialog_surface')),
     );
     expect(surface.color, AppPalette.surfaceRaised);
   });
@@ -110,9 +137,11 @@ class _DialogHarnessState extends State<_DialogHarness> {
   bool _hasResult = false;
 
   Future<void> _openDialog() async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (_) => UnassignDeviceDialog(deviceName: widget.deviceName),
+    final result = await RemoveDeviceDialog.show(
+      context,
+      deviceId: 'device-1',
+      deviceSerial: 'SN-001',
+      deviceName: widget.deviceName,
     );
     if (!mounted) return;
     setState(() {
@@ -143,4 +172,28 @@ class _DialogHarnessState extends State<_DialogHarness> {
       ),
     );
   }
+}
+
+class _FakeDeviceManagementRepository implements DeviceManagementRepository {
+  @override
+  Future<Either<Failure, void>> removeDevice({required String serial}) async {
+    return right(null);
+  }
+
+  @override
+  Future<Either<Failure, void>> renameDevice({
+    required String serial,
+    required String alias,
+    required String description,
+  }) async {
+    return right(null);
+  }
+}
+
+class _FakeDeviceCatalogSync implements DeviceCatalogSync {
+  @override
+  void onDeviceRemoved(String deviceId) {}
+
+  @override
+  Future<void> refresh() async {}
 }

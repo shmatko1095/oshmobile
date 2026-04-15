@@ -3,15 +3,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/theme/text_styles.dart';
-import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
-import 'package:oshmobile/features/home/presentation/pages/rename_device_page.dart';
-import 'package:oshmobile/features/home/presentation/pages/unassign_device_dialog.dart';
+import 'package:oshmobile/features/device_catalog/presentation/cubit/device_catalog_cubit.dart';
+import 'package:oshmobile/features/device_management/presentation/pages/rename_device_page.dart';
+import 'package:oshmobile/features/device_management/presentation/widgets/remove_device_dialog.dart';
 
 class ThingItem extends StatelessWidget {
   final bool online;
   final bool selected;
   final String room;
   final String name;
+  final String serial;
 
   // final String type;
   final String id;
@@ -22,22 +23,19 @@ class ThingItem extends StatelessWidget {
     required this.selected,
     required this.room,
     required this.name,
+    required this.serial,
     // required this.type,
     required this.id,
   });
 
   void _onDeviceRename(BuildContext context) {
-    Navigator.push(
-        context,
-        RenameDevicePage.route(
-          deviceId: id,
-          name: name,
-          room: room,
-        ));
+    Navigator.of(context).push(
+      RenameDevicePage.route(deviceId: id),
+    );
   }
 
   void _onDeviceSelected(BuildContext context) {
-    context.read<HomeCubit>().selectDevice(id);
+    context.read<DeviceCatalogCubit>().selectDevice(id);
     Navigator.of(context).pop();
   }
 
@@ -56,11 +54,11 @@ class ThingItem extends StatelessWidget {
   }
 
   Future<bool?> _showUnassignDialog(BuildContext context) async {
-    return await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return UnassignDeviceDialog(deviceName: name);
-      },
+    return RemoveDeviceDialog.show(
+      context,
+      deviceId: id,
+      deviceSerial: serial,
+      deviceName: name,
     );
   }
 
@@ -69,7 +67,7 @@ class ThingItem extends StatelessWidget {
     return Dismissible(
       confirmDismiss: (_) async => _confirmUnassign(context),
       key: ValueKey('drawer_device_$id'),
-      onDismissed: (dir) => context.read<HomeCubit>().unassignDevice(id),
+      onDismissed: (_) {},
       direction: DismissDirection.endToStart,
       background: _buildDismissBackground(),
       child: _buildDeviceButton(context),

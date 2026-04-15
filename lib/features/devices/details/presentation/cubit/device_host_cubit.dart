@@ -3,11 +3,11 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
+import 'package:oshmobile/features/device_catalog/presentation/cubit/device_catalog_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_host_state.dart';
-import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 
 class DeviceHostCubit extends Cubit<DeviceHostState> {
-  final HomeCubit _homeCubit;
+  final DeviceCatalogCubit _deviceCatalogCubit;
   final String _deviceId;
   Timer? _timer;
 
@@ -15,9 +15,9 @@ class DeviceHostCubit extends Cubit<DeviceHostState> {
   int _checksDone = 0;
 
   DeviceHostCubit({
-    required HomeCubit homeCubit,
+    required DeviceCatalogCubit deviceCatalogCubit,
     required String deviceId,
-  })  : _homeCubit = homeCubit,
+  })  : _deviceCatalogCubit = deviceCatalogCubit,
         _deviceId = deviceId,
         super(const DeviceHostState());
 
@@ -45,10 +45,12 @@ class DeviceHostCubit extends Cubit<DeviceHostState> {
 
   Future<void> _checkOnce() async {
     // if (isClosed) return;
-    await _homeCubit.updateDeviceList();
+    await _deviceCatalogCubit.refresh();
 
-    Device? device =
-        _homeCubit.userDevices.filter((d) => d.id == _deviceId).firstOrNull;
+    Device? device = _deviceCatalogCubit
+        .getAll()
+        .filter((d) => d.id == _deviceId)
+        .firstOrNull;
     final isOnline = device?.connectionInfo.online == true;
 
     if (isOnline) {

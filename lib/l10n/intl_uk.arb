@@ -112,6 +112,7 @@
   "DeviceActions": "Дії пристрою",
   "DeviceInternalSettings": "Налаштування пристрою",
   "DeviceInternalSettingsUnavailable": "Доступно, коли пристрій онлайн і підтримує налаштування.",
+  "DeviceAboutUnavailable": "Доступно, коли пристрій онлайн і сесія пристрою готова.",
   "RenameDeviceAction": "Перейменувати пристрій",
   "RemoveDeviceAction": "Видалити пристрій",
   "SchedulePointActions": "Дії точки розкладу",

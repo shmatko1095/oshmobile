@@ -103,6 +103,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "DeleteSensor": MessageLookupByLibrary.simpleMessage("Видалити датчик"),
     "Deleted": MessageLookupByLibrary.simpleMessage("Видалено"),
     "DemoMode": MessageLookupByLibrary.simpleMessage("Демо-режим"),
+    "DeviceAboutUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Доступно, коли пристрій онлайн і сесія пристрою готова.",
+    ),
     "DeviceActions": MessageLookupByLibrary.simpleMessage("Дії пристрою"),
     "DeviceDetails": MessageLookupByLibrary.simpleMessage("Деталі пристрою"),
     "DeviceEditTitle": MessageLookupByLibrary.simpleMessage(

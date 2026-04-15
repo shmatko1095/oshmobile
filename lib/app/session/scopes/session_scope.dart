@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/selected_device_session_cubit.dart';
 import 'package:oshmobile/core/common/cubits/app/app_lifecycle_cubit.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart'
     as global_auth;
@@ -9,12 +10,12 @@ import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/services/mqtt_session_controller.dart';
 import 'package:oshmobile/app/session/di/session_di.dart';
-import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
+import 'package:oshmobile/features/device_catalog/presentation/cubit/device_catalog_cubit.dart';
 
 /// SessionScope:
 /// - Enters GetIt session scope on mount.
 /// - Starts MQTT connect via [MqttSessionController].
-/// - Provides session-scoped cubits (HomeCubit, GlobalMqttCubit, MqttCommCubit).
+/// - Provides session-scoped cubits (DeviceCatalogCubit, GlobalMqttCubit, MqttCommCubit).
 /// - Listens to app lifecycle to disconnect on background and reconnect on resume.
 /// - Listens to auth changes to update MQTT credentials on token refresh.
 /// - Leaves session scope on dispose.
@@ -43,10 +44,11 @@ class _SessionScopeState extends State<SessionScope> {
   int? _sessionGen;
 
   // Session-scoped instances (resolved after SessionDi.enter()).
-  late final HomeCubit _home;
+  late final DeviceCatalogCubit _catalog;
   late final GlobalMqttCubit _mqtt;
   late final MqttCommCubit _comm;
   late final MqttSessionController _sessionController;
+  late final SelectedDeviceSessionCubit _selectedDeviceSession;
 
   @override
   void initState() {
@@ -67,10 +69,11 @@ class _SessionScopeState extends State<SessionScope> {
     _sessionGen = gen;
 
     // Resolve session singletons.
-    _home = locator<HomeCubit>();
+    _catalog = locator<DeviceCatalogCubit>();
     _mqtt = locator<GlobalMqttCubit>();
     _comm = locator<MqttCommCubit>();
     _sessionController = locator<MqttSessionController>();
+    _selectedDeviceSession = locator<SelectedDeviceSessionCubit>();
 
     // Wait until initial MQTT connect completes.
     try {
@@ -161,9 +164,10 @@ class _SessionScopeState extends State<SessionScope> {
 
     return MultiBlocProvider(
       providers: [
-        BlocProvider.value(value: _home),
+        BlocProvider.value(value: _catalog),
         BlocProvider.value(value: _mqtt),
         BlocProvider.value(value: _comm),
+        BlocProvider.value(value: _selectedDeviceSession),
       ],
       child: MultiBlocListener(
         listeners: [

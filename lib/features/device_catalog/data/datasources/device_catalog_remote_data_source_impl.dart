@@ -1,14 +1,15 @@
-import 'package:oshmobile/core/error/exceptions.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
-import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/requests/claim_my_device_request.dart';
+import 'package:oshmobile/core/error/exceptions.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_response_mapper.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_service.dart';
-import 'package:oshmobile/features/home/data/datasources/user_remote_data_source.dart';
+import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/requests/claim_my_device_request.dart';
+import 'package:oshmobile/features/device_catalog/data/datasources/device_catalog_remote_data_source.dart';
 
-class UserRemoteDataSourceImpl implements UserRemoteDataSource {
+class DeviceCatalogRemoteDataSourceImpl
+    implements DeviceCatalogRemoteDataSource {
   final MobileV1Service _mobileService;
 
-  const UserRemoteDataSourceImpl({
+  const DeviceCatalogRemoteDataSourceImpl({
     required MobileV1Service mobileService,
   }) : _mobileService = mobileService;
 
@@ -21,14 +22,6 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
       serial: deviceSn,
       request: ClaimMyDeviceRequest(secureCode: deviceSc),
     );
-    MobileV1ResponseMapper.ensureSuccess(response);
-  }
-
-  @override
-  Future<void> unassignDevice({
-    required String serial,
-  }) async {
-    final response = await _mobileService.unassignMyDevice(serial: serial);
     MobileV1ResponseMapper.ensureSuccess(response);
   }
 

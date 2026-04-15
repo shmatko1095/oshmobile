@@ -112,6 +112,7 @@
   "DeviceActions": "Device actions",
   "DeviceInternalSettings": "Device settings",
   "DeviceInternalSettingsUnavailable": "Available when the device is online and exposes settings.",
+  "DeviceAboutUnavailable": "Available when the device is online and the device session is ready.",
   "RenameDeviceAction": "Rename device",
   "RemoveDeviceAction": "Remove device",
   "SchedulePointActions": "Schedule point actions",

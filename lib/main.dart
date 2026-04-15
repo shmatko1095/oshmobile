@@ -28,6 +28,8 @@ import 'package:oshmobile/startup_error_app.dart';
 
 const _enableAnalyticsDebug =
     bool.fromEnvironment('ENABLE_ANALYTICS_DEBUG', defaultValue: false);
+const _enableCrashlyticsDebug =
+    bool.fromEnvironment('ENABLE_CRASHLYTICS_DEBUG', defaultValue: false);
 
 bool _isBackgroundSocketAbort(Object error) {
   if (error is! SocketException) return false;
@@ -77,7 +79,8 @@ Future<void> main() async {
 
     await OshAnalytics.setCollectionEnabled(
         kReleaseMode || _enableAnalyticsDebug);
-    await OshCrashReporter.setCollectionEnabled(kReleaseMode);
+    await OshCrashReporter.setCollectionEnabled(
+        kReleaseMode || _enableCrashlyticsDebug);
     Bloc.observer = OshBlocObserver();
 
     FlutterError.onError = (FlutterErrorDetails details) {

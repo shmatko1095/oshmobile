@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/selected_device_session_cubit.dart';
 import 'package:oshmobile/core/analytics/osh_analytics.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/di/device_context.dart';
+import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/app/device_session/di/device_di.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_host_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
@@ -26,13 +28,11 @@ import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_
 class DeviceScope extends StatefulWidget {
   final Device device;
   final ValueChanged<String?>? onTitleChanged;
-  final ValueChanged<VoidCallback?>? onInternalSettingsActionChanged;
 
   const DeviceScope({
     super.key,
     required this.device,
     required this.onTitleChanged,
-    required this.onInternalSettingsActionChanged,
   });
 
   @override
@@ -51,6 +51,7 @@ class _DeviceScopeState extends State<DeviceScope> {
   late final DevicePageCubit _page;
   late final DeviceFacade _facade;
   late final DeviceSnapshotCubit _snapshot;
+  late final SelectedDeviceSessionCubit _selectedDeviceSession;
   bool _snapshotInitialized = false;
 
   late final DevicePresenterRegistry _presenters;
@@ -58,6 +59,7 @@ class _DeviceScopeState extends State<DeviceScope> {
   @override
   void initState() {
     super.initState();
+    _selectedDeviceSession = context.read<SelectedDeviceSessionCubit>();
 
     // IMPORTANT:
     // When user switches device, Flutter may create the new DeviceScope
@@ -118,10 +120,28 @@ class _DeviceScopeState extends State<DeviceScope> {
 
       // Start the reactive stream only after negotiation and configuration bootstrap complete.
       _snapshot.start();
+      _selectedDeviceSession.bind(
+        deviceId: _ctx.deviceId,
+        facade: _facade,
+        snapshotCubit: _snapshot,
+      );
 
       if (!mounted) return;
       setState(() => _ready = true);
-    } catch (e) {
+    } catch (e, st) {
+      unawaited(
+        OshCrashReporter.logNonFatal(
+          e,
+          st,
+          reason: 'DeviceScope: failed to enter device session',
+          context: {
+            'feature': 'device_session',
+            'action': 'enter_device_scope',
+            'device_id': widget.device.id,
+            'serial': widget.device.sn,
+          },
+        ),
+      );
       if (!mounted) return;
       setState(() {
         _error = e;
@@ -132,6 +152,10 @@ class _DeviceScopeState extends State<DeviceScope> {
 
   @override
   void dispose() {
+    final currentDeviceId = _deviceGen != null ? widget.device.id : null;
+    if (currentDeviceId != null) {
+      _selectedDeviceSession.clear(currentDeviceId);
+    }
     if (_snapshotInitialized) {
       unawaited(_snapshot.close());
     }
@@ -168,8 +192,6 @@ class _DeviceScopeState extends State<DeviceScope> {
           deviceId: _ctx.deviceId,
           presenters: _presenters,
           onTitleChanged: widget.onTitleChanged,
-          onInternalSettingsActionChanged:
-              widget.onInternalSettingsActionChanged,
         ),
       ),
     );

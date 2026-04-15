@@ -1,7 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:oshmobile/core/error/failures.dart';
 import 'package:oshmobile/core/usecase/usecase.dart';
-import 'package:oshmobile/features/home/domain/repositories/user_repository.dart';
+import 'package:oshmobile/features/device_catalog/domain/repositories/device_catalog_repository.dart';
 
 class AssignDeviceParams {
   final String sn;
@@ -14,13 +14,13 @@ class AssignDeviceParams {
 }
 
 class AssignDevice implements UseCase<void, AssignDeviceParams> {
-  final UserRepository userRepository;
+  final DeviceCatalogRepository deviceCatalogRepository;
 
-  AssignDevice({required this.userRepository});
+  AssignDevice({required this.deviceCatalogRepository});
 
   @override
   Future<Either<Failure, void>> call(AssignDeviceParams params) async {
-    return userRepository.assignDevice(
+    return deviceCatalogRepository.assignDevice(
       deviceSn: params.sn,
       deviceSc: params.sc,
     );

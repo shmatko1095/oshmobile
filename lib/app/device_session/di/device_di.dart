@@ -12,6 +12,7 @@ import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/features/device_about/data/device_about_repository_mqtt.dart';
 import 'package:oshmobile/features/device_about/domain/repositories/device_about_repository.dart';
+import 'package:oshmobile/features/device_catalog/presentation/cubit/device_catalog_cubit.dart';
 import 'package:oshmobile/features/devices/details/data/mqtt_telemetry_repository.dart';
 import 'package:oshmobile/features/devices/details/data/telemetry_topics.dart';
 import 'package:oshmobile/features/devices/details/domain/queries/get_device_full.dart';
@@ -20,7 +21,6 @@ import 'package:oshmobile/features/devices/details/presentation/cubit/device_hos
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
 import 'package:oshmobile/app/device_session/data/device_facade_impl.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
-import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/schedule/data/schedule_repository_mqtt.dart';
 import 'package:oshmobile/features/schedule/data/schedule_topics.dart';
 import 'package:oshmobile/features/schedule/domain/repositories/schedule_repository.dart';
@@ -219,7 +219,7 @@ class DeviceDi {
 
     getIt.registerLazySingleton<DeviceHostCubit>(
       () => DeviceHostCubit(
-        homeCubit: getIt<HomeCubit>(),
+        deviceCatalogCubit: getIt<DeviceCatalogCubit>(),
         deviceId: ctx.deviceId,
       ),
       dispose: (c) => unawaited(c.close()),

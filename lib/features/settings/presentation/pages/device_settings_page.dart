@@ -1,17 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/analytics/osh_analytics.dart';
-import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
-import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
-import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
-import 'package:oshmobile/app/device_session/scopes/device_route_scope.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
-import 'package:oshmobile/features/device_about/presentation/pages/device_about_page.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
@@ -23,13 +15,11 @@ import 'package:oshmobile/features/settings/presentation/utils/settings_text_loc
 import 'package:oshmobile/generated/l10n.dart';
 
 class DeviceSettingsPage extends StatelessWidget {
-  final Device device;
   final SettingsUiSchema schema;
   static const SettingsTextLocalizer _textLocalizer = SettingsTextLocalizer();
 
   const DeviceSettingsPage({
     super.key,
-    required this.device,
     required this.schema,
   });
 
@@ -195,7 +185,6 @@ class DeviceSettingsPage extends StatelessWidget {
               context,
               schema,
               slice.data!,
-              device,
             );
           case DeviceSliceStatus.ready:
           case DeviceSliceStatus.saving:
@@ -203,7 +192,7 @@ class DeviceSettingsPage extends StatelessWidget {
             if (data == null) {
               return _buildError(context, 'Settings state is empty');
             }
-            return _buildSettingsList(context, schema, data, device);
+            return _buildSettingsList(context, schema, data);
         }
       },
     );
@@ -261,23 +250,17 @@ class DeviceSettingsPage extends StatelessWidget {
     BuildContext context,
     SettingsUiSchema schema,
     SettingsSnapshot snapshot,
-    Device device,
   ) {
     final theme = Theme.of(context);
     final groups = schema.groups.toList(growable: false);
-    final itemCount = groups.length + 1;
 
     return RefreshIndicator(
       onRefresh: () => context.read<DeviceFacade>().settings.get(force: true),
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-        itemCount: itemCount,
+        itemCount: groups.length,
         itemBuilder: (ctx, index) {
-          if (index == groups.length) {
-            return _buildAboutCard(context, theme, device);
-          }
-
           final group = groups[index];
           final fields = schema.fieldsInGroup(group.id).toList(growable: false);
           if (fields.isEmpty) return const SizedBox.shrink();
@@ -309,42 +292,6 @@ class DeviceSettingsPage extends StatelessWidget {
                     showDivider: i != fields.length - 1,
                   ),
               ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildAboutCard(BuildContext context, ThemeData theme, Device device) {
-    final facade = context.read<DeviceFacade>();
-    final snapshotCubit = context.read<DeviceSnapshotCubit>();
-    return Card(
-      margin: const EdgeInsets.only(top: 12, bottom: 0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppPalette.radiusXl),
-      ),
-      child: ListTile(
-        title: Text(S.of(context).About),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () {
-          final deviceLayout = snapshotCubit.state.details.data?.layout;
-          unawaited(
-            OshAnalytics.logEvent(
-              OshAnalyticsEvents.deviceAboutOpened,
-              parameters: {'device_layout': deviceLayout},
-            ),
-          );
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              settings: const RouteSettings(
-                name: OshAnalyticsScreens.deviceAbout,
-              ),
-              builder: (_) => DeviceRouteScope.provide(
-                facade: facade,
-                snapshotCubit: snapshotCubit,
-                child: DeviceAboutPage(deviceSn: device.sn),
-              ),
             ),
           );
         },

@@ -1,36 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/selected_device_session_cubit.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screen_view.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
-import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
-import 'package:oshmobile/features/home/presentation/pages/rename_device_page.dart';
-import 'package:oshmobile/features/home/presentation/pages/unassign_device_dialog.dart';
+import 'package:oshmobile/features/device_catalog/presentation/cubit/device_catalog_cubit.dart';
+import 'package:oshmobile/features/device_management/presentation/pages/rename_device_page.dart';
+import 'package:oshmobile/features/device_management/presentation/widgets/remove_device_dialog.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class DeviceSettingsHubPage extends StatelessWidget {
   final String deviceId;
-  final VoidCallback? openInternalSettingsAction;
 
   static MaterialPageRoute<void> route({
     required String deviceId,
-    required VoidCallback? openInternalSettingsAction,
   }) =>
       MaterialPageRoute<void>(
         settings: const RouteSettings(
           name: OshAnalyticsScreens.deviceSettingsHub,
         ),
-        builder: (_) => DeviceSettingsHubPage(
-          deviceId: deviceId,
-          openInternalSettingsAction: openInternalSettingsAction,
-        ),
+        builder: (_) => DeviceSettingsHubPage(deviceId: deviceId),
       );
 
   const DeviceSettingsHubPage({
     super.key,
     required this.deviceId,
-    required this.openInternalSettingsAction,
   });
 
   String _deviceDisplayName(Device device) {
@@ -48,30 +43,16 @@ class DeviceSettingsHubPage extends StatelessWidget {
     return take(device.id);
   }
 
-  String _deviceRoom(Device device) => device.userData.description.trim();
-
-  Future<void> _openRename(BuildContext context, Device device) async {
-    await Navigator.of(context).push(
-      RenameDevicePage.route(
-        deviceId: device.id,
-        name: _deviceDisplayName(device),
-        room: _deviceRoom(device),
-      ),
+  Future<void> _openRemoveDialog(BuildContext context, Device device) async {
+    final removed = await RemoveDeviceDialog.show(
+      context,
+      deviceId: device.id,
+      deviceSerial: device.sn,
+      deviceName: _deviceDisplayName(device),
     );
-  }
-
-  Future<void> _removeDevice(BuildContext context, Device device) async {
-    final approved = await showDialog<bool>(
-      context: context,
-      builder: (_) => UnassignDeviceDialog(
-        deviceName: _deviceDisplayName(device),
-      ),
-    );
-    if (approved != true || !context.mounted) return;
-
-    final homeCubit = context.read<HomeCubit>();
-    Navigator.of(context).pop();
-    homeCubit.unassignDevice(device.id);
+    if (removed == true && context.mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -87,10 +68,10 @@ class DeviceSettingsHubPage extends StatelessWidget {
           ),
         ),
         body: SafeArea(
-          child: BlocBuilder<HomeCubit, HomeState>(
-            builder: (context, state) {
-              final homeCubit = context.read<HomeCubit>();
-              final device = homeCubit.getDeviceById(deviceId);
+          child: BlocBuilder<DeviceCatalogCubit, DeviceCatalogState>(
+            builder: (context, catalogState) {
+              final device =
+                  context.read<DeviceCatalogCubit>().getById(deviceId);
               if (device == null) {
                 return Center(
                   child: Padding(
@@ -103,8 +84,13 @@ class DeviceSettingsHubPage extends StatelessWidget {
                 );
               }
 
+              final sessionState =
+                  context.watch<SelectedDeviceSessionCubit>().state;
+              final isCurrentSession = sessionState.deviceId == device.id;
               final canOpenInternalSettings =
-                  openInternalSettingsAction != null;
+                  isCurrentSession && sessionState.canOpenInternalSettings;
+              final canOpenAbout =
+                  isCurrentSession && sessionState.canOpenAbout;
 
               return ListView(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
@@ -119,7 +105,21 @@ class DeviceSettingsHubPage extends StatelessWidget {
                             ? null
                             : S.of(context).DeviceInternalSettingsUnavailable,
                         onTap: canOpenInternalSettings
-                            ? openInternalSettingsAction
+                            ? () => context
+                                .read<SelectedDeviceSessionCubit>()
+                                .openInternalSettings(context, device)
+                            : null,
+                      ),
+                      _SettingsTile(
+                        leading: Icons.info_outline_rounded,
+                        title: S.of(context).About,
+                        subtitle: canOpenAbout
+                            ? null
+                            : S.of(context).DeviceAboutUnavailable,
+                        onTap: canOpenAbout
+                            ? () => context
+                                .read<SelectedDeviceSessionCubit>()
+                                .openAbout(context, device)
                             : null,
                       ),
                     ],
@@ -131,7 +131,11 @@ class DeviceSettingsHubPage extends StatelessWidget {
                       _SettingsTile(
                         leading: Icons.edit_rounded,
                         title: S.of(context).RenameDeviceAction,
-                        onTap: () => _openRename(context, device),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            RenameDevicePage.route(deviceId: device.id),
+                          );
+                        },
                       ),
                       _SettingsTile(
                         leading: Icons.delete_outline_rounded,
@@ -140,7 +144,7 @@ class DeviceSettingsHubPage extends StatelessWidget {
                         iconColor: AppPalette.destructiveFg,
                         trailingColor:
                             AppPalette.destructiveFg.withValues(alpha: 0.72),
-                        onTap: () => _removeDevice(context, device),
+                        onTap: () => _openRemoveDialog(context, device),
                       ),
                     ],
                   ),

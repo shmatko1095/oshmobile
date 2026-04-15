@@ -764,6 +764,16 @@ class S {
     );
   }
 
+  /// `Available when the device is online and the device session is ready.`
+  String get DeviceAboutUnavailable {
+    return Intl.message(
+      'Available when the device is online and the device session is ready.',
+      name: 'DeviceAboutUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Rename device`
   String get RenameDeviceAction {
     return Intl.message(

@@ -52,21 +52,27 @@ import 'package:oshmobile/features/ble_provisioning/domain/usecases/disconnect_b
 import 'package:oshmobile/features/ble_provisioning/domain/usecases/observe_device_nearby.dart';
 import 'package:oshmobile/features/ble_provisioning/domain/usecases/scan_wifi_networks.dart';
 import 'package:oshmobile/features/ble_provisioning/presentation/cubit/ble_provisioning_cubit.dart';
+import 'package:oshmobile/features/device_catalog/data/datasources/device_catalog_remote_data_source.dart';
+import 'package:oshmobile/features/device_catalog/data/datasources/device_catalog_remote_data_source_impl.dart';
+import 'package:oshmobile/features/device_catalog/data/repositories/device_catalog_repository_impl.dart';
+import 'package:oshmobile/features/device_catalog/data/selected_device_storage.dart';
+import 'package:oshmobile/features/device_catalog/domain/repositories/device_catalog_repository.dart';
+import 'package:oshmobile/features/device_catalog/domain/usecases/assign_device.dart';
+import 'package:oshmobile/features/device_catalog/domain/usecases/get_devices.dart';
+import 'package:oshmobile/features/device_catalog/presentation/cubit/add_device_cubit.dart';
+import 'package:oshmobile/features/device_management/data/datasources/device_management_remote_data_source.dart';
+import 'package:oshmobile/features/device_management/data/datasources/device_management_remote_data_source_impl.dart';
+import 'package:oshmobile/features/device_management/data/repositories/device_management_repository_impl.dart';
+import 'package:oshmobile/features/device_management/domain/repositories/device_management_repository.dart';
+import 'package:oshmobile/features/device_management/domain/usecases/remove_device.dart';
+import 'package:oshmobile/features/device_management/domain/usecases/rename_device.dart';
+import 'package:oshmobile/features/device_management/presentation/cubit/device_management_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_presenter.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/thermostat_presenters.dart';
 import 'package:oshmobile/features/home/data/datasources/device_remote_data_source.dart';
 import 'package:oshmobile/features/home/data/datasources/device_remote_data_source_impl.dart';
-import 'package:oshmobile/features/home/data/datasources/user_remote_data_source.dart';
-import 'package:oshmobile/features/home/data/datasources/user_remote_data_source_impl.dart';
 import 'package:oshmobile/features/home/data/repositories/device_repository_impl.dart';
-import 'package:oshmobile/features/home/data/repositories/user_repository_impl.dart';
 import 'package:oshmobile/features/home/domain/repositories/device_repository.dart';
-import 'package:oshmobile/features/home/domain/repositories/user_repository.dart';
-import 'package:oshmobile/features/home/domain/usecases/assign_device.dart';
-import 'package:oshmobile/features/home/domain/usecases/get_user_devices.dart';
-import 'package:oshmobile/features/home/domain/usecases/unassign_device.dart';
-import 'package:oshmobile/features/home/domain/usecases/update_device_user_data.dart';
-import 'package:oshmobile/features/home/utils/selected_device_storage.dart';
 import 'package:oshmobile/features/telemetry_history/data/datasources/telemetry_history_remote_data_source.dart';
 import 'package:oshmobile/features/telemetry_history/data/datasources/telemetry_history_remote_data_source_impl.dart';
 import 'package:oshmobile/features/telemetry_history/data/repositories/telemetry_history_repository_impl.dart';
@@ -87,7 +93,8 @@ Future<void> initDependencies() async {
   _initStartupFeature();
   await _initMqttClient();
   _initAuthFeature();
-  _initHomeFeature();
+  _initDeviceCatalogFeature();
+  _initDeviceManagementFeature();
   _initAccountSettingsFeature();
   _initDevicesFeature();
   _initTelemetryHistoryFeature();
@@ -180,42 +187,67 @@ Future<void> _initKeycloakWrapper() async {
   locator.registerSingleton<KeycloakWrapper>(keycloakWrapper);
 }
 
-void _initHomeFeature() {
+void _initDeviceCatalogFeature() {
   locator
-    ..registerFactory<UserRemoteDataSource>(() =>
-        UserRemoteDataSourceImpl(mobileService: locator<MobileV1Service>()))
-    ..registerFactory<UserRepository>(
-      () => UserRepositoryImpl(dataSource: locator<UserRemoteDataSource>()),
-    )
-    ..registerFactory<DeviceRemoteDataSource>(
-      () =>
-          DeviceRemoteDataSourceImpl(mobileService: locator<MobileV1Service>()),
-    )
-    ..registerFactory<DeviceRepository>(
-      () => DeviceRepositoryImpl(dataSource: locator<DeviceRemoteDataSource>()),
-    )
-    ..registerFactory<GetUserDevices>(
-      () => GetUserDevices(
-        userRepository: locator<UserRepository>(),
+    ..registerFactory<DeviceCatalogRemoteDataSource>(
+      () => DeviceCatalogRemoteDataSourceImpl(
+        mobileService: locator<MobileV1Service>(),
       ),
     )
-    ..registerFactory<UnassignDevice>(
-      () => UnassignDevice(
-        userRepository: locator<UserRepository>(),
+    ..registerFactory<DeviceCatalogRepository>(
+      () => DeviceCatalogRepositoryImpl(
+        dataSource: locator<DeviceCatalogRemoteDataSource>(),
+      ),
+    )
+    ..registerFactory<GetDevices>(
+      () => GetDevices(
+        deviceCatalogRepository: locator<DeviceCatalogRepository>(),
       ),
     )
     ..registerFactory<AssignDevice>(
       () => AssignDevice(
-        userRepository: locator<UserRepository>(),
-      ),
-    )
-    ..registerFactory<UpdateDeviceUserData>(
-      () => UpdateDeviceUserData(
-        deviceRepository: locator<DeviceRepository>(),
+        deviceCatalogRepository: locator<DeviceCatalogRepository>(),
       ),
     )
     ..registerFactory<SelectedDeviceStorage>(
       () => SelectedDeviceStorage(locator<SharedPreferences>()),
+    )
+    ..registerFactory<AddDeviceCubit>(
+      () => AddDeviceCubit(
+        assignDevice: locator<AssignDevice>(),
+        deviceCatalogSync: locator(),
+      ),
+    );
+}
+
+void _initDeviceManagementFeature() {
+  locator
+    ..registerFactory<DeviceManagementRemoteDataSource>(
+      () => DeviceManagementRemoteDataSourceImpl(
+        mobileService: locator<MobileV1Service>(),
+      ),
+    )
+    ..registerFactory<DeviceManagementRepository>(
+      () => DeviceManagementRepositoryImpl(
+        dataSource: locator<DeviceManagementRemoteDataSource>(),
+      ),
+    )
+    ..registerFactory<RenameDevice>(
+      () => RenameDevice(
+        deviceManagementRepository: locator<DeviceManagementRepository>(),
+      ),
+    )
+    ..registerFactory<RemoveDevice>(
+      () => RemoveDevice(
+        deviceManagementRepository: locator<DeviceManagementRepository>(),
+      ),
+    )
+    ..registerFactory<DeviceManagementCubit>(
+      () => DeviceManagementCubit(
+        renameDevice: locator<RenameDevice>(),
+        removeDevice: locator<RemoveDevice>(),
+        deviceCatalogSync: locator(),
+      ),
     );
 }
 
@@ -296,6 +328,13 @@ void _initDevicesFeature() {
   // MQTT-based repos/usecases must be session-scoped (see SessionDi).
 
   locator
+    ..registerFactory<DeviceRemoteDataSource>(
+      () =>
+          DeviceRemoteDataSourceImpl(mobileService: locator<MobileV1Service>()),
+    )
+    ..registerFactory<DeviceRepository>(
+      () => DeviceRepositoryImpl(dataSource: locator<DeviceRemoteDataSource>()),
+    )
     ..registerLazySingleton<DeviceMqttTopicsV1>(
         () => DeviceMqttTopicsV1(locator<AppConfig>().devicesTenantId))
     ..registerLazySingleton<ControlStateResolver>(
