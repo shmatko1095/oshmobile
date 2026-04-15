@@ -744,6 +744,26 @@ class S {
     );
   }
 
+  /// `Device settings`
+  String get DeviceInternalSettings {
+    return Intl.message(
+      'Device settings',
+      name: 'DeviceInternalSettings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Available when the device is online and exposes settings.`
+  String get DeviceInternalSettingsUnavailable {
+    return Intl.message(
+      'Available when the device is online and exposes settings.',
+      name: 'DeviceInternalSettingsUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Rename device`
   String get RenameDeviceAction {
     return Intl.message(

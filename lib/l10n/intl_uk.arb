@@ -110,6 +110,8 @@
   "DeleteSensor": "Видалити датчик",
   "DeletePoint": "Видалити точку",
   "DeviceActions": "Дії пристрою",
+  "DeviceInternalSettings": "Налаштування пристрою",
+  "DeviceInternalSettingsUnavailable": "Доступно, коли пристрій онлайн і підтримує налаштування.",
   "RenameDeviceAction": "Перейменувати пристрій",
   "RemoveDeviceAction": "Видалити пристрій",
   "SchedulePointActions": "Дії точки розкладу",

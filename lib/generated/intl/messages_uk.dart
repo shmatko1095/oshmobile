@@ -108,6 +108,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "DeviceEditTitle": MessageLookupByLibrary.simpleMessage(
       "Інформація про пристрій",
     ),
+    "DeviceInternalSettings": MessageLookupByLibrary.simpleMessage(
+      "Налаштування пристрою",
+    ),
+    "DeviceInternalSettingsUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Доступно, коли пристрій онлайн і підтримує налаштування.",
+    ),
     "DeviceNoSettingsYet": MessageLookupByLibrary.simpleMessage(
       "Для цього пристрою налаштування ще недоступні.",
     ),

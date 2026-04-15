@@ -12,10 +12,24 @@ import 'package:oshmobile/core/utils/show_shackbar.dart';
 
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
+import 'package:oshmobile/features/settings/presentation/pages/device_settings_hub_page.dart';
 import 'package:oshmobile/features/settings/presentation/pages/device_settings_page.dart';
 
 class DeviceSettingsNavigator {
-  static void openFromHost(BuildContext hostContext, Device device) {
+  static void openHub(
+    BuildContext context, {
+    required String deviceId,
+    required VoidCallback? openInternalSettingsAction,
+  }) {
+    Navigator.of(context).push(
+      DeviceSettingsHubPage.route(
+        deviceId: deviceId,
+        openInternalSettingsAction: openInternalSettingsAction,
+      ),
+    );
+  }
+
+  static void openInternalFromHost(BuildContext hostContext, Device device) {
     if (!hostContext.mounted) return;
 
     late final DeviceFacade facade;

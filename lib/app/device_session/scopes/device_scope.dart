@@ -26,13 +26,13 @@ import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_
 class DeviceScope extends StatefulWidget {
   final Device device;
   final ValueChanged<String?>? onTitleChanged;
-  final ValueChanged<VoidCallback?>? onSettingsActionChanged;
+  final ValueChanged<VoidCallback?>? onInternalSettingsActionChanged;
 
   const DeviceScope({
     super.key,
     required this.device,
     required this.onTitleChanged,
-    required this.onSettingsActionChanged,
+    required this.onInternalSettingsActionChanged,
   });
 
   @override
@@ -168,7 +168,8 @@ class _DeviceScopeState extends State<DeviceScope> {
           deviceId: _ctx.deviceId,
           presenters: _presenters,
           onTitleChanged: widget.onTitleChanged,
-          onSettingsActionChanged: widget.onSettingsActionChanged,
+          onInternalSettingsActionChanged:
+              widget.onInternalSettingsActionChanged,
         ),
       ),
     );

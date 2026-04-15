@@ -106,6 +106,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "DeviceEditTitle": MessageLookupByLibrary.simpleMessage(
       "Device information",
     ),
+    "DeviceInternalSettings": MessageLookupByLibrary.simpleMessage(
+      "Device settings",
+    ),
+    "DeviceInternalSettingsUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Available when the device is online and exposes settings.",
+    ),
     "DeviceNoSettingsYet": MessageLookupByLibrary.simpleMessage(
       "This device does not expose any settings yet.",
     ),

@@ -110,6 +110,8 @@
   "DeleteSensor": "Delete sensor",
   "DeletePoint": "Delete point",
   "DeviceActions": "Device actions",
+  "DeviceInternalSettings": "Device settings",
+  "DeviceInternalSettingsUnavailable": "Available when the device is online and exposes settings.",
   "RenameDeviceAction": "Rename device",
   "RemoveDeviceAction": "Remove device",
   "SchedulePointActions": "Schedule point actions",

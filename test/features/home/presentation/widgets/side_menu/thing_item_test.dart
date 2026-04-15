@@ -6,22 +6,10 @@ import 'package:oshmobile/features/home/presentation/widgets/side_menu/thing_ite
 import 'package:oshmobile/generated/l10n.dart';
 
 void main() {
-  testWidgets('remove action from overflow menu opens confirm dialog',
-      (tester) async {
+  testWidgets('does not render overflow menu action anymore', (tester) async {
     await _pumpThingItem(tester);
 
-    await tester.tap(find.byIcon(Icons.more_horiz_rounded));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Remove device'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Remove device?'), findsOneWidget);
-    expect(find.text('Remove device'), findsOneWidget);
-
-    await tester.tap(find.text('Cancel'));
-    await tester.pumpAndSettle();
-    expect(
-        find.byKey(const ValueKey('drawer_device_device-1')), findsOneWidget);
+    expect(find.byIcon(Icons.more_horiz_rounded), findsNothing);
   });
 
   testWidgets('swipe to remove opens same confirm dialog', (tester) async {

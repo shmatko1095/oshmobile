@@ -20,14 +20,14 @@ class DeviceHostBody extends StatelessWidget {
   final String deviceId;
   final DevicePresenterRegistry presenters;
   final ValueChanged<String?>? onTitleChanged;
-  final ValueChanged<VoidCallback?>? onSettingsActionChanged;
+  final ValueChanged<VoidCallback?>? onInternalSettingsActionChanged;
 
   const DeviceHostBody({
     super.key,
     required this.deviceId,
     required this.presenters,
     required this.onTitleChanged,
-    required this.onSettingsActionChanged,
+    required this.onInternalSettingsActionChanged,
   });
 
   String? _titleFrom(DevicePageState s) {
@@ -65,7 +65,7 @@ class DeviceHostBody extends StatelessWidget {
     });
 
     if (liveDevice == null) {
-      onSettingsActionChanged?.call(null);
+      onInternalSettingsActionChanged?.call(null);
       return const Loader();
     }
 
@@ -74,13 +74,13 @@ class DeviceHostBody extends StatelessWidget {
         return BlocBuilder<DeviceHostCubit, DeviceHostState>(
           builder: (context, hostState) {
             if (hostState.isWaitingOnline) {
-              onSettingsActionChanged?.call(null);
+              onInternalSettingsActionChanged?.call(null);
               return const Loader();
             }
 
             // For offline devices show offline screen immediately.
             if (!liveDevice.connectionInfo.online) {
-              onSettingsActionChanged?.call(null);
+              onInternalSettingsActionChanged?.call(null);
               return DeviceOfflinePage(
                 device: liveDevice,
                 onWifiProvisioningSuccess: () {
@@ -98,15 +98,15 @@ class DeviceHostBody extends StatelessWidget {
               builder: (context, st) {
                 switch (st) {
                   case DevicePageLoading():
-                    onSettingsActionChanged?.call(null);
+                    onInternalSettingsActionChanged?.call(null);
                     return const Loader();
 
                   case DevicePageError(:final message):
-                    onSettingsActionChanged?.call(null);
+                    onInternalSettingsActionChanged?.call(null);
                     return Center(child: Text(message));
 
                   case DevicePageUpdateRequired(:final message):
-                    onSettingsActionChanged?.call(null);
+                    onInternalSettingsActionChanged?.call(null);
                     return DeviceCompatibilityStatePage(
                       device: liveDevice,
                       variant: DeviceCompatibilityVariant.updateRequired,
@@ -116,7 +116,7 @@ class DeviceHostBody extends StatelessWidget {
                     );
 
                   case DevicePageCompatibilityError(:final message):
-                    onSettingsActionChanged?.call(null);
+                    onInternalSettingsActionChanged?.call(null);
                     return DeviceCompatibilityStatePage(
                       device: liveDevice,
                       variant: DeviceCompatibilityVariant.compatibilityError,
@@ -127,8 +127,8 @@ class DeviceHostBody extends StatelessWidget {
 
                   case DevicePageReady(:final bundle):
                     {
-                      onSettingsActionChanged?.call(
-                        () => DeviceSettingsNavigator.openFromHost(
+                      onInternalSettingsActionChanged?.call(
+                        () => DeviceSettingsNavigator.openInternalFromHost(
                           innerCtx,
                           liveDevice,
                         ),

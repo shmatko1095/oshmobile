@@ -12,6 +12,7 @@ import 'package:oshmobile/features/home/presentation/pages/add_device_page.dart'
 import 'package:oshmobile/features/home/presentation/bloc/home_cubit.dart';
 import 'package:oshmobile/features/home/presentation/widgets/mqtt_activity_icon.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/side_menu.dart';
+import 'package:oshmobile/features/settings/presentation/open_settings_page.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class HomePage extends StatefulWidget {
@@ -27,7 +28,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   static const _defaultTitle = 'Osh App';
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  VoidCallback? _openSettingsAction;
+  VoidCallback? _openInternalSettingsAction;
   String? _title;
 
   @override
@@ -54,11 +55,11 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _setSettingsActionSafe(VoidCallback? cb) {
+  void _setInternalSettingsActionSafe(VoidCallback? cb) {
     if (!mounted) return;
-    final shouldRebuild = (_openSettingsAction == null) != (cb == null);
+    final shouldRebuild = (_openInternalSettingsAction == null) != (cb == null);
     if (!shouldRebuild) {
-      _openSettingsAction = cb;
+      _openInternalSettingsAction = cb;
       return;
     }
 
@@ -67,33 +68,35 @@ class _HomePageState extends State<HomePage> {
         phase == SchedulerPhase.transientCallbacks) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          setState(() => _openSettingsAction = cb);
+          setState(() => _openInternalSettingsAction = cb);
         }
       });
     } else {
-      setState(() => _openSettingsAction = cb);
+      setState(() => _openInternalSettingsAction = cb);
     }
+  }
+
+  Device? _selectedDevice(HomeCubit homeCubit, HomeState state) {
+    final selectedId = state.selectedDeviceId;
+    if (selectedId == null) return null;
+
+    return homeCubit.getDeviceById(selectedId);
   }
 
   bool _canOpenSettings(HomeCubit homeCubit, HomeState state) {
-    if (_openSettingsAction == null) return false;
-    if (state is HomeInitial ||
-        state is HomeLoading ||
-        state is HomeRefreshing) {
-      return false;
-    }
-
-    final selectedId = state.selectedDeviceId;
-    if (selectedId == null) return false;
-
-    return homeCubit.getDeviceById(selectedId) != null;
+    return _selectedDevice(homeCubit, state) != null;
   }
 
-  void _onIconPressed() {
+  void _onSettingsPressed() {
     final homeCubit = context.read<HomeCubit>();
-    final state = homeCubit.state;
-    if (!_canOpenSettings(homeCubit, state)) return;
-    _openSettingsAction!.call();
+    final device = _selectedDevice(homeCubit, homeCubit.state);
+    if (device == null) return;
+
+    DeviceSettingsNavigator.openHub(
+      context,
+      deviceId: device.id,
+      openInternalSettingsAction: _openInternalSettingsAction,
+    );
   }
 
   String _resolveDeviceTitle(Device device) {
@@ -110,7 +113,7 @@ class _HomePageState extends State<HomePage> {
 
     if (deviceId == null) {
       _setTitleSafe(null);
-      _setSettingsActionSafe(null);
+      _setInternalSettingsActionSafe(null);
       return NoSelectedDevicePage(
         title: userDevices.isEmpty
             ? S.of(context).NoDevicesYet
@@ -130,7 +133,7 @@ class _HomePageState extends State<HomePage> {
     final device = homeCubit.getDeviceById(deviceId);
     if (device == null) {
       _setTitleSafe(null);
-      _setSettingsActionSafe(null);
+      _setInternalSettingsActionSafe(null);
       return NoSelectedDevicePage(
         title: S.of(context).NoDeviceSelected,
         subtitle: S.of(context).NoDeviceSelectedChooseDeviceSubtitle,
@@ -144,7 +147,7 @@ class _HomePageState extends State<HomePage> {
       key: ValueKey(device.id),
       device: device,
       onTitleChanged: _setTitleSafe,
-      onSettingsActionChanged: _setSettingsActionSafe,
+      onInternalSettingsActionChanged: _setInternalSettingsActionSafe,
     );
   }
 
@@ -174,7 +177,7 @@ class _HomePageState extends State<HomePage> {
                 return IconButton(
                   icon: const Icon(Icons.settings),
                   tooltip: S.of(context).Settings,
-                  onPressed: enabled ? _onIconPressed : null,
+                  onPressed: enabled ? _onSettingsPressed : null,
                 );
               },
             ),
@@ -203,7 +206,7 @@ class _HomePageState extends State<HomePage> {
               case HomeLoading():
               case HomeRefreshing():
                 _setTitleSafe(null);
-                _setSettingsActionSafe(null);
+                _setInternalSettingsActionSafe(null);
                 return const Loader();
 
               case HomeFailed(:final selectedDeviceId):
@@ -220,7 +223,7 @@ class _HomePageState extends State<HomePage> {
             }
 
             _setTitleSafe(null);
-            _setSettingsActionSafe(null);
+            _setInternalSettingsActionSafe(null);
             return NoSelectedDevicePage(
               title: S.of(context).NoDeviceSelected,
               subtitle: S.of(context).NoDeviceSelectedChooseDeviceSubtitle,
