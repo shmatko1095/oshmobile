@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class AppButton extends StatelessWidget {
@@ -52,7 +51,8 @@ class AppButton extends StatelessWidget {
             ? SizedBox(
                 height: 24,
                 width: 24,
-                child: CupertinoActivityIndicator(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
                   color: disabledFgColor,
                 ),
               )

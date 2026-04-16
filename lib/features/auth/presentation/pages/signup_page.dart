@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
@@ -197,7 +196,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
   Widget _buildActionButtons(BuildContext context, AuthState state) {
     if (state is AuthLoading) {
-      return const Center(child: CupertinoActivityIndicator());
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_isCredentialsStep) {

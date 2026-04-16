@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
@@ -13,8 +12,7 @@ import 'package:oshmobile/generated/l10n.dart';
 class ForgotPasswordPage extends StatefulWidget {
   final String email;
 
-  static MaterialPageRoute<void> route(String email) =>
-      MaterialPageRoute<void>(
+  static MaterialPageRoute<void> route(String email) => MaterialPageRoute<void>(
         settings: const RouteSettings(
           name: OshAnalyticsScreens.forgotPassword,
         ),
@@ -89,7 +87,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
                 const SizedBox(height: 28),
                 (state is AuthLoading)
-                    ? const Center(child: CupertinoActivityIndicator())
+                    ? const Center(child: CircularProgressIndicator())
                     : CustomElevatedButton(
                         buttonText: S.of(context).ResetPassword,
                         onPressed: _resetPassword,

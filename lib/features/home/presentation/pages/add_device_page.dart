@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -170,7 +169,7 @@ class _AddDevicePageState extends State<AddDevicePage>
                             ),
                             const SizedBox(height: 30),
                             (state.status == AddDeviceStatus.submitting)
-                                ? CupertinoActivityIndicator()
+                                ? const CircularProgressIndicator()
                                 : CustomElevatedButton(
                                     buttonText: S.of(context).AddDevice,
                                     onPressed: () => _submitManual(),

@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
@@ -153,7 +152,7 @@ class _RenameDevicePageState extends State<RenameDevicePage> {
                             ),
                             const SizedBox(height: 30),
                             if (isLoading)
-                              const CupertinoActivityIndicator()
+                              const CircularProgressIndicator()
                             else
                               CustomElevatedButton(
                                 buttonText: S.of(context).OK,

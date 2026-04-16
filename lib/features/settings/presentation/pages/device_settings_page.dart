@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
@@ -113,7 +112,7 @@ class DeviceSettingsPage extends StatelessWidget {
                       child: SizedBox(
                         width: 18,
                         height: 18,
-                        child: CupertinoActivityIndicator(),
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     ),
                   );

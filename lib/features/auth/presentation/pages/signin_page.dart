@@ -182,7 +182,7 @@ class _SignInPageState extends State<SignInPage> {
                   ),
                   const SizedBox(height: 28),
                   (state is AuthLoading)
-                      ? const Center(child: CupertinoActivityIndicator())
+                      ? const Center(child: CircularProgressIndicator())
                       : CustomElevatedButton(
                           buttonText: S.of(context).SignIn,
                           onPressed: _signIn,

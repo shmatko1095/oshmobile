@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
@@ -196,7 +195,7 @@ class _SensorCalibrationPageState extends State<SensorCalibrationPage> {
                   child: SizedBox(
                     width: 18,
                     height: 18,
-                    child: CupertinoActivityIndicator(),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ),
               )

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/analytics/osh_analytics.dart';
@@ -156,7 +155,7 @@ class _ConnectingBleView extends StatelessWidget {
           const SizedBox(
             width: 32,
             height: 32,
-            child: CupertinoActivityIndicator(),
+            child: CircularProgressIndicator(strokeWidth: 3),
           ),
           const SizedBox(height: 16),
           Text(
