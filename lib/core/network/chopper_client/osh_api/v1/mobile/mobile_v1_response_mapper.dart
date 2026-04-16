@@ -40,6 +40,21 @@ class MobileV1ResponseMapper {
     return body;
   }
 
+  static List<Map<String, dynamic>> requireJsonList(
+      Response<dynamic> response) {
+    final body = _decodeList(response.body);
+    if (!response.isSuccessful || body == null) {
+      throw ServerException(
+        _errorMessage(response),
+        code: _errorCode(response),
+      );
+    }
+    return body
+        .whereType<Map>()
+        .map((item) => item.cast<String, dynamic>())
+        .toList(growable: false);
+  }
+
   static void ensureSuccess(Response<dynamic> response) {
     if (!response.isSuccessful) {
       throw ServerException(

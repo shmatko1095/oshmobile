@@ -106,6 +106,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "DeviceAboutUnavailable": MessageLookupByLibrary.simpleMessage(
       "Доступно, коли пристрій онлайн і сесія пристрою готова.",
     ),
+    "DeviceAccessEmpty": MessageLookupByLibrary.simpleMessage(
+      "Користувачів з доступом не знайдено.",
+    ),
+    "DeviceAccessEmptyDemo": MessageLookupByLibrary.simpleMessage(
+      "У демо-режимі список користувачів приховано.",
+    ),
+    "DeviceAccessLoadFailed": MessageLookupByLibrary.simpleMessage(
+      "Не вдалося завантажити користувачів девайса.",
+    ),
+    "DeviceAccessRemoveMyAccess": MessageLookupByLibrary.simpleMessage(
+      "Видалити мій доступ",
+    ),
+    "DeviceAccessTitle": MessageLookupByLibrary.simpleMessage(
+      "Доступ до девайсу",
+    ),
     "DeviceActions": MessageLookupByLibrary.simpleMessage("Дії пристрою"),
     "DeviceDetails": MessageLookupByLibrary.simpleMessage("Деталі пристрою"),
     "DeviceEditTitle": MessageLookupByLibrary.simpleMessage(
@@ -357,6 +372,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "WedShort": MessageLookupByLibrary.simpleMessage("Ср"),
     "Yes": MessageLookupByLibrary.simpleMessage("Так"),
+    "YouLabel": MessageLookupByLibrary.simpleMessage("Ви"),
     "YourEmailIsNotVerifiedYet": MessageLookupByLibrary.simpleMessage(
       "Ваш email ще не підтверджено. Натисніть кнопку нижче, щоб надіслати лист повторно.",
     ),
@@ -413,6 +429,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Час до затемнення",
     ),
     "displayLanguage": MessageLookupByLibrary.simpleMessage("Мова"),
+    "hysteresis": MessageLookupByLibrary.simpleMessage("Гістерезис"),
     "maxFloorTempFailSafe": MessageLookupByLibrary.simpleMessage(
       "Дія при збої датчика підлоги",
     ),

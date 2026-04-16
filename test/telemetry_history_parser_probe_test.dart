@@ -45,6 +45,11 @@ class _FakeMobileV1Service extends MobileV1Service {
   }
 
   @override
+  Future<Response<dynamic>> getMyDeviceUsers({required String serial}) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<Response<dynamic>> listMyDevices() {
     throw UnimplementedError();
   }

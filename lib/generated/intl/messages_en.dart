@@ -104,6 +104,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "DeviceAboutUnavailable": MessageLookupByLibrary.simpleMessage(
       "Available when the device is online and the device session is ready.",
     ),
+    "DeviceAccessEmpty": MessageLookupByLibrary.simpleMessage(
+      "No users with access found.",
+    ),
+    "DeviceAccessEmptyDemo": MessageLookupByLibrary.simpleMessage(
+      "Users are hidden in demo mode.",
+    ),
+    "DeviceAccessLoadFailed": MessageLookupByLibrary.simpleMessage(
+      "Failed to load device users.",
+    ),
+    "DeviceAccessRemoveMyAccess": MessageLookupByLibrary.simpleMessage(
+      "Remove my access",
+    ),
+    "DeviceAccessTitle": MessageLookupByLibrary.simpleMessage("Device access"),
     "DeviceActions": MessageLookupByLibrary.simpleMessage("Device actions"),
     "DeviceDetails": MessageLookupByLibrary.simpleMessage("Device details"),
     "DeviceEditTitle": MessageLookupByLibrary.simpleMessage(
@@ -343,6 +356,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "WedShort": MessageLookupByLibrary.simpleMessage("Wed"),
     "Yes": MessageLookupByLibrary.simpleMessage("Yes"),
+    "YouLabel": MessageLookupByLibrary.simpleMessage("You"),
     "YourEmailIsNotVerifiedYet": MessageLookupByLibrary.simpleMessage(
       "Your email is not verified yet. Click the button below to resend the verification email.",
     ),
@@ -395,6 +409,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "displayIdleTime": MessageLookupByLibrary.simpleMessage("Idle dim timeout"),
     "displayLanguage": MessageLookupByLibrary.simpleMessage("Language"),
+    "hysteresis": MessageLookupByLibrary.simpleMessage("Hysteresis"),
     "maxFloorTempFailSafe": MessageLookupByLibrary.simpleMessage(
       "Floor sensor fail-safe",
     ),

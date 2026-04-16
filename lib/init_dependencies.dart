@@ -64,8 +64,10 @@ import 'package:oshmobile/features/device_management/data/datasources/device_man
 import 'package:oshmobile/features/device_management/data/datasources/device_management_remote_data_source_impl.dart';
 import 'package:oshmobile/features/device_management/data/repositories/device_management_repository_impl.dart';
 import 'package:oshmobile/features/device_management/domain/repositories/device_management_repository.dart';
+import 'package:oshmobile/features/device_management/domain/usecases/get_device_users.dart';
 import 'package:oshmobile/features/device_management/domain/usecases/remove_device.dart';
 import 'package:oshmobile/features/device_management/domain/usecases/rename_device.dart';
+import 'package:oshmobile/features/device_management/presentation/cubit/device_access_cubit.dart';
 import 'package:oshmobile/features/device_management/presentation/cubit/device_management_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_presenter.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/thermostat_presenters.dart';
@@ -242,11 +244,22 @@ void _initDeviceManagementFeature() {
         deviceManagementRepository: locator<DeviceManagementRepository>(),
       ),
     )
+    ..registerFactory<GetDeviceUsers>(
+      () => GetDeviceUsers(
+        deviceManagementRepository: locator<DeviceManagementRepository>(),
+      ),
+    )
     ..registerFactory<DeviceManagementCubit>(
       () => DeviceManagementCubit(
         renameDevice: locator<RenameDevice>(),
         removeDevice: locator<RemoveDevice>(),
         deviceCatalogSync: locator(),
+      ),
+    )
+    ..registerFactory<DeviceAccessCubit>(
+      () => DeviceAccessCubit(
+        getDeviceUsers: locator<GetDeviceUsers>(),
+        currentUserResolver: locator<GlobalAuthCubit>().getJwtUserData,
       ),
     );
 }

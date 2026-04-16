@@ -794,6 +794,61 @@ class S {
     );
   }
 
+  /// `Device access`
+  String get DeviceAccessTitle {
+    return Intl.message(
+      'Device access',
+      name: 'DeviceAccessTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No users with access found.`
+  String get DeviceAccessEmpty {
+    return Intl.message(
+      'No users with access found.',
+      name: 'DeviceAccessEmpty',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Users are hidden in demo mode.`
+  String get DeviceAccessEmptyDemo {
+    return Intl.message(
+      'Users are hidden in demo mode.',
+      name: 'DeviceAccessEmptyDemo',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failed to load device users.`
+  String get DeviceAccessLoadFailed {
+    return Intl.message(
+      'Failed to load device users.',
+      name: 'DeviceAccessLoadFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Remove my access`
+  String get DeviceAccessRemoveMyAccess {
+    return Intl.message(
+      'Remove my access',
+      name: 'DeviceAccessRemoveMyAccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `You`
+  String get YouLabel {
+    return Intl.message('You', name: 'YouLabel', desc: '', args: []);
+  }
+
   /// `Schedule point actions`
   String get SchedulePointActions {
     return Intl.message(
@@ -1022,6 +1077,11 @@ class S {
       desc: '',
       args: [],
     );
+  }
+
+  /// `Hysteresis`
+  String get hysteresis {
+    return Intl.message('Hysteresis', name: 'hysteresis', desc: '', args: []);
   }
 
   /// `Update`

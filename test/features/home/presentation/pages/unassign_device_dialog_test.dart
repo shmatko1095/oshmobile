@@ -6,6 +6,7 @@ import 'package:oshmobile/core/error/failures.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/theme/theme.dart';
 import 'package:oshmobile/features/device_catalog/domain/contracts/device_catalog_sync.dart';
+import 'package:oshmobile/features/device_management/domain/models/device_assigned_user.dart';
 import 'package:oshmobile/features/device_management/domain/repositories/device_management_repository.dart';
 import 'package:oshmobile/features/device_management/domain/usecases/remove_device.dart';
 import 'package:oshmobile/features/device_management/domain/usecases/rename_device.dart';
@@ -175,6 +176,13 @@ class _DialogHarnessState extends State<_DialogHarness> {
 }
 
 class _FakeDeviceManagementRepository implements DeviceManagementRepository {
+  @override
+  Future<Either<Failure, List<DeviceAssignedUser>>> getDeviceUsers({
+    required String serial,
+  }) async {
+    return right(const <DeviceAssignedUser>[]);
+  }
+
   @override
   Future<Either<Failure, void>> removeDevice({required String serial}) async {
     return right(null);

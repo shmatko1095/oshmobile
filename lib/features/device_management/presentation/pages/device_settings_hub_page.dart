@@ -6,6 +6,7 @@ import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/device_catalog/presentation/cubit/device_catalog_cubit.dart';
+import 'package:oshmobile/features/device_management/presentation/pages/device_access_page.dart';
 import 'package:oshmobile/features/device_management/presentation/pages/rename_device_page.dart';
 import 'package:oshmobile/features/device_management/presentation/widgets/remove_device_dialog.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -128,6 +129,19 @@ class DeviceSettingsHubPage extends StatelessWidget {
                   _SectionCard(
                     title: S.of(context).DeviceActions,
                     children: [
+                      _SettingsTile(
+                        leading: Icons.group_outlined,
+                        title: S.of(context).DeviceAccessTitle,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            DeviceAccessPage.route(
+                              deviceId: device.id,
+                              deviceSerial: device.sn,
+                              deviceName: _deviceDisplayName(device),
+                            ),
+                          );
+                        },
+                      ),
                       _SettingsTile(
                         leading: Icons.edit_rounded,
                         title: S.of(context).RenameDeviceAction,
