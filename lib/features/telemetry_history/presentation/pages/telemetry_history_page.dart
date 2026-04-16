@@ -1247,38 +1247,6 @@ class _RangeChip extends StatelessWidget {
   }
 }
 
-class _PagerDots extends StatelessWidget {
-  const _PagerDots({
-    required this.count,
-    required this.active,
-  });
-
-  final int count;
-  final int active;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        for (var i = 0; i < count; i++)
-          AnimatedContainer(
-            duration: AppPalette.motionFast,
-            margin: const EdgeInsets.symmetric(horizontal: 3),
-            height: 6,
-            width: i == active ? 16 : 6,
-            decoration: BoxDecoration(
-              color: i == active
-                  ? AppPalette.accentPrimary
-                  : _historyMutedTextColor(context).withValues(alpha: 0.45),
-              borderRadius: BorderRadius.circular(AppPalette.radiusPill),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
 class _SummaryItem {
   const _SummaryItem({
     required this.label,
