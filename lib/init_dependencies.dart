@@ -15,11 +15,13 @@ import 'package:oshmobile/core/configuration/configuration_bundle_repository_imp
 import 'package:oshmobile/core/configuration/control_state_resolver.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
+import 'package:oshmobile/core/network/chopper_client/core/app_client_headers_interceptor.dart';
 import 'package:oshmobile/core/network/chopper_client/core/api_authenticator.dart';
 import 'package:oshmobile/core/network/chopper_client/core/auth_interceptor.dart';
 import 'package:oshmobile/core/network/chopper_client/core/session_storage.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_service.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/users/users_v1_service.dart';
+import 'package:oshmobile/core/network/app_client/app_client_metadata_provider.dart';
 import 'package:oshmobile/core/network/mqtt/app_device_id_provider.dart';
 import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
@@ -81,6 +83,8 @@ import 'package:oshmobile/features/telemetry_history/data/repositories/telemetry
 import 'package:oshmobile/features/telemetry_history/domain/repositories/telemetry_history_repository.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_history.dart';
 import 'package:oshmobile/features/startup/domain/contracts/startup_auth_bootstrapper.dart';
+import 'package:oshmobile/features/startup/domain/repositories/startup_client_policy_repository.dart';
+import 'package:oshmobile/features/startup/data/repositories/startup_client_policy_repository_impl.dart';
 import 'package:oshmobile/features/startup/presentation/cubit/startup_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -266,6 +270,13 @@ void _initDeviceManagementFeature() {
 
 void _initStartupFeature() {
   locator
+    ..registerLazySingleton<StartupClientPolicyRepository>(
+      () => StartupClientPolicyRepositoryImpl(
+        mobileService: locator<MobileV1Service>(),
+        metadataProvider: locator<AppClientMetadataProvider>(),
+        sharedPreferences: locator<SharedPreferences>(),
+      ),
+    )
     ..registerLazySingleton<StartupAuthBootstrapper>(
       () => locator<GlobalAuthCubit>(),
     )
@@ -273,6 +284,7 @@ void _initStartupFeature() {
       () => StartupCubit(
         connectionChecker: locator<InternetConnectionChecker>(),
         authBootstrapper: locator<StartupAuthBootstrapper>(),
+        clientPolicyRepository: locator<StartupClientPolicyRepository>(),
       ),
     );
 }
@@ -451,6 +463,9 @@ Future<void> _initWebClient() async {
           mobileService: locator<MobileV1Service>(),
           keycloakWrapper: locator<KeycloakWrapper>()),
     )
+    ..registerLazySingleton<AppClientMetadataProvider>(
+      () => PackageInfoAppClientMetadataProvider(),
+    )
     ..registerLazySingleton<ApiAuthenticator>(
       () => ApiAuthenticator(
         globalAuthCubit: locator<GlobalAuthCubit>(),
@@ -467,6 +482,9 @@ Future<void> _initWebClient() async {
     ],
     interceptors: [
       AuthInterceptor(globalAuthCubit: locator<GlobalAuthCubit>()),
+      AppClientHeadersInterceptor(
+        metadataProvider: locator<AppClientMetadataProvider>(),
+      ),
       const HeadersInterceptor({
         'Accept': 'application/json',
         'Connection': 'keep-alive',

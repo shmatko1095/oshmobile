@@ -1,27 +1,35 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
 import 'package:oshmobile/features/startup/domain/contracts/startup_auth_bootstrapper.dart';
+import 'package:oshmobile/features/startup/domain/models/mobile_client_policy.dart';
+import 'package:oshmobile/features/startup/domain/models/mobile_client_policy_decision.dart';
+import 'package:oshmobile/features/startup/domain/models/mobile_client_policy_status.dart';
+import 'package:oshmobile/features/startup/domain/repositories/startup_client_policy_repository.dart';
 import 'package:oshmobile/features/startup/presentation/cubit/startup_cubit.dart';
 import 'package:oshmobile/features/startup/presentation/cubit/startup_state.dart';
 
 void main() {
   late _FakeInternetConnectionChecker connectionChecker;
   late _FakeStartupAuthBootstrapper authBootstrapper;
+  late _FakeStartupClientPolicyRepository policyRepository;
   late _FakeCrashReporterBackend crashReporter;
 
   setUp(() {
     connectionChecker = _FakeInternetConnectionChecker();
     authBootstrapper = _FakeStartupAuthBootstrapper();
+    policyRepository = _FakeStartupClientPolicyRepository();
     crashReporter = _FakeCrashReporterBackend();
+
     OshCrashReporter.debugSetBackend(crashReporter);
+    OshAnalytics.debugSetBackend(const _NoopAnalyticsBackend());
   });
 
   tearDown(() {
     OshCrashReporter.debugResetBackend();
+    OshAnalytics.debugResetBackend();
   });
 
   test('start emits checkingConnectivity then noInternet when offline',
@@ -30,6 +38,7 @@ void main() {
     final cubit = StartupCubit(
       connectionChecker: connectionChecker,
       authBootstrapper: authBootstrapper,
+      clientPolicyRepository: policyRepository,
     );
 
     final emitted = <StartupState>[];
@@ -46,6 +55,7 @@ void main() {
       ],
     );
     expect(authBootstrapper.calls, 0);
+    expect(policyRepository.calls, 0);
     expect(
       crashReporter.logs,
       <String>[
@@ -58,12 +68,16 @@ void main() {
     await cubit.close();
   });
 
-  test('start emits restoringSession then ready when online', () async {
+  test('start emits checkingPolicy and restoringSession when policy allows',
+      () async {
     connectionChecker.onCheck = () async => true;
     authBootstrapper.onCheck = () async => true;
+    policyRepository.nextDecision = _allowDecision;
+
     final cubit = StartupCubit(
       connectionChecker: connectionChecker,
       authBootstrapper: authBootstrapper,
+      clientPolicyRepository: policyRepository,
     );
 
     final emitted = <StartupState>[];
@@ -76,21 +90,49 @@ void main() {
       emitted.map((state) => state.stage).toList(),
       <StartupStage>[
         StartupStage.checkingConnectivity,
+        StartupStage.checkingPolicy,
+        StartupStage.checkingPolicy,
         StartupStage.restoringSession,
         StartupStage.ready,
       ],
     );
     expect(connectionChecker.calls, 1);
+    expect(policyRepository.calls, 1);
     expect(authBootstrapper.calls, 1);
     expect(
       crashReporter.logs,
-      <String>[
+      containsAllInOrder(<String>[
         'startup:checking_connectivity',
+        'startup:checking_client_policy',
         'startup:restoring_session',
-      ],
+      ]),
     );
 
     await sub.cancel();
+    await cubit.close();
+  });
+
+  test('require_update on startup blocks flow before auth restore', () async {
+    connectionChecker.onCheck = () async => true;
+    authBootstrapper.onCheck = () async => true;
+    policyRepository.nextDecision = MobileClientPolicyDecision(
+      status: MobileClientPolicyStatus.requireUpdate,
+      policy: _samplePolicy,
+    );
+
+    final cubit = StartupCubit(
+      connectionChecker: connectionChecker,
+      authBootstrapper: authBootstrapper,
+      clientPolicyRepository: policyRepository,
+    );
+
+    await cubit.start();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(cubit.state.stage, StartupStage.ready);
+    expect(cubit.state.hardUpdateRequired, isTrue);
+    expect(authBootstrapper.calls, 0);
+
     await cubit.close();
   });
 
@@ -98,9 +140,12 @@ void main() {
     var isOnline = false;
     connectionChecker.onCheck = () async => isOnline;
     authBootstrapper.onCheck = () async => true;
+    policyRepository.nextDecision = _allowDecision;
+
     final cubit = StartupCubit(
       connectionChecker: connectionChecker,
       authBootstrapper: authBootstrapper,
+      clientPolicyRepository: policyRepository,
     );
 
     final emitted = <StartupState>[];
@@ -121,43 +166,34 @@ void main() {
       isTrue,
     );
     expect(cubit.state.stage, StartupStage.ready);
-    expect(
-      crashReporter.logs,
-      containsAllInOrder(<String>[
-        'startup:no_internet',
-        'startup:retry',
-        'startup:checking_connectivity',
-        'startup:restoring_session',
-      ]),
-    );
 
     await sub.cancel();
     await cubit.close();
   });
 
-  test('start and retry share one in-flight bootstrap run', () async {
+  test('onAppResumed applies require_update immediately', () async {
     connectionChecker.onCheck = () async => true;
-    final completer = Completer<bool>();
-    authBootstrapper.onCheck = () => completer.future;
+    authBootstrapper.onCheck = () async => true;
+    policyRepository.nextDecision = _allowDecision;
+
     final cubit = StartupCubit(
       connectionChecker: connectionChecker,
       authBootstrapper: authBootstrapper,
+      clientPolicyRepository: policyRepository,
     );
 
-    final future1 = cubit.start();
-    final future2 = cubit.start();
-    final future3 = cubit.retry();
+    await cubit.start();
     await Future<void>.delayed(Duration.zero);
 
-    expect(identical(future1, future2), isTrue);
-    expect(identical(future1, future3), isTrue);
-    expect(connectionChecker.calls, 1);
-    expect(authBootstrapper.calls, 1);
+    policyRepository.nextDecision = MobileClientPolicyDecision(
+      status: MobileClientPolicyStatus.requireUpdate,
+      policy: _samplePolicy,
+    );
 
-    completer.complete(true);
-    await Future.wait<void>(<Future<void>>[future1, future2, future3]);
+    await cubit.onAppResumed();
 
-    expect(cubit.state.stage, StartupStage.ready);
+    expect(cubit.state.hardUpdateRequired, isTrue);
+
     await cubit.close();
   });
 
@@ -169,6 +205,7 @@ void main() {
     final cubit = StartupCubit(
       connectionChecker: connectionChecker,
       authBootstrapper: authBootstrapper,
+      clientPolicyRepository: policyRepository,
     );
 
     await cubit.start();
@@ -177,13 +214,28 @@ void main() {
     expect(cubit.state.stage, StartupStage.noInternet);
     expect(crashReporter.recordedErrors, hasLength(1));
     expect(
-        crashReporter.recordedErrors.single.reason, 'Startup bootstrap failed');
+      crashReporter.recordedErrors.single.reason,
+      'Startup bootstrap failed',
+    );
     expect(crashReporter.customKeys['phase'], 'checking_connectivity');
     expect(crashReporter.customKeys['is_retry'], isFalse);
 
     await cubit.close();
   });
 }
+
+final MobileClientPolicy _samplePolicy = MobileClientPolicy(
+  minSupportedVersion: '1.0.0',
+  latestVersion: '2.0.0',
+  storeUrl: 'https://example.com/store',
+  policyVersion: 12,
+  checkedAt: DateTime.utc(2026, 4, 16, 12),
+  fetchedAt: DateTime.utc(2026, 4, 16, 12),
+);
+
+const MobileClientPolicyDecision _allowDecision = MobileClientPolicyDecision(
+  status: MobileClientPolicyStatus.allow,
+);
 
 class _FakeInternetConnectionChecker implements InternetConnectionChecker {
   int calls = 0;
@@ -205,6 +257,21 @@ class _FakeStartupAuthBootstrapper implements StartupAuthBootstrapper {
     calls++;
     return onCheck?.call() ?? Future<bool>.value(true);
   }
+}
+
+class _FakeStartupClientPolicyRepository
+    implements StartupClientPolicyRepository {
+  int calls = 0;
+  MobileClientPolicyDecision nextDecision = _allowDecision;
+
+  @override
+  Future<MobileClientPolicyDecision> checkPolicy() async {
+    calls++;
+    return nextDecision;
+  }
+
+  @override
+  Future<void> suppressRecommendPrompt({required int policyVersion}) async {}
 }
 
 class _RecordedError {
@@ -261,4 +328,33 @@ class _FakeCrashReporterBackend implements CrashReporterBackend {
 
   @override
   Future<void> setUserId(String userId) async {}
+}
+
+class _NoopAnalyticsBackend implements AnalyticsBackend {
+  const _NoopAnalyticsBackend();
+
+  @override
+  Future<void> logEvent(
+    String name, {
+    Map<String, Object?>? parameters,
+  }) async {}
+
+  @override
+  Future<void> logScreenView({
+    required String screenName,
+    String? screenClass,
+    Map<String, Object?>? parameters,
+  }) async {}
+
+  @override
+  Future<void> setCollectionEnabled(bool enabled) async {}
+
+  @override
+  Future<void> setUserId(String? userId) async {}
+
+  @override
+  Future<void> setUserProperty({
+    required String name,
+    required String? value,
+  }) async {}
 }

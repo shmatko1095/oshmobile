@@ -32,6 +32,15 @@ class _FakeMobileV1Service extends MobileV1Service {
   }
 
   @override
+  Future<Response<dynamic>> getClientPolicy({
+    required String platform,
+    required String appVersion,
+    int? build,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<Response<dynamic>> claimMyDevice({
     required String serial,
     required ClaimMyDeviceRequest request,

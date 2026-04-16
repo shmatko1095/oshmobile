@@ -1819,6 +1819,16 @@ class S {
     );
   }
 
+  /// `Checking app version policy...`
+  String get startupCheckingAppVersion {
+    return Intl.message(
+      'Checking app version policy...',
+      name: 'startupCheckingAppVersion',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `No internet connection screen`
   String get startupNoInternetScreenSemantics {
     return Intl.message(
@@ -1864,6 +1874,86 @@ class S {
     return Intl.message(
       'If needed, reconnect and tap Retry.',
       name: 'startupNoInternetHintRetry',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `App update recommendation dialog`
+  String get startupUpdateRecommendSemantics {
+    return Intl.message(
+      'App update recommendation dialog',
+      name: 'startupUpdateRecommendSemantics',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `A new app version is available`
+  String get startupUpdateRecommendTitle {
+    return Intl.message(
+      'A new app version is available',
+      name: 'startupUpdateRecommendTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update to get the latest fixes and improvements.`
+  String get startupUpdateRecommendSubtitle {
+    return Intl.message(
+      'Update to get the latest fixes and improvements.',
+      name: 'startupUpdateRecommendSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update now`
+  String get startupUpdateNow {
+    return Intl.message(
+      'Update now',
+      name: 'startupUpdateNow',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Later`
+  String get startupUpdateLater {
+    return Intl.message(
+      'Later',
+      name: 'startupUpdateLater',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `App update required screen`
+  String get startupUpdateRequiredSemantics {
+    return Intl.message(
+      'App update required screen',
+      name: 'startupUpdateRequiredSemantics',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Update app to continue`
+  String get startupUpdateRequiredTitle {
+    return Intl.message(
+      'Update app to continue',
+      name: 'startupUpdateRequiredTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This version is no longer supported. Install the latest version to keep using Oshhome.`
+  String get startupUpdateRequiredSubtitle {
+    return Intl.message(
+      'This version is no longer supported. Install the latest version to keep using Oshhome.',
+      name: 'startupUpdateRequiredSubtitle',
       desc: '',
       args: [],
     );

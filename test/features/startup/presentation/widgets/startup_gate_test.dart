@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:keycloak_wrapper/keycloak_wrapper.dart';
 import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/common/cubits/app/app_lifecycle_cubit.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart'
     as global_auth;
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
@@ -12,6 +13,9 @@ import 'package:oshmobile/core/network/chopper_client/core/session_storage.dart'
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_service.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
 import 'package:oshmobile/features/startup/domain/contracts/startup_auth_bootstrapper.dart';
+import 'package:oshmobile/features/startup/domain/models/mobile_client_policy_decision.dart';
+import 'package:oshmobile/features/startup/domain/models/mobile_client_policy_status.dart';
+import 'package:oshmobile/features/startup/domain/repositories/startup_client_policy_repository.dart';
 import 'package:oshmobile/features/startup/presentation/cubit/startup_cubit.dart';
 import 'package:oshmobile/features/startup/presentation/cubit/startup_state.dart';
 import 'package:oshmobile/features/startup/presentation/widgets/startup_gate.dart';
@@ -26,7 +30,7 @@ void main() {
     OshAnalytics.debugResetBackend();
   });
 
-  testWidgets('renders all startup stages', (WidgetTester tester) async {
+  testWidgets('renders key startup stages', (WidgetTester tester) async {
     final startupCubit = _TestStartupCubit();
     final authCubit = _TestGlobalAuthCubit();
 
@@ -39,11 +43,10 @@ void main() {
     expect(find.text('Checking internet connection...'), findsOneWidget);
 
     startupCubit.emitForTest(
-      const StartupState(stage: StartupStage.restoringSession),
+      const StartupState(stage: StartupStage.checkingPolicy),
     );
     await tester.pump();
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(find.text('Restoring your session...'), findsNothing);
+    expect(find.text('Checking app version policy...'), findsOneWidget);
 
     startupCubit.emitForTest(
       const StartupState(stage: StartupStage.noInternet),
@@ -61,9 +64,15 @@ void main() {
     await authCubit.close();
   });
 
-  testWidgets('does not show sign-in before startup is ready',
+  testWidgets('ready + hard update renders blocking page',
       (WidgetTester tester) async {
-    final startupCubit = _TestStartupCubit();
+    final startupCubit = _TestStartupCubit()
+      ..emitForTest(
+        const StartupState(
+          stage: StartupStage.ready,
+          hardUpdateRequired: true,
+        ),
+      );
     final authCubit = _TestGlobalAuthCubit();
 
     await _pumpStartupGate(
@@ -72,21 +81,8 @@ void main() {
       authCubit: authCubit,
     );
 
+    expect(find.text('Update app to continue'), findsOneWidget);
     expect(find.text('sign-in'), findsNothing);
-
-    startupCubit.emitForTest(
-      const StartupState(stage: StartupStage.restoringSession),
-    );
-    await tester.pump();
-
-    expect(find.text('sign-in'), findsNothing);
-
-    startupCubit.emitForTest(
-      const StartupState(stage: StartupStage.ready),
-    );
-    await tester.pump();
-
-    expect(find.text('sign-in'), findsOneWidget);
 
     await startupCubit.close();
     await authCubit.close();
@@ -126,6 +122,7 @@ Future<void> _pumpStartupGate(
   await tester.pumpWidget(
     MultiBlocProvider(
       providers: [
+        BlocProvider<AppLifecycleCubit>(create: (_) => AppLifecycleCubit()),
         BlocProvider<StartupCubit>.value(value: startupCubit),
         BlocProvider<global_auth.GlobalAuthCubit>.value(value: authCubit),
       ],
@@ -155,6 +152,7 @@ class _TestStartupCubit extends StartupCubit {
       : super(
           connectionChecker: _FakeInternetConnectionChecker(),
           authBootstrapper: _FakeStartupAuthBootstrapper(),
+          clientPolicyRepository: _FakeStartupClientPolicyRepository(),
         );
 
   void emitForTest(StartupState state) {
@@ -192,6 +190,19 @@ class _FakeInternetConnectionChecker implements InternetConnectionChecker {
 class _FakeStartupAuthBootstrapper implements StartupAuthBootstrapper {
   @override
   Future<bool> checkAuthStatus() async => true;
+}
+
+class _FakeStartupClientPolicyRepository
+    implements StartupClientPolicyRepository {
+  @override
+  Future<MobileClientPolicyDecision> checkPolicy() async {
+    return const MobileClientPolicyDecision(
+      status: MobileClientPolicyStatus.allow,
+    );
+  }
+
+  @override
+  Future<void> suppressRecommendPrompt({required int policyVersion}) async {}
 }
 
 class _NoopAnalyticsBackend implements AnalyticsBackend {

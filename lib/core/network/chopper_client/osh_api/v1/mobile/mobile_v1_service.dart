@@ -60,4 +60,11 @@ abstract class MobileV1Service extends ChopperService {
     @Query('to') required String to,
     @Query('resolution') String resolution = 'auto',
   });
+
+  @GET(path: '/client-policy')
+  Future<Response> getClientPolicy({
+    @Query('platform') required String platform,
+    @Query('app_version') required String appVersion,
+    @Query('build') int? build,
+  });
 }

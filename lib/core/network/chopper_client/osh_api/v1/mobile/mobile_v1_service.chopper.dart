@@ -147,4 +147,26 @@ final class _$MobileV1Service extends MobileV1Service {
     );
     return client.send<dynamic, dynamic>($request);
   }
+
+  @override
+  Future<Response<dynamic>> getClientPolicy({
+    required String platform,
+    required String appVersion,
+    int? build,
+  }) {
+    final Uri $url =
+        Uri.parse('https://api.oshhome.com/v1/mobile/client-policy');
+    final Map<String, dynamic> $params = <String, dynamic>{
+      'platform': platform,
+      'app_version': appVersion,
+      'build': build,
+    };
+    final Request $request = Request(
+      'GET',
+      $url,
+      client.baseUrl,
+      parameters: $params,
+    );
+    return client.send<dynamic, dynamic>($request);
+  }
 }

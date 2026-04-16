@@ -445,6 +445,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "offlineBlePermissionHint": MessageLookupByLibrary.simpleMessage(
       "Щоб змінити налаштування Wi‑Fi, потрібен доступ до Bluetooth.",
     ),
+    "startupCheckingAppVersion": MessageLookupByLibrary.simpleMessage(
+      "Перевіряємо політику версії застосунку...",
+    ),
     "startupCheckingInternet": MessageLookupByLibrary.simpleMessage(
       "Перевіряємо підключення до інтернету...",
     ),
@@ -462,6 +465,26 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "startupNoInternetTitle": MessageLookupByLibrary.simpleMessage(
       "Немає підключення до інтернету",
+    ),
+    "startupUpdateLater": MessageLookupByLibrary.simpleMessage("Пізніше"),
+    "startupUpdateNow": MessageLookupByLibrary.simpleMessage("Оновити зараз"),
+    "startupUpdateRecommendSemantics": MessageLookupByLibrary.simpleMessage(
+      "Діалог рекомендації оновити застосунок",
+    ),
+    "startupUpdateRecommendSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Оновіть, щоб отримати останні виправлення та покращення.",
+    ),
+    "startupUpdateRecommendTitle": MessageLookupByLibrary.simpleMessage(
+      "Доступна нова версія застосунку",
+    ),
+    "startupUpdateRequiredSemantics": MessageLookupByLibrary.simpleMessage(
+      "Екран обовʼязкового оновлення застосунку",
+    ),
+    "startupUpdateRequiredSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Ця версія більше не підтримується. Встановіть останню версію, щоб і далі користуватися Oshhome.",
+    ),
+    "startupUpdateRequiredTitle": MessageLookupByLibrary.simpleMessage(
+      "Оновіть застосунок, щоб продовжити",
     ),
     "time": MessageLookupByLibrary.simpleMessage("Час"),
     "timeAuto": MessageLookupByLibrary.simpleMessage("Автоматичний час"),

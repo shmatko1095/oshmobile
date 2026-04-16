@@ -425,6 +425,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "offlineBlePermissionHint": MessageLookupByLibrary.simpleMessage(
       "Bluetooth access is needed to change Wi-Fi settings.",
     ),
+    "startupCheckingAppVersion": MessageLookupByLibrary.simpleMessage(
+      "Checking app version policy...",
+    ),
     "startupCheckingInternet": MessageLookupByLibrary.simpleMessage(
       "Checking internet connection...",
     ),
@@ -442,6 +445,26 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "startupNoInternetTitle": MessageLookupByLibrary.simpleMessage(
       "No internet connection",
+    ),
+    "startupUpdateLater": MessageLookupByLibrary.simpleMessage("Later"),
+    "startupUpdateNow": MessageLookupByLibrary.simpleMessage("Update now"),
+    "startupUpdateRecommendSemantics": MessageLookupByLibrary.simpleMessage(
+      "App update recommendation dialog",
+    ),
+    "startupUpdateRecommendSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Update to get the latest fixes and improvements.",
+    ),
+    "startupUpdateRecommendTitle": MessageLookupByLibrary.simpleMessage(
+      "A new app version is available",
+    ),
+    "startupUpdateRequiredSemantics": MessageLookupByLibrary.simpleMessage(
+      "App update required screen",
+    ),
+    "startupUpdateRequiredSubtitle": MessageLookupByLibrary.simpleMessage(
+      "This version is no longer supported. Install the latest version to keep using Oshhome.",
+    ),
+    "startupUpdateRequiredTitle": MessageLookupByLibrary.simpleMessage(
+      "Update app to continue",
     ),
     "time": MessageLookupByLibrary.simpleMessage("Time"),
     "timeAuto": MessageLookupByLibrary.simpleMessage("Automatic time"),

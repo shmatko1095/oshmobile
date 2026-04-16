@@ -39,4 +39,11 @@ final class OshAnalyticsEvents {
   static const accountSettingsOpened = 'account_settings_opened';
   static const themeChanged = 'theme_changed';
   static const accountDeletionRequested = 'account_deletion_requested';
+
+  static const mobilePolicyFetched = 'mobile_policy_fetched';
+  static const mobilePolicyPromptShown = 'mobile_policy_prompt_shown';
+  static const mobilePolicyUpdateTapped = 'mobile_policy_update_tapped';
+  static const mobilePolicyLaterTapped = 'mobile_policy_later_tapped';
+  static const mobilePolicyFallbackCache = 'mobile_policy_fallback_cache';
+  static const mobilePolicyFailOpen = 'mobile_policy_fail_open';
 }
