@@ -2,13 +2,13 @@
 /// Versioned class name keeps room for future protocol revisions.
 ///
 /// Base:
-///   v1/tenants/<tenant>/devices/<deviceId>
+///   `v1/tenants/<tenant>/devices/<deviceId>`
 ///
 /// Channels:
-///   cmd/<domain>     (downlink: app/cloud -> device)
-///   rsp             (uplink: device -> app/cloud, JSON-RPC responses)
-///   evt/<domain>     (uplink: device -> app/cloud, non-retained)
-///   state/<domain>   (uplink: device -> app/cloud, retained)
+///   `cmd/<domain>`   (downlink: app/cloud -> device)
+///   `rsp`            (uplink: device -> app/cloud, JSON-RPC responses)
+///   `evt/<domain>`   (uplink: device -> app/cloud, non-retained)
+///   `state/<domain>` (uplink: device -> app/cloud, retained)
 class DeviceMqttTopicsV1 {
   final String tenantId;
 

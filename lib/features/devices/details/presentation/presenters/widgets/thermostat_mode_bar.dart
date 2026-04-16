@@ -123,8 +123,9 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
         source: source,
       );
     } finally {
-      if (!mounted) return;
-      setState(() => _editorOpening = false);
+      if (mounted) {
+        setState(() => _editorOpening = false);
+      }
     }
   }
 

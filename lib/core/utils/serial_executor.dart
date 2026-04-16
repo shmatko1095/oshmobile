@@ -3,7 +3,7 @@
 ///
 /// Usage:
 ///   final _serial = SerialExecutor();
-///   Future<void> foo() => _serial.run(() async { ... });
+///   `Future<void> foo() => _serial.run(() async { ... });`
 class SerialExecutor {
   Future<void> _tail = Future<void>.value();
 

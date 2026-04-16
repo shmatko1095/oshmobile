@@ -331,8 +331,9 @@ class TelemetryState {
     final heaterEnabled = asBool(json['heater_enabled']);
     final loadFactor = asInt(json['load_factor']);
 
-    if (sensorsRaw is! List || heaterEnabled == null || loadFactor == null)
+    if (sensorsRaw is! List || heaterEnabled == null || loadFactor == null) {
       return null;
+    }
 
     final sensors = <ClimateSensorTelemetry>[];
     for (final item in sensorsRaw) {

@@ -31,11 +31,11 @@ bool matchesReqId(dynamic payload, String expected) {
   return false;
 }
 
-/// Decodes MQTT JSON payload into a Map<String, dynamic>.
+/// Decodes MQTT JSON payload into a `Map<String, dynamic>`.
 /// Supports:
-/// - Map<String, dynamic>
-/// - Map (casted)
-/// - JSON String (decoded)
+/// - `Map<String, dynamic>`
+/// - `Map` (casted)
+/// - JSON `String` (decoded)
 ///
 /// Returns empty map for invalid / unsupported payloads.
 Map<String, dynamic> decodeMqttMap(dynamic raw) {

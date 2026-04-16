@@ -24,7 +24,6 @@ import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
-import 'package:oshmobile/features/telemetry_history/domain/contracts/telemetry_history_series_reader.dart';
 import 'package:oshmobile/generated/l10n.dart';
 import 'package:oshmobile/init_dependencies.dart';
 import 'package:shared_preferences/shared_preferences.dart';
