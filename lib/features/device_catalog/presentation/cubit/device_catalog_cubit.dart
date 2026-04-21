@@ -40,9 +40,11 @@ class DeviceCatalogCubit extends Cubit<DeviceCatalogState>
 
   void selectDevice(String deviceId) {
     final previousId = state.selectedDeviceId;
+    final previousDevice =
+        previousId == null ? null : getById(previousId);
     emit(state.copyWith(selectedDeviceId: deviceId, clearError: true));
     unawaited(_selectedDeviceStorage.saveSelectedDevice(_userUuid, deviceId));
-    _comm.dropForDevice(previousId);
+    _comm.dropForDevice(previousDevice?.sn);
   }
 
   @override
@@ -125,13 +127,14 @@ class DeviceCatalogCubit extends Cubit<DeviceCatalogState>
   @override
   void onDeviceRemoved(String deviceId) {
     final wasSelected = state.selectedDeviceId == deviceId;
+    final removedDevice = getById(deviceId);
     final devices = state.devices
         .where((device) => device.id != deviceId)
         .toList(growable: false);
 
     if (wasSelected) {
       unawaited(_selectedDeviceStorage.clearSelectedDevice(_userUuid));
-      _comm.dropForDevice(deviceId);
+      _comm.dropForDevice(removedDevice?.sn);
     }
 
     emit(
