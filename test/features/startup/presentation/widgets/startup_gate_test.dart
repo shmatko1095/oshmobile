@@ -166,15 +166,7 @@ class _TestGlobalAuthCubit extends global_auth.GlobalAuthCubit {
           authService: AuthService.create(),
           mobileService: MobileV1Service.create(),
           sessionStorage: SessionStorage(storage: FlutterSecureStorage()),
-          keycloakWrapper: KeycloakWrapper(
-            config: KeycloakConfig(
-              bundleIdentifier: 'com.example.test',
-              clientId: 'client',
-              clientSecret: 'secret',
-              frontendUrl: 'https://example.com',
-              realm: 'realm',
-            ),
-          ),
+          keycloakWrapper: KeycloakWrapper(),
         );
 
   void emitForTest(global_auth.GlobalAuthState state) {

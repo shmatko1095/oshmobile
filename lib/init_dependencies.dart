@@ -148,7 +148,7 @@ Future<void> _initKeycloakWrapper() async {
     additionalScopes: ['offline_access'],
   );
 
-  final keycloakWrapper = KeycloakWrapper(config: keycloakConfig);
+  final keycloakWrapper = KeycloakWrapper();
 
   bool isRetrying = false;
 
@@ -171,7 +171,7 @@ Future<void> _initKeycloakWrapper() async {
         await const FlutterSecureStorage().deleteAll();
         AppLog.debug('Storage cleared. Retrying initialization.');
 
-        await keycloakWrapper.initialize();
+        await keycloakWrapper.initialize(config: keycloakConfig);
         AppLog.debug('Keycloak recovered successfully inside onError.');
       } catch (e, st) {
         OshCrashReporter.logFatal(e, st,
@@ -186,7 +186,7 @@ Future<void> _initKeycloakWrapper() async {
   };
 
   try {
-    await keycloakWrapper.initialize();
+    await keycloakWrapper.initialize(config: keycloakConfig);
   } catch (e) {
     AppLog.error('Keycloak initialize threw explicitly', error: e);
   }
