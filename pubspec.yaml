@@ -33,6 +33,7 @@ dependencies:
   chopper: ^8.5.0
   http: ^1.6.0
   json_annotation: ^4.10.0
+  logging: ^1.3.0
 
   cupertino_icons: ^1.0.8
   flutter_bloc: ^9.1.1

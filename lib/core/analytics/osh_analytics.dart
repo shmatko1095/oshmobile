@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_user_properties.dart';
+import 'package:oshmobile/core/logging/app_log.dart';
 
 abstract class AnalyticsBackend {
   Future<void> setCollectionEnabled(bool enabled);
@@ -210,9 +211,9 @@ class OshAnalytics {
     Object error,
     StackTrace stack,
   ) {
-    debugPrint('Analytics operation failed ($operation): $error');
-    debugPrintStack(
-      label: 'Analytics failure stack',
+    AppLog.error(
+      'Analytics operation failed ($operation)',
+      error: error,
       stackTrace: stack,
     );
   }

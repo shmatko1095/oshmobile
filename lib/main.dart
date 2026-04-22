@@ -15,6 +15,8 @@ import 'package:oshmobile/core/common/widgets/app_lifecycle_observer.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart'
     as global_auth;
 import 'package:oshmobile/app/session/scopes/session_scope.dart';
+import 'package:oshmobile/core/logging/app_log.dart';
+import 'package:oshmobile/core/logging/app_logging.dart';
 import 'package:oshmobile/core/logging/osh_bloc_observer.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/theme/theme.dart';
@@ -71,6 +73,7 @@ void _reportUncaughtError(
 Future<void> main() async {
   runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
+    AppLogging.bootstrap();
     await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
     await Firebase.initializeApp(
@@ -102,8 +105,11 @@ Future<void> main() async {
       await initDependencies();
     } catch (e, st) {
       OshCrashReporter.logNonFatal(e, st, reason: 'initDependencies failed');
-      debugPrint('initDependencies failed: $e');
-      debugPrint(st.toString());
+      AppLog.error(
+        'initDependencies failed',
+        error: e,
+        stackTrace: st,
+      );
       runApp(StartupErrorApp(error: e.toString()));
       return;
     }

@@ -1,9 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:keycloak_wrapper/keycloak_wrapper.dart';
 import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/core/error/exceptions.dart';
 import 'package:oshmobile/core/error/failures.dart';
+import 'package:oshmobile/core/logging/app_log.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
 import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:oshmobile/features/auth/domain/repository/auth_repository.dart';
@@ -71,7 +71,11 @@ class AuthRepositoryImpl implements AuthRepository {
     } on ServerException catch (e) {
       return left(Failure.unexpected(e.message));
     } catch (e, st) {
-      debugPrint('signInWithGoogle via keycloak_wrapper failed: $e\n$st');
+      AppLog.error(
+        'signInWithGoogle via keycloak_wrapper failed',
+        error: e,
+        stackTrace: st,
+      );
       return left(Failure.unexpected('Google sign-in failed: $e'));
     }
   }

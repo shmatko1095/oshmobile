@@ -1,7 +1,6 @@
 import 'dart:convert';
-import 'dart:developer';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:keycloak_wrapper/keycloak_wrapper.dart';
@@ -10,6 +9,7 @@ import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_user_properties.dart';
 import 'package:oshmobile/core/common/entities/jwt_user_data.dart';
 import 'package:oshmobile/core/common/entities/session.dart';
+import 'package:oshmobile/core/logging/app_log.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_service.dart';
@@ -76,7 +76,7 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState>
       try {
         await _keycloakWrapper.logout();
       } catch (e) {
-        debugPrint('Keycloak logout failed: $e');
+        AppLog.warn('Keycloak logout failed: $e');
       }
     }
 
@@ -110,7 +110,7 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState>
       if (!response.isSuccessful || response.body == null) {
         await OshAnalytics.resetSessionContext();
         _emitAuthInitial();
-        log(response.bodyString);
+        AppLog.warn('Refresh token request failed: ${response.bodyString}');
         return false;
       }
 
@@ -149,7 +149,8 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState>
     final response = await _mobileService.createDemoSession();
     if (!response.isSuccessful || response.body == null) {
       _emitAuthInitial();
-      log(_extractResponseMessage(response));
+      AppLog.warn(
+          'Demo session refresh failed: ${_extractResponseMessage(response)}');
       return false;
     }
 

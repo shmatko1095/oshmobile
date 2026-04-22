@@ -31,15 +31,10 @@
 		<key>UISupportedInterfaceOrientations</key>
 		<array>
 			<string>UIInterfaceOrientationPortrait</string>
-			<string>UIInterfaceOrientationLandscapeLeft</string>
-			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
 		<key>UISupportedInterfaceOrientations~ipad</key>
 		<array>
 			<string>UIInterfaceOrientationPortrait</string>
-			<string>UIInterfaceOrientationPortraitUpsideDown</string>
-			<string>UIInterfaceOrientationLandscapeLeft</string>
-			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
@@ -48,9 +43,7 @@
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>Photos from gallery required</string>
 		<key>NSCameraUsageDescription</key>
-		<string>Photos from camera required</string>
-		<key>NSCameraUsageDescription</key>
-		<string>Camera is used to scan QR codes</string>
+		<string>Camera is used to scan QR codes and capture photos.</string>
 		<key>NSBluetoothAlwaysUsageDescription</key>
 		<string>We use Bluetooth to configure your OSH device.</string>
 		<key>NSBluetoothPeripheralUsageDescription</key>

@@ -1,7 +1,4 @@
-import 'dart:developer';
-
 import 'package:chopper/chopper.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
@@ -13,6 +10,7 @@ import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/configuration/configuration_bundle_repository.dart';
 import 'package:oshmobile/core/configuration/configuration_bundle_repository_impl.dart';
 import 'package:oshmobile/core/configuration/control_state_resolver.dart';
+import 'package:oshmobile/core/logging/app_log.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/core/app_client_headers_interceptor.dart';
@@ -156,30 +154,33 @@ Future<void> _initKeycloakWrapper() async {
 
   keycloakWrapper.onError = (message, error, stackTrace) async {
     final errorStr = error.toString();
-    debugPrint('Keycloak onError triggered: $message $errorStr');
+    AppLog.warn('Keycloak onError triggered: $message $errorStr');
 
     if (errorStr.contains('BadPaddingException') ||
         errorStr.contains('BAD_DECRYPT') ||
         errorStr.contains('Cipher functions')) {
       if (isRetrying) {
-        debugPrint('❌ Fatal: Keycloak recovery failed even after cleanup.');
+        AppLog.error('Keycloak recovery failed even after cleanup.');
         return;
       }
 
-      debugPrint(
-          '⚠️ Detected corrupted storage via onError. Starting recovery...');
+      AppLog.warn('Detected corrupted storage via onError. Starting recovery.');
       isRetrying = true;
 
       try {
         await const FlutterSecureStorage().deleteAll();
-        debugPrint('🧹 Storage cleared. Retrying initialization...');
+        AppLog.debug('Storage cleared. Retrying initialization.');
 
         await keycloakWrapper.initialize();
-        debugPrint('✅ Keycloak recovered successfully inside onError.');
+        AppLog.debug('Keycloak recovered successfully inside onError.');
       } catch (e, st) {
         OshCrashReporter.logFatal(e, st,
             reason: "Failed to initialize Keycloak");
-        debugPrint('❌ Recovery threw an exception: $e');
+        AppLog.error(
+          'Keycloak recovery threw an exception',
+          error: e,
+          stackTrace: st,
+        );
       }
     }
   };
@@ -187,7 +188,7 @@ Future<void> _initKeycloakWrapper() async {
   try {
     await keycloakWrapper.initialize();
   } catch (e) {
-    debugPrint('Keycloak initialize threw explicitly: $e');
+    AppLog.error('Keycloak initialize threw explicitly', error: e);
   }
 
   locator.registerSingleton<KeycloakWrapper>(keycloakWrapper);
@@ -427,25 +428,6 @@ void _initBleProvisioningFeature() {
 }
 
 Future<void> _initWebClient() async {
-  chopperLogger.onRecord.listen((record) {
-    final t = record.time;
-    final ts = '${t.hour.toString().padLeft(2, '0')}:'
-        '${t.minute.toString().padLeft(2, '0')}:'
-        '${t.second.toString().padLeft(2, '0')}.'
-        '${t.millisecond.toString().padLeft(3, '0')}';
-
-    log(
-      '[$ts] ${record.loggerName} ${record.level.name}: ${record.message}',
-      zone: record.zone,
-      time: record.time,
-      error: record.error,
-      name: record.loggerName,
-      level: record.level.value,
-      stackTrace: record.stackTrace,
-      sequenceNumber: record.sequenceNumber,
-    );
-  });
-
   locator
     ..registerLazySingleton<AuthService>(
       () => AuthService.create(),

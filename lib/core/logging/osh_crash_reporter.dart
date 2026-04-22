@@ -1,5 +1,6 @@
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
+import 'package:oshmobile/core/logging/app_log.dart';
 
 abstract class CrashReporterBackend {
   Future<void> recordError(
@@ -211,9 +212,9 @@ class OshCrashReporter {
     Object error,
     StackTrace stack,
   ) {
-    debugPrint('Crashlytics operation failed ($operation): $error');
-    debugPrintStack(
-      label: 'Crashlytics failure stack',
+    AppLog.error(
+      'Crashlytics operation failed ($operation)',
+      error: error,
       stackTrace: stack,
     );
   }
