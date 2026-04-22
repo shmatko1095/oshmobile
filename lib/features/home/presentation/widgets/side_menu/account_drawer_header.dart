@@ -45,6 +45,22 @@ class AccountDrawerHeader extends StatelessWidget {
         isDark ? AppPalette.textPrimary : AppPalette.lightTextStrong;
     final subtitleColor =
         isDark ? AppPalette.textSecondary : AppPalette.lightTextMuted;
+    final showUnverifiedEmailBadge = !isDemoMode && !userData.isEmailVerified;
+    final statusChips = <Widget>[
+      if (isDemoMode)
+        _buildStatusChip(
+          label: s.DemoMode,
+          backgroundColor: AppPalette.accentPrimary.withValues(alpha: 0.12),
+          textColor: titleColor,
+        ),
+      if (showUnverifiedEmailBadge)
+        _buildStatusChip(
+          label: s.VerifyYourEmail,
+          backgroundColor:
+              AppPalette.accentWarning.withValues(alpha: isDark ? 0.22 : 0.14),
+          textColor: isDark ? AppPalette.destructiveFg : AppPalette.accentError,
+        ),
+    ];
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -79,26 +95,12 @@ class AccountDrawerHeader extends StatelessWidget {
                       color: subtitleColor,
                     ),
                   ),
-                  if (isDemoMode) ...[
+                  if (statusChips.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppPalette.accentPrimary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        s.DemoMode,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                          color: titleColor,
-                        ),
-                      ),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: statusChips,
                     ),
                   ],
                 ],
@@ -118,6 +120,32 @@ class AccountDrawerHeader extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip({
+    required String label,
+    required Color backgroundColor,
+    required Color textColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(AppPalette.radiusPill),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.3,
+          color: textColor,
         ),
       ),
     );
