@@ -9,6 +9,7 @@ class AuthField extends StatefulWidget {
   final bool isObscureText;
   final TextEditingController controller;
   final FormFieldValidator<String>? validator;
+  final bool enableContextMenu;
 
   const AuthField({
     super.key,
@@ -18,6 +19,7 @@ class AuthField extends StatefulWidget {
     this.validator,
     this.isObscureText = false,
     this.obscureIcon = Icons.remove_red_eye,
+    this.enableContextMenu = false,
     required this.controller,
   });
 
@@ -44,6 +46,10 @@ class _AuthFieldState extends State<AuthField> {
     return TextFormField(
       controller: widget.controller,
       validator: widget.validator,
+      enableInteractiveSelection: widget.enableContextMenu,
+      contextMenuBuilder: widget.enableContextMenu
+          ? null
+          : (context, editableTextState) => const SizedBox.shrink(),
       cursorColor: theme.colorScheme.primary,
       style: theme.textTheme.bodyLarge?.copyWith(
         color: theme.colorScheme.onSurface,
