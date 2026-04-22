@@ -83,6 +83,8 @@ class DeviceScheduleApiImpl implements DeviceScheduleApi {
     return base.copyWith(
       mode: _modeOverride ?? base.mode,
       range: _rangeOverride ?? base.range,
+      clearCurrentPoint: true,
+      clearNextPoint: true,
       lists: merged,
     );
   }

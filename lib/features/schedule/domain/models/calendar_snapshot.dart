@@ -8,6 +8,8 @@ import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 class CalendarSnapshot {
   final CalendarMode mode;
   final ScheduleRange range;
+  final SchedulePoint? currentPoint;
+  final SchedulePoint? nextPoint;
 
   /// Unmodifiable map with unmodifiable lists inside.
   /// Type remains `Map<CalendarMode, List<SchedulePoint>>` for compatibility,
@@ -18,6 +20,8 @@ class CalendarSnapshot {
   CalendarSnapshot._({
     required this.mode,
     required this.range,
+    required this.currentPoint,
+    required this.nextPoint,
     required Map<CalendarMode, List<SchedulePoint>> lists,
   }) : lists = _freezeAndFill(lists);
 
@@ -25,11 +29,15 @@ class CalendarSnapshot {
   factory CalendarSnapshot({
     required CalendarMode mode,
     ScheduleRange? range,
+    SchedulePoint? currentPoint,
+    SchedulePoint? nextPoint,
     required Map<CalendarMode, List<SchedulePoint>> lists,
   }) {
     return CalendarSnapshot._(
         mode: mode,
         range: range ?? const ScheduleRange.defaults(),
+        currentPoint: currentPoint,
+        nextPoint: nextPoint,
         lists: lists);
   }
 
@@ -41,11 +49,18 @@ class CalendarSnapshot {
   CalendarSnapshot copyWith({
     CalendarMode? mode,
     ScheduleRange? range,
+    SchedulePoint? currentPoint,
+    bool clearCurrentPoint = false,
+    SchedulePoint? nextPoint,
+    bool clearNextPoint = false,
     Map<CalendarMode, List<SchedulePoint>>? lists,
   }) =>
       CalendarSnapshot._(
         mode: mode ?? this.mode,
         range: range ?? this.range,
+        currentPoint:
+            clearCurrentPoint ? null : (currentPoint ?? this.currentPoint),
+        nextPoint: clearNextPoint ? null : (nextPoint ?? this.nextPoint),
         lists: lists ?? this.lists,
       );
 
@@ -53,7 +68,12 @@ class CalendarSnapshot {
   /// and empty lists for all modes.
   static CalendarSnapshot empty([CalendarMode mode = CalendarMode.off]) =>
       CalendarSnapshot._(
-          mode: mode, range: const ScheduleRange.defaults(), lists: const {});
+        mode: mode,
+        range: const ScheduleRange.defaults(),
+        currentPoint: null,
+        nextPoint: null,
+        lists: const {},
+      );
 
   // --------------------------------------------------------------------------
   // Internals

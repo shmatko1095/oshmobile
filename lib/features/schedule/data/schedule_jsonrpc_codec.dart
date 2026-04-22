@@ -40,7 +40,11 @@ class ScheduleJsonRpcCodec {
   }
 
   Map<String, dynamic> encodeBody(CalendarSnapshot snapshot) {
-    final data = encodeBodyUnchecked(snapshot);
+    final data = <String, dynamic>{
+      'mode': snapshot.mode.id,
+      'points': _encodePoints(snapshot.lists,
+          range: snapshot.range, includeAllListModes: true),
+    };
     if (!_validator.validateSetPayload(data)) {
       throw FormatException('Invalid schedule.set payload');
     }
@@ -82,15 +86,30 @@ class ScheduleJsonRpcCodec {
     final range = _decodeRange(pointsRaw['range']);
     if (range == null && pointsRaw.containsKey('range')) return null;
 
-    return CalendarSnapshot(mode: mode, range: range, lists: lists);
+    return CalendarSnapshot(
+      mode: mode,
+      range: range,
+      currentPoint: _decodePoint(data['current_point']),
+      nextPoint: _decodePoint(data['next_point']),
+      lists: lists,
+    );
   }
 
   static Map<String, dynamic> encodeBodyUnchecked(CalendarSnapshot snapshot) {
-    return <String, dynamic>{
+    final out = <String, dynamic>{
       'mode': snapshot.mode.id,
       'points': _encodePoints(snapshot.lists,
           range: snapshot.range, includeAllListModes: true),
     };
+    final currentPoint = snapshot.currentPoint;
+    if (currentPoint != null) {
+      out['current_point'] = _encodePoint(currentPoint);
+    }
+    final nextPoint = snapshot.nextPoint;
+    if (nextPoint != null) {
+      out['next_point'] = _encodePoint(nextPoint);
+    }
+    return out;
   }
 
   static Map<String, dynamic> encodePatchUnchecked({
@@ -123,25 +142,29 @@ class ScheduleJsonRpcCodec {
 
     final out = <SchedulePoint>[];
     for (final item in raw) {
-      if (item is! Map) continue;
-
-      final temp = (item['temp'] as num?)?.toDouble();
-
-      final hh = (item['hh'] as num?)?.toInt() ?? 0;
-      final mm = (item['mm'] as num?)?.toInt() ?? 0;
-      final mask = (item['mask'] as num?)?.toInt() ?? WeekdayMask.all;
-
-      if (temp == null) continue;
-
-      out.add(
-        SchedulePoint(
-          time: TimeOfDay(hour: hh.clamp(0, 23), minute: mm.clamp(0, 59)),
-          daysMask: mask & WeekdayMask.all,
-          temp: double.parse(temp.toStringAsFixed(1)),
-        ),
-      );
+      final point = _decodePoint(item);
+      if (point != null) {
+        out.add(point);
+      }
     }
     return out;
+  }
+
+  static SchedulePoint? _decodePoint(dynamic raw) {
+    if (raw is! Map) return null;
+
+    final temp = (raw['temp'] as num?)?.toDouble();
+    if (temp == null) return null;
+
+    final hh = (raw['hh'] as num?)?.toInt() ?? 0;
+    final mm = (raw['mm'] as num?)?.toInt() ?? 0;
+    final mask = (raw['mask'] as num?)?.toInt() ?? WeekdayMask.all;
+
+    return SchedulePoint(
+      time: TimeOfDay(hour: hh.clamp(0, 23), minute: mm.clamp(0, 59)),
+      daysMask: mask & WeekdayMask.all,
+      temp: double.parse(temp.toStringAsFixed(1)),
+    );
   }
 
   static Map<String, dynamic> _encodePoints(

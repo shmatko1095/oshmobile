@@ -3,6 +3,7 @@ import 'package:oshmobile/core/configuration/models/model_configuration.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/features/schedule/data/schedule_jsonrpc_codec.dart';
 import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
+import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/domain/utils/schedule_point_resolver.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 
@@ -114,16 +115,13 @@ class ControlStateResolver {
         return selected[field];
 
       case 'schedule_current_target':
-        return schedule == null ? null : resolveCurrentPoint(schedule)?.temp;
+        if (schedule == null) return null;
+        return (schedule.currentPoint ?? resolveCurrentPoint(schedule))?.temp;
 
       case 'schedule_next_target':
-        final point = schedule == null ? null : resolveNextPoint(schedule);
-        if (point == null) return null;
-        return <String, dynamic>{
-          'temp': point.temp,
-          'hour': point.time.hour,
-          'minute': point.time.minute,
-        };
+        if (schedule == null) return null;
+        final point = schedule.nextPoint ?? resolveNextPoint(schedule);
+        return _nextTargetFromPoint(point);
     }
 
     return null;
@@ -285,5 +283,14 @@ class ControlStateResolver {
       return null;
     }
     return current;
+  }
+
+  Map<String, dynamic>? _nextTargetFromPoint(SchedulePoint? point) {
+    if (point == null) return null;
+    return <String, dynamic>{
+      'temp': point.temp,
+      'hour': point.time.hour,
+      'minute': point.time.minute,
+    };
   }
 }
