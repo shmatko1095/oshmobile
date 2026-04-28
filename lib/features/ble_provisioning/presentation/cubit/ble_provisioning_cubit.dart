@@ -43,16 +43,23 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
         _observeDeviceNearby = observeDeviceNearby,
         super(const BleProvisioningState.initial());
 
+  void _emitIfOpen(BleProvisioningState next) {
+    if (isClosed) return;
+    emit(next);
+  }
+
   Future<void> startNearbyCheck({
     required String serialNumber,
   }) async {
     final hasPerms = await _permissions.ensureBlePermissions();
+    if (isClosed) return;
+
     if (!hasPerms) {
       await OshAnalytics.logEvent(
         OshAnalyticsEvents.bleNearbyCheckFailed,
         parameters: {'reason': 'permission_denied'},
       );
-      emit(state.copyWith(
+      _emitIfOpen(state.copyWith(
         status: ProvisioningStatus.permissionDenied,
         deviceNearby: null,
         error: 'BLE permissions not granted',
@@ -61,9 +68,10 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
     }
 
     await _nearbySub?.cancel();
+    if (isClosed) return;
     _nearbySub = null;
 
-    emit(state.copyWith(
+    _emitIfOpen(state.copyWith(
       status: ProvisioningStatus.searchingNearby,
       deviceNearby: null,
       error: null,
@@ -71,7 +79,7 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
 
     _nearbySub = _observeDeviceNearby(serialNumber: serialNumber).listen(
       (isNearby) {
-        emit(state.copyWith(
+        _emitIfOpen(state.copyWith(
           status: ProvisioningStatus.searchingNearby,
           deviceNearby: isNearby,
           error: null,
@@ -85,7 +93,7 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
             parameters: {'reason': 'observe_failed'},
           ),
         );
-        emit(state.copyWith(
+        _emitIfOpen(state.copyWith(
           status: ProvisioningStatus.error,
           deviceNearby: null,
           error: 'Nearby check failed: $e',
@@ -110,31 +118,37 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
     required String secureCode,
   }) async {
     await OshAnalytics.logEvent(OshAnalyticsEvents.bleProvisionStarted);
+    if (isClosed) return;
+
     await _nearbySub?.cancel();
     _nearbySub = null;
 
     await ensureBleDisconnected();
+    if (isClosed) return;
 
     final hasPerms = await _permissions.ensureBlePermissions();
+    if (isClosed) return;
     if (!hasPerms) {
       await OshAnalytics.logEvent(
         OshAnalyticsEvents.bleConnectFailed,
         parameters: {'reason': 'permission_denied'},
       );
-      emit(state.copyWith(
+      _emitIfOpen(state.copyWith(
         status: ProvisioningStatus.permissionDenied,
         error: 'BLE permissions not granted',
       ));
       return;
     }
 
-    emit(state.copyWith(status: ProvisioningStatus.connectingBle, error: null));
+    _emitIfOpen(
+        state.copyWith(status: ProvisioningStatus.connectingBle, error: null));
 
     try {
       await _connectBleDevice(
           serialNumber: serialNumber, secureCode: secureCode);
       await OshAnalytics.logEvent(OshAnalyticsEvents.bleConnectSucceeded);
-      emit(
+      if (isClosed) return;
+      _emitIfOpen(
           state.copyWith(status: ProvisioningStatus.wifiScanIdle, error: null));
       await refreshScan();
     } catch (e, st) {
@@ -143,7 +157,7 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
         OshAnalyticsEvents.bleConnectFailed,
         parameters: {'reason': 'connect_failed'},
       );
-      emit(state.copyWith(
+      _emitIfOpen(state.copyWith(
           status: ProvisioningStatus.error,
           error: 'Failed to connect via BLE: $e'));
     }
@@ -151,9 +165,10 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
 
   Future<void> refreshScan() async {
     await _scanSub?.cancel();
+    if (isClosed) return;
     _scanSub = null;
 
-    emit(state.copyWith(
+    _emitIfOpen(state.copyWith(
       status: ProvisioningStatus.wifiScanInProgress,
       networks: const [],
       error: null,
@@ -161,22 +176,22 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
 
     _scanSub = _scanWifiNetworks().listen(
       (networks) {
-        emit(state.copyWith(
+        _emitIfOpen(state.copyWith(
             status: ProvisioningStatus.wifiScanInProgress, networks: networks));
       },
       onError: (e) {
         OshCrashReporter.logNonFatal(e, null, reason: "Wi-Fi scan failed");
-        emit(state.copyWith(
+        _emitIfOpen(state.copyWith(
             status: ProvisioningStatus.error, error: 'Wi-Fi scan failed: $e'));
       },
       onDone: () {
-        emit(state.copyWith(status: ProvisioningStatus.wifiScanDone));
+        _emitIfOpen(state.copyWith(status: ProvisioningStatus.wifiScanDone));
       },
     );
   }
 
   void selectNetwork(WifiNetwork network) {
-    emit(state.copyWith(
+    _emitIfOpen(state.copyWith(
       selectedNetwork: network,
       status: ProvisioningStatus.enterPassword,
       error: null,
@@ -188,9 +203,10 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
     if (network == null) return;
 
     await _wifiConnSub?.cancel();
+    if (isClosed) return;
     _wifiConnSub = null;
 
-    emit(state.copyWith(
+    _emitIfOpen(state.copyWith(
       status: ProvisioningStatus.wifiConnecting,
       lastConnectStatus: null,
       error: null,
@@ -219,7 +235,7 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
             ),
           );
         }
-        emit(state.copyWith(
+        _emitIfOpen(state.copyWith(
           lastConnectStatus: status,
           status: _mapConnectState(status),
         ));
@@ -234,7 +250,7 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
             },
           ),
         );
-        emit(state.copyWith(
+        _emitIfOpen(state.copyWith(
           status: ProvisioningStatus.error,
           error: 'Wi-Fi connect failed: $e',
         ));
@@ -243,7 +259,7 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
   }
 
   void resetForNewFlow() {
-    emit(const BleProvisioningState.initial());
+    _emitIfOpen(const BleProvisioningState.initial());
   }
 
   ProvisioningStatus _mapConnectState(WifiConnectStatus s) {
