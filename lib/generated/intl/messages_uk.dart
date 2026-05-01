@@ -404,7 +404,25 @@ class MessageLookup extends MessageLookupByLibrary {
       "Технічні деталі",
     ),
     "control": MessageLookupByLibrary.simpleMessage("Керування нагрівом"),
+    "controlLimits": MessageLookupByLibrary.simpleMessage("Захист підлоги"),
     "controlModel": MessageLookupByLibrary.simpleMessage("Модель керування"),
+    "controlModel_description": MessageLookupByLibrary.simpleMessage(
+      "Виберіть, як термостат регулює нагрів.",
+    ),
+    "controlModel_hysteresis_description": MessageLookupByLibrary.simpleMessage(
+      "Гістерезис вмикає нагрів нижче цільової температури мінус значення гістерезису та вимикає його на цільовій температурі.\nЦе просте пряме керування ON/OFF з обмеженням перемикання реле щонайменше 2 хв на кожен стан.",
+    ),
+    "controlModel_hysteresis_title": MessageLookupByLibrary.simpleMessage(
+      "Гістерезис",
+    ),
+    "controlModel_r2c_description": MessageLookupByLibrary.simpleMessage(
+      "R2C оцінює, як нагріваються та охолоджуються кімната і теплова маса, а потім коригує час увімкнення реле в межах 15-хвилинного циклу.\nЗазвичай краще підходить для більш інерційних систем опалення; перемикання реле обмежене щонайменше 2 хв на кожен стан.",
+    ),
+    "controlModel_r2c_title": MessageLookupByLibrary.simpleMessage("R2C"),
+    "controlModel_tpi_description": MessageLookupByLibrary.simpleMessage(
+      "TPI змінює час увімкнення реле в межах 10-хвилинного циклу, щоб утримувати опорну температуру близько до цільової.\nЗазвичай краще підходить для плавного утримання заданої температури; перемикання реле обмежене щонайменше 2 хв на кожен стан.",
+    ),
+    "controlModel_tpi_title": MessageLookupByLibrary.simpleMessage("TPI"),
     "deviceConnectedToWifi": MessageLookupByLibrary.simpleMessage(
       "Пристрій підключено до Wi‑Fi",
     ),
@@ -430,14 +448,32 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "displayLanguage": MessageLookupByLibrary.simpleMessage("Мова"),
     "hysteresis": MessageLookupByLibrary.simpleMessage("Гістерезис"),
+    "hysteresis_description": MessageLookupByLibrary.simpleMessage(
+      "Температурна дельта, яка використовується в режимі гістерезису.",
+    ),
     "maxFloorTempFailSafe": MessageLookupByLibrary.simpleMessage(
       "Дія при збої датчика підлоги",
+    ),
+    "maxFloorTempFailSafe_description": MessageLookupByLibrary.simpleMessage(
+      "Поведінка, коли дані від опорного датчика підлоги недоступні.",
+    ),
+    "maxFloorTempFailSafe_false_description": MessageLookupByLibrary.simpleMessage(
+      "Нагрів вимикається, коли дані від опорного датчика підлоги недоступні.",
+    ),
+    "maxFloorTempFailSafe_true_description": MessageLookupByLibrary.simpleMessage(
+      "Нагрів продовжується, коли дані від опорного датчика підлоги недоступні.",
     ),
     "maxFloorTempLimitEnabled": MessageLookupByLibrary.simpleMessage(
       "Обмеження температури підлоги",
     ),
+    "maxFloorTempLimitEnabled_description": MessageLookupByLibrary.simpleMessage(
+      "Використовувати задану максимальну температуру підлоги як ліміт нагріву.",
+    ),
     "maxFloorTemperature": MessageLookupByLibrary.simpleMessage(
       "Макс. температура підлоги",
+    ),
+    "maxFloorTemperature_description": MessageLookupByLibrary.simpleMessage(
+      "Коли підлога досягає цієї температури, нагрів буде вимкнено.",
     ),
     "offlineBleNotNearbyHint": MessageLookupByLibrary.simpleMessage(
       "Підійдіть ближче до пристрою, щоб налаштувати Wi‑Fi.",

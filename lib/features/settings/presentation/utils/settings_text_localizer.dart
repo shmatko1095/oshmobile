@@ -7,13 +7,76 @@ class SettingsTextLocalizer {
   const SettingsTextLocalizer();
 
   String groupTitle(BuildContext context, SettingsUiGroup group) {
-    final fallback = _fallbackGroupTitle(group);
-    return _lookup(context, key: group.id, fallback: fallback);
+    return _lookup(
+      context,
+      key: group.id,
+      fallback: _normalize(group.titleKey) ?? _normalize(group.id) ?? '',
+    );
   }
 
   String fieldTitle(BuildContext context, SettingsUiField field) {
-    final fallback = _fallbackFieldTitle(field);
-    return _lookup(context, key: field.id, fallback: fallback);
+    return _lookup(
+      context,
+      key: field.id,
+      fallback: _normalize(field.titleKey) ?? _normalize(field.path) ?? '',
+    );
+  }
+
+  String? fieldDescription(BuildContext context, SettingsUiField field) {
+    return _lookupOptional(
+      context,
+      key: '${field.id}_description',
+      fallback: field.descriptionKey,
+    );
+  }
+
+  String enumOptionTitle(
+    BuildContext context,
+    SettingsUiField field,
+    String value,
+  ) {
+    final option = field.enumOptions[value];
+    return _lookup(
+      context,
+      key: '${field.id}_${normalizeEnumValue(value)}_title',
+      fallback: _normalize(option?.titleKey) ?? _normalize(value) ?? value,
+    );
+  }
+
+  String? enumOptionDescription(
+    BuildContext context,
+    SettingsUiField field,
+    String value,
+  ) {
+    final option = field.enumOptions[value];
+    return _lookupOptional(
+      context,
+      key: '${field.id}_${normalizeEnumValue(value)}_description',
+      fallback: option?.descriptionKey,
+    );
+  }
+
+  String? booleanOptionDescription(
+    BuildContext context,
+    SettingsUiField field,
+    bool value,
+  ) {
+    final option = field.booleanOptions[value];
+    return _lookupOptional(
+      context,
+      key: '${field.id}_${value ? 'true' : 'false'}_description',
+      fallback: option?.descriptionKey,
+    );
+  }
+
+  static String normalizeEnumValue(String value) {
+    final normalized = value
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+    return normalized.isEmpty ? 'value' : normalized;
   }
 
   String _lookup(
@@ -21,28 +84,32 @@ class SettingsTextLocalizer {
     required String key,
     required String fallback,
   }) {
-    final normalizedFallback = _normalize(fallback) ?? '';
+    return _lookupOptional(
+          context,
+          key: key,
+          fallback: fallback,
+        ) ??
+        '';
+  }
+
+  String? _lookupOptional(
+    BuildContext context, {
+    required String key,
+    required String? fallback,
+  }) {
+    final normalizedFallback = _normalize(fallback);
     final normalizedKey = _normalize(key);
     if (normalizedKey == null) return normalizedFallback;
 
-    // Ensure localization delegate is resolved for this context.
     S.of(context);
 
     final localized = Intl.message(
-      normalizedFallback,
+      normalizedFallback ?? '',
       name: normalizedKey,
       desc: '',
       args: const [],
     );
     return _normalize(localized) ?? normalizedFallback;
-  }
-
-  String _fallbackGroupTitle(SettingsUiGroup group) {
-    return _normalize(group.titleKey) ?? _normalize(group.id) ?? '';
-  }
-
-  String _fallbackFieldTitle(SettingsUiField field) {
-    return _normalize(field.titleKey) ?? _normalize(field.path) ?? '';
   }
 
   String? _normalize(String? value) {

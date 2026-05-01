@@ -388,7 +388,25 @@ class MessageLookup extends MessageLookupByLibrary {
       "Technical details",
     ),
     "control": MessageLookupByLibrary.simpleMessage("Heating control"),
+    "controlLimits": MessageLookupByLibrary.simpleMessage("Floor protection"),
     "controlModel": MessageLookupByLibrary.simpleMessage("Control model"),
+    "controlModel_description": MessageLookupByLibrary.simpleMessage(
+      "Select how the thermostat regulates heating.",
+    ),
+    "controlModel_hysteresis_description": MessageLookupByLibrary.simpleMessage(
+      "Hysteresis turns heating ON below target minus the hysteresis value and OFF at the target temperature.\nThis is simple direct ON/OFF control with relay switching limited to at least 2 min per state.",
+    ),
+    "controlModel_hysteresis_title": MessageLookupByLibrary.simpleMessage(
+      "Hysteresis",
+    ),
+    "controlModel_r2c_description": MessageLookupByLibrary.simpleMessage(
+      "R2C estimates how the room and thermal mass heat and cool, then adjusts relay ON time within a 15 min cycle.\nUsually better for more inertial heating systems; relay switching is limited to at least 2 min per state.",
+    ),
+    "controlModel_r2c_title": MessageLookupByLibrary.simpleMessage("R2C"),
+    "controlModel_tpi_description": MessageLookupByLibrary.simpleMessage(
+      "TPI changes relay ON time within a 10 min cycle to keep the reference temperature near the target.\nUsually better for smooth setpoint holding; relay switching is limited to at least 2 min per state.",
+    ),
+    "controlModel_tpi_title": MessageLookupByLibrary.simpleMessage("TPI"),
     "deviceConnectedToWifi": MessageLookupByLibrary.simpleMessage(
       "Device connected to Wi-Fi",
     ),
@@ -410,14 +428,34 @@ class MessageLookup extends MessageLookupByLibrary {
     "displayIdleTime": MessageLookupByLibrary.simpleMessage("Idle dim timeout"),
     "displayLanguage": MessageLookupByLibrary.simpleMessage("Language"),
     "hysteresis": MessageLookupByLibrary.simpleMessage("Hysteresis"),
+    "hysteresis_description": MessageLookupByLibrary.simpleMessage(
+      "Temperature delta used when the hysteresis control mode is active.",
+    ),
     "maxFloorTempFailSafe": MessageLookupByLibrary.simpleMessage(
       "Floor sensor fail-safe",
     ),
+    "maxFloorTempFailSafe_description": MessageLookupByLibrary.simpleMessage(
+      "Behavior when floor reference sensor data is unavailable.",
+    ),
+    "maxFloorTempFailSafe_false_description": MessageLookupByLibrary.simpleMessage(
+      "Heating is turned off when floor reference sensor data is unavailable.",
+    ),
+    "maxFloorTempFailSafe_true_description":
+        MessageLookupByLibrary.simpleMessage(
+          "Heating continues when floor reference sensor data is unavailable.",
+        ),
     "maxFloorTempLimitEnabled": MessageLookupByLibrary.simpleMessage(
       "Floor temperature limit",
     ),
+    "maxFloorTempLimitEnabled_description":
+        MessageLookupByLibrary.simpleMessage(
+          "Use the configured maximum floor temperature as a heating limit.",
+        ),
     "maxFloorTemperature": MessageLookupByLibrary.simpleMessage(
       "Max floor temperature",
+    ),
+    "maxFloorTemperature_description": MessageLookupByLibrary.simpleMessage(
+      "When the floor reaches this temperature, heating will be turned off.",
     ),
     "offlineBleNotNearbyHint": MessageLookupByLibrary.simpleMessage(
       "Move closer to the device to set up Wi-Fi.",

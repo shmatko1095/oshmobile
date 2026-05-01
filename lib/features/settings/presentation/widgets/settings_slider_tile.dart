@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 /// - min/max labels at the bottom.
 class SettingsSliderTile extends StatelessWidget {
   final String title;
+  final String? subtitle;
   final double value;
   final double min;
   final double max;
@@ -18,6 +19,7 @@ class SettingsSliderTile extends StatelessWidget {
   const SettingsSliderTile({
     super.key,
     required this.title,
+    this.subtitle,
     required this.value,
     required this.min,
     required this.max,
@@ -47,7 +49,7 @@ class SettingsSliderTile extends StatelessWidget {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Row(
             children: [
               Expanded(
@@ -67,6 +69,20 @@ class SettingsSliderTile extends StatelessWidget {
             ],
           ),
         ),
+        if (subtitle != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                subtitle!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color:
+                      theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
           child: Slider(
@@ -78,7 +94,7 @@ class SettingsSliderTile extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           child: Row(
             children: [
               Text(

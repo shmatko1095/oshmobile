@@ -959,6 +959,16 @@ class S {
     return Intl.message('Heating control', name: 'control', desc: '', args: []);
   }
 
+  /// `Floor protection`
+  String get controlLimits {
+    return Intl.message(
+      'Floor protection',
+      name: 'controlLimits',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Active brightness`
   String get displayActiveBrightness {
     return Intl.message(
@@ -1049,11 +1059,91 @@ class S {
     );
   }
 
+  /// `Select how the thermostat regulates heating.`
+  String get controlModel_description {
+    return Intl.message(
+      'Select how the thermostat regulates heating.',
+      name: 'controlModel_description',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `TPI`
+  String get controlModel_tpi_title {
+    return Intl.message(
+      'TPI',
+      name: 'controlModel_tpi_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `TPI changes relay ON time within a 10 min cycle to keep the reference temperature near the target.\nUsually better for smooth setpoint holding; relay switching is limited to at least 2 min per state.`
+  String get controlModel_tpi_description {
+    return Intl.message(
+      'TPI changes relay ON time within a 10 min cycle to keep the reference temperature near the target.\nUsually better for smooth setpoint holding; relay switching is limited to at least 2 min per state.',
+      name: 'controlModel_tpi_description',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `R2C`
+  String get controlModel_r2c_title {
+    return Intl.message(
+      'R2C',
+      name: 'controlModel_r2c_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `R2C estimates how the room and thermal mass heat and cool, then adjusts relay ON time within a 15 min cycle.\nUsually better for more inertial heating systems; relay switching is limited to at least 2 min per state.`
+  String get controlModel_r2c_description {
+    return Intl.message(
+      'R2C estimates how the room and thermal mass heat and cool, then adjusts relay ON time within a 15 min cycle.\nUsually better for more inertial heating systems; relay switching is limited to at least 2 min per state.',
+      name: 'controlModel_r2c_description',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hysteresis`
+  String get controlModel_hysteresis_title {
+    return Intl.message(
+      'Hysteresis',
+      name: 'controlModel_hysteresis_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hysteresis turns heating ON below target minus the hysteresis value and OFF at the target temperature.\nThis is simple direct ON/OFF control with relay switching limited to at least 2 min per state.`
+  String get controlModel_hysteresis_description {
+    return Intl.message(
+      'Hysteresis turns heating ON below target minus the hysteresis value and OFF at the target temperature.\nThis is simple direct ON/OFF control with relay switching limited to at least 2 min per state.',
+      name: 'controlModel_hysteresis_description',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Max floor temperature`
   String get maxFloorTemperature {
     return Intl.message(
       'Max floor temperature',
       name: 'maxFloorTemperature',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `When the floor reaches this temperature, heating will be turned off.`
+  String get maxFloorTemperature_description {
+    return Intl.message(
+      'When the floor reaches this temperature, heating will be turned off.',
+      name: 'maxFloorTemperature_description',
       desc: '',
       args: [],
     );
@@ -1069,6 +1159,16 @@ class S {
     );
   }
 
+  /// `Use the configured maximum floor temperature as a heating limit.`
+  String get maxFloorTempLimitEnabled_description {
+    return Intl.message(
+      'Use the configured maximum floor temperature as a heating limit.',
+      name: 'maxFloorTempLimitEnabled_description',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Floor sensor fail-safe`
   String get maxFloorTempFailSafe {
     return Intl.message(
@@ -1079,9 +1179,49 @@ class S {
     );
   }
 
+  /// `Behavior when floor reference sensor data is unavailable.`
+  String get maxFloorTempFailSafe_description {
+    return Intl.message(
+      'Behavior when floor reference sensor data is unavailable.',
+      name: 'maxFloorTempFailSafe_description',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Heating continues when floor reference sensor data is unavailable.`
+  String get maxFloorTempFailSafe_true_description {
+    return Intl.message(
+      'Heating continues when floor reference sensor data is unavailable.',
+      name: 'maxFloorTempFailSafe_true_description',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Heating is turned off when floor reference sensor data is unavailable.`
+  String get maxFloorTempFailSafe_false_description {
+    return Intl.message(
+      'Heating is turned off when floor reference sensor data is unavailable.',
+      name: 'maxFloorTempFailSafe_false_description',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Hysteresis`
   String get hysteresis {
     return Intl.message('Hysteresis', name: 'hysteresis', desc: '', args: []);
+  }
+
+  /// `Temperature delta used when the hysteresis control mode is active.`
+  String get hysteresis_description {
+    return Intl.message(
+      'Temperature delta used when the hysteresis control mode is active.',
+      name: 'hysteresis_description',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Update`

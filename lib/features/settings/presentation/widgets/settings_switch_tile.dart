@@ -26,8 +26,8 @@ class SettingsSwitchTile extends StatelessWidget {
       children: [
         ListTile(
           dense: true,
-          visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
-          minVerticalPadding: subtitle != null ? 4 : 2,
+          visualDensity: const VisualDensity(horizontal: 0, vertical: -1),
+          minVerticalPadding: subtitle != null ? 8 : 6,
           title: Text(
             title,
             style: theme.textTheme.bodyLarge,
@@ -50,7 +50,7 @@ class SettingsSwitchTile extends StatelessWidget {
             ),
           ),
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         ),
         if (showDivider) const Divider(height: 1),
       ],

@@ -46,11 +46,15 @@ class ConfigurationDomainContract {
 class ConfigurationSettingsGroup {
   final String id;
   final String title;
+  final String? parentGroupId;
+  final String presentation;
   final List<String> controlIds;
 
   const ConfigurationSettingsGroup({
     required this.id,
     required this.title,
+    this.parentGroupId,
+    this.presentation = 'inline',
     required this.controlIds,
   });
 
@@ -58,6 +62,8 @@ class ConfigurationSettingsGroup {
     return ConfigurationSettingsGroup(
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
+      parentGroupId: json['parent_group_id']?.toString(),
+      presentation: json['presentation']?.toString() ?? 'inline',
       controlIds: (json['control_ids'] as List? ?? const <dynamic>[])
           .map((item) => item.toString())
           .toList(growable: false),
@@ -209,6 +215,8 @@ class ConfigurationControlUi {
   final num? max;
   final num? step;
   final List<String> enumValues;
+  final Map<String, ConfigurationControlValueDisplay> enumDisplay;
+  final Map<bool, ConfigurationControlBooleanDisplay> booleanDisplay;
 
   const ConfigurationControlUi({
     this.widget,
@@ -218,9 +226,41 @@ class ConfigurationControlUi {
     this.max,
     this.step,
     this.enumValues = const <String>[],
+    this.enumDisplay = const <String, ConfigurationControlValueDisplay>{},
+    this.booleanDisplay = const <bool, ConfigurationControlBooleanDisplay>{},
   });
 
   factory ConfigurationControlUi.fromJson(Map<String, dynamic> json) {
+    final enumDisplay = <String, ConfigurationControlValueDisplay>{};
+    final enumDisplayRaw = json['enum_display'];
+    if (enumDisplayRaw is Map) {
+      enumDisplayRaw.forEach((key, value) {
+        if (value is! Map) return;
+        enumDisplay[key.toString()] = ConfigurationControlValueDisplay.fromJson(
+          value.cast<String, dynamic>(),
+        );
+      });
+    }
+
+    final booleanDisplay = <bool, ConfigurationControlBooleanDisplay>{};
+    final booleanDisplayRaw = json['boolean_display'];
+    if (booleanDisplayRaw is Map) {
+      booleanDisplayRaw.forEach((key, value) {
+        if (value is! Map) return;
+
+        final normalizedKey = key.toString().trim().toLowerCase();
+        if (normalizedKey == 'true') {
+          booleanDisplay[true] = ConfigurationControlBooleanDisplay.fromJson(
+            value.cast<String, dynamic>(),
+          );
+        } else if (normalizedKey == 'false') {
+          booleanDisplay[false] = ConfigurationControlBooleanDisplay.fromJson(
+            value.cast<String, dynamic>(),
+          );
+        }
+      });
+    }
+
     return ConfigurationControlUi(
       widget: json['widget']?.toString(),
       fieldType: json['field_type']?.toString(),
@@ -231,6 +271,41 @@ class ConfigurationControlUi {
       enumValues: (json['enum_values'] as List? ?? const <dynamic>[])
           .map((item) => item.toString())
           .toList(growable: false),
+      enumDisplay: Map.unmodifiable(enumDisplay),
+      booleanDisplay: Map.unmodifiable(booleanDisplay),
+    );
+  }
+}
+
+class ConfigurationControlValueDisplay {
+  final String title;
+  final String description;
+
+  const ConfigurationControlValueDisplay({
+    required this.title,
+    required this.description,
+  });
+
+  factory ConfigurationControlValueDisplay.fromJson(Map<String, dynamic> json) {
+    return ConfigurationControlValueDisplay(
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+    );
+  }
+}
+
+class ConfigurationControlBooleanDisplay {
+  final String description;
+
+  const ConfigurationControlBooleanDisplay({
+    required this.description,
+  });
+
+  factory ConfigurationControlBooleanDisplay.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return ConfigurationControlBooleanDisplay(
+      description: json['description']?.toString() ?? '',
     );
   }
 }
@@ -238,6 +313,7 @@ class ConfigurationControlUi {
 class ConfigurationControl {
   final String id;
   final String title;
+  final String description;
   final ConfigurationReadBinding? read;
   final ConfigurationWriteBinding? write;
   final ConfigurationControlUi? ui;
@@ -245,6 +321,7 @@ class ConfigurationControl {
   const ConfigurationControl({
     required this.id,
     required this.title,
+    required this.description,
     this.read,
     this.write,
     this.ui,
@@ -258,6 +335,7 @@ class ConfigurationControl {
     return ConfigurationControl(
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
       read: readRaw is Map
           ? ConfigurationReadBinding.fromJson(readRaw.cast<String, dynamic>())
           : null,
