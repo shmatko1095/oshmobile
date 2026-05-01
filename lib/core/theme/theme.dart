@@ -22,6 +22,18 @@ class AppTheme {
       surfaceTintColor: AppPalette.backgroundColorLight,
       backgroundColor: AppPalette.backgroundColorLight,
       foregroundColor: AppPalette.lightTextPrimary,
+      titleTextStyle: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: AppPalette.lightTextPrimary,
+      ),
+      toolbarTextStyle: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: AppPalette.lightTextPrimary,
+      ),
+      iconTheme: IconThemeData(color: AppPalette.lightTextPrimary),
+      actionsIconTheme: IconThemeData(color: AppPalette.lightTextPrimary),
       elevation: 0,
     ),
     chipTheme: const ChipThemeData(
@@ -35,20 +47,32 @@ class AppTheme {
           displayColor: AppPalette.lightTextPrimary,
         )
         .copyWith(
-          titleLarge:
-              const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-          titleMedium:
-              const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          titleSmall:
-              const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          titleLarge: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: AppPalette.lightTextPrimary,
+          ),
+          titleMedium: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppPalette.lightTextPrimary,
+          ),
+          titleSmall: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppPalette.lightTextPrimary,
+          ),
           bodyLarge:
               const TextStyle(fontSize: 16, color: AppPalette.lightTextPrimary),
           bodyMedium:
               const TextStyle(fontSize: 14, color: AppPalette.lightTextPrimary),
           bodySmall: const TextStyle(
               fontSize: 12, color: AppPalette.lightTextSecondary),
-          labelLarge:
-              const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          labelLarge: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppPalette.lightTextPrimary,
+          ),
         ),
     dividerColor: AppPalette.lightBorder,
     dividerTheme: const DividerThemeData(
@@ -120,6 +144,18 @@ class AppTheme {
       surfaceTintColor: AppPalette.canvas,
       backgroundColor: AppPalette.canvas,
       foregroundColor: AppPalette.textPrimary,
+      titleTextStyle: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: AppPalette.textPrimary,
+      ),
+      toolbarTextStyle: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: AppPalette.textPrimary,
+      ),
+      iconTheme: IconThemeData(color: AppPalette.textPrimary),
+      actionsIconTheme: IconThemeData(color: AppPalette.textPrimary),
       elevation: 0,
     ),
     chipTheme: const ChipThemeData(
@@ -133,20 +169,32 @@ class AppTheme {
           displayColor: AppPalette.textPrimary,
         )
         .copyWith(
-          titleLarge:
-              const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-          titleMedium:
-              const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          titleSmall:
-              const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          titleLarge: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: AppPalette.textPrimary,
+          ),
+          titleMedium: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppPalette.textPrimary,
+          ),
+          titleSmall: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppPalette.textPrimary,
+          ),
           bodyLarge:
               const TextStyle(fontSize: 16, color: AppPalette.textPrimary),
           bodyMedium:
               const TextStyle(fontSize: 14, color: AppPalette.textPrimary),
           bodySmall:
               const TextStyle(fontSize: 12, color: AppPalette.textSecondary),
-          labelLarge:
-              const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          labelLarge: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppPalette.textPrimary,
+          ),
         ),
     inputDecorationTheme: AppComponentThemes.darkInputDecoration,
     dividerColor: AppPalette.separator,

@@ -255,7 +255,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                         );
                       },
                       onDecTemp: () {
-                        final next = (p.temp - 0.5).clamp(5.0, 35.0);
+                        final next = (p.temp - 0.5).clamp(10.0, 40.0);
                         final newTemp = double.parse(next.toStringAsFixed(1));
                         _patchPoint(
                           facade,
@@ -266,7 +266,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                         );
                       },
                       onIncTemp: () {
-                        final next = (p.temp + 0.5).clamp(5.0, 35.0);
+                        final next = (p.temp + 0.5).clamp(10.0, 40.0);
                         final newTemp = double.parse(next.toStringAsFixed(1));
                         _patchPoint(
                           facade,

@@ -144,6 +144,9 @@ class AppComponentThemes {
 
   static const ListTileThemeData lightListTileTheme = ListTileThemeData(
     contentPadding: EdgeInsets.symmetric(horizontal: 16),
+    iconColor: AppPalette.lightTextSecondary,
+    textColor: AppPalette.lightTextPrimary,
+    dense: false,
   );
 
   static const ListTileThemeData darkListTileTheme = ListTileThemeData(
