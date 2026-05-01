@@ -546,9 +546,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "updateAtMidnight": MessageLookupByLibrary.simpleMessage(
       "Оновлювати опівночі",
     ),
+    "updateAtMidnight_false_description": MessageLookupByLibrary.simpleMessage(
+      "Оновлення будуть завантажені та встановлені автоматично одразу після появи.",
+    ),
+    "updateAtMidnight_true_description": MessageLookupByLibrary.simpleMessage(
+      "Оновлення будуть завантажені та встановлені автоматично вночі, коли стануть доступними.",
+    ),
     "updateAutoUpdateEnabled": MessageLookupByLibrary.simpleMessage(
       "Автооновлення",
     ),
+    "updateAutoUpdateEnabled_false_description":
+        MessageLookupByLibrary.simpleMessage("Автоматичні оновлення вимкнені."),
+    "updateAutoUpdateEnabled_true_description":
+        MessageLookupByLibrary.simpleMessage(
+          "Оновлення будуть завантажені та встановлені автоматично одразу після появи.",
+        ),
     "updates": MessageLookupByLibrary.simpleMessage("Оновлення"),
     "wifiConnectFailed": MessageLookupByLibrary.simpleMessage(
       "Не вдалося підключитися до Wi‑Fi",

@@ -1029,11 +1029,51 @@ class S {
     );
   }
 
+  /// `Updates will be downloaded and installed automatically as soon as they are available.`
+  String get updateAutoUpdateEnabled_true_description {
+    return Intl.message(
+      'Updates will be downloaded and installed automatically as soon as they are available.',
+      name: 'updateAutoUpdateEnabled_true_description',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Automatic updates are turned off.`
+  String get updateAutoUpdateEnabled_false_description {
+    return Intl.message(
+      'Automatic updates are turned off.',
+      name: 'updateAutoUpdateEnabled_false_description',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Update at midnight`
   String get updateAtMidnight {
     return Intl.message(
       'Update at midnight',
       name: 'updateAtMidnight',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Updates will be downloaded and installed automatically at night when available.`
+  String get updateAtMidnight_true_description {
+    return Intl.message(
+      'Updates will be downloaded and installed automatically at night when available.',
+      name: 'updateAtMidnight_true_description',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Updates will be downloaded and installed automatically as soon as they are available.`
+  String get updateAtMidnight_false_description {
+    return Intl.message(
+      'Updates will be downloaded and installed automatically as soon as they are available.',
+      name: 'updateAtMidnight_false_description',
       desc: '',
       args: [],
     );

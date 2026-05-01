@@ -528,9 +528,23 @@ class MessageLookup extends MessageLookupByLibrary {
     "updateAtMidnight": MessageLookupByLibrary.simpleMessage(
       "Update at midnight",
     ),
+    "updateAtMidnight_false_description": MessageLookupByLibrary.simpleMessage(
+      "Updates will be downloaded and installed automatically as soon as they are available.",
+    ),
+    "updateAtMidnight_true_description": MessageLookupByLibrary.simpleMessage(
+      "Updates will be downloaded and installed automatically at night when available.",
+    ),
     "updateAutoUpdateEnabled": MessageLookupByLibrary.simpleMessage(
       "Auto update",
     ),
+    "updateAutoUpdateEnabled_false_description":
+        MessageLookupByLibrary.simpleMessage(
+          "Automatic updates are turned off.",
+        ),
+    "updateAutoUpdateEnabled_true_description":
+        MessageLookupByLibrary.simpleMessage(
+          "Updates will be downloaded and installed automatically as soon as they are available.",
+        ),
     "updates": MessageLookupByLibrary.simpleMessage("Updates"),
     "wifiConnectFailed": MessageLookupByLibrary.simpleMessage(
       "Failed to connect to Wi-Fi",
