@@ -81,7 +81,7 @@
   "GoToLogin": "Перейти до входу",
   "AddDevice": "Додати пристрій",
   "NoDevicesYet": "Пристроїв ще немає",
-  "OpenDevices": "Відкрити пристрої",
+  "OpenDevices": "Обрати пристрії",
   "RemoveDeviceConfirmTitle": "Видалити пристрій?",
   "RemoveDeviceConfirmMessage": "Пристрій {deviceName} буде видалено з вашого списку. Ви зможете додати його знову, відсканувавши QR-код.",
   "@RemoveDeviceConfirmMessage": {

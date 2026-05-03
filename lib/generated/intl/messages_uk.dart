@@ -204,7 +204,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "OK": MessageLookupByLibrary.simpleMessage("OK"),
     "Offline": MessageLookupByLibrary.simpleMessage("Офлайн"),
     "Online": MessageLookupByLibrary.simpleMessage("Онлайн"),
-    "OpenDevices": MessageLookupByLibrary.simpleMessage("Відкрити пристрої"),
+    "OpenDevices": MessageLookupByLibrary.simpleMessage("Обрати пристрії"),
     "Password": MessageLookupByLibrary.simpleMessage("Пароль"),
     "PasswordConfirmation": MessageLookupByLibrary.simpleMessage(
       "Підтвердження пароля",
