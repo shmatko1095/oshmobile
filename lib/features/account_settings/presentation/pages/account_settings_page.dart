@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
@@ -5,14 +7,20 @@ import 'package:oshmobile/core/common/cubits/app/app_theme_cubit.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/entities/jwt_user_data.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
+import 'package:oshmobile/core/network/app_client/app_client_metadata_provider.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
-import 'package:oshmobile/features/account_settings/domain/usecases/request_my_account_deletion.dart';
-import 'package:oshmobile/init_dependencies.dart';
+import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/account_settings/domain/models/app_theme_preference.dart';
+import 'package:oshmobile/features/account_settings/domain/usecases/request_my_account_deletion.dart';
 import 'package:oshmobile/features/account_settings/presentation/cubit/account_settings_cubit.dart';
 import 'package:oshmobile/features/account_settings/presentation/cubit/account_settings_state.dart';
-import 'package:oshmobile/features/account_settings/presentation/pages/account_deletion_request_page.dart';
+import 'package:oshmobile/features/account_settings/presentation/pages/account_profile_page.dart';
+import 'package:oshmobile/features/account_settings/presentation/widgets/account_settings_section.dart';
+import 'package:oshmobile/features/startup/domain/repositories/startup_client_policy_repository.dart';
+import 'package:oshmobile/features/startup/presentation/widgets/mobile_policy_update_flow.dart';
+import 'package:oshmobile/features/startup/presentation/widgets/startup_recommend_update_dialog.dart';
 import 'package:oshmobile/generated/l10n.dart';
+import 'package:oshmobile/init_dependencies.dart';
 
 class AccountSettingsPage extends StatelessWidget {
   const AccountSettingsPage({super.key});
@@ -30,6 +38,8 @@ class AccountSettingsPage extends StatelessWidget {
       create: (_) => AccountSettingsCubit(
         appThemeCubit: context.read<AppThemeCubit>(),
         requestMyAccountDeletion: locator<RequestMyAccountDeletion>(),
+        clientPolicyRepository: locator<StartupClientPolicyRepository>(),
+        appClientMetadataProvider: locator<AppClientMetadataProvider>(),
       ),
       child: const _AccountSettingsView(),
     );
@@ -56,22 +66,105 @@ class _AccountSettingsView extends StatelessWidget {
         title: Text(s.ProfileAndSettings),
       ),
       body: SafeArea(
-        child: BlocBuilder<AccountSettingsCubit, AccountSettingsState>(
+        child: BlocConsumer<AccountSettingsCubit, AccountSettingsState>(
+          listenWhen: (previous, current) {
+            return previous.versionCheckOutcomeId !=
+                    current.versionCheckOutcomeId &&
+                current.pendingVersionCheckOutcome != null;
+          },
+          listener: (context, state) async {
+            await _handleVersionCheckOutcome(context, state);
+          },
           builder: (context, state) {
             return ListView(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
               children: [
                 _buildProfileCard(context, userName, email, isDemoMode),
                 const SizedBox(height: 12),
-                _buildApplicationSettingsCard(context, state),
+                _buildThemeSection(context, state),
                 const SizedBox(height: 12),
-                _buildAccountSettingsCard(context, state, email),
+                _buildAboutAppSection(context, state),
               ],
             );
           },
         ),
       ),
     );
+  }
+
+  Future<void> _handleVersionCheckOutcome(
+    BuildContext context,
+    AccountSettingsState state,
+  ) async {
+    final outcome = state.pendingVersionCheckOutcome;
+    if (outcome == null) {
+      return;
+    }
+
+    final cubit = context.read<AccountSettingsCubit>();
+    cubit.clearVersionCheckOutcome();
+
+    switch (outcome.type) {
+      case AccountSettingsVersionCheckOutcomeType.latestInstalled:
+        SnackBarUtils.showSuccess(
+          context: context,
+          content: S.of(context).LatestVersionInstalled,
+        );
+      case AccountSettingsVersionCheckOutcomeType.failed:
+        SnackBarUtils.showFail(
+          context: context,
+          content: S.of(context).UnableToCheckForUpdates,
+        );
+      case AccountSettingsVersionCheckOutcomeType.recommendUpdate:
+        final policy = outcome.policy;
+        if (policy == null) {
+          SnackBarUtils.showFail(
+            context: context,
+            content: S.of(context).UnableToCheckForUpdates,
+          );
+          return;
+        }
+
+        await showStartupRecommendUpdateDialog(
+          context: context,
+          onUpdateNow: () async {
+            Navigator.of(context, rootNavigator: true).pop();
+            await launchMobilePolicyUpdate(
+              source: 'settings_manual_check',
+              storeUrl: policy.storeUrl,
+              status: outcome.status,
+              policy: policy,
+            );
+          },
+          onLater: () async {
+            Navigator.of(context, rootNavigator: true).pop();
+            await cubit.onRecommendUpdateLaterTapped(policy: policy);
+          },
+        );
+      case AccountSettingsVersionCheckOutcomeType.requireUpdate:
+        final policy = outcome.policy;
+        if (policy == null) {
+          SnackBarUtils.showFail(
+            context: context,
+            content: S.of(context).UnableToCheckForUpdates,
+          );
+          return;
+        }
+
+        await showBlockingStartupForceUpdateFlow(
+          context: context,
+          onUpdateNow: () {
+            unawaited(
+              launchMobilePolicyUpdate(
+                source: 'settings_manual_check',
+                storeUrl: policy.storeUrl,
+                status: outcome.status,
+                policy: policy,
+              ),
+            );
+          },
+        );
+    }
   }
 
   Widget _buildProfileCard(
@@ -94,10 +187,25 @@ class _AccountSettingsView extends StatelessWidget {
         isDark ? AppPalette.textSecondary : AppPalette.lightTextMuted;
 
     return AppSolidCard(
+      onTap: () => _openProfile(context),
       backgroundColor: surface,
-      padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+      borderColor: isDark ? AppPalette.borderSoft : AppPalette.lightBorder,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Row(
         children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: avatarSurface,
+            child: Text(
+              avatarText,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: titleColor,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,7 +218,7 @@ class _AccountSettingsView extends StatelessWidget {
                         color: titleColor,
                       ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   email,
                   maxLines: 1,
@@ -128,7 +236,8 @@ class _AccountSettingsView extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: AppPalette.accentPrimary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius:
+                          BorderRadius.circular(AppPalette.radiusPill),
                     ),
                     child: Text(
                       s.DemoMode,
@@ -144,136 +253,92 @@ class _AccountSettingsView extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: avatarSurface,
-            child: Text(
-              avatarText,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: titleColor,
-              ),
-            ),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: AppPalette.lightTextDisabled,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildApplicationSettingsCard(
+  Widget _buildThemeSection(
     BuildContext context,
     AccountSettingsState state,
   ) {
     final s = S.of(context);
     final cubit = context.read<AccountSettingsCubit>();
 
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppPalette.radiusXl),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-            child: Text(
-              s.ApplicationSettings,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
-                  ),
-            ),
-          ),
-          _buildThemeTile(
-            context,
-            title: s.ThemeSystem,
-            value: AppThemePreference.system,
-            groupValue: state.selectedTheme,
-            onSelected: cubit.changeTheme,
-            showDivider: true,
-          ),
-          _buildThemeTile(
-            context,
-            title: s.ThemeDark,
-            value: AppThemePreference.dark,
-            groupValue: state.selectedTheme,
-            onSelected: cubit.changeTheme,
-            showDivider: true,
-          ),
-          _buildThemeTile(
-            context,
-            title: s.ThemeLight,
-            value: AppThemePreference.light,
-            groupValue: state.selectedTheme,
-            onSelected: cubit.changeTheme,
-            showDivider: false,
-          ),
-        ],
-      ),
+    return AccountSettingsSection(
+      title: s.Theme,
+      children: [
+        _buildThemeTile(
+          context,
+          title: s.ThemeSystem,
+          value: AppThemePreference.system,
+          groupValue: state.selectedTheme,
+          onSelected: cubit.changeTheme,
+          showDivider: true,
+        ),
+        _buildThemeTile(
+          context,
+          title: s.ThemeDark,
+          value: AppThemePreference.dark,
+          groupValue: state.selectedTheme,
+          onSelected: cubit.changeTheme,
+          showDivider: true,
+        ),
+        _buildThemeTile(
+          context,
+          title: s.ThemeLight,
+          value: AppThemePreference.light,
+          groupValue: state.selectedTheme,
+          onSelected: cubit.changeTheme,
+          showDivider: false,
+        ),
+      ],
     );
   }
 
-  Widget _buildAccountSettingsCard(
+  Widget _buildAboutAppSection(
     BuildContext context,
     AccountSettingsState state,
-    String email,
   ) {
     final s = S.of(context);
+    final cubit = context.read<AccountSettingsCubit>();
+    final versionLabel = state.installedVersionLabel.trim().isEmpty
+        ? '—'
+        : state.installedVersionLabel;
 
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppPalette.radiusXl),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-            child: Text(
-              s.AccountSettings,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
-                  ),
-            ),
+    return AccountSettingsSection(
+      title: s.AboutApp,
+      children: [
+        AccountSettingsActionTile(
+          title: s.AppVersion,
+          subtitle: versionLabel,
+          leading: const Icon(
+            Icons.system_update_rounded,
+            color: AppPalette.accentPrimary,
           ),
-          ListTile(
-            leading: const Icon(
-              Icons.delete_forever_rounded,
-              color: AppPalette.destructiveFg,
-            ),
-            title: Text(
-              s.DeleteAccount,
-              style: const TextStyle(
-                color: AppPalette.destructiveFg,
-              ),
-            ),
-            trailing: state.isDeleting
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(
-                    Icons.chevron_right_rounded,
-                    color: AppPalette.lightTextDisabled,
-                  ),
-            onTap: state.isDeleting
-                ? null
-                : () => _onDeleteAccountTap(context, email),
-          ),
-        ],
-      ),
+          trailing: state.isCheckingVersion
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppPalette.lightTextDisabled,
+                ),
+          onTap: state.isCheckingVersion ? null : cubit.checkAppVersion,
+        ),
+      ],
     );
   }
 
-  Future<void> _onDeleteAccountTap(BuildContext context, String email) async {
+  Future<void> _openProfile(BuildContext context) async {
     await Navigator.of(context).push(
-      AccountDeletionRequestPage.route(
-        cubit: context.read<AccountSettingsCubit>(),
-        email: email,
-      ),
+      AccountProfilePage.route(cubit: context.read<AccountSettingsCubit>()),
     );
   }
 
@@ -287,31 +352,15 @@ class _AccountSettingsView extends StatelessWidget {
   }) {
     final selected = groupValue == value;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ListTile(
-          title: Text(
-            title,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          trailing: Icon(
-            selected ? Icons.check_circle_rounded : Icons.circle_outlined,
-            color: selected
-                ? AppPalette.accentPrimary
-                : AppPalette.lightTextDisabled,
-          ),
-          onTap: () => onSelected(value),
-          selected: selected,
-        ),
-        if (showDivider)
-          const Divider(
-            height: 1,
-            thickness: 0.8,
-            indent: 16,
-            endIndent: 16,
-          ),
-      ],
+    return AccountSettingsActionTile(
+      title: title,
+      trailing: Icon(
+        selected ? Icons.check_circle_rounded : Icons.circle_outlined,
+        color:
+            selected ? AppPalette.accentPrimary : AppPalette.lightTextDisabled,
+      ),
+      onTap: () => onSelected(value),
+      showDivider: showDivider,
     );
   }
 }

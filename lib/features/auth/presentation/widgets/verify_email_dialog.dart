@@ -1,18 +1,29 @@
-part of 'signin_page.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
+import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:oshmobile/generated/l10n.dart';
 
-void _showVerifyDialog(BuildContext context, String email) {
-  showCupertinoDialog(
+void showVerifyEmailDialog({
+  required BuildContext context,
+  required String email,
+}) {
+  showCupertinoDialog<void>(
     context: context,
-    builder: (BuildContext context) {
+    builder: (dialogContext) {
       return VerifyEmailDialog(email: email);
     },
   );
 }
 
 class VerifyEmailDialog extends StatefulWidget {
-  final String email;
+  const VerifyEmailDialog({
+    required this.email,
+    super.key,
+  });
 
-  const VerifyEmailDialog({super.key, required this.email});
+  final String email;
 
   @override
   State<VerifyEmailDialog> createState() => _VerifyEmailDialogState();
@@ -30,15 +41,14 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final titleStyle = Theme.of(context).textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-          color: theme.colorScheme.onSurface,
-        );
-    final contentStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color:
-              isDark ? AppPalette.textSecondary : AppPalette.lightTextSecondary,
-          height: 1.4,
-        );
+    final titleStyle = theme.textTheme.titleLarge?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: theme.colorScheme.onSurface,
+    );
+    final contentStyle = theme.textTheme.bodyMedium?.copyWith(
+      color: isDark ? AppPalette.textSecondary : AppPalette.lightTextSecondary,
+      height: 1.4,
+    );
     final emailStyle = theme.textTheme.bodyMedium?.copyWith(
       fontWeight: FontWeight.w700,
       color: theme.colorScheme.primary,
@@ -107,7 +117,7 @@ class _VerifyEmailDialogState extends State<VerifyEmailDialog> {
             ),
           ),
         CupertinoDialogAction(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.of(context).pop(),
           child: Text(
             _isEmailSent ? S.of(context).OK : S.of(context).Cancel,
             style: _isEmailSent

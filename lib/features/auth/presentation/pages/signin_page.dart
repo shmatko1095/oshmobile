@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screen_view.dart';
@@ -12,9 +11,8 @@ import 'package:oshmobile/features/auth/presentation/pages/signup_page.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/auth_field.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/auth_page_scaffold.dart';
 import 'package:oshmobile/features/auth/presentation/widgets/elevated_button.dart';
+import 'package:oshmobile/features/auth/presentation/widgets/verify_email_dialog.dart';
 import 'package:oshmobile/generated/l10n.dart';
-
-part 'verify_email_alert.dart';
 
 class SignInPage extends StatefulWidget {
   static MaterialPageRoute<void> route() => MaterialPageRoute<void>(
@@ -64,7 +62,10 @@ class _SignInPageState extends State<SignInPage> {
 
   void _onAuthStateChanged(BuildContext context, AuthState state) {
     if (state is AuthFailedEmailNotVerified) {
-      _showVerifyDialog(context, _emailController.text.trim());
+      showVerifyEmailDialog(
+        context: context,
+        email: _emailController.text.trim(),
+      );
     } else if (state is AuthFailedInvalidUserCredentials) {
       SnackBarUtils.showFail(
         context: context,

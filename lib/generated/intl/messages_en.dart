@@ -53,9 +53,11 @@ class MessageLookup extends MessageLookupByLibrary {
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "About": MessageLookupByLibrary.simpleMessage("About"),
+    "AboutApp": MessageLookupByLibrary.simpleMessage("About app"),
     "Account": MessageLookupByLibrary.simpleMessage("Account"),
     "AccountSettings": MessageLookupByLibrary.simpleMessage("Account settings"),
     "AddDevice": MessageLookupByLibrary.simpleMessage("Add device"),
+    "AppVersion": MessageLookupByLibrary.simpleMessage("App version"),
     "ApplicationSettings": MessageLookupByLibrary.simpleMessage(
       "Application settings",
     ),
@@ -171,6 +173,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "InvalidValue": MessageLookupByLibrary.simpleMessage("Invalid value"),
     "LastName": MessageLookupByLibrary.simpleMessage("Last name"),
     "LastUpdateAt": m4,
+    "LatestVersionInstalled": MessageLookupByLibrary.simpleMessage(
+      "Latest version installed",
+    ),
     "ManualTemperature": MessageLookupByLibrary.simpleMessage(
       "Manual temperature",
     ),
@@ -216,6 +221,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "PointCameraToQR": MessageLookupByLibrary.simpleMessage(
       "Point the camera at the QR code",
     ),
+    "Profile": MessageLookupByLibrary.simpleMessage("Profile"),
     "ProfileAndSettings": MessageLookupByLibrary.simpleMessage(
       "Profile & settings",
     ),
@@ -302,6 +308,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Average"),
     "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Maximum"),
     "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Minimum"),
+    "Theme": MessageLookupByLibrary.simpleMessage("Theme"),
     "ThemeDark": MessageLookupByLibrary.simpleMessage("Dark"),
     "ThemeLight": MessageLookupByLibrary.simpleMessage("Light"),
     "ThemeSystem": MessageLookupByLibrary.simpleMessage("System"),
@@ -332,6 +339,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "Tips": MessageLookupByLibrary.simpleMessage("Tips"),
     "TryDemo": MessageLookupByLibrary.simpleMessage("Try Demo"),
     "TueShort": MessageLookupByLibrary.simpleMessage("Tue"),
+    "UnableToCheckForUpdates": MessageLookupByLibrary.simpleMessage(
+      "Unable to check for updates",
+    ),
     "Undo": MessageLookupByLibrary.simpleMessage("Undo"),
     "UnknownDeviceType": MessageLookupByLibrary.simpleMessage(
       "Unknown device type",
@@ -344,10 +354,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "UnsupportedDeviceMessage": MessageLookupByLibrary.simpleMessage(
       "This device model is not yet supported by the current version of the app. You can try refreshing the data, opening the device settings, or sending a report.",
     ),
+    "UnverifiedEmail": MessageLookupByLibrary.simpleMessage(
+      "Email not verified",
+    ),
     "Update": MessageLookupByLibrary.simpleMessage("Update"),
     "UserAlreadyExist": MessageLookupByLibrary.simpleMessage(
       "User already exist",
     ),
+    "VerifiedEmail": MessageLookupByLibrary.simpleMessage("Email verified"),
     "VerifyYourEmail": MessageLookupByLibrary.simpleMessage(
       "Verify your email",
     ),

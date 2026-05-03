@@ -2,17 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'package:oshmobile/core/common/cubits/app/app_lifecycle_cubit.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
-import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/features/auth/presentation/pages/signin_page.dart';
 import 'package:oshmobile/features/home/presentation/pages/home_page.dart';
 import 'package:oshmobile/features/startup/presentation/cubit/startup_cubit.dart';
 import 'package:oshmobile/features/startup/presentation/cubit/startup_state.dart';
 import 'package:oshmobile/features/startup/presentation/pages/no_internet_page.dart';
 import 'package:oshmobile/features/startup/presentation/pages/startup_force_update_page.dart';
+import 'package:oshmobile/features/startup/presentation/widgets/mobile_policy_update_flow.dart';
 import 'package:oshmobile/features/startup/presentation/widgets/startup_loader.dart';
 import 'package:oshmobile/features/startup/presentation/widgets/startup_recommend_update_dialog.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -118,35 +117,12 @@ class _StartupGateState extends State<StartupGate> {
 
   Future<void> _handleUpdateNowTap({required String source}) async {
     final cubit = context.read<StartupCubit>();
-    await cubit.onUpdateNowTapped(source: source);
-
-    final rawUrl = cubit.currentStoreUrl;
-    if (rawUrl == null || rawUrl.trim().isEmpty) {
-      return;
-    }
-
-    final uri = Uri.tryParse(rawUrl.trim());
-    if (uri == null) {
-      await OshCrashReporter.logNonFatal(
-        FormatException('Invalid store URL: $rawUrl'),
-        StackTrace.current,
-        reason: 'Unable to open app store URL',
-      );
-      return;
-    }
-
-    final launched = await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
+    await launchMobilePolicyUpdate(
+      source: source,
+      storeUrl: cubit.currentStoreUrl,
+      status: cubit.state.policyStatus,
+      policy: cubit.state.policy,
     );
-
-    if (!launched) {
-      await OshCrashReporter.logNonFatal(
-        StateError('launchUrl returned false: $uri'),
-        StackTrace.current,
-        reason: 'Unable to open app store URL',
-      );
-    }
   }
 }
 

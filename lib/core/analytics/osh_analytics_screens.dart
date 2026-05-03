@@ -26,5 +26,6 @@ final class OshAnalyticsScreens {
   static const sensorRename = 'sensor_rename';
   static const sensorCalibration = 'sensor_calibration';
   static const accountSettings = 'account_settings';
+  static const accountProfile = 'account_profile';
   static const accountDeletionRequest = 'account_deletion_request';
 }

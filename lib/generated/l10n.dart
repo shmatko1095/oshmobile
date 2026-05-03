@@ -99,6 +99,11 @@ class S {
     );
   }
 
+  /// `Profile`
+  String get Profile {
+    return Intl.message('Profile', name: 'Profile', desc: '', args: []);
+  }
+
   /// `Application settings`
   String get ApplicationSettings {
     return Intl.message(
@@ -122,6 +127,61 @@ class S {
   /// `Account`
   String get Account {
     return Intl.message('Account', name: 'Account', desc: '', args: []);
+  }
+
+  /// `Theme`
+  String get Theme {
+    return Intl.message('Theme', name: 'Theme', desc: '', args: []);
+  }
+
+  /// `About app`
+  String get AboutApp {
+    return Intl.message('About app', name: 'AboutApp', desc: '', args: []);
+  }
+
+  /// `App version`
+  String get AppVersion {
+    return Intl.message('App version', name: 'AppVersion', desc: '', args: []);
+  }
+
+  /// `Email verified`
+  String get VerifiedEmail {
+    return Intl.message(
+      'Email verified',
+      name: 'VerifiedEmail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Email not verified`
+  String get UnverifiedEmail {
+    return Intl.message(
+      'Email not verified',
+      name: 'UnverifiedEmail',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Latest version installed`
+  String get LatestVersionInstalled {
+    return Intl.message(
+      'Latest version installed',
+      name: 'LatestVersionInstalled',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unable to check for updates`
+  String get UnableToCheckForUpdates {
+    return Intl.message(
+      'Unable to check for updates',
+      name: 'UnableToCheckForUpdates',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `System`

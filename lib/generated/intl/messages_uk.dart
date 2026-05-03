@@ -53,11 +53,13 @@ class MessageLookup extends MessageLookupByLibrary {
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "About": MessageLookupByLibrary.simpleMessage("Про пристрій"),
+    "AboutApp": MessageLookupByLibrary.simpleMessage("Про застосунок"),
     "Account": MessageLookupByLibrary.simpleMessage("Обліковий запис"),
     "AccountSettings": MessageLookupByLibrary.simpleMessage(
       "Налаштування акаунта",
     ),
     "AddDevice": MessageLookupByLibrary.simpleMessage("Додати пристрій"),
+    "AppVersion": MessageLookupByLibrary.simpleMessage("Версія застосунку"),
     "ApplicationSettings": MessageLookupByLibrary.simpleMessage(
       "Налаштування застосунку",
     ),
@@ -173,6 +175,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "InvalidValue": MessageLookupByLibrary.simpleMessage("Недійсне значення"),
     "LastName": MessageLookupByLibrary.simpleMessage("Прізвище"),
     "LastUpdateAt": m4,
+    "LatestVersionInstalled": MessageLookupByLibrary.simpleMessage(
+      "Встановлено останню версію",
+    ),
     "ManualTemperature": MessageLookupByLibrary.simpleMessage(
       "Ручна температура",
     ),
@@ -218,6 +223,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "PointCameraToQR": MessageLookupByLibrary.simpleMessage(
       "Наведіть камеру на QR-код",
     ),
+    "Profile": MessageLookupByLibrary.simpleMessage("Профіль"),
     "ProfileAndSettings": MessageLookupByLibrary.simpleMessage(
       "Профіль і налаштування",
     ),
@@ -316,6 +322,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Середнє"),
     "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Максимум"),
     "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Мінімум"),
+    "Theme": MessageLookupByLibrary.simpleMessage("Тема"),
     "ThemeDark": MessageLookupByLibrary.simpleMessage("Темна"),
     "ThemeLight": MessageLookupByLibrary.simpleMessage("Світла"),
     "ThemeSystem": MessageLookupByLibrary.simpleMessage("Системна"),
@@ -346,6 +353,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "Tips": MessageLookupByLibrary.simpleMessage("Поради"),
     "TryDemo": MessageLookupByLibrary.simpleMessage("Спробувати демо"),
     "TueShort": MessageLookupByLibrary.simpleMessage("Вт"),
+    "UnableToCheckForUpdates": MessageLookupByLibrary.simpleMessage(
+      "Не вдалося перевірити оновлення",
+    ),
     "Undo": MessageLookupByLibrary.simpleMessage("Скасувати"),
     "UnknownDeviceType": MessageLookupByLibrary.simpleMessage(
       "Невідомий тип пристрою",
@@ -360,10 +370,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "UnsupportedDeviceMessage": MessageLookupByLibrary.simpleMessage(
       "Ця модель пристрою поки не підтримується поточною версією застосунку. Спробуйте оновити дані, відкрити налаштування пристрою або надіслати звіт.",
     ),
+    "UnverifiedEmail": MessageLookupByLibrary.simpleMessage(
+      "Email не підтверджено",
+    ),
     "Update": MessageLookupByLibrary.simpleMessage("Оновити"),
     "UserAlreadyExist": MessageLookupByLibrary.simpleMessage(
       "Користувач уже існує",
     ),
+    "VerifiedEmail": MessageLookupByLibrary.simpleMessage("Email підтверджено"),
     "VerifyYourEmail": MessageLookupByLibrary.simpleMessage(
       "Підтвердьте email",
     ),
