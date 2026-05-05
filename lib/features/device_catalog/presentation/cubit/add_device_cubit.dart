@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
+import 'package:oshmobile/core/presentation/errors/rest_error_localizer.dart';
 import 'package:oshmobile/features/device_catalog/domain/contracts/device_catalog_sync.dart';
 import 'package:oshmobile/features/device_catalog/domain/usecases/assign_device.dart';
 
@@ -35,6 +36,7 @@ class AddDeviceCubit extends Cubit<AddDeviceState> {
 
     await result.fold<Future<void>>(
       (failure) async {
+        final message = RestErrorLocalizer.resolveFailure(failure);
         unawaited(
           OshCrashReporter.logNonFatal(
             failure,
@@ -46,13 +48,14 @@ class AddDeviceCubit extends Cubit<AddDeviceState> {
               'serial': serial,
               'failure_type': failure.type.name,
               'failure_message': failure.message ?? '',
+              'failure_code': failure.code ?? '',
             },
           ),
         );
         emit(
           state.copyWith(
             status: AddDeviceStatus.failure,
-            errorMessage: failure.message,
+            errorMessage: message,
           ),
         );
       },

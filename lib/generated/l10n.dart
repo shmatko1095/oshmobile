@@ -324,6 +324,136 @@ class S {
     );
   }
 
+  /// `Please check the entered data and try again.`
+  String get ApiValidationError {
+    return Intl.message(
+      'Please check the entered data and try again.',
+      name: 'ApiValidationError',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The requested item was not found.`
+  String get ApiNotFound {
+    return Intl.message(
+      'The requested item was not found.',
+      name: 'ApiNotFound',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This action conflicts with the current state. Refresh and try again.`
+  String get ApiConflict {
+    return Intl.message(
+      'This action conflicts with the current state. Refresh and try again.',
+      name: 'ApiConflict',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This action cannot be completed right now.`
+  String get ApiPreconditionFailed {
+    return Intl.message(
+      'This action cannot be completed right now.',
+      name: 'ApiPreconditionFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `You do not have access to perform this action.`
+  String get ApiPermissionDenied {
+    return Intl.message(
+      'You do not have access to perform this action.',
+      name: 'ApiPermissionDenied',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Your session has expired. Please sign in again.`
+  String get ApiUnauthenticated {
+    return Intl.message(
+      'Your session has expired. Please sign in again.',
+      name: 'ApiUnauthenticated',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Service is temporarily unavailable. Try again in a moment.`
+  String get ApiServiceUnavailable {
+    return Intl.message(
+      'Service is temporarily unavailable. Try again in a moment.',
+      name: 'ApiServiceUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The request took too long. Try again.`
+  String get ApiTimeout {
+    return Intl.message(
+      'The request took too long. Try again.',
+      name: 'ApiTimeout',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Too many requests. Please wait and try again.`
+  String get ApiTooManyRequests {
+    return Intl.message(
+      'Too many requests. Please wait and try again.',
+      name: 'ApiTooManyRequests',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Something went wrong. Try again.`
+  String get ApiInternalError {
+    return Intl.message(
+      'Something went wrong. Try again.',
+      name: 'ApiInternalError',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This account deletion confirmation link is invalid.`
+  String get DeleteAccountTokenInvalid {
+    return Intl.message(
+      'This account deletion confirmation link is invalid.',
+      name: 'DeleteAccountTokenInvalid',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This account deletion confirmation link was not found.`
+  String get DeleteAccountTokenNotFound {
+    return Intl.message(
+      'This account deletion confirmation link was not found.',
+      name: 'DeleteAccountTokenNotFound',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This account deletion confirmation link was already used or has expired.`
+  String get DeleteAccountTokenExpired {
+    return Intl.message(
+      'This account deletion confirmation link was already used or has expired.',
+      name: 'DeleteAccountTokenExpired',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `First name`
   String get FirstName {
     return Intl.message('First name', name: 'FirstName', desc: '', args: []);
@@ -2212,6 +2342,56 @@ class S {
   /// `Error`
   String get MqttStatusError {
     return Intl.message('Error', name: 'MqttStatusError', desc: '', args: []);
+  }
+
+  /// `This action is not available for the device right now.`
+  String get MqttOperationNotAllowed {
+    return Intl.message(
+      'This action is not available for the device right now.',
+      name: 'MqttOperationNotAllowed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This app version does not support the device protocol required for this action.`
+  String get MqttUnsupportedSchema {
+    return Intl.message(
+      'This app version does not support the device protocol required for this action.',
+      name: 'MqttUnsupportedSchema',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The device rejected the request data.`
+  String get MqttInvalidParams {
+    return Intl.message(
+      'The device rejected the request data.',
+      name: 'MqttInvalidParams',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The device does not support this operation.`
+  String get MqttMethodNotFound {
+    return Intl.message(
+      'The device does not support this operation.',
+      name: 'MqttMethodNotFound',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The device is busy. Try again in a moment.`
+  String get MqttDeviceBusy {
+    return Intl.message(
+      'The device is busy. Try again in a moment.',
+      name: 'MqttDeviceBusy',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `Last update: {time}`

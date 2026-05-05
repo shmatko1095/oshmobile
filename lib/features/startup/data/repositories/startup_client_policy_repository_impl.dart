@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:oshmobile/core/network/app_client/app_client_metadata_provider.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_service.dart';
+import 'package:oshmobile/core/network/rest_response_error_mapper.dart';
 import 'package:oshmobile/features/startup/domain/models/mobile_app_version.dart';
 import 'package:oshmobile/features/startup/domain/models/mobile_client_policy.dart';
 import 'package:oshmobile/features/startup/domain/models/mobile_client_policy_decision.dart';
@@ -162,7 +163,10 @@ class StartupClientPolicyRepositoryImpl
 
   _ParsedPolicyResponse _parseResponse(Response<dynamic> response) {
     if (!response.isSuccessful) {
-      throw _PolicyHttpException(response.statusCode);
+      throw _PolicyHttpException(
+        response.statusCode,
+        RestResponseErrorMapper.messageFromResponse(response),
+      );
     }
 
     final body = _decodeMap(response.body);
@@ -341,7 +345,8 @@ class _ParsedPolicyResponse {
 }
 
 class _PolicyHttpException implements Exception {
-  const _PolicyHttpException(this.httpStatus);
+  const _PolicyHttpException(this.httpStatus, this.message);
 
   final int httpStatus;
+  final String message;
 }

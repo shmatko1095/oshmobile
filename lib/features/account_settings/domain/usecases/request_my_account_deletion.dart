@@ -19,7 +19,7 @@ class RequestMyAccountDeletion implements UseCase<void, NoParams> {
       MobileV1ResponseMapper.ensureSuccess(response);
       return right(null);
     } on ServerException catch (e) {
-      return left(Failure.unexpected(e.message));
+      return left(Failure.fromServerException(e));
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
     }

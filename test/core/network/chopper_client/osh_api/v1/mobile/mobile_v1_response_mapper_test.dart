@@ -43,4 +43,44 @@ void main() {
       throwsA(isA<ServerException>()),
     );
   });
+
+  test('requireJsonList preserves backend code, message, and details', () {
+    final response = Response<dynamic>(
+      http.Response('', 410),
+      <String, dynamic>{
+        'code': 'token_used_or_expired',
+        'message': 'Token is used or expired',
+        'details': <String, dynamic>{
+          'request_id': 'req-1',
+        },
+      },
+    );
+
+    try {
+      MobileV1ResponseMapper.requireJsonList(response);
+      fail('Expected ServerException');
+    } on ServerException catch (error) {
+      expect(error.code, 'token_used_or_expired');
+      expect(error.message, 'Token is used or expired');
+      expect(error.details, <String, String>{'request_id': 'req-1'});
+      expect(error.toString(), 'Token is used or expired');
+    }
+  });
+
+  test('requireJsonList maps legacy reason-only payload as code', () {
+    final response = Response<dynamic>(
+      http.Response('', 404),
+      <String, dynamic>{
+        'reason': 'policy_not_found',
+      },
+    );
+
+    try {
+      MobileV1ResponseMapper.requireJsonList(response);
+      fail('Expected ServerException');
+    } on ServerException catch (error) {
+      expect(error.code, 'policy_not_found');
+      expect(error.message, 'HTTP 404');
+    }
+  });
 }

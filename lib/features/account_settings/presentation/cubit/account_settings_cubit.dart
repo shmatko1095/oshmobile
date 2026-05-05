@@ -8,6 +8,7 @@ import 'package:oshmobile/core/common/cubits/app/app_theme_cubit.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/app_client/app_client_metadata.dart';
 import 'package:oshmobile/core/network/app_client/app_client_metadata_provider.dart';
+import 'package:oshmobile/core/presentation/errors/rest_error_localizer.dart';
 import 'package:oshmobile/core/usecase/usecase.dart';
 import 'package:oshmobile/features/account_settings/domain/models/app_theme_preference.dart';
 import 'package:oshmobile/features/account_settings/domain/usecases/request_my_account_deletion.dart';
@@ -177,7 +178,10 @@ class AccountSettingsCubit extends Cubit<AccountSettingsState> {
     final result = await _requestMyAccountDeletion(NoParams());
     await result.fold(
       (failure) => throw StateError(
-        failure.message ?? 'Account deletion request failed',
+        RestErrorLocalizer.resolveFailure(
+          failure,
+          fallback: 'Account deletion request failed',
+        ),
       ),
       (_) => OshAnalytics.logEvent(OshAnalyticsEvents.accountDeletionRequested),
     );

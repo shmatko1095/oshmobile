@@ -57,6 +57,36 @@ class MessageLookup extends MessageLookupByLibrary {
     "Account": MessageLookupByLibrary.simpleMessage("Account"),
     "AccountSettings": MessageLookupByLibrary.simpleMessage("Account settings"),
     "AddDevice": MessageLookupByLibrary.simpleMessage("Add device"),
+    "ApiConflict": MessageLookupByLibrary.simpleMessage(
+      "This action conflicts with the current state. Refresh and try again.",
+    ),
+    "ApiInternalError": MessageLookupByLibrary.simpleMessage(
+      "Something went wrong. Try again.",
+    ),
+    "ApiNotFound": MessageLookupByLibrary.simpleMessage(
+      "The requested item was not found.",
+    ),
+    "ApiPermissionDenied": MessageLookupByLibrary.simpleMessage(
+      "You do not have access to perform this action.",
+    ),
+    "ApiPreconditionFailed": MessageLookupByLibrary.simpleMessage(
+      "This action cannot be completed right now.",
+    ),
+    "ApiServiceUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Service is temporarily unavailable. Try again in a moment.",
+    ),
+    "ApiTimeout": MessageLookupByLibrary.simpleMessage(
+      "The request took too long. Try again.",
+    ),
+    "ApiTooManyRequests": MessageLookupByLibrary.simpleMessage(
+      "Too many requests. Please wait and try again.",
+    ),
+    "ApiUnauthenticated": MessageLookupByLibrary.simpleMessage(
+      "Your session has expired. Please sign in again.",
+    ),
+    "ApiValidationError": MessageLookupByLibrary.simpleMessage(
+      "Please check the entered data and try again.",
+    ),
     "AppVersion": MessageLookupByLibrary.simpleMessage("App version"),
     "ApplicationSettings": MessageLookupByLibrary.simpleMessage(
       "Application settings",
@@ -98,6 +128,15 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "DeleteAccountEmailFlowTitle": MessageLookupByLibrary.simpleMessage(
       "Confirm account deletion",
+    ),
+    "DeleteAccountTokenExpired": MessageLookupByLibrary.simpleMessage(
+      "This account deletion confirmation link was already used or has expired.",
+    ),
+    "DeleteAccountTokenInvalid": MessageLookupByLibrary.simpleMessage(
+      "This account deletion confirmation link is invalid.",
+    ),
+    "DeleteAccountTokenNotFound": MessageLookupByLibrary.simpleMessage(
+      "This account deletion confirmation link was not found.",
     ),
     "DeletePoint": MessageLookupByLibrary.simpleMessage("Delete point"),
     "DeleteSensor": MessageLookupByLibrary.simpleMessage("Delete sensor"),
@@ -185,8 +224,23 @@ class MessageLookup extends MessageLookupByLibrary {
     "ModeRange": MessageLookupByLibrary.simpleMessage("Range"),
     "ModeWeekly": MessageLookupByLibrary.simpleMessage("Weekly"),
     "MonShort": MessageLookupByLibrary.simpleMessage("Mon"),
+    "MqttDeviceBusy": MessageLookupByLibrary.simpleMessage(
+      "The device is busy. Try again in a moment.",
+    ),
+    "MqttInvalidParams": MessageLookupByLibrary.simpleMessage(
+      "The device rejected the request data.",
+    ),
+    "MqttMethodNotFound": MessageLookupByLibrary.simpleMessage(
+      "The device does not support this operation.",
+    ),
+    "MqttOperationNotAllowed": MessageLookupByLibrary.simpleMessage(
+      "This action is not available for the device right now.",
+    ),
     "MqttStatusError": MessageLookupByLibrary.simpleMessage("Error"),
     "MqttStatusUpdating": MessageLookupByLibrary.simpleMessage("Updating"),
+    "MqttUnsupportedSchema": MessageLookupByLibrary.simpleMessage(
+      "This app version does not support the device protocol required for this action.",
+    ),
     "Name": MessageLookupByLibrary.simpleMessage("Name"),
     "Next": MessageLookupByLibrary.simpleMessage("Next"),
     "NextAt": m5,

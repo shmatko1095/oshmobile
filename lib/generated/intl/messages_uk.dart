@@ -59,6 +59,36 @@ class MessageLookup extends MessageLookupByLibrary {
       "Налаштування акаунта",
     ),
     "AddDevice": MessageLookupByLibrary.simpleMessage("Додати пристрій"),
+    "ApiConflict": MessageLookupByLibrary.simpleMessage(
+      "Цю дію не можна виконати через конфлікт поточного стану. Оновіть дані й спробуйте знову.",
+    ),
+    "ApiInternalError": MessageLookupByLibrary.simpleMessage(
+      "Щось пішло не так. Спробуйте ще раз.",
+    ),
+    "ApiNotFound": MessageLookupByLibrary.simpleMessage(
+      "Запитаний об\'єкт не знайдено.",
+    ),
+    "ApiPermissionDenied": MessageLookupByLibrary.simpleMessage(
+      "У вас немає доступу до цієї дії.",
+    ),
+    "ApiPreconditionFailed": MessageLookupByLibrary.simpleMessage(
+      "Цю дію зараз неможливо виконати.",
+    ),
+    "ApiServiceUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Сервіс тимчасово недоступний. Спробуйте трохи пізніше.",
+    ),
+    "ApiTimeout": MessageLookupByLibrary.simpleMessage(
+      "Запит виконувався надто довго. Спробуйте ще раз.",
+    ),
+    "ApiTooManyRequests": MessageLookupByLibrary.simpleMessage(
+      "Забагато запитів. Зачекайте й спробуйте ще раз.",
+    ),
+    "ApiUnauthenticated": MessageLookupByLibrary.simpleMessage(
+      "Сесію завершено. Увійдіть знову.",
+    ),
+    "ApiValidationError": MessageLookupByLibrary.simpleMessage(
+      "Перевірте введені дані та спробуйте ще раз.",
+    ),
     "AppVersion": MessageLookupByLibrary.simpleMessage("Версія застосунку"),
     "ApplicationSettings": MessageLookupByLibrary.simpleMessage(
       "Налаштування застосунку",
@@ -100,6 +130,15 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "DeleteAccountEmailFlowTitle": MessageLookupByLibrary.simpleMessage(
       "Підтвердьте видалення акаунта",
+    ),
+    "DeleteAccountTokenExpired": MessageLookupByLibrary.simpleMessage(
+      "Посилання для підтвердження видалення акаунта вже використане або прострочене.",
+    ),
+    "DeleteAccountTokenInvalid": MessageLookupByLibrary.simpleMessage(
+      "Посилання для підтвердження видалення акаунта некоректне.",
+    ),
+    "DeleteAccountTokenNotFound": MessageLookupByLibrary.simpleMessage(
+      "Посилання для підтвердження видалення акаунта не знайдено.",
     ),
     "DeletePoint": MessageLookupByLibrary.simpleMessage("Видалити точку"),
     "DeleteSensor": MessageLookupByLibrary.simpleMessage("Видалити датчик"),
@@ -187,8 +226,23 @@ class MessageLookup extends MessageLookupByLibrary {
     "ModeRange": MessageLookupByLibrary.simpleMessage("Діапазон"),
     "ModeWeekly": MessageLookupByLibrary.simpleMessage("Щотижня"),
     "MonShort": MessageLookupByLibrary.simpleMessage("Пн"),
+    "MqttDeviceBusy": MessageLookupByLibrary.simpleMessage(
+      "Пристрій зайнятий. Спробуйте ще раз за мить.",
+    ),
+    "MqttInvalidParams": MessageLookupByLibrary.simpleMessage(
+      "Пристрій відхилив дані запиту.",
+    ),
+    "MqttMethodNotFound": MessageLookupByLibrary.simpleMessage(
+      "Пристрій не підтримує цю операцію.",
+    ),
+    "MqttOperationNotAllowed": MessageLookupByLibrary.simpleMessage(
+      "Ця дія зараз недоступна для пристрою.",
+    ),
     "MqttStatusError": MessageLookupByLibrary.simpleMessage("Помилка"),
     "MqttStatusUpdating": MessageLookupByLibrary.simpleMessage("Оновлення"),
+    "MqttUnsupportedSchema": MessageLookupByLibrary.simpleMessage(
+      "Поточна версія застосунку не підтримує протокол пристрою, потрібний для цієї дії.",
+    ),
     "Name": MessageLookupByLibrary.simpleMessage("Назва"),
     "Next": MessageLookupByLibrary.simpleMessage("Далі"),
     "NextAt": m5,

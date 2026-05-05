@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/core/presentation/errors/mqtt_error_localizer.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
+import 'package:oshmobile/core/network/mqtt/json_rpc_errors.dart';
 import 'package:oshmobile/features/sensors/presentation/utils/sensors_patch_schema_validator.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
@@ -117,7 +119,9 @@ class _SensorCalibrationPageState extends State<SensorCalibrationPage> {
       if (!mounted) return;
       SnackBarUtils.showFail(
         context: context,
-        content: error.toString(),
+        content: error is JsonRpcException
+            ? MqttErrorLocalizer.resolveException(error)
+            : error.toString(),
       );
     } finally {
       if (mounted) {

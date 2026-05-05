@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
+import 'package:oshmobile/core/presentation/errors/rest_error_localizer.dart';
 import 'package:oshmobile/features/device_catalog/domain/contracts/device_catalog_sync.dart';
 import 'package:oshmobile/features/device_management/domain/usecases/remove_device.dart';
 import 'package:oshmobile/features/device_management/domain/usecases/rename_device.dart';
@@ -45,6 +46,7 @@ class DeviceManagementCubit extends Cubit<DeviceManagementState> {
 
     await result.fold<Future<void>>(
       (failure) async {
+        final message = RestErrorLocalizer.resolveFailure(failure);
         unawaited(
           OshCrashReporter.logNonFatal(
             failure,
@@ -58,6 +60,7 @@ class DeviceManagementCubit extends Cubit<DeviceManagementState> {
               'description_length': description.length,
               'failure_type': failure.type.name,
               'failure_message': failure.message ?? '',
+              'failure_code': failure.code ?? '',
             },
           ),
         );
@@ -65,7 +68,7 @@ class DeviceManagementCubit extends Cubit<DeviceManagementState> {
           state.copyWith(
             status: DeviceManagementStatus.failure,
             action: DeviceManagementAction.rename,
-            errorMessage: failure.message,
+            errorMessage: message,
           ),
         );
       },
@@ -115,6 +118,7 @@ class DeviceManagementCubit extends Cubit<DeviceManagementState> {
 
     await result.fold<Future<void>>(
       (failure) async {
+        final message = RestErrorLocalizer.resolveFailure(failure);
         unawaited(
           OshCrashReporter.logNonFatal(
             failure,
@@ -127,6 +131,7 @@ class DeviceManagementCubit extends Cubit<DeviceManagementState> {
               'serial': serial,
               'failure_type': failure.type.name,
               'failure_message': failure.message ?? '',
+              'failure_code': failure.code ?? '',
             },
           ),
         );
@@ -134,7 +139,7 @@ class DeviceManagementCubit extends Cubit<DeviceManagementState> {
           state.copyWith(
             status: DeviceManagementStatus.failure,
             action: DeviceManagementAction.remove,
-            errorMessage: failure.message,
+            errorMessage: message,
           ),
         );
       },

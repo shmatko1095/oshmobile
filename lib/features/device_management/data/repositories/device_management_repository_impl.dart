@@ -18,7 +18,7 @@ class DeviceManagementRepositoryImpl implements DeviceManagementRepository {
       await dataSource.removeDevice(serial: serial);
       return right(null);
     } on ServerException catch (e) {
-      return left(Failure.unexpected(e.message));
+      return left(Failure.fromServerException(e));
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
     }
@@ -32,7 +32,7 @@ class DeviceManagementRepositoryImpl implements DeviceManagementRepository {
       final result = await dataSource.getDeviceUsers(serial: serial);
       return right(result);
     } on ServerException catch (e) {
-      return left(Failure.unexpected(e.message));
+      return left(Failure.fromServerException(e));
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
     }
@@ -52,7 +52,7 @@ class DeviceManagementRepositoryImpl implements DeviceManagementRepository {
       );
       return right(null);
     } on ServerException catch (e) {
-      return left(Failure.unexpected(e.message));
+      return left(Failure.fromServerException(e));
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
     }

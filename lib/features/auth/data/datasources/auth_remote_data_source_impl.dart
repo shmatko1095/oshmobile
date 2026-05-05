@@ -9,6 +9,7 @@ import 'package:oshmobile/core/network/chopper_client/osh_api/v1/users/requests/
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/users/requests/send_reset_password_email_request.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/users/requests/send_verification_email_request.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/users/users_v1_service.dart';
+import 'package:oshmobile/core/network/rest_response_error_mapper.dart';
 import 'package:oshmobile/core/secrets/app_secrets.dart';
 import 'package:oshmobile/features/auth/data/datasources/auth_remote_data_source.dart';
 
@@ -66,7 +67,7 @@ class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
     if (response.isSuccessful && response.body != null) {
       return Session.fromJson(response.body);
     } else {
-      throw ServerException(response.error as String);
+      throw RestResponseErrorMapper.toServerException(response);
     }
   }
 
@@ -98,7 +99,7 @@ class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
       if (error.endsWith("Conflict")) {
         throw const ConflictException();
       } else {
-        throw ServerException(response.error as String);
+        throw RestResponseErrorMapper.toServerException(response);
       }
     }
   }
@@ -113,7 +114,7 @@ class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
         request: SendResetPasswordEmailRequest(email: email));
 
     if (!response.isSuccessful) {
-      throw ServerException(response.error as String);
+      throw RestResponseErrorMapper.toServerException(response);
     }
   }
 
@@ -127,7 +128,7 @@ class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
         request: SendVerificationEmailRequest(email: email));
 
     if (!response.isSuccessful) {
-      throw ServerException(response.error as String);
+      throw RestResponseErrorMapper.toServerException(response);
     }
   }
 
@@ -141,7 +142,7 @@ class OshAuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
       String accessToken = Session.fromJson(response.body).typedAccessToken;
       return accessToken;
     } else {
-      throw ServerException(response.error as String);
+      throw RestResponseErrorMapper.toServerException(response);
     }
   }
 }

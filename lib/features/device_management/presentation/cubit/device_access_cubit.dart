@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/entities/jwt_user_data.dart';
+import 'package:oshmobile/core/presentation/errors/rest_error_localizer.dart';
 import 'package:oshmobile/features/device_management/domain/models/device_assigned_user.dart';
 import 'package:oshmobile/features/device_management/domain/usecases/get_device_users.dart';
 
@@ -34,11 +35,12 @@ class DeviceAccessCubit extends Cubit<DeviceAccessState> {
 
     result.fold(
       (failure) {
+        final message = RestErrorLocalizer.resolveFailure(failure);
         emit(
           state.copyWith(
             status: DeviceAccessStatus.failure,
             currentUserUuid: currentUserUuid.isEmpty ? null : currentUserUuid,
-            errorMessage: failure.message,
+            errorMessage: message,
           ),
         );
       },

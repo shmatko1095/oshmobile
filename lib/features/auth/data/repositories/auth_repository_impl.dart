@@ -35,7 +35,7 @@ class AuthRepositoryImpl implements AuthRepository {
       //   return left(Failure.noInternetConnection());
       // }
     } on ServerException catch (e) {
-      return left(Failure.unexpected(e.message));
+      return left(Failure.fromServerException(e));
     } on InvalidUserCredentialsException catch (_) {
       return left(Failure.invalidUserCredentials());
     } on EmailNotVerifiedException catch (_) {
@@ -69,7 +69,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       return right(session.copyWith(authProvider: 'google'));
     } on ServerException catch (e) {
-      return left(Failure.unexpected(e.message));
+      return left(Failure.fromServerException(e));
     } catch (e, st) {
       AppLog.error(
         'signInWithGoogle via keycloak_wrapper failed',
@@ -86,7 +86,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final session = await authRemoteDataSource.signInDemo();
       return right(session);
     } on ServerException catch (e) {
-      return left(Failure.unexpected(e.message));
+      return left(Failure.fromServerException(e));
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
     }
@@ -114,7 +114,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on ConflictException catch (_) {
       return left(Failure.conflict());
     } on ServerException catch (e) {
-      return left(Failure.unexpected(e.message));
+      return left(Failure.fromServerException(e));
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
     }
@@ -134,7 +134,7 @@ class AuthRepositoryImpl implements AuthRepository {
       //   return left(Failure.noInternetConnection());
       // }
     } on ServerException catch (e) {
-      return left(Failure.unexpected(e.message));
+      return left(Failure.fromServerException(e));
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
     }
@@ -150,7 +150,7 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       return right(null);
     } on ServerException catch (e) {
-      return left(Failure.unexpected(e.message));
+      return left(Failure.fromServerException(e));
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
     }

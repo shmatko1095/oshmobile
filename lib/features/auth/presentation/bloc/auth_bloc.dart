@@ -6,6 +6,7 @@ import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/core/error/failures.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
+import 'package:oshmobile/core/presentation/errors/rest_error_localizer.dart';
 import 'package:oshmobile/core/usecase/usecase.dart';
 import 'package:oshmobile/features/auth/domain/usecases/reset_password.dart';
 import 'package:oshmobile/features/auth/domain/usecases/sign_in.dart';
@@ -169,9 +170,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(const AuthFailedInvalidUserCredentials());
         return;
       case FailureType.unexpected:
+        final message = RestErrorLocalizer.resolveFailure(failure);
         OshCrashReporter.log(
             "AuthBloc: Unexpected failure: ${failure.message}");
-        emit(AuthFailedUnexpected(failure.message));
+        emit(AuthFailedUnexpected(message));
         return;
       case FailureType.conflict:
         emit(const AuthConflict());

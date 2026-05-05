@@ -22,7 +22,7 @@ class DeviceCatalogRepositoryImpl implements DeviceCatalogRepository {
       );
       return right(null);
     } on ServerException catch (e) {
-      return left(Failure.unexpected(e.message));
+      return left(Failure.fromServerException(e));
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
     }
@@ -34,7 +34,7 @@ class DeviceCatalogRepositoryImpl implements DeviceCatalogRepository {
       final result = await dataSource.getDevices();
       return right(result);
     } on ServerException catch (e) {
-      return left(Failure.unexpected(e.message));
+      return left(Failure.fromServerException(e));
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
     }

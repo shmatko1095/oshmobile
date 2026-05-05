@@ -18,7 +18,7 @@ class DeviceRepositoryImpl implements DeviceRepository {
       final result = await dataSource.get(serial: serial);
       return right(result);
     } on ServerException catch (e) {
-      return left(Failure.unexpected(e.message));
+      return left(Failure.fromServerException(e));
     } on Exception catch (e) {
       return left(Failure.unexpected(e.toString()));
     }

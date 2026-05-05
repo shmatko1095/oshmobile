@@ -5,6 +5,8 @@ import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/app/device_session/scopes/device_route_scope.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
+import 'package:oshmobile/core/presentation/errors/mqtt_error_localizer.dart';
+import 'package:oshmobile/core/network/mqtt/json_rpc_errors.dart';
 import 'package:oshmobile/core/common/widgets/app_button.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
@@ -155,7 +157,9 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
       if (mounted) {
         SnackBarUtils.showFail(
           context: context,
-          content: error.toString(),
+          content: error is JsonRpcException
+              ? MqttErrorLocalizer.resolveException(error)
+              : error.toString(),
         );
       }
     } finally {

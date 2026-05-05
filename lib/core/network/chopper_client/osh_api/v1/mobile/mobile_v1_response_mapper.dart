@@ -1,10 +1,8 @@
-import 'dart:convert';
-
 import 'package:chopper/chopper.dart';
 import 'package:oshmobile/core/common/entities/device/connection_info.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/entities/device/device_user_data.dart';
-import 'package:oshmobile/core/error/exceptions.dart';
+import 'package:oshmobile/core/network/rest_response_error_mapper.dart';
 
 class MobileV1ResponseMapper {
   const MobileV1ResponseMapper._();
@@ -12,10 +10,7 @@ class MobileV1ResponseMapper {
   static List<Device> requireDeviceList(Response<dynamic> response) {
     final body = _decodeList(response.body);
     if (!response.isSuccessful || body == null) {
-      throw ServerException(
-        _errorMessage(response),
-        code: _errorCode(response),
-      );
+      throw RestResponseErrorMapper.toServerException(response);
     }
 
     return body
@@ -32,10 +27,7 @@ class MobileV1ResponseMapper {
   static Map<String, dynamic> requireJsonMap(Response<dynamic> response) {
     final body = _decodeMap(response.body);
     if (!response.isSuccessful || body == null) {
-      throw ServerException(
-        _errorMessage(response),
-        code: _errorCode(response),
-      );
+      throw RestResponseErrorMapper.toServerException(response);
     }
     return body;
   }
@@ -44,10 +36,7 @@ class MobileV1ResponseMapper {
       Response<dynamic> response) {
     final body = _decodeList(response.body);
     if (!response.isSuccessful || body == null) {
-      throw ServerException(
-        _errorMessage(response),
-        code: _errorCode(response),
-      );
+      throw RestResponseErrorMapper.toServerException(response);
     }
     return body
         .whereType<Map>()
@@ -56,12 +45,7 @@ class MobileV1ResponseMapper {
   }
 
   static void ensureSuccess(Response<dynamic> response) {
-    if (!response.isSuccessful) {
-      throw ServerException(
-        _errorMessage(response),
-        code: _errorCode(response),
-      );
-    }
+    RestResponseErrorMapper.throwIfFailed(response);
   }
 
   static Device _deviceFromSummary(Map<String, dynamic> json) {
@@ -140,61 +124,10 @@ class MobileV1ResponseMapper {
   }
 
   static Map<String, dynamic>? _decodeMap(dynamic raw) {
-    if (raw is Map<String, dynamic>) return raw;
-    if (raw is Map) {
-      return raw.map((key, value) => MapEntry(key.toString(), value));
-    }
-    if (raw is String && raw.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(raw);
-        if (decoded is Map<String, dynamic>) return decoded;
-        if (decoded is Map) {
-          return decoded.map((key, value) => MapEntry(key.toString(), value));
-        }
-      } on FormatException {
-        return null;
-      }
-    }
-    return null;
+    return RestResponseErrorMapper.decodeMap(raw);
   }
 
   static List<dynamic>? _decodeList(dynamic raw) {
-    if (raw is List) return raw;
-    if (raw is String && raw.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(raw);
-        if (decoded is List) return decoded;
-      } on FormatException {
-        return null;
-      }
-    }
-    return null;
-  }
-
-  static String _errorMessage(Response<dynamic> response) {
-    final map = _decodeMap(response.body) ?? _decodeMap(response.error);
-    if (map != null) {
-      final nested = map['grpc_response'];
-      if (nested is Map) {
-        final nestedMessage = nested['message']?.toString();
-        if (nestedMessage != null && nestedMessage.isNotEmpty) {
-          return nestedMessage;
-        }
-      }
-      for (final key in ['message', 'detail', 'error']) {
-        final value = map[key]?.toString();
-        if (value != null && value.isNotEmpty) {
-          return value;
-        }
-      }
-    }
-    return 'HTTP ${response.statusCode}';
-  }
-
-  static String? _errorCode(Response<dynamic> response) {
-    final map = _decodeMap(response.body) ?? _decodeMap(response.error);
-    final value = map?['code']?.toString().trim();
-    if (value == null || value.isEmpty) return null;
-    return value;
+    return RestResponseErrorMapper.decodeList(raw);
   }
 }

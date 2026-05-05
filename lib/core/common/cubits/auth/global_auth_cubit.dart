@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -14,6 +12,7 @@ import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/chopper_client/auth/auth_service.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_service.dart';
 import 'package:oshmobile/core/network/chopper_client/core/session_storage.dart';
+import 'package:oshmobile/core/network/rest_response_error_mapper.dart';
 import 'package:oshmobile/features/startup/domain/contracts/startup_auth_bootstrapper.dart';
 
 part 'global_auth_state.dart';
@@ -191,35 +190,6 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState>
   }
 
   String _extractResponseMessage(dynamic response) {
-    try {
-      final body = response.body;
-      if (body is Map) {
-        final message = body['message']?.toString();
-        if (message != null && message.isNotEmpty) {
-          return message;
-        }
-      }
-
-      final error = response.error;
-      if (error is Map) {
-        final message = error['message']?.toString();
-        if (message != null && message.isNotEmpty) {
-          return message;
-        }
-      }
-      if (error is String && error.isNotEmpty) {
-        final decoded = jsonDecode(error);
-        if (decoded is Map) {
-          final message = decoded['message']?.toString();
-          if (message != null && message.isNotEmpty) {
-            return message;
-          }
-        }
-      }
-    } catch (_) {
-      // Fall through to the generic status-based message.
-    }
-
-    return 'HTTP ${response.statusCode}';
+    return RestResponseErrorMapper.messageFromResponse(response);
   }
 }
