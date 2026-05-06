@@ -4,14 +4,14 @@ import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
-Future<void> showStartupRecommendUpdateDialog({
+Route<void> createStartupRecommendUpdateRoute({
   required BuildContext context,
   required VoidCallback onUpdateNow,
   required VoidCallback onLater,
 }) {
   final s = S.of(context);
 
-  return showDialog<void>(
+  return DialogRoute<void>(
     context: context,
     barrierDismissible: false,
     builder: (context) {
@@ -95,5 +95,19 @@ Future<void> showStartupRecommendUpdateDialog({
         ),
       );
     },
+  );
+}
+
+Future<void> showStartupRecommendUpdateDialog({
+  required BuildContext context,
+  required VoidCallback onUpdateNow,
+  required VoidCallback onLater,
+}) {
+  return Navigator.of(context, rootNavigator: true).push<void>(
+    createStartupRecommendUpdateRoute(
+      context: context,
+      onUpdateNow: onUpdateNow,
+      onLater: onLater,
+    ),
   );
 }

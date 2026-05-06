@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -43,12 +45,6 @@ void main() {
     expect(find.text('Checking internet connection...'), findsOneWidget);
 
     startupCubit.emitForTest(
-      const StartupState(stage: StartupStage.checkingPolicy),
-    );
-    await tester.pump();
-    expect(find.text('Checking app version policy...'), findsOneWidget);
-
-    startupCubit.emitForTest(
       const StartupState(stage: StartupStage.noInternet),
     );
     await tester.pump();
@@ -83,6 +79,45 @@ void main() {
 
     expect(find.text('Update app to continue'), findsOneWidget);
     expect(find.text('sign-in'), findsNothing);
+
+    await startupCubit.close();
+    await authCubit.close();
+  });
+
+  testWidgets('hard update transition shows blocking flow above current route',
+      (WidgetTester tester) async {
+    final startupCubit = _TestStartupCubit()
+      ..emitForTest(const StartupState(stage: StartupStage.ready));
+    final authCubit = _TestGlobalAuthCubit();
+
+    await _pumpStartupGate(
+      tester,
+      startupCubit: startupCubit,
+      authCubit: authCubit,
+    );
+
+    final navigator = Navigator.of(tester.element(find.text('sign-in')));
+    unawaited(
+      navigator.push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('details')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('details'), findsOneWidget);
+
+    startupCubit.emitForTest(
+      const StartupState(
+        stage: StartupStage.ready,
+        hardUpdateRequired: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Update app to continue'), findsOneWidget);
+    expect(find.text('details'), findsNothing);
 
     await startupCubit.close();
     await authCubit.close();

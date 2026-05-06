@@ -4,7 +4,6 @@ import 'package:oshmobile/features/startup/domain/models/mobile_client_policy_st
 
 enum StartupStage {
   checkingConnectivity,
-  checkingPolicy,
   restoringSession,
   noInternet,
   ready,

@@ -15,12 +15,13 @@
 - `mobile-service` evaluates status using strict app version parsing (`x.y.z`) and stores policy/history in PostgreSQL.
 
 ## Target Behavior (mobile app UX)
-- App checks policy on startup using platform/app version.
+- App starts connectivity and auth bootstrap without waiting for the policy response.
+- Startup policy check runs in background as soon as the app reaches the auth gate (`ready`).
 - App re-checks policy when app returns to foreground (`resumed`).
 - Policy status drives UX:
-  - `allow`: continue startup.
-  - `recommend_update`: continue startup + show non-blocking modal.
-  - `require_update`: show blocking update screen before entering app or immediately on foreground re-check.
+  - `allow`: continue current app flow.
+  - `recommend_update`: continue current flow + show non-blocking modal after the background check completes.
+  - `require_update`: show blocking update screen immediately after the response arrives, including after app entry on cold start or on foreground re-check.
 - If policy endpoint is unavailable:
   - use cached last successful policy fields if available;
   - if cache is missing, fail-open (allow app entry), log degradation.
@@ -73,14 +74,14 @@
   5. Verify decision through public endpoint with test versions.
 
 ## Mobile Plan (oshmobile)
-- Add startup policy fetch right after connectivity check and before normal auth gate routing.
+- Run startup policy fetch in background right after startup reaches `ready`; do not block auth gate routing on cold start.
 - Add foreground policy fetch on lifecycle `resumed`.
 - Add policy domain model and cache model:
   - cache policy fields (`min_supported_version`, `latest_version`, `store_url`, `policy_version`, `checked_at`, `fetched_at`);
   - do not cache final `status` as source of truth; recalculate status for current app version.
 - Add UI:
-  - `recommend_update`: startup modal with `Update now` and `Later`.
-  - `require_update`: full-screen blocking gate with store CTA only.
+  - `recommend_update`: startup/background modal with `Update now` and `Later`.
+  - `require_update`: full-screen blocking gate with store CTA only, including overlay presentation above already-open routes.
 - Soft-update cadence:
   - if user taps `Later`, suppress recommend prompt for current `policy_version` until policy changes.
 - Add request headers to OSH API requests (BFF endpoints only, not OIDC token requests):
@@ -120,7 +121,8 @@
 
 ## Test Plan
 - Mobile unit/widget tests:
-  - startup state transitions for `allow/recommend_update/require_update`,
+  - startup state transitions where `ready` is reached before the background policy result,
+  - startup and foreground transitions for `allow/recommend_update/require_update`,
   - foreground (`resumed`) re-check transitions, including switching to blocking gate from an already opened app session,
   - fallback behavior (cached policy and no-cache fail-open),
   - modal and blocking screen rendering/CTA behavior,
@@ -138,5 +140,6 @@
 - Recommended prompt suppression: once per `policy_version` (show again only after policy update).
 - Outage strategy: fail-open with cache preference.
 - Cache strategy: cache policy fields, recompute status locally for current app version.
-- Lifecycle checks: evaluate policy on startup and on every foreground resume.
+- Lifecycle checks: evaluate policy on startup in background and on every foreground resume.
+- Cold-start contract: do not wait for policy before showing auth gate; `require_update` may block only after the background response arrives.
 - Forced update is a safety net, not a replacement for `/v1/mobile` compatibility discipline.

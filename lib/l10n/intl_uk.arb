@@ -293,7 +293,6 @@
   },
   "DeviceScopeUnavailableInContext": "Контекст пристрою недоступний у поточному місці.",
   "startupCheckingInternet": "Перевіряємо підключення до інтернету...",
-  "startupCheckingAppVersion": "Перевіряємо політику версії застосунку...",
   "startupNoInternetScreenSemantics": "Екран без підключення до інтернету",
   "startupNoInternetTitle": "Немає підключення до інтернету",
   "startupNoInternetSubtitle": "Підключіться до Wi‑Fi або мобільного інтернету, щоб продовжити користуватися Oshhome.",

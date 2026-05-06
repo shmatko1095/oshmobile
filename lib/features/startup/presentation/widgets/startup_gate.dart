@@ -31,10 +31,13 @@ class StartupGate extends StatefulWidget {
 }
 
 class _StartupGateState extends State<StartupGate> {
-  bool _isRecommendDialogOpen = false;
+  Route<void>? _recommendDialogRoute;
+  Route<void>? _forceUpdateRoute;
 
   @override
   Widget build(BuildContext context) {
+    final shouldUseForceUpdateOverlay = _shouldUseForceUpdateOverlay();
+
     return MultiBlocListener(
       listeners: [
         BlocListener<AppLifecycleCubit, AppLifecycleStateVm>(
@@ -42,6 +45,22 @@ class _StartupGateState extends State<StartupGate> {
               previous.state != current.state && current.isResumed,
           listener: (context, _) {
             unawaited(context.read<StartupCubit>().onAppResumed());
+          },
+        ),
+        BlocListener<StartupCubit, StartupState>(
+          listenWhen: (previous, current) {
+            return previous.hardUpdateRequired != current.hardUpdateRequired ||
+                previous.stage != current.stage;
+          },
+          listener: (context, state) {
+            final shouldBlock =
+                state.stage == StartupStage.ready && state.hardUpdateRequired;
+            if (!shouldBlock || !_shouldUseForceUpdateOverlay()) {
+              _dismissForceUpdateGate();
+              return;
+            }
+
+            unawaited(_presentForceUpdateGate());
           },
         ),
         BlocListener<StartupCubit, StartupState>(
@@ -65,15 +84,13 @@ class _StartupGateState extends State<StartupGate> {
             StartupStage.checkingConnectivity => StartupLoader(
                 message: s.startupCheckingInternet,
               ),
-            StartupStage.checkingPolicy => StartupLoader(
-                message: s.startupCheckingAppVersion,
-              ),
             StartupStage.restoringSession => const StartupLoader(),
             StartupStage.noInternet => NoInternetPage(
                 onRetry: () => unawaited(context.read<StartupCubit>().retry()),
                 isChecking: state.isRetrying,
               ),
-            StartupStage.ready => state.hardUpdateRequired
+            StartupStage.ready => state.hardUpdateRequired &&
+                    !shouldUseForceUpdateOverlay
                 ? StartupForceUpdatePage(
                     onUpdateNow: () => unawaited(
                       _handleUpdateNowTap(source: 'require_update'),
@@ -90,29 +107,118 @@ class _StartupGateState extends State<StartupGate> {
   }
 
   Future<void> _presentRecommendUpdateDialog() async {
-    if (_isRecommendDialogOpen || !mounted) {
+    final startupState = context.read<StartupCubit>().state;
+    if (_recommendDialogRoute != null ||
+        _forceUpdateRoute != null ||
+        startupState.hardUpdateRequired ||
+        !mounted) {
       return;
     }
 
-    _isRecommendDialogOpen = true;
+    final route = createStartupRecommendUpdateRoute(
+      context: context,
+      onUpdateNow: () {
+        unawaited(_handleRecommendUpdateNow());
+      },
+      onLater: () {
+        unawaited(_handleRecommendLater());
+      },
+    );
+
+    _recommendDialogRoute = route;
     try {
-      await showStartupRecommendUpdateDialog(
-        context: context,
-        onUpdateNow: () async {
-          Navigator.of(context, rootNavigator: true).pop();
-          await _handleUpdateNowTap(source: 'recommend_update');
-        },
-        onLater: () async {
-          Navigator.of(context, rootNavigator: true).pop();
-          await context.read<StartupCubit>().onRecommendLaterTapped();
-        },
-      );
+      await Navigator.of(context, rootNavigator: true).push<void>(route);
     } finally {
-      _isRecommendDialogOpen = false;
+      if (identical(_recommendDialogRoute, route)) {
+        _recommendDialogRoute = null;
+      }
       if (mounted) {
         await context.read<StartupCubit>().onRecommendPromptDismissed();
       }
     }
+  }
+
+  Future<void> _handleRecommendUpdateNow() async {
+    await _dismissRecommendUpdateDialog();
+    if (!mounted) {
+      return;
+    }
+
+    await _handleUpdateNowTap(source: 'recommend_update');
+  }
+
+  Future<void> _handleRecommendLater() async {
+    await _dismissRecommendUpdateDialog();
+    if (!mounted) {
+      return;
+    }
+
+    await context.read<StartupCubit>().onRecommendLaterTapped();
+  }
+
+  Future<void> _presentForceUpdateGate() async {
+    if (_forceUpdateRoute != null || !_shouldUseForceUpdateOverlay() || !mounted) {
+      return;
+    }
+
+    await _dismissRecommendUpdateDialog();
+    if (!mounted) {
+      return;
+    }
+
+    final route = createBlockingStartupForceUpdateRoute(
+      onUpdateNow: () => unawaited(
+        _handleUpdateNowTap(source: 'require_update'),
+      ),
+    );
+
+    _forceUpdateRoute = route;
+    try {
+      await Navigator.of(context, rootNavigator: true).push<void>(route);
+    } finally {
+      if (identical(_forceUpdateRoute, route)) {
+        _forceUpdateRoute = null;
+      }
+    }
+  }
+
+  Future<void> _dismissRecommendUpdateDialog() async {
+    final route = _recommendDialogRoute;
+    if (route == null) {
+      return;
+    }
+
+    _recommendDialogRoute = null;
+    _removeRoute(route);
+    await Future<void>.delayed(Duration.zero);
+  }
+
+  void _dismissForceUpdateGate() {
+    final route = _forceUpdateRoute;
+    if (route == null) {
+      return;
+    }
+
+    _forceUpdateRoute = null;
+    _removeRoute(route);
+  }
+
+  void _removeRoute(Route<void> route) {
+    if (!route.isActive) {
+      return;
+    }
+
+    final navigator = route.navigator;
+    if (navigator == null) {
+      return;
+    }
+
+    navigator.removeRoute(route);
+  }
+
+  bool _shouldUseForceUpdateOverlay() {
+    final route = ModalRoute.of(context);
+    return route != null && !route.isCurrent;
   }
 
   Future<void> _handleUpdateNowTap({required String source}) async {

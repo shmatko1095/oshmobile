@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oshmobile/core/analytics/osh_analytics.dart';
@@ -68,11 +70,12 @@ void main() {
     await cubit.close();
   });
 
-  test('start emits checkingPolicy and restoringSession when policy allows',
+  test('start reaches ready before background policy result is applied',
       () async {
     connectionChecker.onCheck = () async => true;
     authBootstrapper.onCheck = () async => true;
-    policyRepository.nextDecision = _allowDecision;
+    final policyCompleter = Completer<MobileClientPolicyDecision>();
+    policyRepository.onCheck = () => policyCompleter.future;
 
     final cubit = StartupCubit(
       connectionChecker: connectionChecker,
@@ -87,11 +90,9 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     expect(
-      emitted.map((state) => state.stage).toList(),
+      emitted.map((state) => state.stage).take(3).toList(),
       <StartupStage>[
         StartupStage.checkingConnectivity,
-        StartupStage.checkingPolicy,
-        StartupStage.checkingPolicy,
         StartupStage.restoringSession,
         StartupStage.ready,
       ],
@@ -99,12 +100,21 @@ void main() {
     expect(connectionChecker.calls, 1);
     expect(policyRepository.calls, 1);
     expect(authBootstrapper.calls, 1);
+    expect(cubit.state.stage, StartupStage.ready);
+    expect(cubit.state.isPolicyCheckInProgress, isTrue);
+    expect(cubit.state.policyStatus, isNull);
+
+    policyCompleter.complete(_allowDecision);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(cubit.state.isPolicyCheckInProgress, isFalse);
+    expect(cubit.state.policyStatus, MobileClientPolicyStatus.allow);
     expect(
       crashReporter.logs,
       containsAllInOrder(<String>[
         'startup:checking_connectivity',
-        'startup:checking_client_policy',
         'startup:restoring_session',
+        'startup:checking_client_policy',
       ]),
     );
 
@@ -112,7 +122,7 @@ void main() {
     await cubit.close();
   });
 
-  test('require_update on startup blocks flow before auth restore', () async {
+  test('require_update is applied after startup reaches ready', () async {
     connectionChecker.onCheck = () async => true;
     authBootstrapper.onCheck = () async => true;
     policyRepository.nextDecision = MobileClientPolicyDecision(
@@ -131,7 +141,8 @@ void main() {
 
     expect(cubit.state.stage, StartupStage.ready);
     expect(cubit.state.hardUpdateRequired, isTrue);
-    expect(authBootstrapper.calls, 0);
+    expect(cubit.state.policyStatus, MobileClientPolicyStatus.requireUpdate);
+    expect(authBootstrapper.calls, 1);
 
     await cubit.close();
   });
@@ -263,10 +274,15 @@ class _FakeStartupClientPolicyRepository
     implements StartupClientPolicyRepository {
   int calls = 0;
   MobileClientPolicyDecision nextDecision = _allowDecision;
+  Future<MobileClientPolicyDecision> Function()? onCheck;
 
   @override
   Future<MobileClientPolicyDecision> checkPolicy() async {
     calls++;
+    final onCheck = this.onCheck;
+    if (onCheck != null) {
+      return onCheck();
+    }
     return nextDecision;
   }
 

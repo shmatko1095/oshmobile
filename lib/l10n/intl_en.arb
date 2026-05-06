@@ -293,7 +293,6 @@
   },
   "DeviceScopeUnavailableInContext": "Device scope is not available in the current context.",
   "startupCheckingInternet": "Checking internet connection...",
-  "startupCheckingAppVersion": "Checking app version policy...",
   "startupNoInternetScreenSemantics": "No internet connection screen",
   "startupNoInternetTitle": "No internet connection",
   "startupNoInternetSubtitle": "Connect to Wi-Fi or mobile data to continue using Oshhome.",

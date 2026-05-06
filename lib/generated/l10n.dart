@@ -2189,16 +2189,6 @@ class S {
     );
   }
 
-  /// `Checking app version policy...`
-  String get startupCheckingAppVersion {
-    return Intl.message(
-      'Checking app version policy...',
-      name: 'startupCheckingAppVersion',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `No internet connection screen`
   String get startupNoInternetScreenSemantics {
     return Intl.message(

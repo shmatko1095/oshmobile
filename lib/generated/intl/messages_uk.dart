@@ -549,9 +549,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "offlineBlePermissionHint": MessageLookupByLibrary.simpleMessage(
       "Щоб змінити налаштування Wi‑Fi, потрібен доступ до Bluetooth.",
     ),
-    "startupCheckingAppVersion": MessageLookupByLibrary.simpleMessage(
-      "Перевіряємо політику версії застосунку...",
-    ),
     "startupCheckingInternet": MessageLookupByLibrary.simpleMessage(
       "Перевіряємо підключення до інтернету...",
     ),

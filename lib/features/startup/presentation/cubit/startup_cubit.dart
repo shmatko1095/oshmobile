@@ -48,18 +48,7 @@ class StartupCubit extends Cubit<StartupState> {
   }
 
   Future<void> onAppResumed() {
-    if (state.stage != StartupStage.ready) {
-      return Future<void>.value();
-    }
-    if (state.isPolicyCheckInProgress) {
-      final inFlight = _policyCheckInFlight;
-      if (inFlight != null) {
-        return inFlight.then((_) {});
-      }
-      return Future<void>.value();
-    }
-
-    return _runPolicyCheckForResume();
+    return _runBackgroundPolicyCheck(source: _sourceResume);
   }
 
   Future<void> onRecommendLaterTapped() async {
@@ -146,22 +135,6 @@ class StartupCubit extends Cubit<StartupState> {
       return;
     }
 
-    emit(state.copyWith(stage: StartupStage.checkingPolicy));
-    OshCrashReporter.log('startup:checking_client_policy');
-
-    final policyDecision = await _safeCheckPolicy(
-      source: _sourceStartup,
-      isRetry: isRetry,
-    );
-
-    if (policyDecision != null) {
-      _applyPolicyDecision(policyDecision);
-      if (state.hardUpdateRequired) {
-        emit(state.copyWith(stage: StartupStage.ready));
-        return;
-      }
-    }
-
     emit(state.copyWith(stage: StartupStage.restoringSession));
     OshCrashReporter.log('startup:restoring_session');
 
@@ -178,18 +151,36 @@ class StartupCubit extends Cubit<StartupState> {
 
     emit(state.copyWith(stage: StartupStage.ready));
 
-    if (policyDecision?.shouldShowRecommendPrompt == true &&
-        !state.hardUpdateRequired) {
-      _queueRecommendPrompt();
-    }
+    unawaited(_runBackgroundPolicyCheck(source: _sourceStartup));
   }
 
-  Future<void> _runPolicyCheckForResume() async {
+  Future<void> _runBackgroundPolicyCheck({required String source}) {
+    if (state.stage != StartupStage.ready) {
+      return Future<void>.value();
+    }
+
+    if (state.isPolicyCheckInProgress) {
+      final inFlight = _policyCheckInFlight;
+      if (inFlight != null) {
+        return inFlight.then((_) {});
+      }
+      return Future<void>.value();
+    }
+
+    return _runPolicyCheck(source: source);
+  }
+
+  Future<void> _runPolicyCheck({required String source}) async {
     emit(state.copyWith(isPolicyCheckInProgress: true));
+    OshCrashReporter.log(
+      source == _sourceStartup
+          ? 'startup:checking_client_policy'
+          : 'startup:checking_client_policy_resume',
+    );
 
     try {
       final decision = await _safeCheckPolicy(
-        source: _sourceResume,
+        source: source,
         isRetry: false,
       );
       if (decision == null) {

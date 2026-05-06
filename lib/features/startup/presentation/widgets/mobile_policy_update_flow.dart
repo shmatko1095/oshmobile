@@ -9,6 +9,31 @@ import 'package:oshmobile/features/startup/domain/models/mobile_client_policy.da
 import 'package:oshmobile/features/startup/domain/models/mobile_client_policy_status.dart';
 import 'package:oshmobile/features/startup/presentation/pages/startup_force_update_page.dart';
 
+Route<void> createBlockingStartupForceUpdateRoute({
+  required VoidCallback onUpdateNow,
+}) {
+  return PageRouteBuilder<void>(
+    settings: const RouteSettings(name: 'startup_force_update'),
+    transitionDuration: AppPalette.motionSlow,
+    reverseTransitionDuration: AppPalette.motionSlow,
+    pageBuilder: (_, __, ___) {
+      return PopScope(
+        canPop: false,
+        child: StartupForceUpdatePage(onUpdateNow: onUpdateNow),
+      );
+    },
+    transitionsBuilder: (_, animation, __, child) {
+      return FadeTransition(
+        opacity: CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOut,
+        ),
+        child: child,
+      );
+    },
+  );
+}
+
 Future<void> launchMobilePolicyUpdate({
   required String source,
   required String? storeUrl,
@@ -57,25 +82,9 @@ Future<void> showBlockingStartupForceUpdateFlow({
   required BuildContext context,
   required VoidCallback onUpdateNow,
 }) {
-  return showGeneralDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    barrierLabel: 'startup_force_update',
-    transitionDuration: AppPalette.motionSlow,
-    pageBuilder: (_, __, ___) {
-      return PopScope(
-        canPop: false,
-        child: StartupForceUpdatePage(onUpdateNow: onUpdateNow),
-      );
-    },
-    transitionBuilder: (_, animation, __, child) {
-      return FadeTransition(
-        opacity: CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOut,
-        ),
-        child: child,
-      );
-    },
+  return Navigator.of(context, rootNavigator: true).push<void>(
+    createBlockingStartupForceUpdateRoute(
+      onUpdateNow: onUpdateNow,
+    ),
   );
 }
