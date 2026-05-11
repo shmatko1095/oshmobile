@@ -13,14 +13,18 @@ final class OshAnalyticsEvents {
   static const deviceAssignStarted = 'device_assign_started';
   static const deviceAssignSucceeded = 'device_assign_succeeded';
   static const deviceAssignFailed = 'device_assign_failed';
+  static const deviceCatalogRefreshFailed = 'device_catalog_refresh_failed';
   static const deviceRenameSaved = 'device_rename_saved';
+  static const deviceRenameFailed = 'device_rename_failed';
   static const deviceUnassigned = 'device_unassigned';
+  static const deviceUnassignFailed = 'device_unassign_failed';
 
   static const bleProvisionStarted = 'ble_provision_started';
   static const bleNearbyCheckFailed = 'ble_nearby_check_failed';
   static const bleConnectSucceeded = 'ble_connect_succeeded';
   static const bleConnectFailed = 'ble_connect_failed';
   static const bleWifiNetworkSelected = 'ble_wifi_network_selected';
+  static const bleWifiScanFailed = 'ble_wifi_scan_failed';
   static const bleWifiConnectSucceeded = 'ble_wifi_connect_succeeded';
   static const bleWifiConnectFailed = 'ble_wifi_connect_failed';
 
@@ -39,6 +43,8 @@ final class OshAnalyticsEvents {
   static const accountSettingsOpened = 'account_settings_opened';
   static const themeChanged = 'theme_changed';
   static const accountDeletionRequested = 'account_deletion_requested';
+  static const accountSettingsOperationFailed =
+      'account_settings_operation_failed';
 
   static const mobilePolicyFetched = 'mobile_policy_fetched';
   static const mobilePolicyPromptShown = 'mobile_policy_prompt_shown';

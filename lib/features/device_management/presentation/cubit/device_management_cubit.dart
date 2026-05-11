@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/presentation/errors/rest_error_localizer.dart';
 import 'package:oshmobile/features/device_catalog/domain/contracts/device_catalog_sync.dart';
 import 'package:oshmobile/features/device_management/domain/usecases/remove_device.dart';
@@ -48,14 +49,10 @@ class DeviceManagementCubit extends Cubit<DeviceManagementState> {
       (failure) async {
         final message = RestErrorLocalizer.resolveFailure(failure);
         unawaited(
-          OshCrashReporter.logNonFatal(
-            failure,
-            null,
-            reason: 'DeviceManagementCubit: rename device failed',
-            context: {
-              'feature': 'device_management',
-              'action': 'rename_device',
-              'serial': serial,
+          OshAnalytics.logEvent(
+            OshAnalyticsEvents.deviceRenameFailed,
+            parameters: {
+              'reason': 'rename_failed',
               'alias_length': alias.length,
               'description_length': description.length,
               'failure_type': failure.type.name,
@@ -75,16 +72,11 @@ class DeviceManagementCubit extends Cubit<DeviceManagementState> {
       (_) async {
         try {
           await _deviceCatalogSync.refresh();
-        } catch (error, stackTrace) {
-          await OshCrashReporter.logNonFatal(
-            error,
-            stackTrace,
-            reason:
-                'DeviceManagementCubit: catalog refresh failed after device rename',
-            context: {
-              'feature': 'device_management',
-              'action': 'rename_device_refresh',
-              'serial': serial,
+        } catch (_) {
+          await OshAnalytics.logEvent(
+            OshAnalyticsEvents.deviceCatalogRefreshFailed,
+            parameters: {
+              'source': 'rename_post_refresh',
             },
           );
           rethrow;
@@ -120,17 +112,11 @@ class DeviceManagementCubit extends Cubit<DeviceManagementState> {
       (failure) async {
         final message = RestErrorLocalizer.resolveFailure(failure);
         unawaited(
-          OshCrashReporter.logNonFatal(
-            failure,
-            null,
-            reason: 'DeviceManagementCubit: remove device failed',
-            context: {
-              'feature': 'device_management',
-              'action': 'remove_device',
-              'device_id': deviceId,
-              'serial': serial,
+          OshAnalytics.logEvent(
+            OshAnalyticsEvents.deviceUnassignFailed,
+            parameters: {
+              'reason': 'unassign_failed',
               'failure_type': failure.type.name,
-              'failure_message': failure.message ?? '',
               'failure_code': failure.code ?? '',
             },
           ),
@@ -147,17 +133,11 @@ class DeviceManagementCubit extends Cubit<DeviceManagementState> {
         _deviceCatalogSync.onDeviceRemoved(deviceId);
         try {
           await _deviceCatalogSync.refresh();
-        } catch (error, stackTrace) {
-          await OshCrashReporter.logNonFatal(
-            error,
-            stackTrace,
-            reason:
-                'DeviceManagementCubit: catalog refresh failed after device removal',
-            context: {
-              'feature': 'device_management',
-              'action': 'remove_device_refresh',
-              'device_id': deviceId,
-              'serial': serial,
+        } catch (_) {
+          await OshAnalytics.logEvent(
+            OshAnalyticsEvents.deviceCatalogRefreshFailed,
+            parameters: {
+              'source': 'remove_post_refresh',
             },
           );
           rethrow;

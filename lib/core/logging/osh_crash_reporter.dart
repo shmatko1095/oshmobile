@@ -1,6 +1,7 @@
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:oshmobile/core/logging/app_log.dart';
+import 'package:oshmobile/core/logging/log_sanitizer.dart';
 
 abstract class CrashReporterBackend {
   Future<void> recordError(
@@ -98,11 +99,20 @@ class OshCrashReporter {
     );
   }
 
-  /// Set current user identifier (e.g. UUID or email).
+  /// Set current user identifier.
   static Future<void> setUserId(String userId) {
+    final sanitizedUserId = LogSanitizer.sanitize(userId);
     return _runSafely(
-      () => _currentBackend.setUserId(userId),
+      () => _currentBackend.setUserId(sanitizedUserId),
       operationName: 'setUserIdentifier',
+    );
+  }
+
+  /// Clear current user identifier in Crashlytics scope.
+  static Future<void> clearUserId() {
+    return _runSafely(
+      () => _currentBackend.setUserId(''),
+      operationName: 'clearUserIdentifier',
     );
   }
 
@@ -111,9 +121,20 @@ class OshCrashReporter {
   /// Values will be converted to supported types (String / num / bool).
   static Future<void> setContext(Map<String, Object?> context) async {
     for (final entry in context.entries) {
+      final normalizedValue = _normalizeContextValue(entry.value);
       await _runSafely(
-        () => _setCustomKeySafe(entry.key, entry.value),
+        () => _setCustomKeySafe(entry.key, normalizedValue),
         operationName: 'setCustomKey(${entry.key})',
+      );
+    }
+  }
+
+  /// Reset selected custom keys in Crashlytics scope.
+  static Future<void> clearContext(Iterable<String> keys) async {
+    for (final key in keys) {
+      await _runSafely(
+        () => _setCustomKeySafe(key, 'null'),
+        operationName: 'clearCustomKey($key)',
       );
     }
   }
@@ -121,7 +142,7 @@ class OshCrashReporter {
   /// Add a single log line to Crashlytics breadcrumb trail.
   static void log(String message) {
     try {
-      _currentBackend.log(message);
+      _currentBackend.log(LogSanitizer.sanitize(message));
     } catch (error, stack) {
       _reportSdkFailure('log', error, stack);
     }
@@ -147,12 +168,15 @@ class OshCrashReporter {
       await setContext(context);
     }
 
+    final sanitizedReason =
+        reason == null ? null : LogSanitizer.sanitize(reason);
+
     await _runSafely(
       () => _currentBackend.recordError(
         error,
         stack,
         fatal: false,
-        reason: reason,
+        reason: sanitizedReason,
       ),
       operationName: 'recordError(non-fatal)',
     );
@@ -172,28 +196,35 @@ class OshCrashReporter {
       await setContext(context);
     }
 
+    final sanitizedReason =
+        reason == null ? null : LogSanitizer.sanitize(reason);
+
     await _runSafely(
       () => _currentBackend.recordError(
         error,
         stack,
         fatal: true,
-        reason: reason,
+        reason: sanitizedReason,
       ),
       operationName: 'recordError(fatal)',
     );
   }
 
   /// Helper to safely set custom keys with different value types.
-  static Future<void> _setCustomKeySafe(String key, Object? value) async {
-    if (value == null) {
-      await _currentBackend.setCustomKey(key, 'null');
-    } else if (value is bool) {
+  static Future<void> _setCustomKeySafe(String key, Object value) async {
+    if (value is bool) {
       await _currentBackend.setCustomKey(key, value);
     } else if (value is num) {
       await _currentBackend.setCustomKey(key, value);
     } else {
       await _currentBackend.setCustomKey(key, value.toString());
     }
+  }
+
+  static Object _normalizeContextValue(Object? value) {
+    if (value == null) return 'null';
+    if (value is bool || value is num) return value;
+    return LogSanitizer.sanitize(value.toString());
   }
 
   static Future<void> _runSafely(

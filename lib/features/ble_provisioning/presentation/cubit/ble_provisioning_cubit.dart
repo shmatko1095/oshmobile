@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:oshmobile/core/analytics/osh_analytics.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
-import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/permissions/ble_permission_service.dart';
 import 'package:oshmobile/features/ble_provisioning/domain/entities/wifi_connect_status.dart';
 import 'package:oshmobile/features/ble_provisioning/domain/entities/wifi_network.dart';
@@ -85,8 +84,7 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
           error: null,
         ));
       },
-      onError: (e, st) {
-        OshCrashReporter.logNonFatal(e, st, reason: "Nearby check failed");
+      onError: (e, _) {
         unawaited(
           OshAnalytics.logEvent(
             OshAnalyticsEvents.bleNearbyCheckFailed,
@@ -151,8 +149,7 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
       _emitIfOpen(
           state.copyWith(status: ProvisioningStatus.wifiScanIdle, error: null));
       await refreshScan();
-    } catch (e, st) {
-      OshCrashReporter.logNonFatal(e, st, reason: "Failed to connect via BLE");
+    } catch (e) {
       await OshAnalytics.logEvent(
         OshAnalyticsEvents.bleConnectFailed,
         parameters: {'reason': 'connect_failed'},
@@ -180,7 +177,12 @@ class BleProvisioningCubit extends Cubit<BleProvisioningState> {
             status: ProvisioningStatus.wifiScanInProgress, networks: networks));
       },
       onError: (e) {
-        OshCrashReporter.logNonFatal(e, null, reason: "Wi-Fi scan failed");
+        unawaited(
+          OshAnalytics.logEvent(
+            OshAnalyticsEvents.bleWifiScanFailed,
+            parameters: {'reason': 'scan_failed'},
+          ),
+        );
         _emitIfOpen(state.copyWith(
             status: ProvisioningStatus.error, error: 'Wi-Fi scan failed: $e'));
       },

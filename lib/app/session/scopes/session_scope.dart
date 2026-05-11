@@ -11,6 +11,7 @@ import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/services/mqtt_session_controller.dart';
 import 'package:oshmobile/app/session/di/session_di.dart';
 import 'package:oshmobile/features/device_catalog/presentation/cubit/device_catalog_cubit.dart';
+import 'package:oshmobile/core/logging/crashlytics_context_sync.dart';
 
 /// SessionScope:
 /// - Enters GetIt session scope on mount.
@@ -75,6 +76,9 @@ class _SessionScopeState extends State<SessionScope> {
     _sessionController = locator<MqttSessionController>();
     _selectedDeviceSession = locator<SelectedDeviceSessionCubit>();
 
+    unawaited(CrashlyticsContextSync.syncMqttState(_mqtt.state));
+    unawaited(CrashlyticsContextSync.syncDeviceCatalogState(_catalog.state));
+
     // Wait until initial MQTT connect completes.
     try {
       await _sessionController.ready;
@@ -114,6 +118,16 @@ class _SessionScopeState extends State<SessionScope> {
   void _onAuthStateChanged(global_auth.GlobalAuthState _) {
     if (!_ready) return;
     unawaited(_maybeUpdateCredentialsFromAuth());
+  }
+
+  void _onMqttStateChanged(GlobalMqttState state) {
+    if (!_ready) return;
+    unawaited(CrashlyticsContextSync.syncMqttState(state));
+  }
+
+  void _onDeviceCatalogStateChanged(DeviceCatalogState state) {
+    if (!_ready) return;
+    unawaited(CrashlyticsContextSync.syncDeviceCatalogState(state));
   }
 
   (String, String)? _readAuthCredsOrFallback() {
@@ -178,6 +192,17 @@ class _SessionScopeState extends State<SessionScope> {
           BlocListener<global_auth.GlobalAuthCubit,
               global_auth.GlobalAuthState>(
             listener: (_, st) => _onAuthStateChanged(st),
+          ),
+          BlocListener<GlobalMqttCubit, GlobalMqttState>(
+            listenWhen: (previous, current) =>
+                previous.runtimeType != current.runtimeType,
+            listener: (_, state) => _onMqttStateChanged(state),
+          ),
+          BlocListener<DeviceCatalogCubit, DeviceCatalogState>(
+            listenWhen: (previous, current) =>
+                previous.selectedDeviceId != current.selectedDeviceId ||
+                !identical(previous.devices, current.devices),
+            listener: (_, state) => _onDeviceCatalogStateChanged(state),
           ),
         ],
         child: widget.child,

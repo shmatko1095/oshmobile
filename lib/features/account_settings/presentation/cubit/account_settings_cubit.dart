@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/analytics/osh_analytics.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/common/cubits/app/app_theme_cubit.dart';
-import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/network/app_client/app_client_metadata.dart';
 import 'package:oshmobile/core/network/app_client/app_client_metadata_provider.dart';
 import 'package:oshmobile/core/presentation/errors/rest_error_localizer.dart';
@@ -63,11 +62,12 @@ class AccountSettingsCubit extends Cubit<AccountSettingsState> {
     emit(state.copyWith(isDeleting: true));
     try {
       await onDeleteAccountConfirmed();
-    } catch (error, st) {
-      OshCrashReporter.logNonFatal(
-        error,
-        st,
-        reason: 'Account deletion request failed',
+    } catch (_) {
+      unawaited(
+        OshAnalytics.logEvent(
+          OshAnalyticsEvents.accountSettingsOperationFailed,
+          parameters: {'action': 'delete_account'},
+        ),
       );
       rethrow;
     } finally {
@@ -128,11 +128,10 @@ class AccountSettingsCubit extends Cubit<AccountSettingsState> {
             ),
           );
       }
-    } catch (error, st) {
-      await OshCrashReporter.logNonFatal(
-        error,
-        st,
-        reason: 'Manual app version check failed',
+    } catch (_) {
+      await OshAnalytics.logEvent(
+        OshAnalyticsEvents.accountSettingsOperationFailed,
+        parameters: {'action': 'manual_version_check'},
       );
       _emitVersionCheckOutcome(
         const AccountSettingsVersionCheckOutcome.failed(),
@@ -153,11 +152,10 @@ class AccountSettingsCubit extends Cubit<AccountSettingsState> {
           'policy_version': policy.policyVersion,
         },
       );
-    } catch (error, st) {
-      await OshCrashReporter.logNonFatal(
-        error,
-        st,
-        reason: 'Unable to suppress recommended update prompt',
+    } catch (_) {
+      await OshAnalytics.logEvent(
+        OshAnalyticsEvents.accountSettingsOperationFailed,
+        parameters: {'action': 'suppress_recommend_prompt'},
       );
     }
   }
@@ -217,11 +215,10 @@ class AccountSettingsCubit extends Cubit<AccountSettingsState> {
       emit(state.copyWith(
         installedVersionLabel: _formatInstalledVersion(metadata),
       ));
-    } catch (error, st) {
-      await OshCrashReporter.logNonFatal(
-        error,
-        st,
-        reason: 'Unable to load installed app version',
+    } catch (_) {
+      await OshAnalytics.logEvent(
+        OshAnalyticsEvents.accountSettingsOperationFailed,
+        parameters: {'action': 'load_installed_version'},
       );
     }
   }

@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/widgets/app_button.dart';
+import 'package:oshmobile/core/logging/crashlytics_context_sync.dart';
 import 'package:oshmobile/features/ble_provisioning/presentation/cubit/ble_provisioning_cubit.dart';
 import 'package:oshmobile/features/ble_provisioning/presentation/pages/ble_wifi_scan_page.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -27,14 +30,22 @@ class BleOfflineEntry extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       key: ValueKey('ble_offline_$deviceSn'),
-      create: (_) => _sl<BleProvisioningCubit>()
-        ..startNearbyCheck(
-          serialNumber: deviceSn,
+      create: (_) {
+        final cubit = _sl<BleProvisioningCubit>();
+        unawaited(CrashlyticsContextSync.syncBleState(cubit.state));
+        unawaited(cubit.startNearbyCheck(serialNumber: deviceSn));
+        return cubit;
+      },
+      child: BlocListener<BleProvisioningCubit, BleProvisioningState>(
+        listenWhen: (previous, current) => previous.status != current.status,
+        listener: (_, state) {
+          unawaited(CrashlyticsContextSync.syncBleState(state));
+        },
+        child: _BleOfflineEntryBody(
+          deviceSn: deviceSn,
+          secureCode: secureCode,
+          onWifiProvisioningSuccess: onWifiProvisioningSuccess,
         ),
-      child: _BleOfflineEntryBody(
-        deviceSn: deviceSn,
-        secureCode: secureCode,
-        onWifiProvisioningSuccess: onWifiProvisioningSuccess,
       ),
     );
   }

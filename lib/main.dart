@@ -17,11 +17,13 @@ import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart'
 import 'package:oshmobile/app/session/scopes/session_scope.dart';
 import 'package:oshmobile/core/logging/app_log.dart';
 import 'package:oshmobile/core/logging/app_logging.dart';
+import 'package:oshmobile/core/logging/crashlytics_context_sync.dart';
 import 'package:oshmobile/core/logging/osh_bloc_observer.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/theme/theme.dart';
 import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:oshmobile/features/startup/presentation/cubit/startup_cubit.dart';
+import 'package:oshmobile/features/startup/presentation/cubit/startup_state.dart';
 import 'package:oshmobile/features/startup/presentation/widgets/startup_gate.dart';
 import 'package:oshmobile/firebase_options.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -159,6 +161,15 @@ class _MyAppState extends State<MyApp> {
   bool _inSession = false;
   String? _sessionUserKey;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _handleStartupTransition(context.read<StartupCubit>().state);
+    });
+  }
+
   void _handleAuthTransition(global_auth.GlobalAuthState next) {
     final auth = context.read<global_auth.GlobalAuthCubit>();
 
@@ -185,13 +196,27 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  void _handleStartupTransition(StartupState state) {
+    unawaited(CrashlyticsContextSync.syncStartupState(state));
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AppThemeCubit, ThemeMode>(
       builder: (context, themeMode) {
-        return BlocListener<global_auth.GlobalAuthCubit,
-            global_auth.GlobalAuthState>(
-          listener: (context, state) => _handleAuthTransition(state),
+        return MultiBlocListener(
+          listeners: [
+            BlocListener<global_auth.GlobalAuthCubit,
+                global_auth.GlobalAuthState>(
+              listener: (context, state) => _handleAuthTransition(state),
+            ),
+            BlocListener<StartupCubit, StartupState>(
+              listenWhen: (previous, current) =>
+                  previous.stage != current.stage ||
+                  previous.policyStatus != current.policyStatus,
+              listener: (context, state) => _handleStartupTransition(state),
+            ),
+          ],
           child: MaterialApp(
             key: ValueKey('nav_$_sessionEpoch'),
             title: 'Oshhome',

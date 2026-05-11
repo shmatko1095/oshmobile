@@ -1,7 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/presentation/errors/rest_error_localizer.dart';
 import 'package:oshmobile/features/device_catalog/domain/contracts/device_catalog_sync.dart';
 import 'package:oshmobile/features/device_catalog/domain/usecases/assign_device.dart';
@@ -38,16 +39,11 @@ class AddDeviceCubit extends Cubit<AddDeviceState> {
       (failure) async {
         final message = RestErrorLocalizer.resolveFailure(failure);
         unawaited(
-          OshCrashReporter.logNonFatal(
-            failure,
-            null,
-            reason: 'AddDeviceCubit: assign device failed',
-            context: {
-              'feature': 'device_catalog',
-              'action': 'add_device',
-              'serial': serial,
+          OshAnalytics.logEvent(
+            OshAnalyticsEvents.deviceAssignFailed,
+            parameters: {
+              'reason': 'assign_failed',
               'failure_type': failure.type.name,
-              'failure_message': failure.message ?? '',
               'failure_code': failure.code ?? '',
             },
           ),
@@ -62,16 +58,11 @@ class AddDeviceCubit extends Cubit<AddDeviceState> {
       (_) async {
         try {
           await _deviceCatalogSync.refresh();
-        } catch (error, stackTrace) {
-          await OshCrashReporter.logNonFatal(
-            error,
-            stackTrace,
-            reason:
-                'AddDeviceCubit: catalog refresh failed after device assign',
-            context: {
-              'feature': 'device_catalog',
-              'action': 'add_device_refresh',
-              'serial': serial,
+        } catch (_) {
+          await OshAnalytics.logEvent(
+            OshAnalyticsEvents.deviceCatalogRefreshFailed,
+            parameters: {
+              'source': 'assign_post_refresh',
             },
           );
           rethrow;

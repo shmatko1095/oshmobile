@@ -2,10 +2,11 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/core/analytics/osh_analytics.dart';
+import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
-import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/core/presentation/errors/rest_error_localizer.dart';
 import 'package:oshmobile/core/usecase/usecase.dart';
 import 'package:oshmobile/features/device_catalog/data/selected_device_storage.dart';
@@ -74,29 +75,16 @@ class DeviceCatalogCubit extends Cubit<DeviceCatalogState>
     result.fold(
       (failure) {
         final message = RestErrorLocalizer.resolveFailure(failure);
-        if (isInitialLoad) {
-          unawaited(
-            OshCrashReporter.logNonFatal(
-              failure,
-              null,
-              reason: 'DeviceCatalogCubit: initial catalog refresh failed',
-              context: {
-                'feature': 'device_catalog',
-                'action': 'refresh',
-                'user_id': userId,
-                'selected_device_id': previousSelected ?? '',
-                'failure_type': failure.type.name,
-                'failure_message': failure.message ?? '',
-                'failure_code': failure.code ?? '',
-              },
-            ),
-          );
-        } else {
-          OshCrashReporter.log(
-            'Failed to refresh device catalog, user: $userId '
-            'device: ${previousSelected ?? '-'}',
-          );
-        }
+        unawaited(
+          OshAnalytics.logEvent(
+            OshAnalyticsEvents.deviceCatalogRefreshFailed,
+            parameters: {
+              'source': isInitialLoad ? 'initial_load' : 'manual_refresh',
+              'failure_type': failure.type.name,
+              'failure_code': failure.code ?? '',
+            },
+          ),
+        );
         emit(
           state.copyWith(
             status: DeviceCatalogStatus.failure,
