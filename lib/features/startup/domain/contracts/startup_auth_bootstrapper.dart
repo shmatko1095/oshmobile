@@ -1,3 +1,9 @@
 abstract interface class StartupAuthBootstrapper {
-  Future<bool> checkAuthStatus();
+  Future<StartupAuthBootstrapResult> checkAuthStatus();
+}
+
+enum StartupAuthBootstrapResult {
+  authenticated,
+  unauthenticated,
+  transientFailure,
 }

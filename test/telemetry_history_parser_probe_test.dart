@@ -21,6 +21,11 @@ class _FakeMobileV1Service extends MobileV1Service {
   }
 
   @override
+  Future<Response<dynamic>> ensureMySession() {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<Response<dynamic>> getMyDeviceTelemetryHistory({
     required String serial,
     required String seriesKeys,

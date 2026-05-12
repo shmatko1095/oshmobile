@@ -73,7 +73,8 @@ void main() {
   test('start reaches ready before background policy result is applied',
       () async {
     connectionChecker.onCheck = () async => true;
-    authBootstrapper.onCheck = () async => true;
+    authBootstrapper.onCheck =
+        () async => StartupAuthBootstrapResult.authenticated;
     final policyCompleter = Completer<MobileClientPolicyDecision>();
     policyRepository.onCheck = () => policyCompleter.future;
 
@@ -124,7 +125,8 @@ void main() {
 
   test('require_update is applied after startup reaches ready', () async {
     connectionChecker.onCheck = () async => true;
-    authBootstrapper.onCheck = () async => true;
+    authBootstrapper.onCheck =
+        () async => StartupAuthBootstrapResult.authenticated;
     policyRepository.nextDecision = MobileClientPolicyDecision(
       status: MobileClientPolicyStatus.requireUpdate,
       policy: _samplePolicy,
@@ -147,10 +149,63 @@ void main() {
     await cubit.close();
   });
 
+  test('transient auth bootstrap failure keeps startup in retry flow',
+      () async {
+    connectionChecker.onCheck = () async => true;
+    authBootstrapper.onCheck =
+        () async => StartupAuthBootstrapResult.transientFailure;
+    final cubit = StartupCubit(
+      connectionChecker: connectionChecker,
+      authBootstrapper: authBootstrapper,
+      clientPolicyRepository: policyRepository,
+    );
+
+    final emitted = <StartupState>[];
+    final sub = cubit.stream.listen(emitted.add);
+
+    await cubit.start();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(
+      emitted.map((state) => state.stage).toList(),
+      <StartupStage>[
+        StartupStage.checkingConnectivity,
+        StartupStage.restoringSession,
+        StartupStage.noInternet,
+      ],
+    );
+    expect(cubit.state.stage, StartupStage.noInternet);
+    expect(policyRepository.calls, 0);
+
+    await sub.cancel();
+    await cubit.close();
+  });
+
+  test('unauthenticated auth bootstrap reaches ready sign-in flow', () async {
+    connectionChecker.onCheck = () async => true;
+    authBootstrapper.onCheck =
+        () async => StartupAuthBootstrapResult.unauthenticated;
+    final cubit = StartupCubit(
+      connectionChecker: connectionChecker,
+      authBootstrapper: authBootstrapper,
+      clientPolicyRepository: policyRepository,
+    );
+
+    await cubit.start();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(cubit.state.stage, StartupStage.ready);
+    expect(authBootstrapper.calls, 1);
+    expect(policyRepository.calls, 1);
+
+    await cubit.close();
+  });
+
   test('retry emits isRetrying before restarting startup flow', () async {
     var isOnline = false;
     connectionChecker.onCheck = () async => isOnline;
-    authBootstrapper.onCheck = () async => true;
+    authBootstrapper.onCheck =
+        () async => StartupAuthBootstrapResult.authenticated;
     policyRepository.nextDecision = _allowDecision;
 
     final cubit = StartupCubit(
@@ -184,7 +239,8 @@ void main() {
 
   test('onAppResumed applies require_update immediately', () async {
     connectionChecker.onCheck = () async => true;
-    authBootstrapper.onCheck = () async => true;
+    authBootstrapper.onCheck =
+        () async => StartupAuthBootstrapResult.authenticated;
     policyRepository.nextDecision = _allowDecision;
 
     final cubit = StartupCubit(
@@ -261,12 +317,15 @@ class _FakeInternetConnectionChecker implements InternetConnectionChecker {
 
 class _FakeStartupAuthBootstrapper implements StartupAuthBootstrapper {
   int calls = 0;
-  Future<bool> Function()? onCheck;
+  Future<StartupAuthBootstrapResult> Function()? onCheck;
 
   @override
-  Future<bool> checkAuthStatus() {
+  Future<StartupAuthBootstrapResult> checkAuthStatus() {
     calls++;
-    return onCheck?.call() ?? Future<bool>.value(true);
+    return onCheck?.call() ??
+        Future<StartupAuthBootstrapResult>.value(
+          StartupAuthBootstrapResult.authenticated,
+        );
   }
 }
 

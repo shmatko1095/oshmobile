@@ -19,6 +19,9 @@ abstract class MobileV1Service extends ChopperService {
   @GET(path: '/me/devices')
   Future<Response> listMyDevices();
 
+  @POST(path: '/me/session')
+  Future<Response> ensureMySession();
+
   @POST(path: '/demo/session')
   Future<Response> createDemoSession();
 

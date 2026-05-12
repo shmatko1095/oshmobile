@@ -216,7 +216,8 @@ class _FakeInternetConnectionChecker implements InternetConnectionChecker {
 
 class _FakeStartupAuthBootstrapper implements StartupAuthBootstrapper {
   @override
-  Future<bool> checkAuthStatus() async => true;
+  Future<StartupAuthBootstrapResult> checkAuthStatus() async =>
+      StartupAuthBootstrapResult.authenticated;
 }
 
 class _FakeStartupClientPolicyRepository

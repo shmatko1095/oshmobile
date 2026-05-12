@@ -30,6 +30,17 @@ final class _$MobileV1Service extends MobileV1Service {
   }
 
   @override
+  Future<Response<dynamic>> ensureMySession() {
+    final Uri $url = Uri.parse('https://api.oshhome.com/v1/mobile/me/session');
+    final Request $request = Request(
+      'POST',
+      $url,
+      client.baseUrl,
+    );
+    return client.send<dynamic, dynamic>($request);
+  }
+
+  @override
   Future<Response<dynamic>> createDemoSession() {
     final Uri $url =
         Uri.parse('https://api.oshhome.com/v1/mobile/demo/session');

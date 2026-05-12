@@ -138,8 +138,9 @@ class StartupCubit extends Cubit<StartupState> {
     emit(state.copyWith(stage: StartupStage.restoringSession));
     OshCrashReporter.log('startup:restoring_session');
 
+    final StartupAuthBootstrapResult authResult;
     try {
-      await _authBootstrapper.checkAuthStatus();
+      authResult = await _authBootstrapper.checkAuthStatus();
     } catch (error, st) {
       await _reportStartupFailure(
         error,
@@ -147,6 +148,13 @@ class StartupCubit extends Cubit<StartupState> {
         phase: 'restoring_session',
         isRetry: isRetry,
       );
+      _emitNoInternet();
+      return;
+    }
+
+    if (authResult == StartupAuthBootstrapResult.transientFailure) {
+      _emitNoInternet();
+      return;
     }
 
     emit(state.copyWith(stage: StartupStage.ready));

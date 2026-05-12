@@ -7,6 +7,7 @@ import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_user_properties.dart';
 import 'package:oshmobile/core/common/entities/jwt_user_data.dart';
 import 'package:oshmobile/core/common/entities/session.dart';
+import 'package:oshmobile/core/common/cubits/auth/session_provisioning_failure.dart';
 import 'package:oshmobile/core/logging/app_log.dart';
 import 'package:oshmobile/core/logging/crashlytics_context_keys.dart';
 import 'package:oshmobile/core/logging/crashlytics_context_sync.dart';
@@ -38,7 +39,7 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState>
         super(const AuthInitial(0));
 
   int _revision = 0;
-  Future<bool>? _authBootstrapFuture;
+  Future<StartupAuthBootstrapResult>? _authBootstrapFuture;
 
   void _emitAuthInitial() {
     _revision++;
@@ -51,11 +52,11 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState>
   }
 
   @override
-  Future<bool> checkAuthStatus() {
+  Future<StartupAuthBootstrapResult> checkAuthStatus() {
     final inFlight = _authBootstrapFuture;
     if (inFlight != null) return inFlight;
 
-    final future = _refreshTokenInternal();
+    final future = _bootstrapStoredSession();
     _authBootstrapFuture = future;
     future.whenComplete(() {
       if (identical(_authBootstrapFuture, future)) {
@@ -67,6 +68,16 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState>
 
   Future<void> signedIn(Session session) async {
     await _sessionStorage.setSession(session);
+    if (!session.isDemoMode) {
+      try {
+        await _ensureStoredSession();
+      } on SessionProvisioningException catch (error) {
+        if (error.kind == SessionProvisioningFailureKind.authRejected) {
+          await _rejectStoredSession();
+        }
+        rethrow;
+      }
+    }
     await _syncTelemetryIdentity();
     _emitAuthenticated();
   }
@@ -88,10 +99,20 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState>
   }
 
   Future<bool> refreshToken() async {
-    return _refreshTokenInternal();
+    return await _refreshTokenInternal() ?? false;
   }
 
-  Future<bool> _refreshTokenInternal() async {
+  Future<StartupAuthBootstrapResult> _bootstrapStoredSession() async {
+    final refreshed = await _refreshTokenInternal(ensureProvisioning: true);
+    if (refreshed == null) {
+      return StartupAuthBootstrapResult.transientFailure;
+    }
+    return refreshed
+        ? StartupAuthBootstrapResult.authenticated
+        : StartupAuthBootstrapResult.unauthenticated;
+  }
+
+  Future<bool?> _refreshTokenInternal({bool ensureProvisioning = false}) async {
     try {
       final currentSession = _sessionStorage.getSession();
       if (currentSession == null) {
@@ -115,11 +136,28 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState>
         return false;
       }
 
-      await _applySession(
-        Session.fromJson(response.body).copyWith(
-          authProvider: currentSession.authProvider,
-        ),
+      final session = Session.fromJson(response.body).copyWith(
+        authProvider: currentSession.authProvider,
       );
+      await _sessionStorage.setSession(session);
+      if (ensureProvisioning) {
+        try {
+          await _ensureStoredSession();
+        } on SessionProvisioningException catch (error, st) {
+          if (error.kind == SessionProvisioningFailureKind.transient) {
+            OshCrashReporter.logNonFatal(
+              error,
+              st,
+              reason: 'Session provisioning failed during startup',
+            );
+            return null;
+          }
+          await _rejectStoredSession();
+          return false;
+        }
+      }
+      await _syncTelemetryIdentity();
+      _emitAuthenticated();
       return true;
     } catch (error, st) {
       OshCrashReporter.logNonFatal(error, st, reason: 'Token refresh failed');
@@ -166,6 +204,45 @@ class GlobalAuthCubit extends Cubit<GlobalAuthState>
     await _sessionStorage.setSession(session);
     await _syncTelemetryIdentity();
     _emitAuthenticated();
+  }
+
+  Future<void> _ensureStoredSession() async {
+    final session = _sessionStorage.getSession();
+    if (session == null || session.isDemoMode) {
+      return;
+    }
+
+    try {
+      final response = await _mobileService.ensureMySession();
+      if (response.isSuccessful) {
+        return;
+      }
+
+      throw SessionProvisioningException(
+        kind: _provisioningFailureKind(response.statusCode),
+        message: _extractResponseMessage(response),
+      );
+    } on SessionProvisioningException {
+      rethrow;
+    } catch (error) {
+      throw SessionProvisioningException(
+        kind: SessionProvisioningFailureKind.transient,
+        message: error.toString(),
+      );
+    }
+  }
+
+  SessionProvisioningFailureKind _provisioningFailureKind(int statusCode) {
+    return switch (statusCode) {
+      401 || 403 || 404 => SessionProvisioningFailureKind.authRejected,
+      _ => SessionProvisioningFailureKind.transient,
+    };
+  }
+
+  Future<void> _rejectStoredSession() async {
+    await _sessionStorage.clearSession();
+    await _clearTelemetryIdentity();
+    _emitAuthInitial();
   }
 
   Future<void> _syncTelemetryIdentity() async {

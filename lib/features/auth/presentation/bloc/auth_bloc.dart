@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/analytics/osh_analytics.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
+import 'package:oshmobile/core/common/cubits/auth/session_provisioning_failure.dart';
 import 'package:oshmobile/core/common/entities/session.dart';
 import 'package:oshmobile/core/error/failures.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
@@ -134,12 +135,49 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Session session, {
     required String provider,
   }) async {
-    await _globalAuthCubit.signedIn(session);
+    try {
+      await _globalAuthCubit.signedIn(session);
+    } on SessionProvisioningException catch (failure, st) {
+      await _emitProvisioningFailure(emit, failure, st, provider: provider);
+      return;
+    }
     await OshAnalytics.logEvent(
       OshAnalyticsEvents.authSignInSucceeded,
       parameters: {'provider': provider},
     );
     emit(AuthSuccess("Success"));
+  }
+
+  Future<void> _emitProvisioningFailure(
+    Emitter<AuthState> emit,
+    SessionProvisioningException failure,
+    StackTrace stackTrace, {
+    required String provider,
+  }) async {
+    await OshAnalytics.logEvent(
+      OshAnalyticsEvents.authSignInFailed,
+      parameters: {
+        'provider': provider,
+        'reason': failure.isTransient
+            ? 'session_provisioning_transient'
+            : 'session_provisioning_rejected',
+      },
+    );
+
+    OshCrashReporter.logNonFatal(
+      failure,
+      stackTrace,
+      reason: 'Session provisioning failed during sign-in',
+    );
+
+    if (failure.isTransient) {
+      emit(const AuthFailedNoInternetConnection());
+      return;
+    }
+
+    emit(AuthFailedUnexpected(
+      'Sign in could not be completed. Please sign in again.',
+    ));
   }
 
   Future<void> _emitAuthFailure(
