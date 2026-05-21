@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_history_strip_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_mode_bar.dart';
@@ -10,10 +11,12 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/widge
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/load_factor_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/outlet_temp_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/power_card.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/power_metric_card.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
 import 'package:oshmobile/features/sensors/presentation/open_sensor_editor.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/open_telemetry_history.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric_catalog.dart';
 
 import 'device_presenter.dart';
 
@@ -142,11 +145,14 @@ class ThermostatBasicPresenter implements DevicePresenter {
       'heatingToggle',
       'loadFactor24h',
       'powerNow',
+      'voltageNow',
+      'currentNow',
+      'apparentPowerNow',
       'inletTemp',
       'outletTemp',
       'deltaT',
     ]) {
-      if (bundle.canRenderWidget(widgetId)) {
+      if (_canRenderWidgetWithValue(bundle, widgetId)) {
         ids.add(widgetId);
       }
     }
@@ -156,8 +162,9 @@ class ThermostatBasicPresenter implements DevicePresenter {
   List<_Tile> _buildTiles(
       BuildContext context, DeviceConfigurationBundle bundle) {
     final tiles = <_Tile>[];
+    final powerMeterHistorySeriesKeys = _powerMeterHistorySeriesKeys(bundle);
 
-    if (bundle.canRenderWidget('heatingToggle')) {
+    if (_canRenderWidgetWithValue(bundle, 'heatingToggle')) {
       final bind = _widgetControl(bundle, 'heatingToggle', 0);
       tiles.add(
         _Tile(
@@ -171,7 +178,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
       );
     }
 
-    if (bundle.canRenderWidget('loadFactor24h')) {
+    if (_canRenderWidgetWithValue(bundle, 'loadFactor24h')) {
       final bind = _widgetControl(bundle, 'loadFactor24h', 0);
       tiles.add(
         _Tile(
@@ -185,17 +192,94 @@ class ThermostatBasicPresenter implements DevicePresenter {
       );
     }
 
-    if (bundle.canRenderWidget('powerNow')) {
+    if (_canRenderWidgetWithValue(bundle, 'powerNow')) {
       final bind = _widgetControl(bundle, 'powerNow', 0);
+      final validBind = _optionalWidgetControl(bundle, 'powerNow', 1);
       tiles.add(
         _Tile(
           id: 'powerNow',
-          builder: () => PowerCard(bind: bind),
+          builder: () => PowerCard(
+            bind: bind,
+            validBind: validBind,
+          ),
         ),
       );
     }
 
-    if (bundle.canRenderWidget('inletTemp')) {
+    if (_canRenderWidgetWithValue(bundle, 'voltageNow')) {
+      final valueBind = _widgetControl(bundle, 'voltageNow', 0);
+      final validBind = _optionalWidgetControl(bundle, 'voltageNow', 1);
+      tiles.add(
+        _Tile(
+          id: 'voltageNow',
+          builder: () => PowerMetricCard(
+            valueBind: valueBind,
+            validBind: validBind,
+            title: 'Voltage',
+            unit: 'V',
+            icon: Icons.electrical_services_rounded,
+            accentColor: AppPalette.amberAccent,
+            onTap: () => TelemetryHistoryNavigator.openPowerMeterFromHost(
+              context,
+              initialSeriesKey:
+                  TelemetryHistoryMetricCatalog.powerMeterVoltageV,
+              configuredSeriesKeys: powerMeterHistorySeriesKeys,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_canRenderWidgetWithValue(bundle, 'currentNow')) {
+      final valueBind = _widgetControl(bundle, 'currentNow', 0);
+      final validBind = _optionalWidgetControl(bundle, 'currentNow', 1);
+      tiles.add(
+        _Tile(
+          id: 'currentNow',
+          builder: () => PowerMetricCard(
+            valueBind: valueBind,
+            validBind: validBind,
+            title: 'Current',
+            unit: 'A',
+            icon: Icons.timeline_rounded,
+            accentColor: AppPalette.cyanAccent,
+            decimals: 2,
+            onTap: () => TelemetryHistoryNavigator.openPowerMeterFromHost(
+              context,
+              initialSeriesKey:
+                  TelemetryHistoryMetricCatalog.powerMeterCurrentA,
+              configuredSeriesKeys: powerMeterHistorySeriesKeys,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_canRenderWidgetWithValue(bundle, 'apparentPowerNow')) {
+      final valueBind = _widgetControl(bundle, 'apparentPowerNow', 0);
+      final validBind = _optionalWidgetControl(bundle, 'apparentPowerNow', 1);
+      tiles.add(
+        _Tile(
+          id: 'apparentPowerNow',
+          builder: () => PowerMetricCard(
+            valueBind: valueBind,
+            validBind: validBind,
+            title: 'Apparent power',
+            unit: 'VA',
+            icon: Icons.speed_rounded,
+            accentColor: AppPalette.accentPrimary,
+            onTap: () => TelemetryHistoryNavigator.openPowerMeterFromHost(
+              context,
+              initialSeriesKey:
+                  TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
+              configuredSeriesKeys: powerMeterHistorySeriesKeys,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_canRenderWidgetWithValue(bundle, 'inletTemp')) {
       final bind = _widgetControl(bundle, 'inletTemp', 0);
       tiles.add(
         _Tile(
@@ -205,7 +289,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
       );
     }
 
-    if (bundle.canRenderWidget('outletTemp')) {
+    if (_canRenderWidgetWithValue(bundle, 'outletTemp')) {
       final bind = _widgetControl(bundle, 'outletTemp', 0);
       tiles.add(
         _Tile(
@@ -215,7 +299,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
       );
     }
 
-    if (bundle.canRenderWidget('deltaT')) {
+    if (_canRenderWidgetWithValue(bundle, 'deltaT')) {
       final inletBind = _widgetControl(bundle, 'deltaT', 0);
       final outletBind = _widgetControl(bundle, 'deltaT', 1);
       tiles.add(
@@ -258,7 +342,45 @@ class ThermostatBasicPresenter implements DevicePresenter {
     }
     return widget.controlIds[index];
   }
+
+  String? _optionalWidgetControl(
+    DeviceConfigurationBundle bundle,
+    String widgetId,
+    int index,
+  ) {
+    final bind = _widgetControl(bundle, widgetId, index);
+    return bind.isEmpty ? null : bind;
+  }
+
+  static List<String> _powerMeterHistorySeriesKeys(
+    DeviceConfigurationBundle bundle,
+  ) {
+    final keys = <String>[];
+    for (final entry in _powerMeterHistoryWidgetSeries.entries) {
+      if (_canRenderWidgetWithValue(bundle, entry.key)) {
+        keys.add(entry.value);
+      }
+    }
+    return keys;
+  }
+
+  static bool _canRenderWidgetWithValue(
+    DeviceConfigurationBundle bundle,
+    String widgetId,
+  ) {
+    final widget = bundle.widget(widgetId);
+    if (widget == null || widget.controlIds.isEmpty) {
+      return false;
+    }
+    return bundle.canRenderWidget(widgetId);
+  }
 }
+
+const Map<String, String> _powerMeterHistoryWidgetSeries = <String, String>{
+  'voltageNow': TelemetryHistoryMetricCatalog.powerMeterVoltageV,
+  'currentNow': TelemetryHistoryMetricCatalog.powerMeterCurrentA,
+  'apparentPowerNow': TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
+};
 
 class _Tile {
   final String id;

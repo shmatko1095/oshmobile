@@ -324,6 +324,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Failed to load chart",
     ),
+    "TelemetryHistoryMetricActivePower": MessageLookupByLibrary.simpleMessage(
+      "Active power",
+    ),
+    "TelemetryHistoryMetricApparentPower": MessageLookupByLibrary.simpleMessage(
+      "Apparent power",
+    ),
+    "TelemetryHistoryMetricCurrent": MessageLookupByLibrary.simpleMessage(
+      "Current",
+    ),
     "TelemetryHistoryMetricHeatingActivity":
         MessageLookupByLibrary.simpleMessage("Heating activity"),
     "TelemetryHistoryMetricLoadFactor": MessageLookupByLibrary.simpleMessage(
@@ -334,6 +343,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "TelemetryHistoryMetricTemperature": MessageLookupByLibrary.simpleMessage(
       "Temperature",
+    ),
+    "TelemetryHistoryMetricVoltage": MessageLookupByLibrary.simpleMessage(
+      "Voltage",
     ),
     "TelemetryHistoryNoData": MessageLookupByLibrary.simpleMessage(
       "No data yet.",

@@ -12,6 +12,7 @@ import 'package:oshmobile/app/device_session/scopes/device_route_scope.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_cubit.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric_catalog.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/pages/telemetry_history_page.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
@@ -23,12 +24,7 @@ class TelemetryHistoryNavigator {
     _openMetrics(
       hostContext,
       metrics: <TelemetryHistoryMetric>[
-        TelemetryHistoryMetric(
-          title: s.TelemetryHistoryMetricLoadFactor,
-          seriesKey: 'load_factor',
-          kind: TelemetryHistoryMetricKind.numeric,
-          unit: '%',
-        ),
+        TelemetryHistoryMetricCatalog.loadFactorMetric(s),
       ],
     );
   }
@@ -38,12 +34,33 @@ class TelemetryHistoryNavigator {
     _openMetrics(
       hostContext,
       metrics: <TelemetryHistoryMetric>[
-        TelemetryHistoryMetric(
-          title: s.TelemetryHistoryMetricHeatingActivity,
-          seriesKey: 'heater_enabled',
-          kind: TelemetryHistoryMetricKind.boolean,
-        ),
+        TelemetryHistoryMetricCatalog.heatingActivityMetric(s),
       ],
+    );
+  }
+
+  static void openPowerMeterFromHost(
+    BuildContext hostContext, {
+    required String initialSeriesKey,
+    required Iterable<String> configuredSeriesKeys,
+  }) {
+    final s = S.of(hostContext);
+    final metrics = TelemetryHistoryMetricCatalog.powerMeterMetrics(
+      s,
+      configuredSeriesKeys: configuredSeriesKeys,
+    );
+    if (metrics.isEmpty) {
+      return;
+    }
+
+    _openMetrics(
+      hostContext,
+      metrics: metrics,
+      initialMetricIndex:
+          TelemetryHistoryMetricCatalog.initialIndexForSeriesKey(
+        metrics,
+        initialSeriesKey,
+      ),
     );
   }
 
@@ -99,17 +116,8 @@ class TelemetryHistoryNavigator {
       hostContext,
       metrics: metrics,
       comparisonMetrics: <TelemetryHistoryMetric>[
-        TelemetryHistoryMetric(
-          title: s.TelemetryHistoryMetricTarget,
-          seriesKey: 'target_temp',
-          kind: TelemetryHistoryMetricKind.numeric,
-          unit: '°C',
-        ),
-        TelemetryHistoryMetric(
-          title: s.Heating,
-          seriesKey: 'heater_enabled',
-          kind: TelemetryHistoryMetricKind.boolean,
-        ),
+        TelemetryHistoryMetricCatalog.targetTempMetric(s),
+        TelemetryHistoryMetricCatalog.heatingActivityMetric(s),
       ],
       initialMetricIndex: initialIndex < 0 ? 0 : initialIndex,
     );
@@ -177,9 +185,13 @@ class TelemetryHistoryNavigator {
     }
 
     return switch (metric.seriesKey) {
-      'load_factor' => 'load_factor',
-      'heater_enabled' => 'heater_enabled',
-      'target_temp' => 'target_temp',
+      TelemetryHistoryMetricCatalog.loadFactor => 'load_factor',
+      TelemetryHistoryMetricCatalog.heaterEnabled => 'heater_enabled',
+      TelemetryHistoryMetricCatalog.targetTemp => 'target_temp',
+      TelemetryHistoryMetricCatalog.powerMeterVoltageV => 'power_meter_voltage',
+      TelemetryHistoryMetricCatalog.powerMeterCurrentA => 'power_meter_current',
+      TelemetryHistoryMetricCatalog.powerMeterActivePowerW =>
+        'power_meter_active_power',
       _ => 'metric',
     };
   }

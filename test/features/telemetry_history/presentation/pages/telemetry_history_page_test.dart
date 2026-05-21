@@ -298,5 +298,116 @@ void main() {
 
       await cubit.close();
     });
+
+    testWidgets('formats power meter metrics with configured precision',
+        (tester) async {
+      final api = _QueuedTelemetryHistoryApi();
+      final now = DateTime.utc(2026, 3, 14, 20, 18, 40);
+      final cubit = TelemetryHistoryCubit(
+        seriesReader: api,
+        metrics: const <TelemetryHistoryMetric>[
+          TelemetryHistoryMetric(
+            title: 'Voltage',
+            seriesKey: 'power_meter.voltage_v',
+            kind: TelemetryHistoryMetricKind.numeric,
+            unit: 'V',
+          ),
+          TelemetryHistoryMetric(
+            title: 'Current',
+            seriesKey: 'power_meter.current_a',
+            kind: TelemetryHistoryMetricKind.numeric,
+            unit: 'A',
+            fractionDigits: 2,
+          ),
+          TelemetryHistoryMetric(
+            title: 'Active power',
+            seriesKey: 'power_meter.active_power_w',
+            kind: TelemetryHistoryMetricKind.numeric,
+            unit: 'W',
+          ),
+        ],
+        initialMetricIndex: 1,
+        nowUtc: () => now,
+      );
+
+      await _pumpPage(tester, cubit);
+
+      cubit.load();
+      await tester.pump();
+      expect(api.requests, hasLength(1));
+      expect(api.requests.single.seriesKey, 'power_meter.current_a');
+
+      api.requests.single.completer.complete(
+        _series(
+          seriesKey: api.requests.single.seriesKey,
+          from: api.requests.single.from,
+          to: api.requests.single.to,
+          points: <TelemetryHistoryPoint>[
+            TelemetryHistoryPoint(
+              bucketStart: api.requests.single.from,
+              samplesCount: 1,
+              avgValue: 4.256,
+              minValue: 4.256,
+              maxValue: 4.256,
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('4.26 A'), findsNWidgets(3));
+
+      await tester.tap(find.text('Voltage'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(api.requests, hasLength(2));
+
+      api.requests.last.completer.complete(
+        _series(
+          seriesKey: api.requests.last.seriesKey,
+          from: api.requests.last.from,
+          to: api.requests.last.to,
+          points: <TelemetryHistoryPoint>[
+            TelemetryHistoryPoint(
+              bucketStart: api.requests.last.from,
+              samplesCount: 1,
+              avgValue: 229.74,
+              minValue: 229.74,
+              maxValue: 229.74,
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('229.7 V'), findsNWidgets(3));
+
+      await tester.tap(find.text('Active power'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(api.requests, hasLength(3));
+
+      api.requests.last.completer.complete(
+        _series(
+          seriesKey: api.requests.last.seriesKey,
+          from: api.requests.last.from,
+          to: api.requests.last.to,
+          points: <TelemetryHistoryPoint>[
+            TelemetryHistoryPoint(
+              bucketStart: api.requests.last.from,
+              samplesCount: 1,
+              avgValue: 512.54,
+              minValue: 512.54,
+              maxValue: 512.54,
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('512.5 W'), findsNWidgets(3));
+
+      await cubit.close();
+    });
   });
 }

@@ -334,6 +334,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Не вдалося завантажити графік",
     ),
+    "TelemetryHistoryMetricActivePower": MessageLookupByLibrary.simpleMessage(
+      "Активна потужність",
+    ),
+    "TelemetryHistoryMetricApparentPower": MessageLookupByLibrary.simpleMessage(
+      "Повна потужність",
+    ),
+    "TelemetryHistoryMetricCurrent": MessageLookupByLibrary.simpleMessage(
+      "Струм",
+    ),
     "TelemetryHistoryMetricHeatingActivity":
         MessageLookupByLibrary.simpleMessage("Активність нагріву"),
     "TelemetryHistoryMetricLoadFactor": MessageLookupByLibrary.simpleMessage(
@@ -344,6 +353,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "TelemetryHistoryMetricTemperature": MessageLookupByLibrary.simpleMessage(
       "Температура",
+    ),
+    "TelemetryHistoryMetricVoltage": MessageLookupByLibrary.simpleMessage(
+      "Напруга",
     ),
     "TelemetryHistoryNoData": MessageLookupByLibrary.simpleMessage(
       "Даних ще немає.",

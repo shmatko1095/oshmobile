@@ -99,7 +99,7 @@ String _fmtValue(double value, TelemetryHistoryMetric metric) {
     return '${(value * 100).round()}%';
   }
   final unit = metric.unit.isEmpty ? '' : ' ${metric.unit}';
-  return '${value.toStringAsFixed(1)}$unit';
+  return '${value.toStringAsFixed(metric.fractionDigits)}$unit';
 }
 
 String _rangeLabel(S s, TelemetryHistoryRange range) {

@@ -2119,6 +2119,46 @@ class S {
     );
   }
 
+  /// `Voltage`
+  String get TelemetryHistoryMetricVoltage {
+    return Intl.message(
+      'Voltage',
+      name: 'TelemetryHistoryMetricVoltage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Current`
+  String get TelemetryHistoryMetricCurrent {
+    return Intl.message(
+      'Current',
+      name: 'TelemetryHistoryMetricCurrent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Active power`
+  String get TelemetryHistoryMetricActivePower {
+    return Intl.message(
+      'Active power',
+      name: 'TelemetryHistoryMetricActivePower',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Apparent power`
+  String get TelemetryHistoryMetricApparentPower {
+    return Intl.message(
+      'Apparent power',
+      name: 'TelemetryHistoryMetricApparentPower',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Temperature trend (24h)`
   String get TelemetryHistoryPreviewTitle24h {
     return Intl.message(

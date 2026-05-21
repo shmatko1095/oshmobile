@@ -5,10 +5,15 @@ import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 
 class PowerCard extends StatelessWidget {
-  const PowerCard({super.key, required this.bind});
+  const PowerCard({
+    super.key,
+    required this.bind,
+    this.validBind,
+  });
 
   /// Bind that returns instantaneous power in **watts**
   final String bind; // e.g. 'sensor.power'
+  final String? validBind;
 
   String _fmtPower(num? w) {
     if (w == null) return '—';
@@ -21,35 +26,79 @@ class PowerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final power = context.select<DeviceSnapshotCubit, num?>(
-      (c) => asNum(readBind(c.state.controlState.data ?? const {}, bind)),
+    final snapshot = context.select<DeviceSnapshotCubit, _PowerSnapshot>(
+      (c) {
+        final controlState = c.state.controlState.data ?? const {};
+        final valid = validBind == null || validBind!.isEmpty
+            ? null
+            : readBind(controlState, validBind!);
+        return _PowerSnapshot(
+          power: asNum(readBind(controlState, bind)),
+          valid: valid is bool ? valid : null,
+        );
+      },
     );
+    final valueText =
+        snapshot.valid == false ? _fmtPower(null) : _fmtPower(snapshot.power);
+
     return GlassStatCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Icon(Icons.bolt, color: AppPalette.amberAccent, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              'Power now',
-              style: TextStyle(
-                color: statTitleColor(context),
-                fontWeight: FontWeight.w600,
+          Row(
+            children: [
+              Icon(Icons.bolt, color: AppPalette.amberAccent, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Power now',
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: statTitleColor(context),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
           const SizedBox(height: 8),
-          Text(
-            _fmtPower(power),
-            style: TextStyle(
-              color: statValueColor(context),
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              valueText,
+              maxLines: 1,
+              style: TextStyle(
+                color: statValueColor(context),
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _PowerSnapshot {
+  const _PowerSnapshot({
+    required this.power,
+    required this.valid,
+  });
+
+  final num? power;
+  final bool? valid;
+
+  @override
+  bool operator ==(Object other) {
+    return other is _PowerSnapshot &&
+        other.power == power &&
+        other.valid == valid;
+  }
+
+  @override
+  int get hashCode => Object.hash(power, valid);
 }
