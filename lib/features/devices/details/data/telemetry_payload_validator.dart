@@ -12,7 +12,29 @@ class TelemetryPayloadValidator {
     if (schema == null) return false;
     return RuntimeJsonSchemaValidator.validate(
       value: data,
-      schema: schema,
+      schema: _allowUnknownFields(schema),
     );
+  }
+
+  Map<String, dynamic> _allowUnknownFields(Map<String, dynamic> schema) {
+    return _copySchemaValue(schema) as Map<String, dynamic>;
+  }
+
+  dynamic _copySchemaValue(dynamic value) {
+    if (value is Map) {
+      final out = <String, dynamic>{};
+      value.forEach((key, child) {
+        final normalizedKey = key.toString();
+        if (normalizedKey == 'additionalProperties' && child == false) {
+          return;
+        }
+        out[normalizedKey] = _copySchemaValue(child);
+      });
+      return out;
+    }
+    if (value is List) {
+      return [for (final item in value) _copySchemaValue(item)];
+    }
+    return value;
   }
 }

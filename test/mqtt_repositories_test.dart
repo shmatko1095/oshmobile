@@ -1007,6 +1007,135 @@ void main() {
     expect(state.climateSensors.first.humidity, 44.2);
   });
 
+  test('TelemetryRepository tolerates power_meter extras in telemetry.state',
+      () async {
+    final mqtt = _FakeDeviceMqttRepo();
+    final contracts = _runtimeContractsFor({
+      'telemetry': {'state'},
+    });
+    final topics = TelemetryTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
+    final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
+    final repo = MqttTelemetryRepositoryImpl(
+      jrpc: jrpc,
+      topics: topics,
+      contracts: contracts,
+      deviceSn: 'device-1',
+      pollInterval: Duration.zero,
+    );
+
+    await repo.subscribe();
+
+    final future = repo.watchState().first.timeout(
+          const Duration(seconds: 1),
+        );
+
+    mqtt.emit(
+      topics.stateTelemetry('device-1'),
+      {
+        'jsonrpc': '2.0',
+        'method': contracts.telemetry.read.method('state'),
+        'params': {
+          'meta': {
+            'schema': contracts.telemetry.read.schema,
+            'src': 'device',
+            'ts': 3,
+          },
+          'data': {
+            'climate_sensors': [
+              {
+                'id': 'air',
+                'temp_valid': true,
+                'humidity_valid': true,
+                'temp': 22.6,
+                'humidity': 44.2,
+              }
+            ],
+            'heater_enabled': true,
+            'load_factor': 24,
+            'power_meter': {
+              'online': true,
+              'voltage_valid': true,
+              'voltage_v': 229.7,
+              'current_valid': true,
+              'current_a': 2.25,
+              'active_power_valid': true,
+              'active_power_w': 512.4,
+              'apparent_power_valid': true,
+              'apparent_power_va': 516.8,
+              'power_factor_valid': true,
+              'power_factor': 0.99,
+            },
+            'future_top_level_field': 'kept',
+          }
+        }
+      },
+    );
+
+    final state = await future;
+    final json = state.toJson();
+    final powerMeter = json['power_meter'] as Map;
+
+    expect(state.heaterEnabled, isTrue);
+    expect(state.loadFactor, 24);
+    expect(powerMeter['active_power_w'], 512.4);
+    expect(json['future_top_level_field'], 'kept');
+    expect(state.raw['power_meter'], isA<Map>());
+
+    await repo.unsubscribe();
+  });
+
+  test('TelemetryRepository rejects invalid known telemetry fields', () async {
+    final mqtt = _FakeDeviceMqttRepo();
+    final contracts = _runtimeContractsFor({
+      'telemetry': {'state'},
+    });
+    final topics = TelemetryTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
+    final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
+    final repo = MqttTelemetryRepositoryImpl(
+      jrpc: jrpc,
+      topics: topics,
+      contracts: contracts,
+      deviceSn: 'device-1',
+      timeout: const Duration(milliseconds: 200),
+      pollInterval: Duration.zero,
+    );
+
+    final future = repo.fetch();
+    final req = mqtt.published.single;
+    final reqId = req.payload['id']?.toString();
+
+    mqtt.emit(
+      topics.rsp('device-1'),
+      {
+        'jsonrpc': '2.0',
+        'id': reqId,
+        'result': {
+          'meta': {'schema': contracts.telemetry.read.schema},
+          'data': {
+            'climate_sensors': [
+              {
+                'id': 'air',
+                'temp_valid': true,
+                'humidity_valid': true,
+                'temp': 22.6,
+                'humidity': 44.2,
+              }
+            ],
+            'load_factor': 24,
+            'power_meter': {
+              'online': true,
+              'active_power_valid': true,
+              'active_power_w': 512.4,
+            },
+          }
+        }
+      },
+    );
+
+    await expectLater(future, throwsStateError);
+    expect(repo.currentState, isNull);
+  });
+
   test('TelemetryRepository polls telemetry.get periodically', () async {
     final mqtt = _FakeDeviceMqttRepo();
     final contracts = _runtimeContractsFor({

@@ -319,11 +319,13 @@ class TelemetryState {
   final List<ClimateSensorTelemetry> climateSensors;
   final bool heaterEnabled;
   final int loadFactor;
+  final Map<String, dynamic> raw;
 
   const TelemetryState({
     required this.climateSensors,
     required this.heaterEnabled,
     required this.loadFactor,
+    this.raw = const <String, dynamic>{},
   });
 
   static TelemetryState? fromJson(Map<String, dynamic> json) {
@@ -348,14 +350,18 @@ class TelemetryState {
       climateSensors: sensors,
       heaterEnabled: heaterEnabled,
       loadFactor: loadFactor,
+      raw: Map<String, dynamic>.unmodifiable(json),
     );
   }
 
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'climate_sensors': [
-          for (final item in climateSensors) item.toJson(),
-        ],
-        'heater_enabled': heaterEnabled,
-        'load_factor': loadFactor,
-      };
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      ...raw,
+      'climate_sensors': [
+        for (final item in climateSensors) item.toJson(),
+      ],
+      'heater_enabled': heaterEnabled,
+      'load_factor': loadFactor,
+    };
+  }
 }
