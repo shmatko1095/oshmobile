@@ -108,6 +108,7 @@ void main() {
               'min_value': 26.3,
               'max_value': 29.4,
               'avg_value': 28.141249999999996,
+              'sum_value': 450.26,
               'last_numeric_value': 29.4,
               'reference_sensor_id': 'pcb',
             },
@@ -139,6 +140,7 @@ void main() {
 
     expect(series.points, hasLength(2));
     expect(series.points.first.avgValue, closeTo(28.141249999999996, 0.000001));
+    expect(series.points.first.sumValue, closeTo(450.26, 0.000001));
     expect(series.points.first.bucketStart, DateTime.utc(2026, 3, 14, 19, 30));
     expect(series.points.first.referenceSensorId, 'pcb');
   });
@@ -160,6 +162,7 @@ void main() {
               'min_value': ' 26.3 ',
               'max_value': '29.4',
               'avg_value': '28.141249999999996',
+              'sumValue': ' 450.26 ',
               'last_numeric_value': '29.4',
             },
           ],
@@ -184,6 +187,7 @@ void main() {
     expect(series.points.first.samplesCount, 16);
     expect(series.points.first.minValue, 26.3);
     expect(series.points.first.avgValue, closeTo(28.141249999999996, 0.000001));
+    expect(series.points.first.sumValue, closeTo(450.26, 0.000001));
     expect(series.points.first.bucketStart, DateTime.utc(2026, 3, 14, 19, 30));
   });
 }

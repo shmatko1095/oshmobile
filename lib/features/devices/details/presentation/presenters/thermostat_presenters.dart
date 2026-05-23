@@ -271,7 +271,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
             onTap: () => TelemetryHistoryNavigator.openPowerMeterFromHost(
               context,
               initialSeriesKey:
-                  TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
+                  TelemetryHistoryMetricCatalog.powerMeterApparentPowerVa,
               configuredSeriesKeys: powerMeterHistorySeriesKeys,
             ),
           ),
@@ -379,7 +379,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
 const Map<String, String> _powerMeterHistoryWidgetSeries = <String, String>{
   'voltageNow': TelemetryHistoryMetricCatalog.powerMeterVoltageV,
   'currentNow': TelemetryHistoryMetricCatalog.powerMeterCurrentA,
-  'apparentPowerNow': TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
+  'apparentPowerNow': TelemetryHistoryMetricCatalog.powerMeterApparentPowerVa,
 };
 
 class _Tile {

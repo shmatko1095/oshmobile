@@ -10,6 +10,7 @@ class TelemetryHistoryMetric {
     required this.kind,
     this.unit = '',
     this.fractionDigits = 1,
+    this.useSumValue = false,
     this.subtitle,
     this.sensorId,
     this.isPrimarySensor = false,
@@ -20,6 +21,7 @@ class TelemetryHistoryMetric {
   final TelemetryHistoryMetricKind kind;
   final String unit;
   final int fractionDigits;
+  final bool useSumValue;
   final String? subtitle;
   final String? sensorId;
   final bool isPrimarySensor;

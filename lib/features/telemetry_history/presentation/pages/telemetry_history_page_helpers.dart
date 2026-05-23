@@ -73,10 +73,16 @@ List<_ChartEntry> _chartEntries(
   final entries = <_ChartEntry>[];
   for (final point in series.points) {
     final value = switch (metric.kind) {
-      TelemetryHistoryMetricKind.numeric => point.avgValue ??
-          point.lastNumericValue ??
-          point.maxValue ??
-          point.minValue,
+      TelemetryHistoryMetricKind.numeric => metric.useSumValue
+          ? point.sumValue ??
+              point.avgValue ??
+              point.lastNumericValue ??
+              point.maxValue ??
+              point.minValue
+          : point.avgValue ??
+              point.lastNumericValue ??
+              point.maxValue ??
+              point.minValue,
       TelemetryHistoryMetricKind.boolean => point.trueRatio ??
           (point.lastBoolValue == null
               ? null

@@ -38,6 +38,8 @@ class TelemetryHistoryMetricCatalog {
   static const String powerMeterVoltageV = 'power_meter.voltage_v';
   static const String powerMeterCurrentA = 'power_meter.current_a';
   static const String powerMeterActivePowerW = 'power_meter.active_power_w';
+  static const String powerMeterApparentPowerVa =
+      'power_meter.apparent_power_va';
 
   static const TelemetryHistoryMetricDefinition loadFactorDefinition =
       TelemetryHistoryMetricDefinition(
@@ -82,6 +84,12 @@ class TelemetryHistoryMetricCatalog {
       seriesKey: powerMeterActivePowerW,
       kind: TelemetryHistoryMetricKind.numeric,
       unit: 'W',
+    ),
+    TelemetryHistoryMetricDefinition(
+      title: _apparentPowerTitle,
+      seriesKey: powerMeterApparentPowerVa,
+      kind: TelemetryHistoryMetricKind.numeric,
+      unit: 'VA',
     ),
   ];
 
@@ -134,3 +142,4 @@ String _targetTitle(S s) => s.TelemetryHistoryMetricTarget;
 String _voltageTitle(S s) => s.TelemetryHistoryMetricVoltage;
 String _currentTitle(S s) => s.TelemetryHistoryMetricCurrent;
 String _activePowerTitle(S s) => s.TelemetryHistoryMetricActivePower;
+String _apparentPowerTitle(S s) => s.TelemetryHistoryMetricApparentPower;

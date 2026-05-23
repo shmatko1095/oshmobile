@@ -123,6 +123,7 @@ class TelemetryHistoryRemoteDataSourceImpl
       minValue: _readDouble(raw, 'min_value') ?? _readDouble(raw, 'minValue'),
       maxValue: _readDouble(raw, 'max_value') ?? _readDouble(raw, 'maxValue'),
       avgValue: _readDouble(raw, 'avg_value') ?? _readDouble(raw, 'avgValue'),
+      sumValue: _readDouble(raw, 'sum_value') ?? _readDouble(raw, 'sumValue'),
       lastNumericValue: _readDouble(raw, 'last_numeric_value') ??
           _readDouble(raw, 'lastNumericValue'),
       lastBoolValue:

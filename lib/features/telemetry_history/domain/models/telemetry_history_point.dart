@@ -5,6 +5,7 @@ class TelemetryHistoryPoint {
     this.minValue,
     this.maxValue,
     this.avgValue,
+    this.sumValue,
     this.lastNumericValue,
     this.lastBoolValue,
     this.trueRatio,
@@ -16,6 +17,7 @@ class TelemetryHistoryPoint {
   final double? minValue;
   final double? maxValue;
   final double? avgValue;
+  final double? sumValue;
   final double? lastNumericValue;
   final bool? lastBoolValue;
   final double? trueRatio;
