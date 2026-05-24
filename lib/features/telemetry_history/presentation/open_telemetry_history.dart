@@ -194,6 +194,8 @@ class TelemetryHistoryNavigator {
         'power_meter_active_power',
       TelemetryHistoryMetricCatalog.powerMeterApparentPowerVa =>
         'power_meter_apparent_power',
+      TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta =>
+        'power_meter_energy_used',
       _ => 'metric',
     };
   }

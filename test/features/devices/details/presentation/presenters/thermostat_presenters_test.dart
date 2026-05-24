@@ -72,6 +72,26 @@ void main() {
     );
   });
 
+  test('visibleWidgetIds includes energy widget when control is readable', () {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'energyUsed',
+          'control_ids': ['powerMeterEnergyKwh'],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[
+        {'id': 'powerMeterEnergyKwh', 'path': 'power_meter.energy_kwh'},
+      ],
+      readableDomains: const <String>{'telemetry'},
+    );
+
+    expect(
+      ThermostatBasicPresenter.visibleWidgetIds(bundle),
+      contains('energyUsed'),
+    );
+  });
+
   test(
       'visibleWidgetIds hides power meter widget when value control is missing',
       () {
@@ -233,6 +253,77 @@ void main() {
     expect(
       history.requests.single.seriesKey,
       TelemetryHistoryMetricCatalog.powerMeterCurrentA,
+    );
+  });
+
+  testWidgets('energy tile opens energy history metric', (tester) async {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'energyUsed',
+          'control_ids': ['powerMeterEnergyKwh'],
+        },
+        {
+          'id': 'voltageNow',
+          'control_ids': ['powerMeterVoltageV', 'powerMeterVoltageValid'],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[
+        {'id': 'powerMeterEnergyKwh', 'path': 'power_meter.energy_kwh'},
+        {'id': 'powerMeterVoltageV', 'path': 'power_meter.voltage_v'},
+        {
+          'id': 'powerMeterVoltageValid',
+          'path': 'power_meter.voltage_valid',
+        },
+      ],
+      readableDomains: const <String>{'telemetry'},
+    );
+    final history = _QueuedTelemetryHistoryApi();
+    final snapshot = DeviceSnapshot.initial(device: _device()).copyWith(
+      controlState: DeviceSlice<Map<String, dynamic>>.ready(
+        data: const <String, dynamic>{
+          'powerMeterEnergyKwh': 1.234,
+          'powerMeterVoltageV': 230,
+          'powerMeterVoltageValid': true,
+        },
+      ),
+    );
+    final facade = _FakeDeviceFacade(snapshot, history);
+    final snapshotCubit = DeviceSnapshotCubit(facade: facade);
+    addTearDown(snapshotCubit.close);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          S.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: S.delegate.supportedLocales,
+        home: DeviceRouteScope.provide(
+          facade: facade,
+          snapshotCubit: snapshotCubit,
+          child: Builder(
+            builder: (context) {
+              return const ThermostatBasicPresenter()
+                  .build(context, _device(), bundle);
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Energy used'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(TelemetryHistoryPage), findsOneWidget);
+    expect(history.requests, hasLength(1));
+    expect(
+      history.requests.single.seriesKey,
+      TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
     );
   });
 }

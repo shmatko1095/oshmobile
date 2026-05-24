@@ -144,6 +144,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
       'modeBar',
       'heatingToggle',
       'loadFactor24h',
+      'energyUsed',
       'powerNow',
       'voltageNow',
       'currentNow',
@@ -187,6 +188,31 @@ class ThermostatBasicPresenter implements DevicePresenter {
             percentBind: bind,
             onTap: () =>
                 TelemetryHistoryNavigator.openLoadFactorFromHost(context),
+          ),
+        ),
+      );
+    }
+
+    if (_canRenderWidgetWithValue(bundle, 'energyUsed')) {
+      final valueBind = _widgetControl(bundle, 'energyUsed', 0);
+      final validBind = _optionalWidgetControl(bundle, 'energyUsed', 1);
+      tiles.add(
+        _Tile(
+          id: 'energyUsed',
+          builder: () => PowerMetricCard(
+            valueBind: valueBind,
+            validBind: validBind,
+            title: 'Energy used',
+            unit: 'kWh',
+            icon: Icons.bolt_rounded,
+            accentColor: AppPalette.accentSuccess,
+            decimals: 3,
+            onTap: () => TelemetryHistoryNavigator.openPowerMeterFromHost(
+              context,
+              initialSeriesKey:
+                  TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
+              configuredSeriesKeys: powerMeterHistorySeriesKeys,
+            ),
           ),
         ),
       );
@@ -377,6 +403,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
 }
 
 const Map<String, String> _powerMeterHistoryWidgetSeries = <String, String>{
+  'energyUsed': TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
   'voltageNow': TelemetryHistoryMetricCatalog.powerMeterVoltageV,
   'currentNow': TelemetryHistoryMetricCatalog.powerMeterCurrentA,
   'apparentPowerNow': TelemetryHistoryMetricCatalog.powerMeterApparentPowerVa,

@@ -72,7 +72,7 @@ List<_ChartEntry> _chartEntries(
 
   final entries = <_ChartEntry>[];
   for (final point in series.points) {
-    final value = switch (metric.kind) {
+    final rawValue = switch (metric.kind) {
       TelemetryHistoryMetricKind.numeric => metric.useSumValue
           ? point.sumValue ??
               point.avgValue ??
@@ -88,7 +88,10 @@ List<_ChartEntry> _chartEntries(
               ? null
               : (point.lastBoolValue! ? 1.0 : 0.0)),
     };
-    if (value == null) continue;
+    if (rawValue == null) continue;
+    final value = metric.kind == TelemetryHistoryMetricKind.numeric
+        ? rawValue * metric.valueMultiplier
+        : rawValue;
     entries.add(
       _ChartEntry(
         timestamp: point.bucketStart,

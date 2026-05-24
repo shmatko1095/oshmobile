@@ -10,6 +10,8 @@ class TelemetryHistoryMetricDefinition {
     required this.title,
     this.unit = '',
     this.fractionDigits = 1,
+    this.useSumValue = false,
+    this.valueMultiplier = 1.0,
   });
 
   final String seriesKey;
@@ -17,6 +19,8 @@ class TelemetryHistoryMetricDefinition {
   final TelemetryHistoryMetricTitleBuilder title;
   final String unit;
   final int fractionDigits;
+  final bool useSumValue;
+  final double valueMultiplier;
 
   TelemetryHistoryMetric build(S s) {
     return TelemetryHistoryMetric(
@@ -25,6 +29,8 @@ class TelemetryHistoryMetricDefinition {
       kind: kind,
       unit: unit,
       fractionDigits: fractionDigits,
+      useSumValue: useSumValue,
+      valueMultiplier: valueMultiplier,
     );
   }
 }
@@ -40,6 +46,7 @@ class TelemetryHistoryMetricCatalog {
   static const String powerMeterActivePowerW = 'power_meter.active_power_w';
   static const String powerMeterApparentPowerVa =
       'power_meter.apparent_power_va';
+  static const String powerMeterEnergyWhDelta = 'power_meter.energy_wh_delta';
 
   static const TelemetryHistoryMetricDefinition loadFactorDefinition =
       TelemetryHistoryMetricDefinition(
@@ -66,6 +73,15 @@ class TelemetryHistoryMetricCatalog {
 
   static const List<TelemetryHistoryMetricDefinition> powerMeterDefinitions =
       <TelemetryHistoryMetricDefinition>[
+    TelemetryHistoryMetricDefinition(
+      title: _energyUsedTitle,
+      seriesKey: powerMeterEnergyWhDelta,
+      kind: TelemetryHistoryMetricKind.numeric,
+      unit: 'kWh',
+      fractionDigits: 3,
+      useSumValue: true,
+      valueMultiplier: 0.001,
+    ),
     TelemetryHistoryMetricDefinition(
       title: _voltageTitle,
       seriesKey: powerMeterVoltageV,
@@ -143,3 +159,4 @@ String _voltageTitle(S s) => s.TelemetryHistoryMetricVoltage;
 String _currentTitle(S s) => s.TelemetryHistoryMetricCurrent;
 String _activePowerTitle(S s) => s.TelemetryHistoryMetricActivePower;
 String _apparentPowerTitle(S s) => s.TelemetryHistoryMetricApparentPower;
+String _energyUsedTitle(S s) => 'Energy used';

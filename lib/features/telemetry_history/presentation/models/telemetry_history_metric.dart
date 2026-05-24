@@ -11,6 +11,7 @@ class TelemetryHistoryMetric {
     this.unit = '',
     this.fractionDigits = 1,
     this.useSumValue = false,
+    this.valueMultiplier = 1.0,
     this.subtitle,
     this.sensorId,
     this.isPrimarySensor = false,
@@ -22,6 +23,7 @@ class TelemetryHistoryMetric {
   final String unit;
   final int fractionDigits;
   final bool useSumValue;
+  final double valueMultiplier;
   final String? subtitle;
   final String? sensorId;
   final bool isPrimarySensor;
