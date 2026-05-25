@@ -13,6 +13,7 @@ import 'package:oshmobile/features/telemetry_history/presentation/models/telemet
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_range.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/pages/telemetry_history_page.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_line_chart.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_chart.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class _Request {
@@ -294,7 +295,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(HistoryLineChart), findsOneWidget);
+      expect(find.byType(HistoryMultiLineChart), findsOneWidget);
 
       await cubit.close();
     });
@@ -406,6 +407,153 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('512.5 W'), findsNWidgets(3));
+
+      await cubit.close();
+    });
+
+    testWidgets('renders numeric line from max bucket value', (tester) async {
+      final api = _QueuedTelemetryHistoryApi();
+      final now = DateTime.utc(2026, 3, 14, 20, 18, 40);
+      final cubit = TelemetryHistoryCubit(
+        seriesReader: api,
+        metrics: const <TelemetryHistoryMetric>[
+          TelemetryHistoryMetric(
+            title: 'Active power',
+            seriesKey: 'power_meter.active_power_w',
+            kind: TelemetryHistoryMetricKind.numeric,
+            unit: 'W',
+          ),
+        ],
+        nowUtc: () => now,
+      );
+
+      await _pumpPage(tester, cubit);
+
+      cubit.load();
+      await tester.pump();
+      expect(api.requests, hasLength(1));
+
+      api.requests.single.completer.complete(
+        _series(
+          seriesKey: api.requests.single.seriesKey,
+          from: api.requests.single.from,
+          to: api.requests.single.to,
+          points: <TelemetryHistoryPoint>[
+            TelemetryHistoryPoint(
+              bucketStart: api.requests.single.from,
+              samplesCount: 5,
+              avgValue: 120.0,
+              minValue: 40.0,
+              maxValue: 900.0,
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final chart = tester.widget<HistoryMultiLineChart>(
+        find.byType(HistoryMultiLineChart),
+      );
+      expect(chart.series, hasLength(1));
+      expect(chart.series.single.values.single, 900.0);
+      expect(chart.series.single.rangeMinValues?.single, 40.0);
+      expect(chart.series.single.rangeMaxValues?.single, 900.0);
+
+      await cubit.close();
+    });
+
+    testWidgets('keeps energy metric on sum_value', (tester) async {
+      final api = _QueuedTelemetryHistoryApi();
+      final now = DateTime.utc(2026, 3, 14, 20, 18, 40);
+      final cubit = TelemetryHistoryCubit(
+        seriesReader: api,
+        metrics: const <TelemetryHistoryMetric>[
+          TelemetryHistoryMetric(
+            title: 'Energy used',
+            seriesKey: 'power_meter.energy_wh_delta',
+            kind: TelemetryHistoryMetricKind.numeric,
+            unit: 'Wh',
+            useSumValue: true,
+          ),
+        ],
+        nowUtc: () => now,
+      );
+
+      await _pumpPage(tester, cubit);
+
+      cubit.load();
+      await tester.pump();
+      expect(api.requests, hasLength(1));
+
+      api.requests.single.completer.complete(
+        _series(
+          seriesKey: api.requests.single.seriesKey,
+          from: api.requests.single.from,
+          to: api.requests.single.to,
+          points: <TelemetryHistoryPoint>[
+            TelemetryHistoryPoint(
+              bucketStart: api.requests.single.from,
+              samplesCount: 5,
+              sumValue: 42.0,
+              avgValue: 10.0,
+              minValue: 5.0,
+              maxValue: 900.0,
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final chart = tester.widget<HistoryMultiLineChart>(
+        find.byType(HistoryMultiLineChart),
+      );
+      expect(chart.series.single.values.single, 42.0);
+      expect(chart.series.single.rangeMinValues?.single, isNull);
+      expect(chart.series.single.rangeMaxValues?.single, isNull);
+
+      await cubit.close();
+    });
+
+    testWidgets('keeps boolean metrics on single-line chart', (tester) async {
+      final api = _QueuedTelemetryHistoryApi();
+      final now = DateTime.utc(2026, 3, 14, 20, 18, 40);
+      final cubit = TelemetryHistoryCubit(
+        seriesReader: api,
+        metrics: const <TelemetryHistoryMetric>[
+          TelemetryHistoryMetric(
+            title: 'Heating activity',
+            seriesKey: 'heater_enabled',
+            kind: TelemetryHistoryMetricKind.boolean,
+          ),
+        ],
+        nowUtc: () => now,
+      );
+
+      await _pumpPage(tester, cubit);
+
+      cubit.load();
+      await tester.pump();
+      expect(api.requests, hasLength(1));
+
+      api.requests.single.completer.complete(
+        _series(
+          seriesKey: api.requests.single.seriesKey,
+          from: api.requests.single.from,
+          to: api.requests.single.to,
+          points: <TelemetryHistoryPoint>[
+            TelemetryHistoryPoint(
+              bucketStart: api.requests.single.from,
+              samplesCount: 4,
+              trueRatio: 0.5,
+              lastBoolValue: true,
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(HistoryLineChart), findsOneWidget);
+      expect(find.byType(HistoryMultiLineChart), findsNothing);
 
       await cubit.close();
     });

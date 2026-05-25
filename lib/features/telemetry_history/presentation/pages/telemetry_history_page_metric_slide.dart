@@ -84,6 +84,12 @@ class _MetricSlide extends StatelessWidget {
                 entries.map((entry) => entry.value).toList(growable: false),
             timestamps:
                 entries.map((entry) => entry.timestamp).toList(growable: false),
+            rangeMinValues: entries
+                .map((entry) => entry.rangeMinValue)
+                .toList(growable: false),
+            rangeMaxValues: entries
+                .map((entry) => entry.rangeMaxValue)
+                .toList(growable: false),
             color: tempLineColor,
             lineGradient: _temperatureLineGradient(
               entries,
@@ -131,6 +137,12 @@ class _MetricSlide extends StatelessWidget {
             timestamps: resolvedEntries
                 .map((entry) => entry.timestamp)
                 .toList(growable: false),
+            rangeMinValues: resolvedEntries
+                .map((entry) => entry.rangeMinValue)
+                .toList(growable: false),
+            rangeMaxValues: resolvedEntries
+                .map((entry) => entry.rangeMaxValue)
+                .toList(growable: false),
             color: option.color,
             strokeWidth: 2.0,
             fill: true,
@@ -149,6 +161,10 @@ class _MetricSlide extends StatelessWidget {
     final lineChartValues = entries.map((entry) => entry.value).toList(
           growable: false,
         );
+    final lineChartRangeMinValues =
+        entries.map((entry) => entry.rangeMinValue).toList(growable: false);
+    final lineChartRangeMaxValues =
+        entries.map((entry) => entry.rangeMaxValue).toList(growable: false);
     final lineChartTimestamps = entries.map((entry) => entry.timestamp).toList(
           growable: false,
         );
@@ -252,34 +268,71 @@ class _MetricSlide extends StatelessWidget {
                                     ),
                                   ],
                                 )
-                              : HistoryLineChart(
-                                  values: lineChartValues,
-                                  timestamps: lineChartTimestamps,
-                                  windowStart: series?.from,
-                                  windowEnd: series?.to,
-                                  color: metric.kind ==
-                                          TelemetryHistoryMetricKind.boolean
-                                      ? AppPalette.accentWarning
-                                      : AppPalette.accentPrimary,
-                                  strokeWidth: 2.0,
-                                  fill: true,
-                                  showGrid: false,
-                                  showAxes: true,
-                                  enableTouchTooltip: true,
-                                  valueLabelBuilder: (v) =>
-                                      _fmtValue(v, metric),
-                                  xAxisLabelBuilder: (ts) => _xAxisLabel(
-                                    timestamp: ts,
-                                    range: state.range,
-                                    localeTag: localeTag,
-                                  ),
-                                  tooltipBuilder: (ts, value) => _tooltipLabel(
-                                    timestamp: ts,
-                                    value: value,
-                                    metric: metric,
-                                    localeTag: localeTag,
-                                  ),
-                                ),
+                              : metric.kind ==
+                                      TelemetryHistoryMetricKind.numeric
+                                  ? HistoryMultiLineChart(
+                                      series: <HistoryMultiLineSeries>[
+                                        HistoryMultiLineSeries(
+                                          id: metric.seriesKey,
+                                          label: metric.title,
+                                          values: lineChartValues,
+                                          displayValues: lineChartValues,
+                                          timestamps: lineChartTimestamps,
+                                          rangeMinValues:
+                                              lineChartRangeMinValues,
+                                          rangeMaxValues:
+                                              lineChartRangeMaxValues,
+                                          color: AppPalette.accentPrimary,
+                                          strokeWidth: 2.0,
+                                          fill: true,
+                                        ),
+                                      ],
+                                      windowStart: series?.from,
+                                      windowEnd: series?.to,
+                                      showGrid: false,
+                                      showAxes: true,
+                                      enableTouchTooltip: true,
+                                      valueLabelBuilder: (v) =>
+                                          _fmtValue(v, metric),
+                                      tooltipValueFormatter: (_, value) =>
+                                          _fmtValue(value, metric),
+                                      xAxisLabelBuilder: (ts) => _xAxisLabel(
+                                        timestamp: ts,
+                                        range: state.range,
+                                        localeTag: localeTag,
+                                      ),
+                                      tooltipTimeLabelBuilder: (ts) =>
+                                          _tooltipTimeLabel(
+                                        timestamp: ts,
+                                        localeTag: localeTag,
+                                      ),
+                                    )
+                                  : HistoryLineChart(
+                                      values: lineChartValues,
+                                      timestamps: lineChartTimestamps,
+                                      windowStart: series?.from,
+                                      windowEnd: series?.to,
+                                      color: AppPalette.accentWarning,
+                                      strokeWidth: 2.0,
+                                      fill: true,
+                                      showGrid: false,
+                                      showAxes: true,
+                                      enableTouchTooltip: true,
+                                      valueLabelBuilder: (v) =>
+                                          _fmtValue(v, metric),
+                                      xAxisLabelBuilder: (ts) => _xAxisLabel(
+                                        timestamp: ts,
+                                        range: state.range,
+                                        localeTag: localeTag,
+                                      ),
+                                      tooltipBuilder: (ts, value) =>
+                                          _tooltipLabel(
+                                        timestamp: ts,
+                                        value: value,
+                                        metric: metric,
+                                        localeTag: localeTag,
+                                      ),
+                                    ),
             ),
           ),
         ],

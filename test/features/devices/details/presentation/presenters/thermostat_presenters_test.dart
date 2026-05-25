@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
@@ -15,6 +16,7 @@ import 'package:oshmobile/core/configuration/models/model_configuration.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric_catalog.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_cubit.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/pages/telemetry_history_page.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/thermostat_presenters.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -253,6 +255,115 @@ void main() {
     expect(
       history.requests.single.seriesKey,
       TelemetryHistoryMetricCatalog.powerMeterCurrentA,
+    );
+  });
+
+  testWidgets(
+      'apparent power tile opens history with active power metric selected',
+      (tester) async {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'voltageNow',
+          'control_ids': ['powerMeterVoltageV', 'powerMeterVoltageValid'],
+        },
+        {
+          'id': 'currentNow',
+          'control_ids': ['powerMeterCurrentA', 'powerMeterCurrentValid'],
+        },
+        {
+          'id': 'apparentPowerNow',
+          'control_ids': [
+            'powerMeterApparentPowerVa',
+            'powerMeterApparentPowerValid',
+          ],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[
+        {'id': 'powerMeterVoltageV', 'path': 'power_meter.voltage_v'},
+        {
+          'id': 'powerMeterVoltageValid',
+          'path': 'power_meter.voltage_valid',
+        },
+        {'id': 'powerMeterCurrentA', 'path': 'power_meter.current_a'},
+        {
+          'id': 'powerMeterCurrentValid',
+          'path': 'power_meter.current_valid',
+        },
+        {
+          'id': 'powerMeterApparentPowerVa',
+          'path': 'power_meter.apparent_power_va',
+        },
+        {
+          'id': 'powerMeterApparentPowerValid',
+          'path': 'power_meter.apparent_power_valid',
+        },
+      ],
+      readableDomains: const <String>{'telemetry'},
+    );
+    final history = _QueuedTelemetryHistoryApi();
+    final snapshot = DeviceSnapshot.initial(device: _device()).copyWith(
+      controlState: DeviceSlice<Map<String, dynamic>>.ready(
+        data: const <String, dynamic>{
+          'powerMeterVoltageV': 230,
+          'powerMeterVoltageValid': true,
+          'powerMeterCurrentA': 4.2,
+          'powerMeterCurrentValid': true,
+          'powerMeterApparentPowerVa': 966,
+          'powerMeterApparentPowerValid': true,
+        },
+      ),
+    );
+    final facade = _FakeDeviceFacade(snapshot, history);
+    final snapshotCubit = DeviceSnapshotCubit(facade: facade);
+    addTearDown(snapshotCubit.close);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          S.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: S.delegate.supportedLocales,
+        home: DeviceRouteScope.provide(
+          facade: facade,
+          snapshotCubit: snapshotCubit,
+          child: Builder(
+            builder: (context) {
+              return const ThermostatBasicPresenter()
+                  .build(context, _device(), bundle);
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Apparent power'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(TelemetryHistoryPage), findsOneWidget);
+    final pageContext = tester.element(find.byType(TelemetryHistoryPage));
+    final historyCubit = pageContext.read<TelemetryHistoryCubit>();
+    final historySeriesKeys =
+        historyCubit.state.metrics.map((metric) => metric.seriesKey).toList();
+    expect(
+      historySeriesKeys,
+      isNot(
+        contains(TelemetryHistoryMetricCatalog.powerMeterApparentPowerVa),
+      ),
+    );
+    expect(
+      historySeriesKeys,
+      contains(TelemetryHistoryMetricCatalog.powerMeterActivePowerW),
+    );
+    expect(history.requests, hasLength(1));
+    expect(
+      history.requests.single.seriesKey,
+      TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
     );
   });
 

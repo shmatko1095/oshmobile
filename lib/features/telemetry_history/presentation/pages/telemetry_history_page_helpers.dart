@@ -72,6 +72,8 @@ List<_ChartEntry> _chartEntries(
 
   final entries = <_ChartEntry>[];
   for (final point in series.points) {
+    double? rangeMinValue;
+    double? rangeMaxValue;
     final rawValue = switch (metric.kind) {
       TelemetryHistoryMetricKind.numeric => metric.useSumValue
           ? point.sumValue ??
@@ -79,9 +81,9 @@ List<_ChartEntry> _chartEntries(
               point.lastNumericValue ??
               point.maxValue ??
               point.minValue
-          : point.avgValue ??
+          : point.maxValue ??
+              point.avgValue ??
               point.lastNumericValue ??
-              point.maxValue ??
               point.minValue,
       TelemetryHistoryMetricKind.boolean => point.trueRatio ??
           (point.lastBoolValue == null
@@ -89,6 +91,16 @@ List<_ChartEntry> _chartEntries(
               : (point.lastBoolValue! ? 1.0 : 0.0)),
     };
     if (rawValue == null) continue;
+
+    if (metric.kind == TelemetryHistoryMetricKind.numeric &&
+        !metric.useSumValue &&
+        point.minValue != null &&
+        point.maxValue != null &&
+        point.minValue! <= point.maxValue!) {
+      rangeMinValue = point.minValue! * metric.valueMultiplier;
+      rangeMaxValue = point.maxValue! * metric.valueMultiplier;
+    }
+
     final value = metric.kind == TelemetryHistoryMetricKind.numeric
         ? rawValue * metric.valueMultiplier
         : rawValue;
@@ -96,6 +108,8 @@ List<_ChartEntry> _chartEntries(
       _ChartEntry(
         timestamp: point.bucketStart,
         value: value,
+        rangeMinValue: rangeMinValue,
+        rangeMaxValue: rangeMaxValue,
         referenceSensorId: point.referenceSensorId,
       ),
     );
@@ -402,10 +416,14 @@ class _ChartEntry {
   const _ChartEntry({
     required this.timestamp,
     required this.value,
+    this.rangeMinValue,
+    this.rangeMaxValue,
     this.referenceSensorId,
   });
 
   final DateTime timestamp;
   final double value;
+  final double? rangeMinValue;
+  final double? rangeMaxValue;
   final String? referenceSensorId;
 }
