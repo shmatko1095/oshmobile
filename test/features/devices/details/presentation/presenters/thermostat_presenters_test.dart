@@ -13,12 +13,15 @@ import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/entities/device/device_user_data.dart';
 import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
 import 'package:oshmobile/core/configuration/models/model_configuration.dart';
+import 'package:oshmobile/features/devices/details/data/configuration_thermostat_dashboard_schema_builder.dart';
+import 'package:oshmobile/features/devices/details/domain/models/thermostat_dashboard_schema.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/adapters/thermostat_telemetry_history_opener.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/thermostat_presenters.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
-import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric_catalog.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_cubit.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric_catalog.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/pages/telemetry_history_page.dart';
-import 'package:oshmobile/features/devices/details/presentation/presenters/thermostat_presenters.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 void main() {
@@ -67,7 +70,7 @@ void main() {
     );
 
     expect(
-      ThermostatBasicPresenter.visibleWidgetIds(bundle),
+      _schema(bundle).visibleWidgetIds,
       containsAllInOrder(
         const <String>['voltageNow', 'currentNow', 'apparentPowerNow'],
       ),
@@ -89,7 +92,7 @@ void main() {
     );
 
     expect(
-      ThermostatBasicPresenter.visibleWidgetIds(bundle),
+      _schema(bundle).visibleWidgetIds,
       contains('energyUsed'),
     );
   });
@@ -114,7 +117,7 @@ void main() {
     );
 
     expect(
-      ThermostatBasicPresenter.visibleWidgetIds(bundle),
+      _schema(bundle).visibleWidgetIds,
       isNot(contains('voltageNow')),
     );
   });
@@ -134,7 +137,7 @@ void main() {
     );
 
     expect(
-      ThermostatBasicPresenter.visibleWidgetIds(bundle),
+      _schema(bundle).visibleWidgetIds,
       isNot(contains('voltageNow')),
     );
   });
@@ -159,7 +162,7 @@ void main() {
     );
 
     expect(
-      ThermostatBasicPresenter.visibleWidgetIds(bundle),
+      _schema(bundle).visibleWidgetIds,
       isNot(contains('currentNow')),
     );
   });
@@ -237,8 +240,7 @@ void main() {
           snapshotCubit: snapshotCubit,
           child: Builder(
             builder: (context) {
-              return const ThermostatBasicPresenter()
-                  .build(context, _device(), bundle);
+              return _presenter().build(context, _device(), bundle);
             },
           ),
         ),
@@ -258,8 +260,104 @@ void main() {
     );
   });
 
+  testWidgets('power now tile opens history with active power metric selected',
+      (tester) async {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'powerNow',
+          'control_ids': [
+            'powerMeterActivePowerW',
+            'powerMeterActivePowerValid'
+          ],
+        },
+        {
+          'id': 'apparentPowerNow',
+          'control_ids': [
+            'powerMeterApparentPowerVa',
+            'powerMeterApparentPowerValid',
+          ],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[
+        {
+          'id': 'powerMeterActivePowerW',
+          'path': 'power_meter.active_power_w',
+        },
+        {
+          'id': 'powerMeterActivePowerValid',
+          'path': 'power_meter.active_power_valid',
+        },
+        {
+          'id': 'powerMeterApparentPowerVa',
+          'path': 'power_meter.apparent_power_va',
+        },
+        {
+          'id': 'powerMeterApparentPowerValid',
+          'path': 'power_meter.apparent_power_valid',
+        },
+      ],
+      readableDomains: const <String>{'telemetry'},
+    );
+    final history = _QueuedTelemetryHistoryApi();
+    final snapshot = DeviceSnapshot.initial(device: _device()).copyWith(
+      controlState: DeviceSlice<Map<String, dynamic>>.ready(
+        data: const <String, dynamic>{
+          'powerMeterActivePowerW': 942,
+          'powerMeterActivePowerValid': true,
+          'powerMeterApparentPowerVa': 966,
+          'powerMeterApparentPowerValid': true,
+        },
+      ),
+    );
+    final facade = _FakeDeviceFacade(snapshot, history);
+    final snapshotCubit = DeviceSnapshotCubit(facade: facade);
+    addTearDown(snapshotCubit.close);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          S.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: S.delegate.supportedLocales,
+        home: DeviceRouteScope.provide(
+          facade: facade,
+          snapshotCubit: snapshotCubit,
+          child: Builder(
+            builder: (context) {
+              return _presenter().build(context, _device(), bundle);
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Power now'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(TelemetryHistoryPage), findsOneWidget);
+    final pageContext = tester.element(find.byType(TelemetryHistoryPage));
+    final historyCubit = pageContext.read<TelemetryHistoryCubit>();
+    final historySeriesKeys =
+        historyCubit.state.metrics.map((metric) => metric.seriesKey).toList();
+    expect(
+      historySeriesKeys,
+      contains(TelemetryHistoryMetricCatalog.powerMeterActivePowerW),
+    );
+    expect(history.requests, hasLength(1));
+    expect(
+      history.requests.single.seriesKey,
+      TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
+    );
+  });
+
   testWidgets(
-      'apparent power tile opens history with active power metric selected',
+      'apparent power tile opens history with apparent power metric selected',
       (tester) async {
     final bundle = _bundle(
       widgets: const <Map<String, dynamic>>[
@@ -332,8 +430,7 @@ void main() {
           snapshotCubit: snapshotCubit,
           child: Builder(
             builder: (context) {
-              return const ThermostatBasicPresenter()
-                  .build(context, _device(), bundle);
+              return _presenter().build(context, _device(), bundle);
             },
           ),
         ),
@@ -352,18 +449,16 @@ void main() {
         historyCubit.state.metrics.map((metric) => metric.seriesKey).toList();
     expect(
       historySeriesKeys,
-      isNot(
-        contains(TelemetryHistoryMetricCatalog.powerMeterApparentPowerVa),
-      ),
+      contains(TelemetryHistoryMetricCatalog.powerMeterApparentPowerVa),
     );
     expect(
       historySeriesKeys,
-      contains(TelemetryHistoryMetricCatalog.powerMeterActivePowerW),
+      isNot(contains(TelemetryHistoryMetricCatalog.powerMeterActivePowerW)),
     );
     expect(history.requests, hasLength(1));
     expect(
       history.requests.single.seriesKey,
-      TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
+      TelemetryHistoryMetricCatalog.powerMeterApparentPowerVa,
     );
   });
 
@@ -417,8 +512,7 @@ void main() {
           snapshotCubit: snapshotCubit,
           child: Builder(
             builder: (context) {
-              return const ThermostatBasicPresenter()
-                  .build(context, _device(), bundle);
+              return _presenter().build(context, _device(), bundle);
             },
           ),
         ),
@@ -431,12 +525,140 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(TelemetryHistoryPage), findsOneWidget);
+    final pageContext = tester.element(find.byType(TelemetryHistoryPage));
+    final historyCubit = pageContext.read<TelemetryHistoryCubit>();
+    final historySeriesKeys =
+        historyCubit.state.metrics.map((metric) => metric.seriesKey).toList();
+    expect(
+      historySeriesKeys,
+      equals(
+        const <String>[
+          TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
+        ],
+      ),
+    );
     expect(history.requests, hasLength(1));
     expect(
       history.requests.single.seriesKey,
       TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
     );
   });
+
+  testWidgets('electrical power tiles open history without energy metric',
+      (tester) async {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'energyUsed',
+          'control_ids': ['powerMeterEnergyKwh'],
+        },
+        {
+          'id': 'powerNow',
+          'control_ids': [
+            'powerMeterActivePowerW',
+            'powerMeterActivePowerValid'
+          ],
+        },
+        {
+          'id': 'voltageNow',
+          'control_ids': ['powerMeterVoltageV', 'powerMeterVoltageValid'],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[
+        {'id': 'powerMeterEnergyKwh', 'path': 'power_meter.energy_kwh'},
+        {
+          'id': 'powerMeterActivePowerW',
+          'path': 'power_meter.active_power_w',
+        },
+        {
+          'id': 'powerMeterActivePowerValid',
+          'path': 'power_meter.active_power_valid',
+        },
+        {'id': 'powerMeterVoltageV', 'path': 'power_meter.voltage_v'},
+        {
+          'id': 'powerMeterVoltageValid',
+          'path': 'power_meter.voltage_valid',
+        },
+      ],
+      readableDomains: const <String>{'telemetry'},
+    );
+    final history = _QueuedTelemetryHistoryApi();
+    final snapshot = DeviceSnapshot.initial(device: _device()).copyWith(
+      controlState: DeviceSlice<Map<String, dynamic>>.ready(
+        data: const <String, dynamic>{
+          'powerMeterEnergyKwh': 1.234,
+          'powerMeterActivePowerW': 942,
+          'powerMeterActivePowerValid': true,
+          'powerMeterVoltageV': 230,
+          'powerMeterVoltageValid': true,
+        },
+      ),
+    );
+    final facade = _FakeDeviceFacade(snapshot, history);
+    final snapshotCubit = DeviceSnapshotCubit(facade: facade);
+    addTearDown(snapshotCubit.close);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          S.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: S.delegate.supportedLocales,
+        home: DeviceRouteScope.provide(
+          facade: facade,
+          snapshotCubit: snapshotCubit,
+          child: Builder(
+            builder: (context) {
+              return _presenter().build(context, _device(), bundle);
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Voltage'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(TelemetryHistoryPage), findsOneWidget);
+    final pageContext = tester.element(find.byType(TelemetryHistoryPage));
+    final historyCubit = pageContext.read<TelemetryHistoryCubit>();
+    final historySeriesKeys =
+        historyCubit.state.metrics.map((metric) => metric.seriesKey).toList();
+    expect(
+      historySeriesKeys,
+      isNot(contains(TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta)),
+    );
+    expect(
+      historySeriesKeys,
+      contains(TelemetryHistoryMetricCatalog.powerMeterVoltageV),
+    );
+    expect(
+      historySeriesKeys,
+      contains(TelemetryHistoryMetricCatalog.powerMeterActivePowerW),
+    );
+    expect(history.requests, hasLength(1));
+    expect(
+      history.requests.single.seriesKey,
+      TelemetryHistoryMetricCatalog.powerMeterVoltageV,
+    );
+  });
+}
+
+ThermostatBasicPresenter _presenter() {
+  return ThermostatBasicPresenter(
+    schemaBuilder: const ConfigurationThermostatDashboardSchemaBuilder(),
+    historyOpener: const ThermostatTelemetryHistoryOpener(),
+  );
+}
+
+ThermostatDashboardSchema _schema(DeviceConfigurationBundle bundle) {
+  return const ConfigurationThermostatDashboardSchemaBuilder()
+      .build(bundle: bundle);
 }
 
 DeviceConfigurationBundle _bundle({

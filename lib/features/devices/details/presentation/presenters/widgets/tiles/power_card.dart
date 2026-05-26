@@ -9,11 +9,13 @@ class PowerCard extends StatelessWidget {
     super.key,
     required this.bind,
     this.validBind,
+    this.onTap,
   });
 
   /// Bind that returns instantaneous power in **watts**
   final String bind; // e.g. 'sensor.power'
   final String? validBind;
+  final VoidCallback? onTap;
 
   String _fmtPower(num? w) {
     if (w == null) return '—';
@@ -42,6 +44,7 @@ class PowerCard extends StatelessWidget {
         snapshot.valid == false ? _fmtPower(null) : _fmtPower(snapshot.power);
 
     return GlassStatCard(
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

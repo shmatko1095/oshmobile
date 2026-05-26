@@ -7,6 +7,8 @@ import 'package:oshmobile/generated/l10n.dart';
 
 import '../cubit/device_page_cubit.dart';
 import 'device_presenter.dart';
+import 'factories/unknown_config_view_model_factory.dart';
+import 'models/unknown_config_view_model.dart';
 
 bool _unknownIsDark(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;
@@ -33,7 +35,12 @@ Color _unknownSecondaryTextColor(BuildContext context) =>
         : AppPalette.lightTextSecondary;
 
 class UnknownConfigPresenter implements DevicePresenter {
-  const UnknownConfigPresenter();
+  const UnknownConfigPresenter({
+    UnknownConfigViewModelFactory viewModelFactory =
+        const UnknownConfigViewModelFactory(),
+  }) : _viewModelFactory = viewModelFactory;
+
+  final UnknownConfigViewModelFactory _viewModelFactory;
 
   @override
   Widget build(
@@ -41,13 +48,12 @@ class UnknownConfigPresenter implements DevicePresenter {
     Device device,
     DeviceConfigurationBundle bundle,
   ) {
-    final alias =
-        (device.userData.alias.isEmpty) ? device.sn : device.userData.alias;
+    final viewModel = _viewModelFactory.build(device: device, bundle: bundle);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(alias, overflow: TextOverflow.ellipsis),
+        title: Text(viewModel.alias, overflow: TextOverflow.ellipsis),
         backgroundColor: AppPalette.transparent,
         elevation: 0,
       ),
@@ -61,11 +67,19 @@ class UnknownConfigPresenter implements DevicePresenter {
                 children: [
                   _ProblemCard(),
                   const SizedBox(height: 12),
-                  _MetaCard(device: device, bundle: bundle),
+                  _MetaCard(meta: viewModel.meta),
                   const SizedBox(height: 12),
-                  _ActionsRow(device: device),
+                  _ActionsRow(
+                    actions: viewModel.actions,
+                    onActionTap: (action) {
+                      switch (action) {
+                        case UnknownConfigAction.refresh:
+                          context.read<DevicePageCubit>().load(device.sn);
+                      }
+                    },
+                  ),
                   const SizedBox(height: 8),
-                  _TipsCard(),
+                  _TipsCard(tips: viewModel.tips),
                 ],
               ),
             ),
@@ -106,15 +120,12 @@ class _ProblemCard extends StatelessWidget {
 }
 
 class _MetaCard extends StatelessWidget {
-  const _MetaCard({required this.device, required this.bundle});
+  const _MetaCard({required this.meta});
 
-  final Device device;
-  final DeviceConfigurationBundle bundle;
+  final UnknownConfigMeta meta;
 
   @override
   Widget build(BuildContext context) {
-    final controlCount = bundle.configuration.oshmobile.controls.length;
-    final widgetCount = bundle.configuration.oshmobile.widgets.length;
     return Card(
       color: _unknownSurfaceColor(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -123,44 +134,69 @@ class _MetaCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(S.of(context).DeviceDetails,
-                style: TextStyle(
-                    color: _unknownPrimaryTextColor(context),
-                    fontWeight: FontWeight.w600)),
+            Text(
+              S.of(context).DeviceDetails,
+              style: TextStyle(
+                color: _unknownPrimaryTextColor(context),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             _MetaRow(
-              label: 'Status',
-              value: device.connectionInfo.online
-                  ? S.of(context).Online
-                  : S.of(context).Offline,
-              trailing: device.connectionInfo.online
-                  ? Icon(Icons.check_circle,
-                      size: 16, color: AppPalette.green.withValues(alpha: 0.5))
+              label: S.of(context).UnknownMetaStatus,
+              value:
+                  meta.isOnline ? S.of(context).Online : S.of(context).Offline,
+              trailing: meta.isOnline
+                  ? Icon(
+                      Icons.check_circle,
+                      size: 16,
+                      color: AppPalette.green.withValues(alpha: 0.5),
+                    )
                   : Icon(
                       Icons.offline_bolt,
                       size: 16,
                       color: _unknownSecondaryTextColor(context),
                     ),
             ),
-            _MetaRow(label: 'Serial', value: device.sn),
-            _MetaRow(label: 'Model ID', value: device.modelId),
-            _MetaRow(label: 'Model name', value: device.modelName),
             _MetaRow(
-              label: 'Layout',
-              value: bundle.layout,
+                label: S.of(context).UnknownMetaSerial, value: meta.serial),
+            _MetaRow(
+              label: S.of(context).UnknownMetaModelId,
+              value: meta.modelId,
             ),
-            _MetaRow(label: 'Configuration ID', value: bundle.configurationId),
-            _MetaRow(label: 'Revision', value: bundle.revision.toString()),
-            _MetaRow(label: 'Status', value: bundle.status),
-            _MetaRow(label: 'Firmware', value: bundle.firmwareVersion),
-            _MetaRow(label: 'Device ID', value: device.id),
             _MetaRow(
-              label: 'Controls',
-              value: controlCount == 0 ? '—' : controlCount.toString(),
-              trailing: controlCount == 0
+              label: S.of(context).UnknownMetaModelName,
+              value: meta.modelName,
+            ),
+            _MetaRow(
+                label: S.of(context).UnknownMetaLayout, value: meta.layout),
+            _MetaRow(
+              label: S.of(context).UnknownMetaConfigurationId,
+              value: meta.configurationId,
+            ),
+            _MetaRow(
+              label: S.of(context).UnknownMetaRevision,
+              value: meta.revision.toString(),
+            ),
+            _MetaRow(
+              label: S.of(context).UnknownMetaConfigurationStatus,
+              value: meta.status,
+            ),
+            _MetaRow(
+              label: S.of(context).UnknownMetaFirmware,
+              value: meta.firmwareVersion,
+            ),
+            _MetaRow(
+              label: S.of(context).UnknownMetaDeviceId,
+              value: meta.deviceId,
+            ),
+            _MetaRow(
+              label: S.of(context).UnknownMetaControls,
+              value:
+                  meta.controlsCount == 0 ? '—' : meta.controlsCount.toString(),
+              trailing: meta.controlsCount == 0
                   ? null
                   : Tooltip(
-                      message: bundle.configuration.oshmobile.controls.keys
-                          .join(', '),
+                      message: meta.controlIds.join(', '),
                       child: Icon(
                         Icons.list_alt,
                         size: 18,
@@ -168,7 +204,10 @@ class _MetaCard extends StatelessWidget {
                       ),
                     ),
             ),
-            _MetaRow(label: 'Widgets', value: widgetCount.toString()),
+            _MetaRow(
+              label: S.of(context).UnknownMetaWidgets,
+              value: meta.widgetsCount.toString(),
+            ),
           ].expand((widget) => [widget, const SizedBox(height: 12)]).toList(),
         ),
       ),
@@ -177,29 +216,52 @@ class _MetaCard extends StatelessWidget {
 }
 
 class _ActionsRow extends StatelessWidget {
-  const _ActionsRow({required this.device});
+  const _ActionsRow({
+    required this.actions,
+    required this.onActionTap,
+  });
 
-  final Device device;
+  final List<UnknownConfigAction> actions;
+  final ValueChanged<UnknownConfigAction> onActionTap;
 
   @override
   Widget build(BuildContext context) {
     final color = _unknownPrimaryTextColor(context);
     return Row(
       children: [
-        Expanded(
-          child: _ActionButton(
-            icon: Icons.refresh,
-            label: S.of(context).Update,
-            onTap: () => context.read<DevicePageCubit>().load(device.sn),
-            color: color,
+        for (final action in actions)
+          Expanded(
+            child: _ActionButton(
+              icon: _iconFor(action),
+              label: _labelFor(context, action),
+              onTap: () => onActionTap(action),
+              color: color,
+            ),
           ),
-        ),
       ],
     );
+  }
+
+  IconData _iconFor(UnknownConfigAction action) {
+    switch (action) {
+      case UnknownConfigAction.refresh:
+        return Icons.refresh;
+    }
+  }
+
+  String _labelFor(BuildContext context, UnknownConfigAction action) {
+    switch (action) {
+      case UnknownConfigAction.refresh:
+        return S.of(context).Update;
+    }
   }
 }
 
 class _TipsCard extends StatelessWidget {
+  const _TipsCard({required this.tips});
+
+  final List<UnknownConfigTip> tips;
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -210,18 +272,33 @@ class _TipsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(S.of(context).Tips,
-                style: TextStyle(
-                    color: _unknownPrimaryTextColor(context),
-                    fontWeight: FontWeight.w600)),
+            Text(
+              S.of(context).Tips,
+              style: TextStyle(
+                color: _unknownPrimaryTextColor(context),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             SizedBox(height: 10),
-            _TipItem(text: S.of(context).TipEnsureAppUpdated),
-            _TipItem(text: S.of(context).TipCheckNetwork),
-            _TipItem(text: S.of(context).TipContactSupport),
+            for (final tip in tips)
+              _TipItem(
+                text: _tipText(context, tip),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  String _tipText(BuildContext context, UnknownConfigTip tip) {
+    switch (tip) {
+      case UnknownConfigTip.ensureAppUpdated:
+        return S.of(context).TipEnsureAppUpdated;
+      case UnknownConfigTip.checkNetwork:
+        return S.of(context).TipCheckNetwork;
+      case UnknownConfigTip.contactSupport:
+        return S.of(context).TipContactSupport;
+    }
   }
 }
 
@@ -283,8 +360,10 @@ class _ActionButton extends StatelessWidget {
           children: [
             Icon(icon, color: color.withValues(alpha: 0.95)),
             const SizedBox(height: 6),
-            Text(label,
-                style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: TextStyle(color: color, fontWeight: FontWeight.w600),
+            ),
           ],
         ),
       ),
@@ -309,10 +388,11 @@ class _TipItem extends StatelessWidget {
             style: TextStyle(color: _unknownSecondaryTextColor(context)),
           ),
           Expanded(
-              child: Text(
-            text,
-            style: TextStyle(color: _unknownSecondaryTextColor(context)),
-          )),
+            child: Text(
+              text,
+              style: TextStyle(color: _unknownSecondaryTextColor(context)),
+            ),
+          ),
         ],
       ),
     );

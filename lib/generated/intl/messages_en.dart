@@ -333,6 +333,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryMetricCurrent": MessageLookupByLibrary.simpleMessage(
       "Current",
     ),
+    "TelemetryHistoryMetricEnergyUsed": MessageLookupByLibrary.simpleMessage(
+      "Energy used",
+    ),
     "TelemetryHistoryMetricHeatingActivity":
         MessageLookupByLibrary.simpleMessage("Heating activity"),
     "TelemetryHistoryMetricLoadFactor": MessageLookupByLibrary.simpleMessage(
@@ -413,6 +416,22 @@ class MessageLookup extends MessageLookupByLibrary {
       "Unknown device type",
     ),
     "UnknownError": MessageLookupByLibrary.simpleMessage("Unknown error"),
+    "UnknownMetaConfigurationId": MessageLookupByLibrary.simpleMessage(
+      "Configuration ID",
+    ),
+    "UnknownMetaConfigurationStatus": MessageLookupByLibrary.simpleMessage(
+      "Configuration status",
+    ),
+    "UnknownMetaControls": MessageLookupByLibrary.simpleMessage("Controls"),
+    "UnknownMetaDeviceId": MessageLookupByLibrary.simpleMessage("Device ID"),
+    "UnknownMetaFirmware": MessageLookupByLibrary.simpleMessage("Firmware"),
+    "UnknownMetaLayout": MessageLookupByLibrary.simpleMessage("Layout"),
+    "UnknownMetaModelId": MessageLookupByLibrary.simpleMessage("Model ID"),
+    "UnknownMetaModelName": MessageLookupByLibrary.simpleMessage("Model name"),
+    "UnknownMetaRevision": MessageLookupByLibrary.simpleMessage("Revision"),
+    "UnknownMetaSerial": MessageLookupByLibrary.simpleMessage("Serial"),
+    "UnknownMetaStatus": MessageLookupByLibrary.simpleMessage("Status"),
+    "UnknownMetaWidgets": MessageLookupByLibrary.simpleMessage("Widgets"),
     "UnsavedChanges": MessageLookupByLibrary.simpleMessage("Unsaved changes"),
     "UnsavedChangesDiscardPrompt": MessageLookupByLibrary.simpleMessage(
       "You have unsaved changes. Do you want to discard them and leave this page?",

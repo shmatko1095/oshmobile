@@ -69,8 +69,13 @@ import 'package:oshmobile/features/device_management/domain/usecases/remove_devi
 import 'package:oshmobile/features/device_management/domain/usecases/rename_device.dart';
 import 'package:oshmobile/features/device_management/presentation/cubit/device_access_cubit.dart';
 import 'package:oshmobile/features/device_management/presentation/cubit/device_management_cubit.dart';
+import 'package:oshmobile/features/devices/details/data/configuration_thermostat_dashboard_schema_builder.dart';
+import 'package:oshmobile/features/devices/details/domain/builders/thermostat_dashboard_schema_builder.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/adapters/thermostat_telemetry_history_opener.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_presenter.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/factories/unknown_config_view_model_factory.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/thermostat_presenters.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/unknown_config_presenter.dart';
 import 'package:oshmobile/features/home/data/datasources/device_remote_data_source.dart';
 import 'package:oshmobile/features/home/data/datasources/device_remote_data_source_impl.dart';
 import 'package:oshmobile/features/home/data/repositories/device_repository_impl.dart';
@@ -369,10 +374,32 @@ void _initDevicesFeature() {
     ..registerLazySingleton<ConfigurationBundleRepository>(
       () => ConfigurationBundleRepositoryImpl(client: locator<ChopperClient>()),
     )
-    // Device presenters registry (pure mapping).
-    ..registerSingleton<DevicePresenterRegistry>(const DevicePresenterRegistry({
-      'thermostat_basic': ThermostatBasicPresenter(),
-    }));
+    ..registerLazySingleton<ThermostatDashboardSchemaBuilder>(
+      () => const ConfigurationThermostatDashboardSchemaBuilder(),
+    )
+    ..registerLazySingleton<ThermostatTelemetryHistoryOpener>(
+      () => const ThermostatTelemetryHistoryOpener(),
+    )
+    ..registerLazySingleton<UnknownConfigViewModelFactory>(
+      () => const UnknownConfigViewModelFactory(),
+    )
+    ..registerLazySingleton<ThermostatBasicPresenter>(
+      () => ThermostatBasicPresenter(
+        schemaBuilder: locator<ThermostatDashboardSchemaBuilder>(),
+        historyOpener: locator<ThermostatTelemetryHistoryOpener>(),
+      ),
+    )
+    ..registerLazySingleton<UnknownConfigPresenter>(
+      () => UnknownConfigPresenter(
+        viewModelFactory: locator<UnknownConfigViewModelFactory>(),
+      ),
+    )
+    // Device presenters registry (runtime mapping with injected presenters).
+    ..registerSingleton<DevicePresenterRegistry>(
+      DevicePresenterRegistry({
+        'thermostat_basic': locator<ThermostatBasicPresenter>(),
+      }),
+    );
 }
 
 void _initTelemetryHistoryFeature() {

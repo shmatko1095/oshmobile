@@ -1,3 +1,4 @@
+import 'package:oshmobile/core/configuration/power_meter_series_keys.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
@@ -41,12 +42,14 @@ class TelemetryHistoryMetricCatalog {
   static const String loadFactor = 'load_factor';
   static const String heaterEnabled = 'heater_enabled';
   static const String targetTemp = 'target_temp';
-  static const String powerMeterVoltageV = 'power_meter.voltage_v';
-  static const String powerMeterCurrentA = 'power_meter.current_a';
-  static const String powerMeterActivePowerW = 'power_meter.active_power_w';
+  static const String powerMeterVoltageV = PowerMeterSeriesKeys.voltageV;
+  static const String powerMeterCurrentA = PowerMeterSeriesKeys.currentA;
+  static const String powerMeterActivePowerW =
+      PowerMeterSeriesKeys.activePowerW;
   static const String powerMeterApparentPowerVa =
-      'power_meter.apparent_power_va';
-  static const String powerMeterEnergyWhDelta = 'power_meter.energy_wh_delta';
+      PowerMeterSeriesKeys.apparentPowerVa;
+  static const String powerMeterEnergyWhDelta =
+      PowerMeterSeriesKeys.energyWhDelta;
 
   static const TelemetryHistoryMetricDefinition loadFactorDefinition =
       TelemetryHistoryMetricDefinition(
@@ -159,4 +162,4 @@ String _voltageTitle(S s) => s.TelemetryHistoryMetricVoltage;
 String _currentTitle(S s) => s.TelemetryHistoryMetricCurrent;
 String _activePowerTitle(S s) => s.TelemetryHistoryMetricActivePower;
 String _apparentPowerTitle(S s) => s.TelemetryHistoryMetricApparentPower;
-String _energyUsedTitle(S s) => 'Energy used';
+String _energyUsedTitle(S s) => s.TelemetryHistoryMetricEnergyUsed;

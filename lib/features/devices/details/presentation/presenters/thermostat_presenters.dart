@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
-import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
+import 'package:oshmobile/features/devices/details/domain/builders/thermostat_dashboard_schema_builder.dart';
+import 'package:oshmobile/features/devices/details/domain/models/thermostat_dashboard_schema.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/adapters/thermostat_telemetry_history_opener.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_history_strip_card.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_mode_bar.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/delta_temp_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/heating_status_card.dart';
@@ -16,12 +19,18 @@ import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
 import 'package:oshmobile/features/sensors/presentation/open_sensor_editor.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/open_telemetry_history.dart';
-import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric_catalog.dart';
 
 import 'device_presenter.dart';
 
 class ThermostatBasicPresenter implements DevicePresenter {
-  const ThermostatBasicPresenter();
+  const ThermostatBasicPresenter({
+    required ThermostatDashboardSchemaBuilder schemaBuilder,
+    required ThermostatTelemetryHistoryOpener historyOpener,
+  })  : _schemaBuilder = schemaBuilder,
+        _historyOpener = historyOpener;
+
+  final ThermostatDashboardSchemaBuilder _schemaBuilder;
+  final ThermostatTelemetryHistoryOpener _historyOpener;
 
   @override
   Widget build(
@@ -34,6 +43,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
     const gridCrossAxisSpacing = 16.0;
     const gridMainAxisSpacing = 16.0;
     const gridChildAspectRatio = 1.1;
+
     final contentWidth =
         MediaQuery.sizeOf(context).width - horizontalPadding * 2;
     final tileWidth =
@@ -41,16 +51,12 @@ class ThermostatBasicPresenter implements DevicePresenter {
             gridCrossAxisCount;
     final statTileHeight = tileWidth / gridChildAspectRatio;
 
-    final tiles = _buildTiles(context, bundle);
-    final showHero = bundle.canRenderWidget('heroTemperature');
-    final showModeBar = bundle.canRenderWidget('modeBar');
-    final visibleModes = _visibleModes(bundle);
+    final schema = _schemaBuilder.build(bundle: bundle);
     final scheduleWritable = bundle.canPatchDomain('schedule');
-    final heroCurrentBind = _widgetControl(bundle, 'heroTemperature', 0);
-    final heroCurrentTargetBind = _widgetControl(bundle, 'heroTemperature', 1);
-    final heroNextTargetBind = _widgetControl(bundle, 'heroTemperature', 2);
-    final heroSensorsBind = _widgetControl(bundle, 'heroTemperature', 3);
-    final modeBind = _widgetControl(bundle, 'modeBar', 0);
+
+    final hero = schema.hero;
+    final modeBar = schema.modeBar;
+    final temperatureHistoryStrip = schema.temperatureHistoryStrip;
 
     return Scaffold(
       body: SafeArea(
@@ -58,15 +64,15 @@ class ThermostatBasicPresenter implements DevicePresenter {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            if (showHero)
+            if (hero != null)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
                   child: TemperatureMinimalPanel(
-                    currentBind: heroCurrentBind,
-                    sensorsBind: heroSensorsBind,
-                    currentTargetBind: heroCurrentTargetBind,
-                    nextTargetBind: heroNextTargetBind,
+                    currentBind: hero.currentBind,
+                    sensorsBind: hero.sensorsBind,
+                    currentTargetBind: hero.currentTargetBind,
+                    nextTargetBind: hero.nextTargetBind,
                     unit: '°C',
                     height: MediaQuery.sizeOf(context).height * 0.38,
                     onTap: scheduleWritable
@@ -82,23 +88,28 @@ class ThermostatBasicPresenter implements DevicePresenter {
                   ),
                 ),
               ),
-            if (showModeBar)
+            if (modeBar != null)
               SliverToBoxAdapter(
                 child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-                    child: ThermostatModeBar(
-                      modeBind: modeBind,
-                      visibleModes: visibleModes,
-                      writable: scheduleWritable,
-                    )),
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+                  child: ThermostatModeBar(
+                    modeBind: modeBar.modeBind,
+                    visibleModes: _resolveVisibleModes(modeBar.visibleModeIds),
+                    writable: scheduleWritable,
+                  ),
+                ),
               ),
-            if (showHero && heroSensorsBind.isNotEmpty)
+            if (temperatureHistoryStrip != null)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
-                      horizontalPadding, 12, horizontalPadding, 0),
+                    horizontalPadding,
+                    12,
+                    horizontalPadding,
+                    0,
+                  ),
                   child: TemperatureHistoryStripCard(
-                    sensorsBind: heroSensorsBind,
+                    sensorsBind: temperatureHistoryStrip.sensorsBind,
                     height: statTileHeight,
                     onOpenHistory: (sensors, sensorId, sensorName) {
                       TelemetryHistoryNavigator.openTemperatureFromHost(
@@ -126,7 +137,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
                   childAspectRatio: gridChildAspectRatio,
                 ),
                 delegate: SliverChildListDelegate(
-                  [for (final tile in tiles) tile.builder()],
+                  [for (final tile in schema.tiles) _buildTile(context, tile)],
                 ),
               ),
             ),
@@ -136,282 +147,165 @@ class ThermostatBasicPresenter implements DevicePresenter {
     );
   }
 
-  @visibleForTesting
-  static List<String> visibleWidgetIds(DeviceConfigurationBundle bundle) {
-    final ids = <String>[];
-    for (final widgetId in const [
-      'heroTemperature',
-      'modeBar',
-      'heatingToggle',
-      'loadFactor24h',
-      'energyUsed',
-      'powerNow',
-      'voltageNow',
-      'currentNow',
-      'apparentPowerNow',
-      'inletTemp',
-      'outletTemp',
-      'deltaT',
-    ]) {
-      if (_canRenderWidgetWithValue(bundle, widgetId)) {
-        ids.add(widgetId);
-      }
+  Widget _buildTile(BuildContext context, ThermostatTileSpec tile) {
+    switch (tile) {
+      case ThermostatSingleBindTileSpec(
+          type: final type,
+          bind: final bind,
+          telemetryHistoryIntent: final historyIntent,
+        ):
+        return _buildSingleBindTile(
+          context,
+          type: type,
+          bind: bind,
+          historyIntent: historyIntent,
+        );
+      case ThermostatValueTileSpec(
+          type: final type,
+          valueBind: final valueBind,
+          validBind: final validBind,
+          telemetryHistoryIntent: final historyIntent,
+        ):
+        return _buildValueTile(
+          context,
+          type: type,
+          valueBind: valueBind,
+          validBind: validBind,
+          historyIntent: historyIntent,
+        );
+      case ThermostatDeltaTileSpec(
+          inletBind: final inletBind,
+          outletBind: final outletBind,
+        ):
+        return DeltaTCard(
+          inletBind: inletBind,
+          outletBind: outletBind,
+          unit: '°C',
+        );
     }
-    return ids;
   }
 
-  List<_Tile> _buildTiles(
-      BuildContext context, DeviceConfigurationBundle bundle) {
-    final tiles = <_Tile>[];
-    final powerMeterHistorySeriesKeys = _powerMeterHistorySeriesKeys(bundle);
-
-    if (_canRenderWidgetWithValue(bundle, 'heatingToggle')) {
-      final bind = _widgetControl(bundle, 'heatingToggle', 0);
-      tiles.add(
-        _Tile(
-          id: 'heatingToggle',
-          builder: () => HeatingStatusCard(
-            bind: bind,
-            title: 'Heating',
-            onTap: () => TelemetryHistoryNavigator.openHeatingFromHost(context),
-          ),
-        ),
-      );
+  Widget _buildSingleBindTile(
+    BuildContext context, {
+    required ThermostatTileType type,
+    required String bind,
+    required TelemetryHistoryIntent? historyIntent,
+  }) {
+    switch (type) {
+      case ThermostatTileType.heatingToggle:
+        return HeatingStatusCard(
+          bind: bind,
+          title: 'Heating',
+          onTap: () => TelemetryHistoryNavigator.openHeatingFromHost(context),
+        );
+      case ThermostatTileType.loadFactor24h:
+        return LoadFactorKpiCard(
+          percentBind: bind,
+          onTap: () =>
+              TelemetryHistoryNavigator.openLoadFactorFromHost(context),
+        );
+      case ThermostatTileType.inletTemp:
+        return InletTempCard(bind: bind);
+      case ThermostatTileType.outletTemp:
+        return OutletTempCard(bind: bind);
+      case ThermostatTileType.powerNow:
+      case ThermostatTileType.energyUsed:
+      case ThermostatTileType.voltageNow:
+      case ThermostatTileType.currentNow:
+      case ThermostatTileType.apparentPowerNow:
+      case ThermostatTileType.deltaT:
+        return const SizedBox.shrink();
     }
-
-    if (_canRenderWidgetWithValue(bundle, 'loadFactor24h')) {
-      final bind = _widgetControl(bundle, 'loadFactor24h', 0);
-      tiles.add(
-        _Tile(
-          id: 'loadFactor24h',
-          builder: () => LoadFactorKpiCard(
-            percentBind: bind,
-            onTap: () =>
-                TelemetryHistoryNavigator.openLoadFactorFromHost(context),
-          ),
-        ),
-      );
-    }
-
-    if (_canRenderWidgetWithValue(bundle, 'energyUsed')) {
-      final valueBind = _widgetControl(bundle, 'energyUsed', 0);
-      final validBind = _optionalWidgetControl(bundle, 'energyUsed', 1);
-      tiles.add(
-        _Tile(
-          id: 'energyUsed',
-          builder: () => PowerMetricCard(
-            valueBind: valueBind,
-            validBind: validBind,
-            title: 'Energy used',
-            unit: 'kWh',
-            icon: Icons.bolt_rounded,
-            accentColor: AppPalette.accentSuccess,
-            decimals: 3,
-            onTap: () => TelemetryHistoryNavigator.openPowerMeterFromHost(
-              context,
-              initialSeriesKey:
-                  TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
-              configuredSeriesKeys: powerMeterHistorySeriesKeys,
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (_canRenderWidgetWithValue(bundle, 'powerNow')) {
-      final bind = _widgetControl(bundle, 'powerNow', 0);
-      final validBind = _optionalWidgetControl(bundle, 'powerNow', 1);
-      tiles.add(
-        _Tile(
-          id: 'powerNow',
-          builder: () => PowerCard(
-            bind: bind,
-            validBind: validBind,
-          ),
-        ),
-      );
-    }
-
-    if (_canRenderWidgetWithValue(bundle, 'voltageNow')) {
-      final valueBind = _widgetControl(bundle, 'voltageNow', 0);
-      final validBind = _optionalWidgetControl(bundle, 'voltageNow', 1);
-      tiles.add(
-        _Tile(
-          id: 'voltageNow',
-          builder: () => PowerMetricCard(
-            valueBind: valueBind,
-            validBind: validBind,
-            title: 'Voltage',
-            unit: 'V',
-            icon: Icons.electrical_services_rounded,
-            accentColor: AppPalette.amberAccent,
-            onTap: () => TelemetryHistoryNavigator.openPowerMeterFromHost(
-              context,
-              initialSeriesKey:
-                  TelemetryHistoryMetricCatalog.powerMeterVoltageV,
-              configuredSeriesKeys: powerMeterHistorySeriesKeys,
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (_canRenderWidgetWithValue(bundle, 'currentNow')) {
-      final valueBind = _widgetControl(bundle, 'currentNow', 0);
-      final validBind = _optionalWidgetControl(bundle, 'currentNow', 1);
-      tiles.add(
-        _Tile(
-          id: 'currentNow',
-          builder: () => PowerMetricCard(
-            valueBind: valueBind,
-            validBind: validBind,
-            title: 'Current',
-            unit: 'A',
-            icon: Icons.timeline_rounded,
-            accentColor: AppPalette.cyanAccent,
-            decimals: 2,
-            onTap: () => TelemetryHistoryNavigator.openPowerMeterFromHost(
-              context,
-              initialSeriesKey:
-                  TelemetryHistoryMetricCatalog.powerMeterCurrentA,
-              configuredSeriesKeys: powerMeterHistorySeriesKeys,
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (_canRenderWidgetWithValue(bundle, 'apparentPowerNow')) {
-      final valueBind = _widgetControl(bundle, 'apparentPowerNow', 0);
-      final validBind = _optionalWidgetControl(bundle, 'apparentPowerNow', 1);
-      tiles.add(
-        _Tile(
-          id: 'apparentPowerNow',
-          builder: () => PowerMetricCard(
-            valueBind: valueBind,
-            validBind: validBind,
-            title: 'Apparent power',
-            unit: 'VA',
-            icon: Icons.speed_rounded,
-            accentColor: AppPalette.accentPrimary,
-            onTap: () => TelemetryHistoryNavigator.openPowerMeterFromHost(
-              context,
-              initialSeriesKey:
-                  TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
-              configuredSeriesKeys: powerMeterHistorySeriesKeys,
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (_canRenderWidgetWithValue(bundle, 'inletTemp')) {
-      final bind = _widgetControl(bundle, 'inletTemp', 0);
-      tiles.add(
-        _Tile(
-          id: 'inletTemp',
-          builder: () => InletTempCard(bind: bind),
-        ),
-      );
-    }
-
-    if (_canRenderWidgetWithValue(bundle, 'outletTemp')) {
-      final bind = _widgetControl(bundle, 'outletTemp', 0);
-      tiles.add(
-        _Tile(
-          id: 'outletTemp',
-          builder: () => OutletTempCard(bind: bind),
-        ),
-      );
-    }
-
-    if (_canRenderWidgetWithValue(bundle, 'deltaT')) {
-      final inletBind = _widgetControl(bundle, 'deltaT', 0);
-      final outletBind = _widgetControl(bundle, 'deltaT', 1);
-      tiles.add(
-        _Tile(
-          id: 'deltaT',
-          builder: () => DeltaTCard(
-            inletBind: inletBind,
-            outletBind: outletBind,
-            unit: '°C',
-          ),
-        ),
-      );
-    }
-
-    return tiles;
   }
 
-  List<CalendarMode>? _visibleModes(DeviceConfigurationBundle bundle) {
-    final ids = bundle.widget('modeBar')?.modes ?? const <String>[];
-    if (ids.isEmpty) return null;
+  Widget _buildValueTile(
+    BuildContext context, {
+    required ThermostatTileType type,
+    required String valueBind,
+    required String? validBind,
+    required TelemetryHistoryIntent? historyIntent,
+  }) {
+    switch (type) {
+      case ThermostatTileType.energyUsed:
+        return PowerMetricCard(
+          valueBind: valueBind,
+          validBind: validBind,
+          title: 'Energy used',
+          unit: 'kWh',
+          icon: Icons.bolt_rounded,
+          accentColor: AppPalette.accentSuccess,
+          decimals: 3,
+          onTap: _historyTap(context, historyIntent),
+        );
+      case ThermostatTileType.powerNow:
+        return PowerCard(
+          bind: valueBind,
+          validBind: validBind,
+          onTap: _historyTap(context, historyIntent),
+        );
+      case ThermostatTileType.voltageNow:
+        return PowerMetricCard(
+          valueBind: valueBind,
+          validBind: validBind,
+          title: 'Voltage',
+          unit: 'V',
+          icon: Icons.electrical_services_rounded,
+          accentColor: AppPalette.amberAccent,
+          onTap: _historyTap(context, historyIntent),
+        );
+      case ThermostatTileType.currentNow:
+        return PowerMetricCard(
+          valueBind: valueBind,
+          validBind: validBind,
+          title: 'Current',
+          unit: 'A',
+          icon: Icons.timeline_rounded,
+          accentColor: AppPalette.cyanAccent,
+          decimals: 2,
+          onTap: _historyTap(context, historyIntent),
+        );
+      case ThermostatTileType.apparentPowerNow:
+        return PowerMetricCard(
+          valueBind: valueBind,
+          validBind: validBind,
+          title: 'Apparent power',
+          unit: 'VA',
+          icon: Icons.speed_rounded,
+          accentColor: AppPalette.accentPrimary,
+          onTap: _historyTap(context, historyIntent),
+        );
+      case ThermostatTileType.heatingToggle:
+      case ThermostatTileType.loadFactor24h:
+      case ThermostatTileType.inletTemp:
+      case ThermostatTileType.outletTemp:
+      case ThermostatTileType.deltaT:
+        return const SizedBox.shrink();
+    }
+  }
 
-    final all = <String, CalendarMode>{
+  VoidCallback? _historyTap(
+    BuildContext context,
+    TelemetryHistoryIntent? historyIntent,
+  ) {
+    if (historyIntent == null) {
+      return null;
+    }
+    return () => _historyOpener.open(context, intent: historyIntent);
+  }
+
+  List<CalendarMode>? _resolveVisibleModes(List<String>? modeIds) {
+    if (modeIds == null || modeIds.isEmpty) {
+      return null;
+    }
+
+    final byId = <String, CalendarMode>{
       for (final mode in CalendarMode.all) mode.id: mode,
     };
 
-    return ids
-        .map((id) => all[id])
+    final visibleModes = modeIds
+        .map((id) => byId[id.trim()])
         .whereType<CalendarMode>()
         .toList(growable: false);
+    return visibleModes.isEmpty ? null : visibleModes;
   }
-
-  String _widgetControl(
-    DeviceConfigurationBundle bundle,
-    String widgetId,
-    int index,
-  ) {
-    final widget = bundle.widget(widgetId);
-    if (widget == null || index >= widget.controlIds.length) {
-      return '';
-    }
-    return widget.controlIds[index];
-  }
-
-  String? _optionalWidgetControl(
-    DeviceConfigurationBundle bundle,
-    String widgetId,
-    int index,
-  ) {
-    final bind = _widgetControl(bundle, widgetId, index);
-    return bind.isEmpty ? null : bind;
-  }
-
-  static List<String> _powerMeterHistorySeriesKeys(
-    DeviceConfigurationBundle bundle,
-  ) {
-    final keys = <String>[];
-    for (final entry in _powerMeterHistoryWidgetSeries.entries) {
-      if (_canRenderWidgetWithValue(bundle, entry.key)) {
-        keys.add(entry.value);
-      }
-    }
-    return keys;
-  }
-
-  static bool _canRenderWidgetWithValue(
-    DeviceConfigurationBundle bundle,
-    String widgetId,
-  ) {
-    final widget = bundle.widget(widgetId);
-    if (widget == null || widget.controlIds.isEmpty) {
-      return false;
-    }
-    return bundle.canRenderWidget(widgetId);
-  }
-}
-
-const Map<String, String> _powerMeterHistoryWidgetSeries = <String, String>{
-  'energyUsed': TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
-  'voltageNow': TelemetryHistoryMetricCatalog.powerMeterVoltageV,
-  'currentNow': TelemetryHistoryMetricCatalog.powerMeterCurrentA,
-  'apparentPowerNow': TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
-};
-
-class _Tile {
-  final String id;
-  final Widget Function() builder;
-
-  const _Tile({required this.id, required this.builder});
 }

@@ -1479,6 +1479,126 @@ class S {
     );
   }
 
+  /// `Status`
+  String get UnknownMetaStatus {
+    return Intl.message(
+      'Status',
+      name: 'UnknownMetaStatus',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Serial`
+  String get UnknownMetaSerial {
+    return Intl.message(
+      'Serial',
+      name: 'UnknownMetaSerial',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Model ID`
+  String get UnknownMetaModelId {
+    return Intl.message(
+      'Model ID',
+      name: 'UnknownMetaModelId',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Model name`
+  String get UnknownMetaModelName {
+    return Intl.message(
+      'Model name',
+      name: 'UnknownMetaModelName',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Layout`
+  String get UnknownMetaLayout {
+    return Intl.message(
+      'Layout',
+      name: 'UnknownMetaLayout',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Configuration ID`
+  String get UnknownMetaConfigurationId {
+    return Intl.message(
+      'Configuration ID',
+      name: 'UnknownMetaConfigurationId',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Revision`
+  String get UnknownMetaRevision {
+    return Intl.message(
+      'Revision',
+      name: 'UnknownMetaRevision',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Configuration status`
+  String get UnknownMetaConfigurationStatus {
+    return Intl.message(
+      'Configuration status',
+      name: 'UnknownMetaConfigurationStatus',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Firmware`
+  String get UnknownMetaFirmware {
+    return Intl.message(
+      'Firmware',
+      name: 'UnknownMetaFirmware',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Device ID`
+  String get UnknownMetaDeviceId {
+    return Intl.message(
+      'Device ID',
+      name: 'UnknownMetaDeviceId',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Controls`
+  String get UnknownMetaControls {
+    return Intl.message(
+      'Controls',
+      name: 'UnknownMetaControls',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Widgets`
+  String get UnknownMetaWidgets {
+    return Intl.message(
+      'Widgets',
+      name: 'UnknownMetaWidgets',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Target {temp}`
   String Target(Object temp) {
     return Intl.message('Target $temp', name: 'Target', desc: '', args: [temp]);
@@ -2154,6 +2274,16 @@ class S {
     return Intl.message(
       'Apparent power',
       name: 'TelemetryHistoryMetricApparentPower',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Energy used`
+  String get TelemetryHistoryMetricEnergyUsed {
+    return Intl.message(
+      'Energy used',
+      name: 'TelemetryHistoryMetricEnergyUsed',
       desc: '',
       args: [],
     );

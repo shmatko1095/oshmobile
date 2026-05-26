@@ -343,6 +343,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryMetricCurrent": MessageLookupByLibrary.simpleMessage(
       "Струм",
     ),
+    "TelemetryHistoryMetricEnergyUsed": MessageLookupByLibrary.simpleMessage(
+      "Використана енергія",
+    ),
     "TelemetryHistoryMetricHeatingActivity":
         MessageLookupByLibrary.simpleMessage("Активність нагріву"),
     "TelemetryHistoryMetricLoadFactor": MessageLookupByLibrary.simpleMessage(
@@ -429,6 +432,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "UnknownError": MessageLookupByLibrary.simpleMessage(
       "Сталася невідома помилка",
     ),
+    "UnknownMetaConfigurationId": MessageLookupByLibrary.simpleMessage(
+      "Configuration ID",
+    ),
+    "UnknownMetaConfigurationStatus": MessageLookupByLibrary.simpleMessage(
+      "Статус конфігурації",
+    ),
+    "UnknownMetaControls": MessageLookupByLibrary.simpleMessage("Контроли"),
+    "UnknownMetaDeviceId": MessageLookupByLibrary.simpleMessage("Device ID"),
+    "UnknownMetaFirmware": MessageLookupByLibrary.simpleMessage("Прошивка"),
+    "UnknownMetaLayout": MessageLookupByLibrary.simpleMessage("Layout"),
+    "UnknownMetaModelId": MessageLookupByLibrary.simpleMessage("Model ID"),
+    "UnknownMetaModelName": MessageLookupByLibrary.simpleMessage(
+      "Назва моделі",
+    ),
+    "UnknownMetaRevision": MessageLookupByLibrary.simpleMessage("Ревізія"),
+    "UnknownMetaSerial": MessageLookupByLibrary.simpleMessage("Серійний"),
+    "UnknownMetaStatus": MessageLookupByLibrary.simpleMessage("Статус"),
+    "UnknownMetaWidgets": MessageLookupByLibrary.simpleMessage("Віджети"),
     "UnsavedChanges": MessageLookupByLibrary.simpleMessage("Незбережені зміни"),
     "UnsavedChangesDiscardPrompt": MessageLookupByLibrary.simpleMessage(
       "У вас є незбережені зміни. Скасувати їх і вийти зі сторінки?",
