@@ -20,7 +20,7 @@ class _MetricSelector extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: metrics.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
         itemBuilder: (context, index) {
           return Center(
             child: _MetricChip(
@@ -51,36 +51,43 @@ class _MetricChip extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: AppPalette.motionBase,
-        curve: Curves.easeOutCubic,
-        constraints: const BoxConstraints(minHeight: 40),
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppPalette.accentPrimary.withValues(
-                  alpha: _historyIsDark(context) ? 0.28 : 0.12,
-                )
-              : _historySurfaceColor(context),
-          borderRadius: BorderRadius.circular(AppPalette.radiusPill),
-          border: Border.all(
-            color: selected
-                ? AppPalette.accentPrimary.withValues(alpha: 0.42)
-                : _historyBorderColor(context),
-          ),
-        ),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: selected
-                ? _historyPrimaryTextColor(context)
-                : _historyMutedTextColor(context),
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            height: 1.0,
+      child: SizedBox(
+        height: 44,
+        child: Center(
+          child: AnimatedContainer(
+            duration: AppPalette.motionBase,
+            curve: Curves.easeOutCubic,
+            constraints: const BoxConstraints(minHeight: 36),
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: selected
+                  ? AppPalette.accentPrimary.withValues(
+                      alpha: _historyIsDark(context) ? 0.22 : 0.1,
+                    )
+                  : _historySurfaceColor(context).withValues(
+                      alpha: _historyIsDark(context) ? 0.82 : 1,
+                    ),
+              borderRadius: BorderRadius.circular(AppPalette.radiusPill),
+              border: Border.all(
+                color: selected
+                    ? AppPalette.accentPrimary.withValues(alpha: 0.24)
+                    : _historyBorderColor(context),
+              ),
+            ),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: selected
+                    ? _historyPrimaryTextColor(context)
+                    : _historyMutedTextColor(context),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                height: 1.0,
+              ),
+            ),
           ),
         ),
       ),
@@ -105,11 +112,15 @@ class _SensorIdentityBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: _historySurfaceColor(context),
-        borderRadius: BorderRadius.circular(AppPalette.radiusLg),
-        border: Border.all(color: _historyBorderColor(context)),
+        color: _historySurfaceColor(context).withValues(
+          alpha: _historyIsDark(context) ? 0.84 : 1,
+        ),
+        borderRadius: BorderRadius.circular(AppPalette.radiusMd),
+        border: Border.all(
+          color: _historyBorderColor(context),
+        ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         children: [
           Container(
@@ -201,17 +212,12 @@ class _SummaryPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Row(
         children: [
           for (var i = 0; i < items.length; i++) ...[
             Expanded(child: _SummaryCell(item: items[i])),
-            if (i < items.length - 1)
-              Container(
-                width: 1,
-                height: 44,
-                color: _historyBorderColor(context).withValues(alpha: 0.9),
-              ),
+            if (i < items.length - 1) const SizedBox(width: 6),
           ],
         ],
       ),
@@ -242,11 +248,11 @@ class _SummaryCell extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _historySecondaryTextColor(context),
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Text(
               item.value,
               maxLines: 1,
@@ -254,7 +260,7 @@ class _SummaryCell extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _historyPrimaryTextColor(context),
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.w700,
                 height: 1.05,
               ),
@@ -323,7 +329,7 @@ class _OverlaySeriesChip extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppPalette.radiusPill),
             border: Border.all(
               color: selected
-                  ? option.color.withValues(alpha: 0.72)
+                  ? option.color.withValues(alpha: 0.28)
                   : AppPalette.transparent,
             ),
           ),
@@ -377,11 +383,15 @@ class _RangeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: _historySurfaceColor(context),
+        color: _historySurfaceColor(context).withValues(
+          alpha: _historyIsDark(context) ? 0.88 : 1,
+        ),
         borderRadius: BorderRadius.circular(AppPalette.radiusLg),
-        border: Border.all(color: _historyBorderColor(context)),
+        border: Border.all(
+          color: _historyBorderColor(context),
+        ),
       ),
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       child: Row(
         children: [
           for (final option in options)
@@ -422,12 +432,12 @@ class _RangeChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected
                 ? AppPalette.accentPrimary.withValues(
-                    alpha: _historyIsDark(context) ? 0.36 : 0.14,
+                    alpha: _historyIsDark(context) ? 0.28 : 0.12,
                   )
                 : AppPalette.transparent,
-            borderRadius: BorderRadius.circular(AppPalette.radiusMd),
+            borderRadius: BorderRadius.circular(14),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 11),
           alignment: Alignment.center,
           child: Text(
             label,
@@ -435,8 +445,8 @@ class _RangeChip extends StatelessWidget {
               color: selected
                   ? _historyPrimaryTextColor(context)
                   : _historyMutedTextColor(context),
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
             ),
           ),
         ),

@@ -181,7 +181,7 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
       mainAxisSize: MainAxisSize.min,
       children: [
         AppGlassCard(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           backgroundColor: statSurfaceColor(context),
           borderColor: statBorderColor(context),
           child: Row(
@@ -298,10 +298,10 @@ class _ModeItem extends StatelessWidget {
         ? (isDark ? AppPalette.white : AppPalette.lightTextPrimary)
         : (isDark ? AppPalette.textSecondary : AppPalette.lightTextSecondary);
     final Color bg = selected
-        ? AppPalette.accentPrimary.withValues(alpha: isDark ? 0.22 : 0.14)
+        ? AppPalette.accentPrimary.withValues(alpha: isDark ? 0.14 : 0.1)
         : AppPalette.transparent;
     final Color bd = selected
-        ? AppPalette.accentPrimary.withValues(alpha: isDark ? 0.4 : 0.32)
+        ? AppPalette.accentPrimary.withValues(alpha: isDark ? 0.2 : 0.16)
         : AppPalette.transparent;
 
     return Semantics(
@@ -313,21 +313,21 @@ class _ModeItem extends StatelessWidget {
       hint: semanticsHint,
       child: ExcludeSemantics(
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           onTap: onTap,
           onLongPress: onLongPress,
           child: Ink(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
             decoration: BoxDecoration(
               color: bg,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(color: bd),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(_iconFor(mode), size: 22, color: fg),
-                const SizedBox(height: 6),
+                Icon(_iconFor(mode), size: 21, color: fg),
+                const SizedBox(height: 5),
                 Text(
                   label,
                   maxLines: 1,
@@ -340,7 +340,7 @@ class _ModeItem extends StatelessWidget {
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 // Active underline indicator
                 AnimatedContainer(
                   duration: AppPalette.motionBase,

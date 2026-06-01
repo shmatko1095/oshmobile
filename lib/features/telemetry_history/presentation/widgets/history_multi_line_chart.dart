@@ -49,6 +49,8 @@ class HistoryMultiLineChart extends StatelessWidget {
     this.windowStart,
     this.windowEnd,
     this.showGrid = true,
+    this.showHorizontalGrid,
+    this.showVerticalGrid,
     this.showAxes = false,
     this.enableTouchTooltip = true,
     this.xAxisLabelBuilder,
@@ -61,6 +63,8 @@ class HistoryMultiLineChart extends StatelessWidget {
   final DateTime? windowStart;
   final DateTime? windowEnd;
   final bool showGrid;
+  final bool? showHorizontalGrid;
+  final bool? showVerticalGrid;
   final bool showAxes;
   final bool enableTouchTooltip;
   final HistoryMultiChartTimeLabelBuilder? xAxisLabelBuilder;
@@ -78,9 +82,8 @@ class HistoryMultiLineChart extends StatelessWidget {
         isDark ? AppPalette.textMuted : AppPalette.lightTextSubtle;
     final separatorColor =
         isDark ? AppPalette.separator : AppPalette.lightBorder;
-    final axisBorderColor = isDark
-        ? AppPalette.separator.withValues(alpha: 0.7)
-        : AppPalette.lightBorderStrong;
+    final axisBorderColor =
+        isDark ? AppPalette.borderSoft : AppPalette.lightBorder;
     final tooltipBackground = isDark
         ? AppPalette.tooltipDarkSurface.withValues(alpha: 0.96)
         : AppPalette.white.withValues(alpha: 0.96);
@@ -251,6 +254,8 @@ class HistoryMultiLineChart extends StatelessWidget {
     final xTickIndexes = useWindowAxis
         ? const <int>{}
         : _tickIndexes(primaryXAxisSeries.points.length, targetTickCount: 4);
+    final drawHorizontalGrid = showHorizontalGrid ?? showGrid;
+    final drawVerticalGrid = showVerticalGrid ?? (showGrid && showAxes);
 
     final lineBarsData = <LineChartBarData>[];
     final betweenBarsData = <BetweenBarsData>[];
@@ -281,8 +286,8 @@ class HistoryMultiLineChart extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                line.line.color.withValues(alpha: 0.18),
-                line.line.color.withValues(alpha: 0.02),
+                line.line.color.withValues(alpha: 0.12),
+                line.line.color.withValues(alpha: 0.01),
               ],
             ),
           ),
@@ -344,17 +349,17 @@ class HistoryMultiLineChart extends StatelessWidget {
         maxY: maxY <= minY ? minY + 1 : maxY,
         clipData: const FlClipData.all(),
         gridData: FlGridData(
-          show: showGrid,
-          drawHorizontalLine: true,
-          drawVerticalLine: showAxes,
+          show: drawHorizontalGrid || drawVerticalGrid,
+          drawHorizontalLine: drawHorizontalGrid,
+          drawVerticalLine: drawVerticalGrid,
           horizontalInterval: yInterval,
           verticalInterval: xInterval,
           getDrawingHorizontalLine: (_) => FlLine(
-            color: separatorColor.withValues(alpha: 0.5),
+            color: separatorColor.withValues(alpha: isDark ? 0.12 : 0.18),
             strokeWidth: 1,
           ),
           getDrawingVerticalLine: (_) => FlLine(
-            color: separatorColor.withValues(alpha: 0.35),
+            color: separatorColor.withValues(alpha: isDark ? 0.08 : 0.12),
             strokeWidth: 1,
           ),
         ),

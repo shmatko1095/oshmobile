@@ -43,7 +43,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
     const gridCrossAxisCount = 2;
     const gridCrossAxisSpacing = 16.0;
     const gridMainAxisSpacing = 16.0;
-    const gridChildAspectRatio = 1.1;
+    const gridChildAspectRatio = 1.18;
 
     final contentWidth =
         MediaQuery.sizeOf(context).width - horizontalPadding * 2;
@@ -75,7 +75,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
                     currentTargetBind: hero.currentTargetBind,
                     nextTargetBind: hero.nextTargetBind,
                     unit: '°C',
-                    height: MediaQuery.sizeOf(context).height * 0.38,
+                    height: MediaQuery.sizeOf(context).height * 0.34,
                     onTap: scheduleWritable
                         ? () =>
                             ThermostatModeNavigator.openForCurrentMode(context)

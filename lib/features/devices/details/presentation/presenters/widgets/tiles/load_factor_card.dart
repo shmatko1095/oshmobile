@@ -58,6 +58,7 @@ class LoadFactorKpiCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
                 Icons.insights_rounded,
@@ -68,11 +69,13 @@ class LoadFactorKpiCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: statTitleColor(context),
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
+                    height: 1.12,
                   ),
                 ),
               ),

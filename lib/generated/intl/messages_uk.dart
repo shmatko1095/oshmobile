@@ -335,7 +335,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Не вдалося завантажити графік",
     ),
     "TelemetryHistoryMetricActivePower": MessageLookupByLibrary.simpleMessage(
-      "Активна потужність",
+      "Потужність",
     ),
     "TelemetryHistoryMetricApparentPower": MessageLookupByLibrary.simpleMessage(
       "Повна потужність",

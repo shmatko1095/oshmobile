@@ -31,7 +31,7 @@ class HeatingStatusCard extends StatelessWidget {
     );
 
     final borderColor = isHeating
-        ? AppPalette.accentWarning.withValues(alpha: 0.45)
+        ? AppPalette.accentWarning.withValues(alpha: 0.18)
         : statBorderColor(context);
 
     return AppSolidCard(
@@ -53,8 +53,8 @@ class HeatingStatusCard extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        AppPalette.accentWarning.withValues(alpha: 0.20),
-                        AppPalette.accentWarning.withValues(alpha: 0.07),
+                        AppPalette.accentWarning.withValues(alpha: 0.12),
+                        AppPalette.accentWarning.withValues(alpha: 0.04),
                         AppPalette.transparent,
                       ],
                     ),
@@ -67,6 +67,7 @@ class HeatingStatusCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AnimatedContainer(
                     duration: AppPalette.motionBase,
@@ -75,7 +76,7 @@ class HeatingStatusCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isHeating
-                          ? AppPalette.accentWarning.withValues(alpha: 0.22)
+                          ? AppPalette.accentWarning.withValues(alpha: 0.18)
                           : statSurfaceAltColor(context),
                     ),
                     child: Icon(
@@ -92,11 +93,13 @@ class HeatingStatusCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       title,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: statTitleColor(context),
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
+                        height: 1.12,
                       ),
                     ),
                   ),

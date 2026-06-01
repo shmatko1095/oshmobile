@@ -20,6 +20,11 @@ Use `MASTER.md` as the base. This file describes the current device-details impl
   - subtle white border,
   - accent border or accent glow only for key/active cards.
 - Hero temperature panel uses a stronger blue-accent presentation than the rest of the grid.
+- Lightweight density pass:
+  - hero temperature panel is slightly shorter than the original baseline,
+  - mode bar keeps large touch targets but uses less vertical chrome,
+  - telemetry grid cards are a little shorter and allow two-line localized labels,
+  - active heating remains clearly red/warm but avoids a heavy warning-card feel.
 
 ## Data Typography
 

@@ -298,7 +298,7 @@
   "TelemetryHistoryMetricTarget": "Target",
   "TelemetryHistoryMetricVoltage": "Voltage",
   "TelemetryHistoryMetricCurrent": "Current",
-  "TelemetryHistoryMetricActivePower": "Active power",
+  "TelemetryHistoryMetricActivePower": "Power",
   "TelemetryHistoryMetricApparentPower": "Apparent power",
   "TelemetryHistoryMetricEnergyUsed": "Energy used",
   "TelemetryHistoryPreviewTitle24h": "Temperature trend (24h)",

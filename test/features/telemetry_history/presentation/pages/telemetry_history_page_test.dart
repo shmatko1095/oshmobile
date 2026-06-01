@@ -524,6 +524,9 @@ void main() {
         find.byType(HistoryBarChart),
       );
       expect(chart.values, <double>[0.42, 0.58]);
+      expect(chart.showGrid, isFalse);
+      expect(chart.showHorizontalGrid, isNull);
+      expect(chart.showVerticalGrid, isNull);
       expect(find.text('Total'), findsOneWidget);
       expect(find.text('Avg / hour'), findsOneWidget);
       expect(find.text('Peak interval'), findsOneWidget);

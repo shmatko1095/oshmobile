@@ -2299,10 +2299,10 @@ class S {
     );
   }
 
-  /// `Active power`
+  /// `Power`
   String get TelemetryHistoryMetricActivePower {
     return Intl.message(
-      'Active power',
+      'Power',
       name: 'TelemetryHistoryMetricActivePower',
       desc: '',
       args: [],

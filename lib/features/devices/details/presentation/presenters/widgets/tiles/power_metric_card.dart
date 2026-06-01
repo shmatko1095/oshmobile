@@ -58,18 +58,21 @@ class PowerMetricCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(icon, color: accentColor, size: 18),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
-                  maxLines: 1,
-                  softWrap: false,
+                  maxLines: 2,
+                  softWrap: true,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: statTitleColor(context),
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
+                    height: 1.12,
                   ),
                 ),
               ),

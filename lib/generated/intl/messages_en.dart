@@ -325,7 +325,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Failed to load chart",
     ),
     "TelemetryHistoryMetricActivePower": MessageLookupByLibrary.simpleMessage(
-      "Active power",
+      "Power",
     ),
     "TelemetryHistoryMetricApparentPower": MessageLookupByLibrary.simpleMessage(
       "Apparent power",

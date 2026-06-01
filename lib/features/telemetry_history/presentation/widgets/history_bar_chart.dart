@@ -16,6 +16,8 @@ class HistoryBarChart extends StatelessWidget {
     this.windowEnd,
     this.color = AppPalette.accentSuccess,
     this.showGrid = true,
+    this.showHorizontalGrid,
+    this.showVerticalGrid,
     this.showAxes = false,
     this.enableTouchTooltip = true,
     this.valueLabelBuilder,
@@ -30,6 +32,8 @@ class HistoryBarChart extends StatelessWidget {
   final DateTime? windowEnd;
   final Color color;
   final bool showGrid;
+  final bool? showHorizontalGrid;
+  final bool? showVerticalGrid;
   final bool showAxes;
   final bool enableTouchTooltip;
   final HistoryBarChartValueLabelBuilder? valueLabelBuilder;
@@ -53,9 +57,8 @@ class HistoryBarChart extends StatelessWidget {
         isDark ? AppPalette.textMuted : AppPalette.lightTextSubtle;
     final separatorColor =
         isDark ? AppPalette.separator : AppPalette.lightBorder;
-    final axisBorderColor = isDark
-        ? AppPalette.separator.withValues(alpha: 0.7)
-        : AppPalette.lightBorderStrong;
+    final axisBorderColor =
+        isDark ? AppPalette.borderSoft : AppPalette.lightBorder;
     final tooltipBackground = isDark
         ? AppPalette.tooltipDarkSurface.withValues(alpha: 0.96)
         : AppPalette.white.withValues(alpha: 0.96);
@@ -76,6 +79,8 @@ class HistoryBarChart extends StatelessWidget {
         points.length <= 1 ? 1.0 : math.max(1.0, (points.length - 1) / 3);
     final xTickIndexes = _tickIndexes(points.length, targetTickCount: 4);
     final barWidth = _barWidth(points.length);
+    final drawHorizontalGrid = showHorizontalGrid ?? showGrid;
+    final drawVerticalGrid = showVerticalGrid ?? (showGrid && showAxes);
 
     final groups = <BarChartGroupData>[
       for (var i = 0; i < points.length; i++)
@@ -92,8 +97,8 @@ class HistoryBarChart extends StatelessWidget {
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
                 colors: <Color>[
-                  color.withValues(alpha: 0.48),
-                  color,
+                  color.withValues(alpha: 0.22),
+                  color.withValues(alpha: 0.72),
                 ],
               ),
             ),
@@ -113,17 +118,17 @@ class HistoryBarChart extends StatelessWidget {
           groupsSpace: 2,
           barGroups: groups,
           gridData: FlGridData(
-            show: showGrid,
-            drawHorizontalLine: true,
-            drawVerticalLine: showAxes,
+            show: drawHorizontalGrid || drawVerticalGrid,
+            drawHorizontalLine: drawHorizontalGrid,
+            drawVerticalLine: drawVerticalGrid,
             horizontalInterval: yInterval,
             verticalInterval: xInterval,
             getDrawingHorizontalLine: (_) => FlLine(
-              color: separatorColor.withValues(alpha: 0.5),
+              color: separatorColor.withValues(alpha: isDark ? 0.12 : 0.18),
               strokeWidth: 1,
             ),
             getDrawingVerticalLine: (_) => FlLine(
-              color: separatorColor.withValues(alpha: 0.35),
+              color: separatorColor.withValues(alpha: isDark ? 0.08 : 0.12),
               strokeWidth: 1,
             ),
           ),
@@ -354,9 +359,9 @@ double _alignUpper(double value, double interval) {
 
 double _barWidth(int count) {
   return switch (count) {
-    <= 14 => 12,
-    <= 60 => 7,
-    <= 180 => 4,
-    _ => 2.4,
+    <= 14 => 10,
+    <= 60 => 5.5,
+    <= 180 => 3.2,
+    _ => 2.0,
   };
 }

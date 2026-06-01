@@ -298,7 +298,7 @@
   "TelemetryHistoryMetricTarget": "Ціль",
   "TelemetryHistoryMetricVoltage": "Напруга",
   "TelemetryHistoryMetricCurrent": "Струм",
-  "TelemetryHistoryMetricActivePower": "Активна потужність",
+  "TelemetryHistoryMetricActivePower": "Потужність",
   "TelemetryHistoryMetricApparentPower": "Повна потужність",
   "TelemetryHistoryMetricEnergyUsed": "Використана енергія",
   "TelemetryHistoryPreviewTitle24h": "Історія температури (24 год)",
