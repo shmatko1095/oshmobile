@@ -190,4 +190,43 @@ void main() {
     expect(series.points.first.sumValue, closeTo(450.26, 0.000001));
     expect(series.points.first.bucketStart, DateTime.utc(2026, 3, 14, 19, 30));
   });
+
+  test('does not substitute another series when requested key is missing',
+      () async {
+    final payload = <String, dynamic>{
+      'device_id': 'ff07dce5-c7fe-4f18-b944-c0979f3a5822',
+      'serial': '9C139EB02CDC',
+      'resolution': '5m',
+      'from': 1773433120.445598,
+      'to': 1773519520.445598,
+      'series': [
+        {
+          'series_key': 'climate_sensors.room.temp',
+          'points': [
+            {
+              'bucket_start': 1773516600.0,
+              'samples_count': 16,
+              'avg_value': 28.1,
+            },
+          ],
+        },
+      ],
+    };
+
+    final source = TelemetryHistoryRemoteDataSourceImpl(
+      mobileService: _FakeMobileV1Service(payload),
+    );
+
+    final series = await source.getSeries(
+      serial: '9C139EB02CDC',
+      query: TelemetryHistoryQuery(
+        seriesKey: 'climate_sensors.floor.temp',
+        from: DateTime.utc(2026, 3, 13, 20, 18, 40),
+        to: DateTime.utc(2026, 3, 14, 20, 18, 40),
+      ),
+    );
+
+    expect(series.seriesKey, 'climate_sensors.floor.temp');
+    expect(series.points, isEmpty);
+  });
 }

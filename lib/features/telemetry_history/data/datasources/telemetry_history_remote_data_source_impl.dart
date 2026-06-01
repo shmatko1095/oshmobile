@@ -50,15 +50,17 @@ class TelemetryHistoryRemoteDataSourceImpl
         .map((item) => item.cast<String, dynamic>())
         .toList(growable: false);
     if (multiSeries.isNotEmpty) {
-      final selected = multiSeries.firstWhere(
-        (item) {
-          final key = _readString(item, 'series_key') ??
-              _readString(item, 'seriesKey') ??
-              '';
-          return key == fallbackQuery.seriesKey;
-        },
-        orElse: () => multiSeries.first,
-      );
+      final selected = _findSeriesPayload(multiSeries, fallbackQuery.seriesKey);
+      if (selected == null) {
+        return _emptySeries(
+          deviceId: deviceId,
+          serial: serial,
+          seriesKey: fallbackQuery.seriesKey,
+          resolution: resolution,
+          from: from,
+          to: to,
+        );
+      }
       final seriesKey = _readString(selected, 'series_key') ??
           _readString(selected, 'seriesKey') ??
           fallbackQuery.seriesKey;
@@ -86,6 +88,40 @@ class TelemetryHistoryRemoteDataSourceImpl
       from: from,
       to: to,
       points: points,
+    );
+  }
+
+  Map<String, dynamic>? _findSeriesPayload(
+    List<Map<String, dynamic>> series,
+    String requestedSeriesKey,
+  ) {
+    for (final item in series) {
+      final key = _readString(item, 'series_key') ??
+          _readString(item, 'seriesKey') ??
+          '';
+      if (key == requestedSeriesKey) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  TelemetryHistorySeries _emptySeries({
+    required String deviceId,
+    required String serial,
+    required String seriesKey,
+    required String resolution,
+    required DateTime from,
+    required DateTime to,
+  }) {
+    return TelemetryHistorySeries(
+      deviceId: deviceId,
+      serial: serial,
+      seriesKey: seriesKey,
+      resolution: resolution,
+      from: from,
+      to: to,
+      points: const <TelemetryHistoryPoint>[],
     );
   }
 

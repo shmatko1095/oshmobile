@@ -12,6 +12,7 @@ import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetr
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_range.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/pages/telemetry_history_page.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_bar_chart.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_line_chart.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_chart.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -462,7 +463,8 @@ void main() {
       await cubit.close();
     });
 
-    testWidgets('keeps energy metric on sum_value', (tester) async {
+    testWidgets('renders energy metric as bucket bars and total summary',
+        (tester) async {
       final api = _QueuedTelemetryHistoryApi();
       final now = DateTime.utc(2026, 3, 14, 20, 18, 40);
       final cubit = TelemetryHistoryCubit(
@@ -472,8 +474,11 @@ void main() {
             title: 'Energy used',
             seriesKey: 'power_meter.energy_wh_delta',
             kind: TelemetryHistoryMetricKind.numeric,
-            unit: 'Wh',
+            unit: 'kWh',
+            fractionDigits: 3,
             useSumValue: true,
+            valueMultiplier: 0.001,
+            displayMode: TelemetryHistoryMetricDisplayMode.energyDelta,
           ),
         ],
         nowUtc: () => now,
@@ -494,22 +499,101 @@ void main() {
             TelemetryHistoryPoint(
               bucketStart: api.requests.single.from,
               samplesCount: 5,
-              sumValue: 42.0,
+              sumValue: 420.0,
               avgValue: 10.0,
               minValue: 5.0,
               maxValue: 900.0,
+            ),
+            TelemetryHistoryPoint(
+              bucketStart: api.requests.single.from.add(
+                const Duration(minutes: 5),
+              ),
+              samplesCount: 5,
+              sumValue: 580.0,
+              avgValue: 20.0,
+              minValue: 10.0,
+              maxValue: 1000.0,
             ),
           ],
         ),
       );
       await tester.pumpAndSettle();
 
-      final chart = tester.widget<HistoryMultiLineChart>(
-        find.byType(HistoryMultiLineChart),
+      expect(find.byType(HistoryMultiLineChart), findsNothing);
+      final chart = tester.widget<HistoryBarChart>(
+        find.byType(HistoryBarChart),
       );
-      expect(chart.series.single.values.single, 42.0);
-      expect(chart.series.single.rangeMinValues?.single, isNull);
-      expect(chart.series.single.rangeMaxValues?.single, isNull);
+      expect(chart.values, <double>[0.42, 0.58]);
+      expect(find.text('Total'), findsOneWidget);
+      expect(find.text('Avg / hour'), findsOneWidget);
+      expect(find.text('Peak interval'), findsOneWidget);
+      expect(find.text('Daily avg'), findsNothing);
+      expect(find.text('Peak bucket'), findsNothing);
+      expect(find.text('1.000 kWh'), findsOneWidget);
+      expect(find.text('0.042 kWh'), findsOneWidget);
+      expect(find.text('0.580 kWh'), findsOneWidget);
+
+      await cubit.close();
+    });
+
+    testWidgets('shows daily energy average for week range', (tester) async {
+      final api = _QueuedTelemetryHistoryApi();
+      final now = DateTime.utc(2026, 3, 14, 20, 18, 40);
+      final cubit = TelemetryHistoryCubit(
+        seriesReader: api,
+        metrics: const <TelemetryHistoryMetric>[
+          TelemetryHistoryMetric(
+            title: 'Energy used',
+            seriesKey: 'power_meter.energy_wh_delta',
+            kind: TelemetryHistoryMetricKind.numeric,
+            unit: 'kWh',
+            fractionDigits: 3,
+            useSumValue: true,
+            valueMultiplier: 0.001,
+            displayMode: TelemetryHistoryMetricDisplayMode.energyDelta,
+          ),
+        ],
+        initialRange: TelemetryHistoryRange.week,
+        nowUtc: () => now,
+      );
+
+      await _pumpPage(tester, cubit);
+
+      cubit.load();
+      await tester.pump();
+      expect(api.requests, hasLength(1));
+
+      api.requests.single.completer.complete(
+        _series(
+          seriesKey: api.requests.single.seriesKey,
+          from: api.requests.single.from,
+          to: api.requests.single.to,
+          points: <TelemetryHistoryPoint>[
+            TelemetryHistoryPoint(
+              bucketStart: api.requests.single.from,
+              samplesCount: 5,
+              sumValue: 420.0,
+            ),
+            TelemetryHistoryPoint(
+              bucketStart: api.requests.single.from.add(
+                const Duration(hours: 12),
+              ),
+              samplesCount: 5,
+              sumValue: 580.0,
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(HistoryBarChart), findsOneWidget);
+      expect(find.text('Total'), findsOneWidget);
+      expect(find.text('Avg / day'), findsOneWidget);
+      expect(find.text('Peak interval'), findsOneWidget);
+      expect(find.text('Daily avg'), findsNothing);
+      expect(find.text('1.000 kWh'), findsOneWidget);
+      expect(find.text('0.143 kWh'), findsOneWidget);
+      expect(find.text('0.580 kWh'), findsOneWidget);
 
       await cubit.close();
     });

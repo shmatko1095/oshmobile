@@ -2159,6 +2159,46 @@ class S {
     );
   }
 
+  /// `Total`
+  String get TelemetryHistoryStatTotal {
+    return Intl.message(
+      'Total',
+      name: 'TelemetryHistoryStatTotal',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Avg / hour`
+  String get TelemetryHistoryStatAvgPerHour {
+    return Intl.message(
+      'Avg / hour',
+      name: 'TelemetryHistoryStatAvgPerHour',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Avg / day`
+  String get TelemetryHistoryStatAvgPerDay {
+    return Intl.message(
+      'Avg / day',
+      name: 'TelemetryHistoryStatAvgPerDay',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Peak interval`
+  String get TelemetryHistoryStatPeakInterval {
+    return Intl.message(
+      'Peak interval',
+      name: 'TelemetryHistoryStatPeakInterval',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Temperature sensor`
   String get TelemetryHistorySensorLabel {
     return Intl.message(

@@ -40,9 +40,10 @@ class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
 
   static DateTime _defaultNowUtc() => DateTime.now().toUtc();
 
-  Future<void> load() => _loadMetric(state.metric);
+  Future<void> load() => _loadVisibleMetric(state.metric);
 
-  Future<void> refresh() => _loadMetric(state.metric, forceRefresh: true);
+  Future<void> refresh() =>
+      _loadVisibleMetric(state.metric, forceRefresh: true);
 
   Future<void> selectRange(TelemetryHistoryRange range) async {
     if (range == state.range) return;
@@ -56,18 +57,18 @@ class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
         errorBySeriesKey: <String, String>{},
       ),
     );
-    await _loadMetric(state.metric, forceRefresh: true);
+    await _loadVisibleMetric(state.metric, forceRefresh: true);
   }
 
   Future<void> selectMetricIndex(int index) async {
     if (index < 0 || index >= state.metrics.length) return;
     if (index == state.selectedMetricIndex) return;
     emit(state.copyWith(selectedMetricIndex: index));
-    await _loadMetric(state.metric);
+    await _loadVisibleMetric(state.metric);
   }
 
   Future<void> reloadMetric(TelemetryHistoryMetric metric) {
-    return _loadMetric(metric, forceRefresh: true);
+    return _loadVisibleMetric(metric, forceRefresh: true);
   }
 
   Future<void> ensureMetricsLoaded(
@@ -83,6 +84,19 @@ class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
       uniqueBySeriesKey.values.map(
         (metric) => _loadMetric(metric, forceRefresh: forceRefresh),
       ),
+    );
+  }
+
+  Future<void> _loadVisibleMetric(
+    TelemetryHistoryMetric metric, {
+    bool forceRefresh = false,
+  }) {
+    return ensureMetricsLoaded(
+      <TelemetryHistoryMetric>[
+        metric,
+        ..._comparisonMetricsFor(metric),
+      ],
+      forceRefresh: forceRefresh,
     );
   }
 
@@ -155,5 +169,19 @@ class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
     if (isClosed) return true;
     if (scopeVersion != _scopeVersion) return true;
     return _requestVersionBySeriesKey[seriesKey] != requestVersion;
+  }
+
+  Iterable<TelemetryHistoryMetric> _comparisonMetricsFor(
+    TelemetryHistoryMetric metric,
+  ) {
+    if (!_isTemperatureMetric(metric)) {
+      return const <TelemetryHistoryMetric>[];
+    }
+    return state.comparisonMetrics;
+  }
+
+  bool _isTemperatureMetric(TelemetryHistoryMetric metric) {
+    return metric.kind == TelemetryHistoryMetricKind.numeric &&
+        metric.seriesKey.endsWith('.temp');
   }
 }

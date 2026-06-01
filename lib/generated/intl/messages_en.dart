@@ -375,8 +375,18 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "TelemetryHistorySensorPosition": m10,
     "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Average"),
+    "TelemetryHistoryStatAvgPerDay": MessageLookupByLibrary.simpleMessage(
+      "Avg / day",
+    ),
+    "TelemetryHistoryStatAvgPerHour": MessageLookupByLibrary.simpleMessage(
+      "Avg / hour",
+    ),
     "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Maximum"),
     "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Minimum"),
+    "TelemetryHistoryStatPeakInterval": MessageLookupByLibrary.simpleMessage(
+      "Peak interval",
+    ),
+    "TelemetryHistoryStatTotal": MessageLookupByLibrary.simpleMessage("Total"),
     "Theme": MessageLookupByLibrary.simpleMessage("Theme"),
     "ThemeDark": MessageLookupByLibrary.simpleMessage("Dark"),
     "ThemeLight": MessageLookupByLibrary.simpleMessage("Light"),

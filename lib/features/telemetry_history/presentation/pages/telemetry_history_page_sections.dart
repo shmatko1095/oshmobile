@@ -196,7 +196,7 @@ class _SummaryPanel extends StatelessWidget {
     required this.items,
   });
 
-  final List<_SummaryItem> items;
+  final List<TelemetryHistorySummaryItem> items;
 
   @override
   Widget build(BuildContext context) {
@@ -224,34 +224,44 @@ class _SummaryCell extends StatelessWidget {
     required this.item,
   });
 
-  final _SummaryItem item;
+  final TelemetryHistorySummaryItem item;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          item.label,
-          style: TextStyle(
-            color: _historySecondaryTextColor(context),
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
+    return Semantics(
+      label: item.label,
+      value: item.value,
+      child: ExcludeSemantics(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              item.label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _historySecondaryTextColor(context),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              item.value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _historyPrimaryTextColor(context),
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                height: 1.05,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 10),
-        Text(
-          item.value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: _historyPrimaryTextColor(context),
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            height: 1.05,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -263,7 +273,7 @@ class _OverlaySeriesSelector extends StatelessWidget {
     required this.onToggle,
   });
 
-  final List<_OverlayToggleOption> options;
+  final List<TelemetryHistoryOverlayOption> options;
   final Set<String> selectedIds;
   final ValueChanged<String> onToggle;
 
@@ -292,7 +302,7 @@ class _OverlaySeriesChip extends StatelessWidget {
     required this.onTap,
   });
 
-  final _OverlayToggleOption option;
+  final TelemetryHistoryOverlayOption option;
   final bool selected;
   final VoidCallback onTap;
 

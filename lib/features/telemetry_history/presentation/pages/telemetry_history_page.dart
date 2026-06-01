@@ -1,14 +1,13 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
-import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_cubit.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_state.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_range.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_slide_view_model.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_bar_chart.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_line_chart.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_chart.dart';
 import 'package:oshmobile/generated/l10n.dart';
@@ -29,7 +28,6 @@ class TelemetryHistoryPage extends StatefulWidget {
 class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
   late final PageController _pageController;
   Set<String> _enabledTemperatureSeries = <String>{};
-  String? _comparisonLoadKey;
 
   @override
   void initState() {
@@ -43,27 +41,6 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
-  }
-
-  void _ensureComparisonLoaded(
-    BuildContext context,
-    TelemetryHistoryState state,
-    TelemetryHistoryMetric metric,
-  ) {
-    if (!_isTemperatureMetric(metric) || !state.hasComparisonMetrics) {
-      return;
-    }
-    final loadKey = '${state.range.name}|${metric.seriesKey}';
-    if (_comparisonLoadKey == loadKey) {
-      return;
-    }
-    _comparisonLoadKey = loadKey;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context
-          .read<TelemetryHistoryCubit>()
-          .ensureMetricsLoaded(state.comparisonMetrics);
-    });
   }
 
   void _toggleTemperatureSeries(String id) {
@@ -150,7 +127,6 @@ class _TelemetryHistoryPageState extends State<TelemetryHistoryPage> {
                   },
                   itemBuilder: (context, index) {
                     final metric = state.metrics[index];
-                    _ensureComparisonLoaded(context, state, metric);
                     return _MetricSlide(
                       state: state,
                       metric: metric,

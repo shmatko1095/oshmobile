@@ -389,8 +389,18 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "TelemetryHistorySensorPosition": m10,
     "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Середнє"),
+    "TelemetryHistoryStatAvgPerDay": MessageLookupByLibrary.simpleMessage(
+      "Сер. за добу",
+    ),
+    "TelemetryHistoryStatAvgPerHour": MessageLookupByLibrary.simpleMessage(
+      "Сер. за годину",
+    ),
     "TelemetryHistoryStatMax": MessageLookupByLibrary.simpleMessage("Максимум"),
     "TelemetryHistoryStatMin": MessageLookupByLibrary.simpleMessage("Мінімум"),
+    "TelemetryHistoryStatPeakInterval": MessageLookupByLibrary.simpleMessage(
+      "Пік інтервалу",
+    ),
+    "TelemetryHistoryStatTotal": MessageLookupByLibrary.simpleMessage("Усього"),
     "Theme": MessageLookupByLibrary.simpleMessage("Тема"),
     "ThemeDark": MessageLookupByLibrary.simpleMessage("Темна"),
     "ThemeLight": MessageLookupByLibrary.simpleMessage("Світла"),

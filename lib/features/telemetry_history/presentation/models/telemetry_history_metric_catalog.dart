@@ -13,6 +13,7 @@ class TelemetryHistoryMetricDefinition {
     this.fractionDigits = 1,
     this.useSumValue = false,
     this.valueMultiplier = 1.0,
+    this.displayMode = TelemetryHistoryMetricDisplayMode.line,
   });
 
   final String seriesKey;
@@ -22,6 +23,7 @@ class TelemetryHistoryMetricDefinition {
   final int fractionDigits;
   final bool useSumValue;
   final double valueMultiplier;
+  final TelemetryHistoryMetricDisplayMode displayMode;
 
   TelemetryHistoryMetric build(S s) {
     return TelemetryHistoryMetric(
@@ -32,6 +34,7 @@ class TelemetryHistoryMetricDefinition {
       fractionDigits: fractionDigits,
       useSumValue: useSumValue,
       valueMultiplier: valueMultiplier,
+      displayMode: displayMode,
     );
   }
 }
@@ -84,6 +87,7 @@ class TelemetryHistoryMetricCatalog {
       fractionDigits: 3,
       useSumValue: true,
       valueMultiplier: 0.001,
+      displayMode: TelemetryHistoryMetricDisplayMode.energyDelta,
     ),
     TelemetryHistoryMetricDefinition(
       title: _voltageTitle,

@@ -278,6 +278,10 @@
   "TelemetryHistoryStatMin": "Minimum",
   "TelemetryHistoryStatMax": "Maximum",
   "TelemetryHistoryStatAvg": "Average",
+  "TelemetryHistoryStatTotal": "Total",
+  "TelemetryHistoryStatAvgPerHour": "Avg / hour",
+  "TelemetryHistoryStatAvgPerDay": "Avg / day",
+  "TelemetryHistoryStatPeakInterval": "Peak interval",
   "TelemetryHistorySensorLabel": "Temperature sensor",
   "TelemetryHistorySensorPosition": "Sensor {index}/{total}",
   "@TelemetryHistorySensorPosition": {

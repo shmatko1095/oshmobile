@@ -278,6 +278,10 @@
   "TelemetryHistoryStatMin": "Мінімум",
   "TelemetryHistoryStatMax": "Максимум",
   "TelemetryHistoryStatAvg": "Середнє",
+  "TelemetryHistoryStatTotal": "Усього",
+  "TelemetryHistoryStatAvgPerHour": "Сер. за годину",
+  "TelemetryHistoryStatAvgPerDay": "Сер. за добу",
+  "TelemetryHistoryStatPeakInterval": "Пік інтервалу",
   "TelemetryHistorySensorLabel": "Температурний датчик",
   "TelemetryHistorySensorPosition": "Датчик {index}/{total}",
   "@TelemetryHistorySensorPosition": {
