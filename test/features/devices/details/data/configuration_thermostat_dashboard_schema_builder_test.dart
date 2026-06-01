@@ -149,14 +149,9 @@ void main() {
     );
   });
 
-  test('generates separated history intents for energy and electrical groups',
-      () {
+  test('power now history starts with energy delta without energy widget', () {
     final bundle = _bundle(
       widgets: const <Map<String, dynamic>>[
-        {
-          'id': 'energyUsed',
-          'control_ids': ['powerMeterEnergyKwh'],
-        },
         {
           'id': 'powerNow',
           'control_ids': [
@@ -170,7 +165,6 @@ void main() {
         },
       ],
       controls: const <Map<String, dynamic>>[
-        {'id': 'powerMeterEnergyKwh', 'path': 'power_meter.energy_kwh'},
         {
           'id': 'powerMeterActivePowerW',
           'path': 'power_meter.active_power_w',
@@ -190,15 +184,33 @@ void main() {
 
     final schema = builder.build(bundle: bundle);
 
-    final energyTile = schema.tiles
-        .whereType<ThermostatValueTileSpec>()
-        .firstWhere((tile) => tile.type == ThermostatTileType.energyUsed);
-    final energyIntent = energyTile.telemetryHistoryIntent;
-    expect(energyIntent, isNotNull);
-    expect(energyIntent!.group, TelemetryHistoryIntentGroup.energy);
     expect(
-      energyIntent.configuredSeriesKeys,
-      const <String>[TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta],
+      schema.visibleWidgetIds,
+      isNot(contains('energyUsed')),
+    );
+
+    final powerTile = schema.tiles
+        .whereType<ThermostatValueTileSpec>()
+        .firstWhere((tile) => tile.type == ThermostatTileType.powerNow);
+    final powerIntent = powerTile.telemetryHistoryIntent;
+    expect(powerIntent, isNotNull);
+    expect(
+      powerIntent!.group,
+      TelemetryHistoryIntentGroup.powerConsumption,
+    );
+    expect(
+      powerIntent.initialSeriesKey,
+      TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
+    );
+    expect(
+      powerIntent.configuredSeriesKeys,
+      containsAllInOrder(
+        const <String>[
+          TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
+          TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
+          TelemetryHistoryMetricCatalog.powerMeterVoltageV,
+        ],
+      ),
     );
 
     final voltageTile = schema.tiles
@@ -218,6 +230,34 @@ void main() {
     expect(
       voltageIntent.configuredSeriesKeys,
       isNot(contains(TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta)),
+    );
+  });
+
+  test('keeps energy tile history intent for backward compatible configs', () {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'energyUsed',
+          'control_ids': ['powerMeterEnergyKwh'],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[
+        {'id': 'powerMeterEnergyKwh', 'path': 'power_meter.energy_kwh'},
+      ],
+      readableDomains: const <String>{'telemetry'},
+    );
+
+    final schema = builder.build(bundle: bundle);
+
+    final energyTile = schema.tiles
+        .whereType<ThermostatValueTileSpec>()
+        .firstWhere((tile) => tile.type == ThermostatTileType.energyUsed);
+    final energyIntent = energyTile.telemetryHistoryIntent;
+    expect(energyIntent, isNotNull);
+    expect(energyIntent!.group, TelemetryHistoryIntentGroup.energy);
+    expect(
+      energyIntent.configuredSeriesKeys,
+      const <String>[TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta],
     );
   });
 

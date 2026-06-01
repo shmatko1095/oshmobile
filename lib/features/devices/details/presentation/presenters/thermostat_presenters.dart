@@ -19,6 +19,7 @@ import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
 import 'package:oshmobile/features/sensors/presentation/open_sensor_editor.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/open_telemetry_history.dart';
+import 'package:oshmobile/generated/l10n.dart';
 
 import 'device_presenter.dart';
 
@@ -191,16 +192,19 @@ class ThermostatBasicPresenter implements DevicePresenter {
     required String bind,
     required TelemetryHistoryIntent? historyIntent,
   }) {
+    final s = S.of(context);
+
     switch (type) {
       case ThermostatTileType.heatingToggle:
         return HeatingStatusCard(
           bind: bind,
-          title: 'Heating',
+          title: s.Heating,
           onTap: () => TelemetryHistoryNavigator.openHeatingFromHost(context),
         );
       case ThermostatTileType.loadFactor24h:
         return LoadFactorKpiCard(
           percentBind: bind,
+          title: s.TelemetryHistoryMetricLoadFactor,
           onTap: () =>
               TelemetryHistoryNavigator.openLoadFactorFromHost(context),
         );
@@ -225,12 +229,14 @@ class ThermostatBasicPresenter implements DevicePresenter {
     required String? validBind,
     required TelemetryHistoryIntent? historyIntent,
   }) {
+    final s = S.of(context);
+
     switch (type) {
       case ThermostatTileType.energyUsed:
         return PowerMetricCard(
           valueBind: valueBind,
           validBind: validBind,
-          title: 'Energy used',
+          title: s.TelemetryHistoryMetricEnergyUsed,
           unit: 'kWh',
           icon: Icons.bolt_rounded,
           accentColor: AppPalette.accentSuccess,
@@ -241,13 +247,14 @@ class ThermostatBasicPresenter implements DevicePresenter {
         return PowerCard(
           bind: valueBind,
           validBind: validBind,
+          title: s.TelemetryHistoryMetricActivePower,
           onTap: _historyTap(context, historyIntent),
         );
       case ThermostatTileType.voltageNow:
         return PowerMetricCard(
           valueBind: valueBind,
           validBind: validBind,
-          title: 'Voltage',
+          title: s.TelemetryHistoryMetricVoltage,
           unit: 'V',
           icon: Icons.electrical_services_rounded,
           accentColor: AppPalette.amberAccent,
@@ -257,7 +264,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
         return PowerMetricCard(
           valueBind: valueBind,
           validBind: validBind,
-          title: 'Current',
+          title: s.TelemetryHistoryMetricCurrent,
           unit: 'A',
           icon: Icons.timeline_rounded,
           accentColor: AppPalette.cyanAccent,
@@ -268,7 +275,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
         return PowerMetricCard(
           valueBind: valueBind,
           validBind: validBind,
-          title: 'Apparent power',
+          title: s.TelemetryHistoryMetricApparentPower,
           unit: 'VA',
           icon: Icons.speed_rounded,
           accentColor: AppPalette.accentPrimary,

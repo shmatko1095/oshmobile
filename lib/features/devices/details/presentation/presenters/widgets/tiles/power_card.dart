@@ -9,12 +9,14 @@ class PowerCard extends StatelessWidget {
     super.key,
     required this.bind,
     this.validBind,
+    this.title = 'Power now',
     this.onTap,
   });
 
   /// Bind that returns instantaneous power in **watts**
   final String bind; // e.g. 'sensor.power'
   final String? validBind;
+  final String title;
   final VoidCallback? onTap;
 
   String _fmtPower(num? w) {
@@ -54,7 +56,7 @@ class PowerCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Power now',
+                  title,
                   maxLines: 1,
                   softWrap: false,
                   overflow: TextOverflow.ellipsis,

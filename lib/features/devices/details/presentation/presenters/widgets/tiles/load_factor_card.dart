@@ -11,12 +11,14 @@ class LoadFactorKpiCard extends StatelessWidget {
     this.percentBind,
     this.hoursBind,
     this.secondsBind,
+    this.title = 'Heating activity (24h)',
     this.onTap,
   });
 
   final String? percentBind;
   final String? hoursBind;
   final String? secondsBind;
+  final String title;
   final VoidCallback? onTap;
 
   double? _computePercent(Map<String, dynamic> controlState) {
@@ -65,7 +67,7 @@ class LoadFactorKpiCard extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Heating activity (24h)',
+                  title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -128,12 +130,14 @@ class LoadFactorCard extends StatelessWidget {
     this.percentBind,
     this.hoursBind,
     this.secondsBind,
+    this.title = 'Heating activity (24h)',
     this.onTap,
   });
 
   final String? percentBind;
   final String? hoursBind;
   final String? secondsBind;
+  final String title;
   final VoidCallback? onTap;
 
   @override
@@ -142,6 +146,7 @@ class LoadFactorCard extends StatelessWidget {
       percentBind: percentBind,
       hoursBind: hoursBind,
       secondsBind: secondsBind,
+      title: title,
       onTap: onTap,
     );
   }

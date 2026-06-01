@@ -260,7 +260,7 @@ void main() {
     );
   });
 
-  testWidgets('power now tile opens history with active power metric selected',
+  testWidgets('power now tile opens history with energy metric selected',
       (tester) async {
     final bundle = _bundle(
       widgets: const <Map<String, dynamic>>[
@@ -336,7 +336,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Power now'));
+    await tester.tap(find.text('Active power'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -347,12 +347,20 @@ void main() {
         historyCubit.state.metrics.map((metric) => metric.seriesKey).toList();
     expect(
       historySeriesKeys,
+      contains(TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta),
+    );
+    expect(
+      historySeriesKeys,
       contains(TelemetryHistoryMetricCatalog.powerMeterActivePowerW),
+    );
+    expect(
+      historySeriesKeys,
+      contains(TelemetryHistoryMetricCatalog.powerMeterApparentPowerVa),
     );
     expect(history.requests, hasLength(1));
     expect(
       history.requests.single.seriesKey,
-      TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
+      TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
     );
   });
 

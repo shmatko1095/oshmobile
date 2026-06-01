@@ -179,6 +179,10 @@ class ConfigurationThermostatDashboardSchemaBuilder
     final configuredSeriesKeys = switch (descriptor.historyGroup!) {
       TelemetryHistoryIntentGroup.energy => energySeriesKeys,
       TelemetryHistoryIntentGroup.electrical => electricalSeriesKeys,
+      TelemetryHistoryIntentGroup.powerConsumption => <String>[
+          ...energySeriesKeys,
+          ...electricalSeriesKeys,
+        ],
     };
 
     if (configuredSeriesKeys.isEmpty) {
@@ -208,12 +212,15 @@ class ConfigurationThermostatDashboardSchemaBuilder
     DeviceConfigurationBundle bundle,
     ControlRegistry registry,
   ) {
-    if (!_canRenderWidget(bundle, registry, _energyWidgetId)) {
+    if (!_canRenderWidget(bundle, registry, _energyWidgetId) &&
+        !_canRenderWidget(bundle, registry, _powerWidgetId)) {
       return const <String>[];
     }
 
-    final bind = _requiredWidgetBind(bundle, registry, _energyWidgetId, 0);
-    if (bind == null) {
+    final energyBind =
+        _requiredWidgetBind(bundle, registry, _energyWidgetId, 0);
+    final powerBind = _requiredWidgetBind(bundle, registry, _powerWidgetId, 0);
+    if (energyBind == null && powerBind == null) {
       return const <String>[];
     }
 
@@ -229,8 +236,10 @@ class ConfigurationThermostatDashboardSchemaBuilder
     final keys = <String>[];
 
     for (final descriptor in _tileDescriptors) {
-      if (descriptor.historyGroup != TelemetryHistoryIntentGroup.electrical ||
-          descriptor.initialSeriesKey == null) {
+      if ((descriptor.historyGroup != TelemetryHistoryIntentGroup.electrical &&
+              descriptor.historyGroup !=
+                  TelemetryHistoryIntentGroup.powerConsumption) ||
+          descriptor.seriesKey == null) {
         continue;
       }
 
@@ -244,7 +253,7 @@ class ConfigurationThermostatDashboardSchemaBuilder
         continue;
       }
 
-      keys.add(descriptor.initialSeriesKey!);
+      keys.add(descriptor.seriesKey!);
     }
 
     return keys;
@@ -304,6 +313,7 @@ class ConfigurationThermostatDashboardSchemaBuilder
 const String _heroWidgetId = 'heroTemperature';
 const String _modeBarWidgetId = 'modeBar';
 const String _energyWidgetId = 'energyUsed';
+const String _powerWidgetId = 'powerNow';
 
 enum _TileShape {
   singleBind,
@@ -318,6 +328,7 @@ class _TileDescriptor {
     required this.shape,
     this.historyGroup,
     this.initialSeriesKey,
+    this.seriesKey,
   });
 
   final String widgetId;
@@ -325,6 +336,7 @@ class _TileDescriptor {
   final _TileShape shape;
   final TelemetryHistoryIntentGroup? historyGroup;
   final String? initialSeriesKey;
+  final String? seriesKey;
 }
 
 const List<_TileDescriptor> _tileDescriptors = <_TileDescriptor>[
@@ -344,13 +356,15 @@ const List<_TileDescriptor> _tileDescriptors = <_TileDescriptor>[
     shape: _TileShape.valueWithOptionalValid,
     historyGroup: TelemetryHistoryIntentGroup.energy,
     initialSeriesKey: PowerMeterSeriesKeys.energyWhDelta,
+    seriesKey: PowerMeterSeriesKeys.energyWhDelta,
   ),
   _TileDescriptor(
     widgetId: 'powerNow',
     type: ThermostatTileType.powerNow,
     shape: _TileShape.valueWithOptionalValid,
-    historyGroup: TelemetryHistoryIntentGroup.electrical,
-    initialSeriesKey: PowerMeterSeriesKeys.activePowerW,
+    historyGroup: TelemetryHistoryIntentGroup.powerConsumption,
+    initialSeriesKey: PowerMeterSeriesKeys.energyWhDelta,
+    seriesKey: PowerMeterSeriesKeys.activePowerW,
   ),
   _TileDescriptor(
     widgetId: 'voltageNow',
@@ -358,6 +372,7 @@ const List<_TileDescriptor> _tileDescriptors = <_TileDescriptor>[
     shape: _TileShape.valueWithOptionalValid,
     historyGroup: TelemetryHistoryIntentGroup.electrical,
     initialSeriesKey: PowerMeterSeriesKeys.voltageV,
+    seriesKey: PowerMeterSeriesKeys.voltageV,
   ),
   _TileDescriptor(
     widgetId: 'currentNow',
@@ -365,6 +380,7 @@ const List<_TileDescriptor> _tileDescriptors = <_TileDescriptor>[
     shape: _TileShape.valueWithOptionalValid,
     historyGroup: TelemetryHistoryIntentGroup.electrical,
     initialSeriesKey: PowerMeterSeriesKeys.currentA,
+    seriesKey: PowerMeterSeriesKeys.currentA,
   ),
   _TileDescriptor(
     widgetId: 'apparentPowerNow',
@@ -372,6 +388,7 @@ const List<_TileDescriptor> _tileDescriptors = <_TileDescriptor>[
     shape: _TileShape.valueWithOptionalValid,
     historyGroup: TelemetryHistoryIntentGroup.electrical,
     initialSeriesKey: PowerMeterSeriesKeys.apparentPowerVa,
+    seriesKey: PowerMeterSeriesKeys.apparentPowerVa,
   ),
   _TileDescriptor(
     widgetId: 'inletTemp',

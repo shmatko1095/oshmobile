@@ -14,6 +14,7 @@ enum ThermostatTileType {
 enum TelemetryHistoryIntentGroup {
   energy,
   electrical,
+  powerConsumption,
 }
 
 class TelemetryHistoryIntent {
