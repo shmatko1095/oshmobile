@@ -32,4 +32,5 @@ android/key.properties
 .flutter-plugins
 .flutter-plugins-dependencies
 /.idea/
+/.vscode/settings.json
 .codex/skills/ui-ux-pro-max/scripts/__pycache__/
