@@ -21,6 +21,7 @@ class TemperatureMinimalPanel extends StatefulWidget {
     this.padding = const EdgeInsets.symmetric(vertical: 12),
     this.borderRadius = AppPalette.radiusXl,
     this.onSensorActionTap,
+    this.onAddSensorTap,
   });
 
   final String currentBind;
@@ -33,6 +34,7 @@ class TemperatureMinimalPanel extends StatefulWidget {
   final double borderRadius;
   final VoidCallback? onTap;
   final ValueChanged<SensorEditorEntry>? onSensorActionTap;
+  final VoidCallback? onAddSensorTap;
 
   @override
   State<TemperatureMinimalPanel> createState() =>
@@ -94,14 +96,18 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
     });
   }
 
-  void _ensureInitialPage(List<TemperatureSensorData> sensors) {
-    if (sensors.isEmpty) {
+  void _ensureInitialPage(
+    List<TemperatureSensorData> sensors, {
+    required bool hasAddSensorCard,
+  }) {
+    final pageCount = sensors.length + (hasAddSensorCard ? 1 : 0);
+    if (pageCount == 0) {
       _initialPageResolved = false;
       _page = 0;
       return;
     }
 
-    final maxIndex = sensors.length - 1;
+    final maxIndex = pageCount - 1;
     if (!_initialPageResolved) {
       final mainIndex = sensors.indexWhere((s) => s.isReference);
       final target = mainIndex >= 0 ? mainIndex : 0;
@@ -142,10 +148,14 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
     final sensors = _sensorsResolver.resolve(
       readBind(controlState, widget.sensorsBind),
     );
-    _ensureInitialPage(sensors);
+    final hasAddSensorCard = widget.onAddSensorTap != null;
+    _ensureInitialPage(
+      sensors,
+      hasAddSensorCard: hasAddSensorCard,
+    );
     final fallbackCurrent = _asNum(readBind(controlState, widget.currentBind));
 
-    final content = sensors.isEmpty
+    final content = sensors.isEmpty && !hasAddSensorCard
         ? _FallbackCard(
             temperatureText: _fmtNum(fallbackCurrent),
             unit: widget.unit,
@@ -169,6 +179,7 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
             },
             formatNum: _fmtNum,
             onSensorActionTap: widget.onSensorActionTap,
+            onAddSensorTap: widget.onAddSensorTap,
           );
 
     final panel = Padding(
@@ -293,6 +304,7 @@ class _SensorCarousel extends StatelessWidget {
     required this.onPageChanged,
     required this.formatNum,
     required this.onSensorActionTap,
+    required this.onAddSensorTap,
   });
 
   final PageController pageController;
@@ -306,56 +318,125 @@ class _SensorCarousel extends StatelessWidget {
   final ValueChanged<int> onPageChanged;
   final String Function(num? value, {int fractionDigits}) formatNum;
   final ValueChanged<SensorEditorEntry>? onSensorActionTap;
+  final VoidCallback? onAddSensorTap;
 
   @override
   Widget build(BuildContext context) {
     final hasRefSensor = sensors.any((s) => s.isReference);
+    final itemCount = sensors.length + (onAddSensorTap == null ? 0 : 1);
     return Column(
       children: [
         Expanded(
           child: PageView.builder(
             controller: pageController,
             padEnds: true,
-            itemCount: sensors.length,
+            itemCount: itemCount,
             onPageChanged: onPageChanged,
-            itemBuilder: (_, index) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: _SensorCard(
-                sensor: sensors[index],
-                unit: unit,
-                borderRadius: borderRadius,
-                onTap: onTap,
-                targetLine: targetLine,
-                nextLine: nextLine,
-                showScheduleMeta:
-                    hasRefSensor ? sensors[index].isReference : index == 0,
-                formatNum: formatNum,
-                onActionTap: onSensorActionTap == null
-                    ? null
-                    : () => onSensorActionTap!(
-                          SensorEditorEntry(
-                            id: sensors[index].id,
-                            name: sensors[index].name,
-                            ref: sensors[index].isReference,
-                            kind: sensors[index].kind,
-                            tempValid: sensors[index].tempValid,
-                            humidityValid: sensors[index].humidityValid,
-                            temp: sensors[index].temp,
-                            humidity: sensors[index].humidity,
-                          ),
-                        ),
-              ),
-            ),
+            itemBuilder: (_, index) {
+              final isAddCard = index >= sensors.length;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: isAddCard
+                    ? _AddSensorCard(
+                        borderRadius: borderRadius,
+                        onTap: onAddSensorTap,
+                      )
+                    : _SensorCard(
+                        sensor: sensors[index],
+                        unit: unit,
+                        borderRadius: borderRadius,
+                        onTap: onTap,
+                        targetLine: targetLine,
+                        nextLine: nextLine,
+                        showScheduleMeta: hasRefSensor
+                            ? sensors[index].isReference
+                            : index == 0,
+                        formatNum: formatNum,
+                        onActionTap: onSensorActionTap == null
+                            ? null
+                            : () => onSensorActionTap!(
+                                  SensorEditorEntry(
+                                    id: sensors[index].id,
+                                    name: sensors[index].name,
+                                    ref: sensors[index].isReference,
+                                    kind: sensors[index].kind,
+                                    tempValid: sensors[index].tempValid,
+                                    humidityValid: sensors[index].humidityValid,
+                                    temp: sensors[index].temp,
+                                    humidity: sensors[index].humidity,
+                                  ),
+                                ),
+                      ),
+              );
+            },
           ),
         ),
-        if (sensors.length > 1) ...[
+        if (itemCount > 1) ...[
           const SizedBox(height: 10),
           _Dots(
-            count: sensors.length,
+            count: itemCount,
             active: pageIndex,
           ),
         ],
       ],
+    );
+  }
+}
+
+class _AddSensorCard extends StatelessWidget {
+  const _AddSensorCard({
+    required this.borderRadius,
+    required this.onTap,
+  });
+
+  final double borderRadius;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final titleColor = statTitleColor(context);
+    final valueColor = statValueColor(context);
+    final isDark = isDarkSurface(context);
+
+    return AppSolidCard(
+      onTap: onTap,
+      radius: borderRadius,
+      padding: EdgeInsets.zero,
+      backgroundColor: statSurfaceColor(context),
+      borderColor:
+          AppPalette.accentPrimary.withValues(alpha: isDark ? 0.24 : 0.2),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppPalette.accentPrimary.withValues(
+                  alpha: isDark ? 0.22 : 0.14,
+                ),
+                borderRadius: BorderRadius.circular(AppPalette.radiusPill),
+              ),
+              child: Icon(
+                Icons.add_rounded,
+                size: 36,
+                color: valueColor,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              S.of(context).AddSensor,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: titleColor,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -39,16 +39,21 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m6(deviceName) =>
       "Пристрій ${deviceName} буде видалено з вашого списку. Ви зможете додати його знову, відсканувавши QR-код.";
 
-  static String m7(current, total) => "Крок ${current} з ${total}";
+  static String m7(sensorName) => "${sensorName} готовий.";
 
-  static String m8(temp) => "Ціль ${temp}";
+  static String m8(current, total) => "Крок ${current} з ${total}";
 
-  static String m9(resolution, points) =>
+  static String m9(temp) => "Ціль ${temp}";
+
+  static String m10(resolution, points) =>
       "Роздільність: ${resolution} • Точки: ${points}";
 
-  static String m10(index, total) => "Датчик ${index}/${total}";
+  static String m11(index, total) => "Датчик ${index}/${total}";
 
-  static String m11(lastSeenAt) => "Востаннє був онлайн: ${lastSeenAt}";
+  static String m12(sensorName) =>
+      "${sensorName} буде видалено з цього термостата і переведено з Zigbee мережі.";
+
+  static String m13(lastSeenAt) => "Востаннє був онлайн: ${lastSeenAt}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -59,6 +64,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Налаштування акаунта",
     ),
     "AddDevice": MessageLookupByLibrary.simpleMessage("Додати пристрій"),
+    "AddSensor": MessageLookupByLibrary.simpleMessage("Додати датчик"),
     "ApiConflict": MessageLookupByLibrary.simpleMessage(
       "Цю дію не можна виконати через конфлікт поточного стану. Оновіть дані й спробуйте знову.",
     ),
@@ -316,6 +322,23 @@ class MessageLookup extends MessageLookupByLibrary {
     "SensorMakeMain": MessageLookupByLibrary.simpleMessage("Зробити основним"),
     "SensorMoreActions": MessageLookupByLibrary.simpleMessage("Дії датчика"),
     "SensorNameHint": MessageLookupByLibrary.simpleMessage("Назва датчика"),
+    "SensorPairingFoundMessage": m7,
+    "SensorPairingFoundTitle": MessageLookupByLibrary.simpleMessage(
+      "Датчик знайдено",
+    ),
+    "SensorPairingNotFoundMessage": MessageLookupByLibrary.simpleMessage(
+      "Новий Zigbee датчик не знайдено.",
+    ),
+    "SensorPairingNotFoundTitle": MessageLookupByLibrary.simpleMessage(
+      "Датчик не знайдено",
+    ),
+    "SensorPairingSearching": MessageLookupByLibrary.simpleMessage("Пошук..."),
+    "SensorPairingUnavailableMessage": MessageLookupByLibrary.simpleMessage(
+      "Термостат не може запустити Zigbee прив’язку зараз.",
+    ),
+    "SensorPairingUnavailableTitle": MessageLookupByLibrary.simpleMessage(
+      "Прив’язка недоступна",
+    ),
     "SensorRename": MessageLookupByLibrary.simpleMessage(
       "Перейменувати датчик",
     ),
@@ -327,10 +350,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "SignIn": MessageLookupByLibrary.simpleMessage("Увійти"),
     "SignOut": MessageLookupByLibrary.simpleMessage("Вийти"),
     "SignUp": MessageLookupByLibrary.simpleMessage("Зареєструватися"),
-    "StepOf": m7,
+    "StepOf": m8,
     "Successful": MessageLookupByLibrary.simpleMessage("Успішно"),
     "SunShort": MessageLookupByLibrary.simpleMessage("Нд"),
-    "Target": m8,
+    "Target": m9,
     "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Не вдалося завантажити графік",
     ),
@@ -383,11 +406,11 @@ class MessageLookup extends MessageLookupByLibrary {
       "Тиждень",
     ),
     "TelemetryHistoryRangeYear": MessageLookupByLibrary.simpleMessage("Рік"),
-    "TelemetryHistoryResolutionPoints": m9,
+    "TelemetryHistoryResolutionPoints": m10,
     "TelemetryHistorySensorLabel": MessageLookupByLibrary.simpleMessage(
       "Температурний датчик",
     ),
-    "TelemetryHistorySensorPosition": m10,
+    "TelemetryHistorySensorPosition": m11,
     "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Середнє"),
     "TelemetryHistoryStatAvgPerDay": MessageLookupByLibrary.simpleMessage(
       "Сер. за добу",
@@ -460,6 +483,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "UnknownMetaSerial": MessageLookupByLibrary.simpleMessage("Серійний"),
     "UnknownMetaStatus": MessageLookupByLibrary.simpleMessage("Статус"),
     "UnknownMetaWidgets": MessageLookupByLibrary.simpleMessage("Віджети"),
+    "UnpairSensor": MessageLookupByLibrary.simpleMessage("Відв’язати датчик"),
+    "UnpairSensorConfirmMessage": m12,
+    "UnpairSensorConfirmTitle": MessageLookupByLibrary.simpleMessage(
+      "Відв’язати датчик?",
+    ),
     "UnsavedChanges": MessageLookupByLibrary.simpleMessage("Незбережені зміни"),
     "UnsavedChangesDiscardPrompt": MessageLookupByLibrary.simpleMessage(
       "У вас є незбережені зміни. Скасувати їх і вийти зі сторінки?",
@@ -540,7 +568,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "deviceOfflineHintBluetooth": MessageLookupByLibrary.simpleMessage(
       "Наблизьтеся до пристрою, щоб налаштувати Wi‑Fi через Bluetooth.",
     ),
-    "deviceOfflineSubtitleWithLastSeen": m11,
+    "deviceOfflineSubtitleWithLastSeen": m13,
     "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
       "Пристрій офлайн",
     ),

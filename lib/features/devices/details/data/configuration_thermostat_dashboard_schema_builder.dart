@@ -29,6 +29,12 @@ class ConfigurationThermostatDashboardSchemaBuilder
             sensorsBind: hero.sensorsBind,
           );
 
+    final climateSensorPairing =
+        _buildClimateSensorPairingSpec(bundle, registry);
+    if (climateSensorPairing != null) {
+      visibleWidgetIds.add(_climateSensorPairingWidgetId);
+    }
+
     final energySeriesKeys = _energySeriesKeys(bundle, registry);
     final electricalSeriesKeys = _electricalSeriesKeys(bundle, registry);
 
@@ -55,6 +61,7 @@ class ConfigurationThermostatDashboardSchemaBuilder
       hero: hero,
       modeBar: modeBar,
       temperatureHistoryStrip: temperatureHistoryStrip,
+      climateSensorPairing: climateSensorPairing,
       tiles: List<ThermostatTileSpec>.unmodifiable(tiles),
       visibleWidgetIds: List<String>.unmodifiable(visibleWidgetIds),
     );
@@ -106,6 +113,31 @@ class ConfigurationThermostatDashboardSchemaBuilder
     return ThermostatModeBarSpec(
       modeBind: modeBind,
       visibleModeIds: _visibleModeIds(bundle),
+    );
+  }
+
+  ClimateSensorPairingSpec? _buildClimateSensorPairingSpec(
+    DeviceConfigurationBundle bundle,
+    ControlRegistry registry,
+  ) {
+    if (!_canRenderWidget(bundle, registry, _climateSensorPairingWidgetId) ||
+        !bundle.canPatchDomain('sensors')) {
+      return null;
+    }
+
+    final widget = bundle.widget(_climateSensorPairingWidgetId);
+    if (widget == null) return null;
+
+    final rawTransport = widget.options['transport']?.toString().trim();
+    final transport =
+        rawTransport == null || rawTransport.isEmpty ? 'zigbee' : rawTransport;
+    if (transport.toLowerCase() != 'zigbee') {
+      return null;
+    }
+
+    return ClimateSensorPairingSpec(
+      transport: transport,
+      timeoutSec: _positiveIntOption(widget.options['timeout_sec']) ?? 180,
     );
   }
 
@@ -206,6 +238,16 @@ class ConfigurationThermostatDashboardSchemaBuilder
         .map((id) => id.trim())
         .where((id) => id.isNotEmpty)
         .toList(growable: false);
+  }
+
+  int? _positiveIntOption(Object? raw) {
+    if (raw is int && raw > 0) return raw;
+    if (raw is num && raw > 0) return raw.toInt();
+    if (raw is String) {
+      final parsed = int.tryParse(raw);
+      if (parsed != null && parsed > 0) return parsed;
+    }
+    return null;
   }
 
   List<String> _energySeriesKeys(
@@ -312,6 +354,7 @@ class ConfigurationThermostatDashboardSchemaBuilder
 
 const String _heroWidgetId = 'heroTemperature';
 const String _modeBarWidgetId = 'modeBar';
+const String _climateSensorPairingWidgetId = 'climateSensorPairing';
 const String _energyWidgetId = 'energyUsed';
 const String _powerWidgetId = 'powerNow';
 

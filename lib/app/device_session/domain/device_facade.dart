@@ -132,6 +132,11 @@ abstract interface class DeviceSensorsApi {
     required double value,
   });
 
+  Future<void> setPairing({
+    required bool enabled,
+    int? timeoutSec,
+  });
+
   Future<void> remove({
     required String id,
     bool? leave,

@@ -124,11 +124,32 @@
   "Failed": "Не вдалося",
   "DeviceEditTitle": "Інформація про пристрій",
   "Name": "Назва",
+  "AddSensor": "Додати датчик",
   "SensorRename": "Перейменувати датчик",
   "SensorNameHint": "Назва датчика",
   "SensorCalibration": "Калібрування",
   "SensorMakeMain": "Зробити основним",
   "DeleteSensor": "Видалити датчик",
+  "UnpairSensor": "Відв’язати датчик",
+  "UnpairSensorConfirmTitle": "Відв’язати датчик?",
+  "UnpairSensorConfirmMessage": "{sensorName} буде видалено з цього термостата і переведено з Zigbee мережі.",
+  "@UnpairSensorConfirmMessage": {
+    "placeholders": {
+      "sensorName": {}
+    }
+  },
+  "SensorPairingSearching": "Пошук...",
+  "SensorPairingFoundTitle": "Датчик знайдено",
+  "SensorPairingFoundMessage": "{sensorName} готовий.",
+  "@SensorPairingFoundMessage": {
+    "placeholders": {
+      "sensorName": {}
+    }
+  },
+  "SensorPairingNotFoundTitle": "Датчик не знайдено",
+  "SensorPairingNotFoundMessage": "Новий Zigbee датчик не знайдено.",
+  "SensorPairingUnavailableTitle": "Прив’язка недоступна",
+  "SensorPairingUnavailableMessage": "Термостат не може запустити Zigbee прив’язку зараз.",
   "DeletePoint": "Видалити точку",
   "DeviceActions": "Дії пристрою",
   "DeviceInternalSettings": "Налаштування пристрою",

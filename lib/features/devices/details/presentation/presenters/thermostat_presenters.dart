@@ -18,6 +18,7 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/widge
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
 import 'package:oshmobile/features/sensors/presentation/open_sensor_editor.dart';
+import 'package:oshmobile/features/sensors/presentation/open_sensor_pairing.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/open_telemetry_history.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
@@ -58,6 +59,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
     final hero = schema.hero;
     final modeBar = schema.modeBar;
     final temperatureHistoryStrip = schema.temperatureHistoryStrip;
+    final climateSensorPairing = schema.climateSensorPairing;
 
     return Scaffold(
       body: SafeArea(
@@ -86,6 +88,13 @@ class ThermostatBasicPresenter implements DevicePresenter {
                         sensor: sensor,
                       );
                     },
+                    onAddSensorTap: climateSensorPairing == null
+                        ? null
+                        : () => SensorPairingNavigator.openFromHost(
+                              context,
+                              transport: climateSensorPairing.transport,
+                              timeoutSec: climateSensorPairing.timeoutSec,
+                            ),
                   ),
                 ),
               ),

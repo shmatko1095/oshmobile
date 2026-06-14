@@ -51,8 +51,8 @@ class SensorEditorPage extends StatefulWidget {
 }
 
 class _SensorEditorPageState extends State<SensorEditorPage> {
-  static const bool _showDeleteSensorAction = false;
   bool _isSettingReference = false;
+  bool _isRemoving = false;
 
   SensorMeta? _findSensor(SensorsState? state) {
     if (state == null) return null;
@@ -169,6 +169,62 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
     }
   }
 
+  bool _isZigbee(SensorMeta? sensor) {
+    return sensor?.transport.trim().toLowerCase() == 'zigbee';
+  }
+
+  Future<void> _unpairSensor(SensorMeta sensor, String title) async {
+    if (_isRemoving) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(S.of(dialogContext).UnpairSensorConfirmTitle),
+        content: Text(
+          S.of(dialogContext).UnpairSensorConfirmMessage(title),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(S.of(dialogContext).Cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(S.of(dialogContext).UnpairSensor),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isRemoving = true);
+    try {
+      final facade = context.read<DeviceFacade>();
+      await facade.sensors.remove(id: sensor.id, leave: true);
+      await facade.refreshAll(forceGet: true);
+      if (!mounted) return;
+      SnackBarUtils.showSuccess(
+        context: context,
+        content: S.of(context).Done,
+      );
+      Navigator.of(context).pop();
+    } catch (error) {
+      if (mounted) {
+        SnackBarUtils.showFail(
+          context: context,
+          content: error is JsonRpcException
+              ? MqttErrorLocalizer.resolveException(error)
+              : error.toString(),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRemoving = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final facade = context.read<DeviceFacade>();
@@ -204,6 +260,14 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
                     telemetry?.humidityValid ?? widget.sensor.humidityValid;
                 final temp = telemetry?.temp ?? widget.sensor.temp;
                 final humidity = telemetry?.humidity ?? widget.sensor.humidity;
+                final calibrationAllowed =
+                    sensor?.tempCalibrationAllowed == true;
+                final sensorsWritable =
+                    snapshot.details.data?.canPatchDomain('sensors') ?? false;
+                final canUnpair = sensor != null &&
+                    _isZigbee(sensor) &&
+                    sensor.removable &&
+                    sensorsWritable;
 
                 return RefreshIndicator(
                   onRefresh: () => facade.refreshAll(forceGet: true),
@@ -318,44 +382,47 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
                                       );
                                     },
                             ),
-                            const Divider(height: 1),
-                            ListTile(
-                              title: Text(S.of(context).SensorCalibration),
-                              subtitle: Text(_calibrationSubtitle(sensor)),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: sensor == null
-                                  ? null
-                                  : () async {
-                                      final facade =
-                                          context.read<DeviceFacade>();
-                                      final snapshotCubit =
-                                          context.read<DeviceSnapshotCubit>();
-                                      final saved = await Navigator.of(context)
-                                          .push<bool>(
-                                        MaterialPageRoute(
-                                          settings: const RouteSettings(
-                                            name: OshAnalyticsScreens
-                                                .sensorCalibration,
-                                          ),
-                                          builder: (_) =>
-                                              DeviceRouteScope.provide(
-                                            facade: facade,
-                                            snapshotCubit: snapshotCubit,
-                                            child: SensorCalibrationPage(
-                                              sensorId: sensor.id,
-                                              initialCalibration:
-                                                  sensor.tempCalibration,
-                                            ),
-                                          ),
+                            if (calibrationAllowed) ...[
+                              const Divider(height: 1),
+                              ListTile(
+                                title: Text(S.of(context).SensorCalibration),
+                                subtitle: Text(_calibrationSubtitle(sensor)),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () async {
+                                  if (sensor == null ||
+                                      !sensor.tempCalibrationAllowed) {
+                                    return;
+                                  }
+
+                                  final facade = context.read<DeviceFacade>();
+                                  final snapshotCubit =
+                                      context.read<DeviceSnapshotCubit>();
+                                  final saved =
+                                      await Navigator.of(context).push<bool>(
+                                    MaterialPageRoute(
+                                      settings: const RouteSettings(
+                                        name: OshAnalyticsScreens
+                                            .sensorCalibration,
+                                      ),
+                                      builder: (_) => DeviceRouteScope.provide(
+                                        facade: facade,
+                                        snapshotCubit: snapshotCubit,
+                                        child: SensorCalibrationPage(
+                                          sensorId: sensor.id,
+                                          initialCalibration:
+                                              sensor.tempCalibration,
                                         ),
-                                      );
-                                      if (!mounted || saved != true) return;
-                                      SnackBarUtils.showSuccess(
-                                        context: this.context,
-                                        content: S.of(this.context).Done,
-                                      );
-                                    },
-                            ),
+                                      ),
+                                    ),
+                                  );
+                                  if (!mounted || saved != true) return;
+                                  SnackBarUtils.showSuccess(
+                                    context: this.context,
+                                    content: S.of(this.context).Done,
+                                  );
+                                },
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -369,13 +436,16 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
                             : () => _setReference(sensor),
                         isLoading: _isSettingReference,
                       ),
-                      if (_showDeleteSensorAction) ...[
+                      if (canUnpair) ...[
                         const SizedBox(height: 10),
                         AppButton(
-                          text: S.of(context).DeleteSensor,
-                          onPressed: null,
+                          text: S.of(context).UnpairSensor,
+                          onPressed: _isRemoving
+                              ? null
+                              : () => _unpairSensor(sensor, title),
                           backgroundColor: AppPalette.destructiveBg,
                           foregroundColor: AppPalette.destructiveFg,
+                          isLoading: _isRemoving,
                         ),
                       ],
                     ],

@@ -61,6 +61,16 @@ class ThermostatTemperatureHistoryStripSpec {
   final String sensorsBind;
 }
 
+class ClimateSensorPairingSpec {
+  const ClimateSensorPairingSpec({
+    required this.transport,
+    required this.timeoutSec,
+  });
+
+  final String transport;
+  final int timeoutSec;
+}
+
 sealed class ThermostatTileSpec {
   const ThermostatTileSpec({
     required this.type,
@@ -108,6 +118,7 @@ class ThermostatDashboardSchema {
     required this.hero,
     required this.modeBar,
     required this.temperatureHistoryStrip,
+    required this.climateSensorPairing,
     required this.tiles,
     required this.visibleWidgetIds,
   });
@@ -115,6 +126,7 @@ class ThermostatDashboardSchema {
   final ThermostatHeroSpec? hero;
   final ThermostatModeBarSpec? modeBar;
   final ThermostatTemperatureHistoryStripSpec? temperatureHistoryStrip;
+  final ClimateSensorPairingSpec? climateSensorPairing;
   final List<ThermostatTileSpec> tiles;
   final List<String> visibleWidgetIds;
 }

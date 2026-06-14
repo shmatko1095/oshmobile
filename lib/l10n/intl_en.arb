@@ -124,11 +124,32 @@
   "Failed": "Failed",
   "DeviceEditTitle": "Device information",
   "Name": "Name",
+  "AddSensor": "Add sensor",
   "SensorRename": "Rename sensor",
   "SensorNameHint": "Sensor name",
   "SensorCalibration": "Calibration",
   "SensorMakeMain": "Set as reference.",
   "DeleteSensor": "Delete sensor",
+  "UnpairSensor": "Unpair sensor",
+  "UnpairSensorConfirmTitle": "Unpair sensor?",
+  "UnpairSensorConfirmMessage": "{sensorName} will be removed from this thermostat and asked to leave the Zigbee network.",
+  "@UnpairSensorConfirmMessage": {
+    "placeholders": {
+      "sensorName": {}
+    }
+  },
+  "SensorPairingSearching": "Searching...",
+  "SensorPairingFoundTitle": "Sensor found",
+  "SensorPairingFoundMessage": "{sensorName} is ready.",
+  "@SensorPairingFoundMessage": {
+    "placeholders": {
+      "sensorName": {}
+    }
+  },
+  "SensorPairingNotFoundTitle": "Sensor not found",
+  "SensorPairingNotFoundMessage": "No new Zigbee sensor was found.",
+  "SensorPairingUnavailableTitle": "Pairing unavailable",
+  "SensorPairingUnavailableMessage": "The thermostat cannot start Zigbee pairing right now.",
   "DeletePoint": "Delete point",
   "DeviceActions": "Device actions",
   "DeviceInternalSettings": "Device settings",

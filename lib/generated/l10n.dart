@@ -864,6 +864,11 @@ class S {
     return Intl.message('Name', name: 'Name', desc: '', args: []);
   }
 
+  /// `Add sensor`
+  String get AddSensor {
+    return Intl.message('Add sensor', name: 'AddSensor', desc: '', args: []);
+  }
+
   /// `Rename sensor`
   String get SensorRename {
     return Intl.message(
@@ -909,6 +914,106 @@ class S {
     return Intl.message(
       'Delete sensor',
       name: 'DeleteSensor',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unpair sensor`
+  String get UnpairSensor {
+    return Intl.message(
+      'Unpair sensor',
+      name: 'UnpairSensor',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unpair sensor?`
+  String get UnpairSensorConfirmTitle {
+    return Intl.message(
+      'Unpair sensor?',
+      name: 'UnpairSensorConfirmTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{sensorName} will be removed from this thermostat and asked to leave the Zigbee network.`
+  String UnpairSensorConfirmMessage(Object sensorName) {
+    return Intl.message(
+      '$sensorName will be removed from this thermostat and asked to leave the Zigbee network.',
+      name: 'UnpairSensorConfirmMessage',
+      desc: '',
+      args: [sensorName],
+    );
+  }
+
+  /// `Searching...`
+  String get SensorPairingSearching {
+    return Intl.message(
+      'Searching...',
+      name: 'SensorPairingSearching',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sensor found`
+  String get SensorPairingFoundTitle {
+    return Intl.message(
+      'Sensor found',
+      name: 'SensorPairingFoundTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{sensorName} is ready.`
+  String SensorPairingFoundMessage(Object sensorName) {
+    return Intl.message(
+      '$sensorName is ready.',
+      name: 'SensorPairingFoundMessage',
+      desc: '',
+      args: [sensorName],
+    );
+  }
+
+  /// `Sensor not found`
+  String get SensorPairingNotFoundTitle {
+    return Intl.message(
+      'Sensor not found',
+      name: 'SensorPairingNotFoundTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No new Zigbee sensor was found.`
+  String get SensorPairingNotFoundMessage {
+    return Intl.message(
+      'No new Zigbee sensor was found.',
+      name: 'SensorPairingNotFoundMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Pairing unavailable`
+  String get SensorPairingUnavailableTitle {
+    return Intl.message(
+      'Pairing unavailable',
+      name: 'SensorPairingUnavailableTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The thermostat cannot start Zigbee pairing right now.`
+  String get SensorPairingUnavailableMessage {
+    return Intl.message(
+      'The thermostat cannot start Zigbee pairing right now.',
+      name: 'SensorPairingUnavailableMessage',
       desc: '',
       args: [],
     );

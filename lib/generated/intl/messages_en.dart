@@ -39,16 +39,21 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m6(deviceName) =>
       "The device ${deviceName} will be removed from your list. You can re-add it anytime by scanning the QR code again.";
 
-  static String m7(current, total) => "Step ${current} of ${total}";
+  static String m7(sensorName) => "${sensorName} is ready.";
 
-  static String m8(temp) => "Target ${temp}";
+  static String m8(current, total) => "Step ${current} of ${total}";
 
-  static String m9(resolution, points) =>
+  static String m9(temp) => "Target ${temp}";
+
+  static String m10(resolution, points) =>
       "Resolution: ${resolution} • Points: ${points}";
 
-  static String m10(index, total) => "Sensor ${index}/${total}";
+  static String m11(index, total) => "Sensor ${index}/${total}";
 
-  static String m11(lastSeenAt) => "Last seen online: ${lastSeenAt}";
+  static String m12(sensorName) =>
+      "${sensorName} will be removed from this thermostat and asked to leave the Zigbee network.";
+
+  static String m13(lastSeenAt) => "Last seen online: ${lastSeenAt}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -57,6 +62,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "Account": MessageLookupByLibrary.simpleMessage("Account"),
     "AccountSettings": MessageLookupByLibrary.simpleMessage("Account settings"),
     "AddDevice": MessageLookupByLibrary.simpleMessage("Add device"),
+    "AddSensor": MessageLookupByLibrary.simpleMessage("Add sensor"),
     "ApiConflict": MessageLookupByLibrary.simpleMessage(
       "This action conflicts with the current state. Refresh and try again.",
     ),
@@ -310,6 +316,25 @@ class MessageLookup extends MessageLookupByLibrary {
     "SensorMakeMain": MessageLookupByLibrary.simpleMessage("Set as reference."),
     "SensorMoreActions": MessageLookupByLibrary.simpleMessage("Sensor actions"),
     "SensorNameHint": MessageLookupByLibrary.simpleMessage("Sensor name"),
+    "SensorPairingFoundMessage": m7,
+    "SensorPairingFoundTitle": MessageLookupByLibrary.simpleMessage(
+      "Sensor found",
+    ),
+    "SensorPairingNotFoundMessage": MessageLookupByLibrary.simpleMessage(
+      "No new Zigbee sensor was found.",
+    ),
+    "SensorPairingNotFoundTitle": MessageLookupByLibrary.simpleMessage(
+      "Sensor not found",
+    ),
+    "SensorPairingSearching": MessageLookupByLibrary.simpleMessage(
+      "Searching...",
+    ),
+    "SensorPairingUnavailableMessage": MessageLookupByLibrary.simpleMessage(
+      "The thermostat cannot start Zigbee pairing right now.",
+    ),
+    "SensorPairingUnavailableTitle": MessageLookupByLibrary.simpleMessage(
+      "Pairing unavailable",
+    ),
     "SensorRename": MessageLookupByLibrary.simpleMessage("Rename sensor"),
     "SerialNumber": MessageLookupByLibrary.simpleMessage("Serial number"),
     "SetTemperature": MessageLookupByLibrary.simpleMessage("Set temperature"),
@@ -317,10 +342,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "SignIn": MessageLookupByLibrary.simpleMessage("Sign In"),
     "SignOut": MessageLookupByLibrary.simpleMessage("Sign Out"),
     "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
-    "StepOf": m7,
+    "StepOf": m8,
     "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
     "SunShort": MessageLookupByLibrary.simpleMessage("Sun"),
-    "Target": m8,
+    "Target": m9,
     "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Failed to load chart",
     ),
@@ -369,11 +394,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryRangeMonth": MessageLookupByLibrary.simpleMessage("Month"),
     "TelemetryHistoryRangeWeek": MessageLookupByLibrary.simpleMessage("Week"),
     "TelemetryHistoryRangeYear": MessageLookupByLibrary.simpleMessage("Year"),
-    "TelemetryHistoryResolutionPoints": m9,
+    "TelemetryHistoryResolutionPoints": m10,
     "TelemetryHistorySensorLabel": MessageLookupByLibrary.simpleMessage(
       "Temperature sensor",
     ),
-    "TelemetryHistorySensorPosition": m10,
+    "TelemetryHistorySensorPosition": m11,
     "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Average"),
     "TelemetryHistoryStatAvgPerDay": MessageLookupByLibrary.simpleMessage(
       "Avg / day",
@@ -442,6 +467,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "UnknownMetaSerial": MessageLookupByLibrary.simpleMessage("Serial"),
     "UnknownMetaStatus": MessageLookupByLibrary.simpleMessage("Status"),
     "UnknownMetaWidgets": MessageLookupByLibrary.simpleMessage("Widgets"),
+    "UnpairSensor": MessageLookupByLibrary.simpleMessage("Unpair sensor"),
+    "UnpairSensorConfirmMessage": m12,
+    "UnpairSensorConfirmTitle": MessageLookupByLibrary.simpleMessage(
+      "Unpair sensor?",
+    ),
     "UnsavedChanges": MessageLookupByLibrary.simpleMessage("Unsaved changes"),
     "UnsavedChangesDiscardPrompt": MessageLookupByLibrary.simpleMessage(
       "You have unsaved changes. Do you want to discard them and leave this page?",
@@ -522,7 +552,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "deviceOfflineHintBluetooth": MessageLookupByLibrary.simpleMessage(
       "Move closer to the device to set up Wi-Fi over Bluetooth.",
     ),
-    "deviceOfflineSubtitleWithLastSeen": m11,
+    "deviceOfflineSubtitleWithLastSeen": m13,
     "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
       "Device is offline",
     ),

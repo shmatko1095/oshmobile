@@ -639,6 +639,12 @@ final class _FakeDeviceSensorsApi implements DeviceSensorsApi {
   }) async {}
 
   @override
+  Future<void> setPairing({
+    required bool enabled,
+    int? timeoutSec,
+  }) async {}
+
+  @override
   Future<void> remove({
     required String id,
     bool? leave,

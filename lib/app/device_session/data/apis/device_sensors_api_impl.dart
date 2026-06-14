@@ -85,6 +85,16 @@ class DeviceSensorsApiImpl implements DeviceSensorsApi {
   }
 
   @override
+  Future<void> setPairing({
+    required bool enabled,
+    int? timeoutSec,
+  }) {
+    final payload = <String, dynamic>{'enabled': enabled};
+    if (timeoutSec != null) payload['timeout_sec'] = timeoutSec;
+    return patch(SensorsPatchPairing(payload: payload));
+  }
+
+  @override
   Future<void> remove({
     required String id,
     bool? leave,

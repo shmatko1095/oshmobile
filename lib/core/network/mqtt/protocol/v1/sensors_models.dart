@@ -50,6 +50,7 @@ class SensorMeta {
   final bool removable;
   final String kind;
   final double tempCalibration;
+  final bool tempCalibrationAllowed;
 
   const SensorMeta({
     required this.id,
@@ -59,6 +60,7 @@ class SensorMeta {
     required this.removable,
     required this.kind,
     required this.tempCalibration,
+    required this.tempCalibrationAllowed,
   });
 
   static SensorMeta? fromJson(Map<String, dynamic> json) {
@@ -69,6 +71,7 @@ class SensorMeta {
     final removable = asBool(json['removable']);
     final kind = asString(json['kind']);
     final tempCalibration = asNum(json['temp_calibration'])?.toDouble();
+    final tempCalibrationAllowed = asBool(json['temp_calibration_allowed']);
 
     if (id == null ||
         name == null ||
@@ -88,6 +91,8 @@ class SensorMeta {
       removable: removable,
       kind: kind,
       tempCalibration: tempCalibration,
+      tempCalibrationAllowed: tempCalibrationAllowed ??
+          (transport.trim().toLowerCase() != 'zigbee'),
     );
   }
 
@@ -99,6 +104,7 @@ class SensorMeta {
         'removable': removable,
         'kind': kind,
         'temp_calibration': tempCalibration,
+        'temp_calibration_allowed': tempCalibrationAllowed,
       };
 }
 
@@ -258,6 +264,7 @@ class SensorSnapshot {
   bool get removable => meta.removable;
   String get kind => meta.kind;
   double get tempCalibration => meta.tempCalibration;
+  bool get tempCalibrationAllowed => meta.tempCalibrationAllowed;
 
   bool get tempValid => telemetry?.tempValid ?? false;
   bool get humidityValid => telemetry?.humidityValid ?? false;
