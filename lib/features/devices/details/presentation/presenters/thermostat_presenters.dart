@@ -5,7 +5,6 @@ import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/devices/details/domain/builders/thermostat_dashboard_schema_builder.dart';
 import 'package:oshmobile/features/devices/details/domain/models/thermostat_dashboard_schema.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/adapters/thermostat_telemetry_history_opener.dart';
-import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_history_strip_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_mode_bar.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/delta_temp_card.dart';
@@ -46,13 +45,6 @@ class ThermostatBasicPresenter implements DevicePresenter {
     const gridMainAxisSpacing = 16.0;
     const gridChildAspectRatio = 1.18;
 
-    final contentWidth =
-        MediaQuery.sizeOf(context).width - horizontalPadding * 2;
-    final tileWidth =
-        (contentWidth - gridCrossAxisSpacing * (gridCrossAxisCount - 1)) /
-            gridCrossAxisCount;
-    final statTileHeight = tileWidth / gridChildAspectRatio;
-
     final schema = _schemaBuilder.build(bundle: bundle);
     final scheduleWritable = bundle.canPatchDomain('schedule');
 
@@ -60,6 +52,10 @@ class ThermostatBasicPresenter implements DevicePresenter {
     final modeBar = schema.modeBar;
     final temperatureHistoryStrip = schema.temperatureHistoryStrip;
     final climateSensorPairing = schema.climateSensorPairing;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final heroHeight = temperatureHistoryStrip == null
+        ? screenHeight * 0.34
+        : (screenHeight * 0.43).clamp(340.0, 410.0).toDouble();
 
     return Scaffold(
       body: SafeArea(
@@ -77,7 +73,9 @@ class ThermostatBasicPresenter implements DevicePresenter {
                     currentTargetBind: hero.currentTargetBind,
                     nextTargetBind: hero.nextTargetBind,
                     unit: '°C',
-                    height: MediaQuery.sizeOf(context).height * 0.34,
+                    height: heroHeight,
+                    showHistoryPreview: temperatureHistoryStrip != null,
+                    historyChartHeight: 104,
                     onTap: scheduleWritable
                         ? () =>
                             ThermostatModeNavigator.openForCurrentMode(context)
@@ -95,6 +93,16 @@ class ThermostatBasicPresenter implements DevicePresenter {
                               transport: climateSensorPairing.transport,
                               timeoutSec: climateSensorPairing.timeoutSec,
                             ),
+                    onOpenHistory: temperatureHistoryStrip == null
+                        ? null
+                        : (sensors, sensorId, sensorName) {
+                            TelemetryHistoryNavigator.openTemperatureFromHost(
+                              context,
+                              sensors: sensors,
+                              sensorId: sensorId,
+                              sensorName: sensorName,
+                            );
+                          },
                   ),
                 ),
               ),
@@ -106,29 +114,6 @@ class ThermostatBasicPresenter implements DevicePresenter {
                     modeBind: modeBar.modeBind,
                     visibleModes: _resolveVisibleModes(modeBar.visibleModeIds),
                     writable: scheduleWritable,
-                  ),
-                ),
-              ),
-            if (temperatureHistoryStrip != null)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    horizontalPadding,
-                    12,
-                    horizontalPadding,
-                    0,
-                  ),
-                  child: TemperatureHistoryStripCard(
-                    sensorsBind: temperatureHistoryStrip.sensorsBind,
-                    height: statTileHeight,
-                    onOpenHistory: (sensors, sensorId, sensorName) {
-                      TelemetryHistoryNavigator.openTemperatureFromHost(
-                        context,
-                        sensors: sensors,
-                        sensorId: sensorId,
-                        sensorName: sensorName,
-                      );
-                    },
                   ),
                 ),
               ),

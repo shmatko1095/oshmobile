@@ -17,6 +17,9 @@ import 'package:oshmobile/features/devices/details/data/configuration_thermostat
 import 'package:oshmobile/features/devices/details/domain/models/thermostat_dashboard_schema.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/adapters/thermostat_telemetry_history_opener.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/thermostat_presenters.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_history_strip_card.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_mode_bar.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_cubit.dart';
@@ -165,6 +168,98 @@ void main() {
       _schema(bundle).visibleWidgetIds,
       isNot(contains('currentNow')),
     );
+  });
+
+  testWidgets('temperature history preview is embedded in hero card',
+      (tester) async {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'heroTemperature',
+          'control_ids': [
+            'ambientTemperature',
+            'scheduleCurrentTarget',
+            'scheduleNextTarget',
+            'climateSensors',
+          ],
+        },
+        {
+          'id': 'modeBar',
+          'control_ids': ['scheduleMode'],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[
+        {'id': 'ambientTemperature', 'path': 'ambient.temperature'},
+        {'id': 'scheduleCurrentTarget', 'path': 'schedule.current_target'},
+        {'id': 'scheduleNextTarget', 'path': 'schedule.next_target'},
+        {'id': 'climateSensors', 'path': 'climateSensors'},
+        {'id': 'scheduleMode', 'path': 'schedule.mode'},
+      ],
+      readableDomains: const <String>{'telemetry'},
+    );
+    final history = _QueuedTelemetryHistoryApi();
+    final snapshot = DeviceSnapshot.initial(device: _device()).copyWith(
+      controlState: DeviceSlice<Map<String, dynamic>>.ready(
+        data: const <String, dynamic>{
+          'ambientTemperature': 22.1,
+          'scheduleCurrentTarget': 22,
+          'scheduleNextTarget': {
+            'temp': 21,
+            'hour': 20,
+            'minute': 30,
+          },
+          'scheduleMode': 'manual',
+          'climateSensors': [
+            {
+              'id': 'air',
+              'name': 'Air',
+              'ref': true,
+              'temp_valid': true,
+              'temp_stale': false,
+              'temp': 22.1,
+              'humidity_valid': false,
+            },
+          ],
+        },
+      ),
+    );
+    final facade = _FakeDeviceFacade(snapshot, history);
+    final snapshotCubit = DeviceSnapshotCubit(facade: facade);
+    addTearDown(snapshotCubit.close);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          S.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: S.delegate.supportedLocales,
+        home: DeviceRouteScope.provide(
+          facade: facade,
+          snapshotCubit: snapshotCubit,
+          child: Builder(
+            builder: (context) {
+              return _presenter().build(context, _device(), bundle);
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(TemperatureMinimalPanel), findsOneWidget);
+    expect(find.byType(TemperatureHistoryStripCard), findsNothing);
+    expect(find.byType(ThermostatModeBar), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('temperature-history-preview-air')),
+      findsOneWidget,
+    );
+
+    final heroTop = tester.getTopLeft(find.byType(TemperatureMinimalPanel)).dy;
+    final modeTop = tester.getTopLeft(find.byType(ThermostatModeBar)).dy;
+    expect(heroTop, lessThan(modeTop));
   });
 
   testWidgets('power meter tiles open history with tapped metric selected',

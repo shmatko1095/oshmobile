@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/utils/temperature_sensors_resolver.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_history_strip_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 import 'package:oshmobile/features/sensors/presentation/models/sensor_editor_entry.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/cubit/temperature_history_preview_cubit.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class TemperatureMinimalPanel extends StatefulWidget {
@@ -22,6 +25,9 @@ class TemperatureMinimalPanel extends StatefulWidget {
     this.borderRadius = AppPalette.radiusXl,
     this.onSensorActionTap,
     this.onAddSensorTap,
+    this.showHistoryPreview = false,
+    this.historyChartHeight = 104,
+    this.onOpenHistory,
   });
 
   final String currentBind;
@@ -35,6 +41,9 @@ class TemperatureMinimalPanel extends StatefulWidget {
   final VoidCallback? onTap;
   final ValueChanged<SensorEditorEntry>? onSensorActionTap;
   final VoidCallback? onAddSensorTap;
+  final bool showHistoryPreview;
+  final double historyChartHeight;
+  final OnOpenTemperatureHistory? onOpenHistory;
 
   @override
   State<TemperatureMinimalPanel> createState() =>
@@ -212,6 +221,7 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
       hasAddSensorCard: hasAddSensorCard,
     );
     final fallbackCurrent = _asNum(readBind(controlState, widget.currentBind));
+    final showHistoryPreview = widget.showHistoryPreview && sensors.isNotEmpty;
 
     final content = sensors.isEmpty && !hasAddSensorCard
         ? _FallbackCard(
@@ -231,6 +241,9 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
             onTap: widget.onTap,
             targetLine: targetLine,
             nextLine: nextLine,
+            showHistoryPreview: showHistoryPreview,
+            historyChartHeight: widget.historyChartHeight,
+            onOpenHistory: widget.onOpenHistory,
             onPageChanged: (nextPage) {
               if (_page == nextPage) return;
               setState(() {
@@ -243,9 +256,18 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
             onAddSensorTap: widget.onAddSensorTap,
           );
 
+    final panelContent = showHistoryPreview
+        ? BlocProvider(
+            create: (context) => TemperatureHistoryPreviewCubit(
+              seriesReader: context.read<DeviceFacade>().telemetryHistory,
+            ),
+            child: content,
+          )
+        : content;
+
     final panel = Padding(
       padding: widget.padding,
-      child: content,
+      child: panelContent,
     );
 
     if (widget.height != null) {
@@ -366,6 +388,9 @@ class _SensorCarousel extends StatelessWidget {
     required this.formatNum,
     required this.onSensorActionTap,
     required this.onAddSensorTap,
+    required this.showHistoryPreview,
+    required this.historyChartHeight,
+    required this.onOpenHistory,
   });
 
   final PageController pageController;
@@ -380,6 +405,9 @@ class _SensorCarousel extends StatelessWidget {
   final String Function(num? value, {int fractionDigits}) formatNum;
   final ValueChanged<SensorEditorEntry>? onSensorActionTap;
   final VoidCallback? onAddSensorTap;
+  final bool showHistoryPreview;
+  final double historyChartHeight;
+  final OnOpenTemperatureHistory? onOpenHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -415,6 +443,11 @@ class _SensorCarousel extends StatelessWidget {
                         showScheduleMeta: hasRefSensor
                             ? sensors[index].isReference
                             : index == 0,
+                        allSensors: sensors,
+                        showHistoryPreview: showHistoryPreview,
+                        historyActive: index == pageIndex,
+                        historyChartHeight: historyChartHeight,
+                        onOpenHistory: onOpenHistory,
                         formatNum: formatNum,
                         onActionTap: onSensorActionTap == null
                             ? null
@@ -516,6 +549,11 @@ class _SensorCard extends StatelessWidget {
     required this.targetLine,
     required this.nextLine,
     required this.showScheduleMeta,
+    required this.allSensors,
+    required this.showHistoryPreview,
+    required this.historyActive,
+    required this.historyChartHeight,
+    required this.onOpenHistory,
     required this.formatNum,
     required this.onActionTap,
   });
@@ -527,143 +565,369 @@ class _SensorCard extends StatelessWidget {
   final String? targetLine;
   final String? nextLine;
   final bool showScheduleMeta;
+  final List<TemperatureSensorData> allSensors;
+  final bool showHistoryPreview;
+  final bool historyActive;
+  final double historyChartHeight;
+  final OnOpenTemperatureHistory? onOpenHistory;
   final String Function(num? value, {int fractionDigits}) formatNum;
   final VoidCallback? onActionTap;
 
   @override
   Widget build(BuildContext context) {
-    final hasAnyData = sensor.hasTemperature || sensor.humidityValid;
     final isMainCard = showScheduleMeta;
-    final titleColor = statTitleColor(context);
-    final valueColor = statValueColor(context);
-    final mutedColor = statMutedColor(context);
     final isDark = isDarkSurface(context);
 
     return AppSolidCard(
-      onTap: onTap,
       radius: borderRadius,
       padding: EdgeInsets.zero,
       backgroundColor: statSurfaceColor(context),
       borderColor: isMainCard
           ? AppPalette.accentPrimary.withValues(alpha: isDark ? 0.24 : 0.2)
           : statBorderColor(context),
-      child: Stack(
-        children: [
-          if (isMainCard) _MainCardAccentLayer(borderRadius: borderRadius),
-          Padding(
-            padding: const EdgeInsets.all(AppPalette.spaceLg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        sensor.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: valueColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ),
-                    _SensorCardAction(sensor: sensor, onTap: onActionTap),
-                  ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: Stack(
+          children: [
+            if (isMainCard && !showHistoryPreview)
+              _MainCardAccentLayer(borderRadius: borderRadius),
+            if (showHistoryPreview)
+              Positioned.fill(
+                child: TemperatureSensorHistoryBackdrop(
+                  key: ValueKey(
+                    'temperature-history-backdrop-${sensor.id}',
+                  ),
+                  sensor: sensor,
+                  active: historyActive,
+                  padding: const EdgeInsets.fromLTRB(0, 76, 0, 0),
                 ),
-                const Spacer(),
-                if (sensor.hasTemperature)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        formatNum(sensor.temp),
-                        style: TextStyle(
-                          color: valueColor,
-                          fontSize: 72,
-                          fontWeight: FontWeight.w300,
-                          height: 0.95,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Text(
-                          unit,
-                          style: TextStyle(
-                            color: titleColor,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      if (sensor.tempStale) ...[
-                        const SizedBox(width: 8),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 18),
-                          child: Container(
-                            key: ValueKey(
-                              'temperature-stale-indicator-${sensor.id}',
-                            ),
-                            width: 10,
-                            height: 10,
-                            decoration: const BoxDecoration(
-                              color: AppPalette.amber,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  )
-                else
-                  Text(
-                    'No temperature data',
-                    style: TextStyle(
-                      color: titleColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
+              ),
+            if (showHistoryPreview) const _HistoryBackdropReadabilityLayer(),
+            Positioned.fill(
+              child: _SensorTemperaturePane(
+                sensor: sensor,
+                unit: unit,
+                borderRadius: borderRadius,
+                onTap: onTap,
+                targetLine: targetLine,
+                nextLine: nextLine,
+                showScheduleMeta: showScheduleMeta,
+                compact: showHistoryPreview,
+                formatNum: formatNum,
+                onActionTap: onActionTap,
+              ),
+            ),
+            if (showHistoryPreview && onOpenHistory != null)
+              Positioned(
+                right: 14,
+                bottom: 12,
+                child: _SensorHistoryAction(
+                  sensor: sensor,
+                  onTap: () => onOpenHistory!(
+                    temperatureHistorySensorRefs(allSensors),
+                    sensor.id,
+                    sensor.name,
                   ),
-                const SizedBox(height: 12),
-                if (sensor.humidityValid)
-                  Row(
-                    children: [
-                      const Icon(Icons.water_drop_rounded,
-                          size: 18, color: AppPalette.accentPrimary),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${formatNum(sensor.humidity, fractionDigits: 0)}%',
-                        style: TextStyle(
-                          color: valueColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ],
-                  )
-                else if (!hasAnyData)
-                  Text(
-                    'No sensor data',
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryBackdropReadabilityLayer extends StatelessWidget {
+  const _HistoryBackdropReadabilityLayer();
+
+  @override
+  Widget build(BuildContext context) {
+    final surface = statSurfaceColor(context);
+    final isDark = isDarkSurface(context);
+
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                surface.withValues(alpha: isDark ? 0.86 : 0.82),
+                surface.withValues(alpha: isDark ? 0.34 : 0.36),
+                surface.withValues(alpha: isDark ? 0.0 : 0.06),
+              ],
+              stops: const [0.0, 0.46, 1.0],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SensorHistoryAction extends StatelessWidget {
+  const _SensorHistoryAction({
+    required this.sensor,
+    required this.onTap,
+  });
+
+  final TemperatureSensorData sensor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final surface = statSurfaceColor(context);
+    final isDark = isDarkSurface(context);
+
+    return Semantics(
+      button: true,
+      label: '${s.TelemetryHistoryPreviewTitle24h}, ${sensor.name}',
+      hint: s.TelemetryHistoryPreviewOpenHint,
+      child: Tooltip(
+        message: s.TelemetryHistoryPreviewOpenHint,
+        child: Material(
+          color: AppPalette.transparent,
+          child: InkWell(
+            key: ValueKey('temperature-history-preview-${sensor.id}'),
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppPalette.radiusPill),
+            child: Ink(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: surface.withValues(alpha: isDark ? 0.72 : 0.82),
+                borderRadius: BorderRadius.circular(AppPalette.radiusPill),
+                border: Border.all(
+                  color: AppPalette.accentPrimary.withValues(
+                    alpha: isDark ? 0.24 : 0.18,
+                  ),
+                ),
+              ),
+              child: Icon(
+                Icons.show_chart_rounded,
+                size: 19,
+                color: AppPalette.accentPrimary,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SensorTemperaturePane extends StatelessWidget {
+  const _SensorTemperaturePane({
+    required this.sensor,
+    required this.unit,
+    required this.borderRadius,
+    required this.onTap,
+    required this.targetLine,
+    required this.nextLine,
+    required this.showScheduleMeta,
+    required this.compact,
+    required this.formatNum,
+    required this.onActionTap,
+  });
+
+  final TemperatureSensorData sensor;
+  final String unit;
+  final double borderRadius;
+  final VoidCallback? onTap;
+  final String? targetLine;
+  final String? nextLine;
+  final bool showScheduleMeta;
+  final bool compact;
+  final String Function(num? value, {int fractionDigits}) formatNum;
+  final VoidCallback? onActionTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasAnyData = sensor.hasTemperature || sensor.humidityValid;
+    final titleColor = statTitleColor(context);
+    final valueColor = statValueColor(context);
+    final mutedColor = statMutedColor(context);
+    final valueFontSize = compact ? 76.0 : 72.0;
+    final unitFontSize = compact ? 22.0 : 22.0;
+    final contentPadding = compact
+        ? const EdgeInsets.fromLTRB(16, 16, 58, 16)
+        : const EdgeInsets.all(AppPalette.spaceLg);
+
+    final content = Padding(
+      padding: contentPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  sensor.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: valueColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: compact ? 18 : 20,
+                  ),
+                ),
+              ),
+              _SensorCardAction(sensor: sensor, onTap: onActionTap),
+            ],
+          ),
+          if (compact) const SizedBox(height: 62) else const Spacer(),
+          if (hasAnyData)
+            _SensorReadingsRow(
+              sensor: sensor,
+              unit: unit,
+              valueColor: valueColor,
+              unitColor: titleColor,
+              humidityColor: mutedColor,
+              valueFontSize: valueFontSize,
+              unitFontSize: unitFontSize,
+              compact: compact,
+              formatNum: formatNum,
+            )
+          else
+            Text(
+              'No sensor data',
+              style: TextStyle(
+                color: mutedColor,
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
+            ),
+          SizedBox(height: compact ? 8 : 12),
+          if (showScheduleMeta)
+            _ScheduleMetaBlock(
+              targetLine: targetLine,
+              nextLine: nextLine,
+              titleColor: titleColor,
+              mutedColor: mutedColor,
+            ),
+          if (compact) const Spacer(),
+        ],
+      ),
+    );
+
+    if (onTap == null) return content;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: content,
+    );
+  }
+}
+
+class _SensorReadingsRow extends StatelessWidget {
+  const _SensorReadingsRow({
+    required this.sensor,
+    required this.unit,
+    required this.valueColor,
+    required this.unitColor,
+    required this.humidityColor,
+    required this.valueFontSize,
+    required this.unitFontSize,
+    required this.compact,
+    required this.formatNum,
+  });
+
+  final TemperatureSensorData sensor;
+  final String unit;
+  final Color valueColor;
+  final Color unitColor;
+  final Color humidityColor;
+  final double valueFontSize;
+  final double unitFontSize;
+  final bool compact;
+  final String Function(num? value, {int fractionDigits}) formatNum;
+
+  @override
+  Widget build(BuildContext context) {
+    final temperatureStyle = TextStyle(
+      color: valueColor,
+      fontSize: valueFontSize,
+      fontWeight: FontWeight.w300,
+      height: 0.95,
+    );
+
+    final humidityStyle = TextStyle(
+      color: humidityColor,
+      fontSize: compact ? 17 : 19,
+      fontWeight: FontWeight.w700,
+      height: 1.1,
+    );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (sensor.hasTemperature)
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  formatNum(sensor.temp),
+                  style: temperatureStyle,
+                ),
+                const SizedBox(width: 4),
+                Padding(
+                  padding: EdgeInsets.only(bottom: compact ? 9 : 10),
+                  child: Text(
+                    unit,
                     style: TextStyle(
-                      color: mutedColor,
+                      color: unitColor,
+                      fontSize: unitFontSize,
                       fontWeight: FontWeight.w500,
-                      fontSize: 14,
                     ),
                   ),
-                if (showScheduleMeta)
-                  _ScheduleMetaBlock(
-                    targetLine: targetLine,
-                    nextLine: nextLine,
-                    titleColor: titleColor,
-                    mutedColor: mutedColor,
+                ),
+                if (sensor.tempStale) ...[
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: EdgeInsets.only(bottom: compact ? 17 : 18),
+                    child: Container(
+                      key: ValueKey(
+                        'temperature-stale-indicator-${sensor.id}',
+                      ),
+                      width: 10,
+                      height: 10,
+                      decoration: const BoxDecoration(
+                        color: AppPalette.amber,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                   ),
+                ],
               ],
             ),
           ),
-        ],
-      ),
+        if (sensor.hasTemperature && sensor.humidityValid)
+          SizedBox(height: compact ? 2 : 4),
+        if (sensor.humidityValid)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.water_drop_rounded,
+                size: compact ? 16 : 18,
+                color: AppPalette.accentPrimary.withValues(alpha: 0.82),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '${formatNum(sensor.humidity, fractionDigits: 0)}%',
+                style: sensor.hasTemperature ? humidityStyle : temperatureStyle,
+              ),
+            ],
+          ),
+      ],
     );
   }
 }
@@ -774,15 +1038,7 @@ class _ScheduleMetaBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 10),
-        Divider(
-          color: isDarkSurface(context)
-              ? AppPalette.separator
-              : AppPalette.lightBorder,
-          thickness: 0.8,
-          height: 1,
-        ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         if (targetLine != null)
           Text(
             targetLine!,

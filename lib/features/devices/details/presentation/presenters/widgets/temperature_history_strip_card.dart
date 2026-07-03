@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/app/device_session/domain/models/device_temperature_sensor_ref.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/app/device_session/domain/models/device_temperature_sensor_ref.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
@@ -19,6 +19,20 @@ typedef OnOpenTemperatureHistory = void Function(
   String sensorId,
   String sensorName,
 );
+
+List<DeviceTemperatureSensorRef> temperatureHistorySensorRefs(
+  List<TemperatureSensorData> sensors,
+) {
+  return sensors
+      .map(
+        (sensor) => DeviceTemperatureSensorRef(
+          id: sensor.id,
+          name: sensor.name,
+          isReference: sensor.isReference,
+        ),
+      )
+      .toList(growable: false);
+}
 
 class TemperatureHistoryStripCard extends StatelessWidget {
   const TemperatureHistoryStripCard({
@@ -50,6 +64,436 @@ class TemperatureHistoryStripCard extends StatelessWidget {
   }
 }
 
+class TemperatureSensorHistoryPreview extends StatefulWidget {
+  const TemperatureSensorHistoryPreview({
+    super.key,
+    required this.sensor,
+    required this.sensors,
+    required this.active,
+    required this.height,
+    this.chartHeight,
+    this.onOpenHistory,
+    this.showTitle = true,
+    this.showSensorName = false,
+    this.showTopDivider = false,
+    this.borderRadius = AppPalette.radiusLg,
+    this.padding = const EdgeInsets.fromLTRB(16, 8, 16, 10),
+  });
+
+  final TemperatureSensorData sensor;
+  final List<TemperatureSensorData> sensors;
+  final bool active;
+  final double height;
+  final double? chartHeight;
+  final OnOpenTemperatureHistory? onOpenHistory;
+  final bool showTitle;
+  final bool showSensorName;
+  final bool showTopDivider;
+  final double borderRadius;
+  final EdgeInsets padding;
+
+  @override
+  State<TemperatureSensorHistoryPreview> createState() =>
+      _TemperatureSensorHistoryPreviewState();
+}
+
+class _TemperatureSensorHistoryPreviewState
+    extends State<TemperatureSensorHistoryPreview> {
+  bool _ensureScheduled = false;
+  String? _scheduledSeriesKey;
+
+  String get _seriesKey => 'climate_sensors.${widget.sensor.id}.temp';
+
+  void _scheduleEnsureLoaded(String seriesKey) {
+    _scheduledSeriesKey = seriesKey;
+    if (_ensureScheduled) return;
+    _ensureScheduled = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureScheduled = false;
+      final key = _scheduledSeriesKey;
+      _scheduledSeriesKey = null;
+      if (!mounted || key == null || key.isEmpty) return;
+      context
+          .read<TemperatureHistoryPreviewCubit>()
+          .ensureLoaded(seriesKey: key);
+    });
+  }
+
+  void _openHistory() {
+    widget.onOpenHistory?.call(
+      temperatureHistorySensorRefs(widget.sensors),
+      widget.sensor.id,
+      widget.sensor.name,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context);
+    final mutedColor = statMutedColor(context);
+    final titleColor = statValueColor(context);
+    final subtitleColor = statTitleColor(context);
+    final effectiveChartHeight =
+        math.min(widget.chartHeight ?? widget.height, widget.height);
+    final seriesKey = _seriesKey;
+
+    if (widget.active &&
+        context.read<TemperatureHistoryPreviewCubit>().shouldLoad(seriesKey)) {
+      _scheduleEnsureLoaded(seriesKey);
+    }
+
+    final preview = context.select<TemperatureHistoryPreviewCubit,
+        TemperatureHistoryPreviewEntry?>(
+      (cubit) => cubit.state.entryOf(seriesKey),
+    );
+    final values = preview?.values ?? const <double>[];
+    final timestamps = preview?.timestamps;
+    final hasData = values.isNotEmpty;
+    final loading = widget.active &&
+        (preview == null ||
+            preview.status == TemperatureHistoryPreviewStatus.loading);
+    final showHeader = widget.showTitle || widget.showSensorName;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: widget.showTopDivider
+            ? Border(
+                top: BorderSide(
+                  color: isDarkSurface(context)
+                      ? AppPalette.separator
+                      : AppPalette.lightBorder,
+                  width: 0.8,
+                ),
+              )
+            : null,
+      ),
+      child: Semantics(
+        button: widget.onOpenHistory != null,
+        label: '${s.TelemetryHistoryPreviewTitle24h}, ${widget.sensor.name}',
+        hint: widget.onOpenHistory == null
+            ? null
+            : s.TelemetryHistoryPreviewOpenHint,
+        child: InkWell(
+          onTap: widget.onOpenHistory == null ? null : _openHistory,
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+          child: SizedBox(
+            key: ValueKey('temperature-history-preview-${widget.sensor.id}'),
+            height: widget.height,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(widget.borderRadius),
+              child: Stack(
+                children: [
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: effectiveChartHeight,
+                    child: loading
+                        ? const Center(
+                            child: SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : hasData
+                            ? HistoryLineChart(
+                                values: values,
+                                timestamps: timestamps,
+                                windowStart: preview?.windowStart,
+                                windowEnd: preview?.windowEnd,
+                                color: AppPalette.accentPrimary,
+                                strokeWidth: 1.8,
+                                fill: true,
+                                showGrid: false,
+                              )
+                            : Center(
+                                child: Text(
+                                  '—',
+                                  style: TextStyle(
+                                    color: mutedColor,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                  ),
+                  if (showHeader)
+                    Positioned(
+                      left: widget.padding.left,
+                      top: widget.padding.top,
+                      right: widget.padding.right,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (widget.showTitle)
+                                  Text(
+                                    s.TelemetryHistoryPreviewTitle24h,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: titleColor,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                if (widget.showSensorName) ...[
+                                  if (widget.showTitle)
+                                    const SizedBox(height: 2),
+                                  Text(
+                                    widget.sensor.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: subtitleColor,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 16,
+                            color: subtitleColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class TemperatureSensorHistoryBackdrop extends StatefulWidget {
+  const TemperatureSensorHistoryBackdrop({
+    super.key,
+    required this.sensor,
+    required this.active,
+    this.padding = const EdgeInsets.fromLTRB(0, 72, 0, 0),
+  });
+
+  final TemperatureSensorData sensor;
+  final bool active;
+  final EdgeInsets padding;
+
+  @override
+  State<TemperatureSensorHistoryBackdrop> createState() =>
+      _TemperatureSensorHistoryBackdropState();
+}
+
+class _TemperatureSensorHistoryBackdropState
+    extends State<TemperatureSensorHistoryBackdrop> {
+  bool _ensureScheduled = false;
+  String? _scheduledSeriesKey;
+
+  String get _seriesKey => 'climate_sensors.${widget.sensor.id}.temp';
+
+  void _scheduleEnsureLoaded(String seriesKey) {
+    _scheduledSeriesKey = seriesKey;
+    if (_ensureScheduled) return;
+    _ensureScheduled = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureScheduled = false;
+      final key = _scheduledSeriesKey;
+      _scheduledSeriesKey = null;
+      if (!mounted || key == null || key.isEmpty) return;
+      context
+          .read<TemperatureHistoryPreviewCubit>()
+          .ensureLoaded(seriesKey: key);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final seriesKey = _seriesKey;
+    if (widget.active &&
+        context.read<TemperatureHistoryPreviewCubit>().shouldLoad(seriesKey)) {
+      _scheduleEnsureLoaded(seriesKey);
+    }
+
+    final preview = context.select<TemperatureHistoryPreviewCubit,
+        TemperatureHistoryPreviewEntry?>(
+      (cubit) => cubit.state.entryOf(seriesKey),
+    );
+    final values = preview?.values ?? const <double>[];
+    if (values.isEmpty) return const SizedBox.expand();
+
+    return IgnorePointer(
+      child: Padding(
+        padding: widget.padding,
+        child: CustomPaint(
+          painter: _TemperatureHistoryBackdropPainter(
+            values: values,
+            color: AppPalette.accentPrimary,
+            isDark: isDarkSurface(context),
+          ),
+          child: const SizedBox.expand(),
+        ),
+      ),
+    );
+  }
+}
+
+class _TemperatureHistoryBackdropPainter extends CustomPainter {
+  const _TemperatureHistoryBackdropPainter({
+    required this.values,
+    required this.color,
+    required this.isDark,
+  });
+
+  final List<double> values;
+  final Color color;
+  final bool isDark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.isEmpty || size.width <= 0 || size.height <= 0) return;
+
+    final points = _pointsFor(size);
+    if (points.isEmpty) return;
+
+    final line = _smoothPath(points);
+    final area = _smoothAreaPath(points, size);
+
+    final fillColor = Color.lerp(
+          color,
+          isDark ? AppPalette.black : AppPalette.lightTextPrimary,
+          isDark ? 0.16 : 0.30,
+        ) ??
+        color;
+
+    final baseFillPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = fillColor.withValues(alpha: isDark ? 0.30 : 0.24);
+    canvas.drawPath(area, baseFillPaint);
+
+    final fillPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          fillColor.withValues(alpha: isDark ? 0.74 : 0.56),
+          fillColor.withValues(alpha: isDark ? 0.44 : 0.34),
+          fillColor.withValues(alpha: isDark ? 0.14 : 0.12),
+        ],
+        stops: const [0.0, 0.52, 1.0],
+      ).createShader(Offset.zero & size);
+    canvas.drawPath(area, fillPaint);
+
+    final glowPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 9
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..color = color.withValues(alpha: isDark ? 0.42 : 0.26)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7);
+    canvas.drawPath(line, glowPaint);
+
+    final linePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..color = color.withValues(alpha: isDark ? 0.92 : 0.76);
+    canvas.drawPath(line, linePaint);
+  }
+
+  List<Offset> _pointsFor(Size size) {
+    final minValue = values.reduce(math.min);
+    final maxValue = values.reduce(math.max);
+    final rawRange = maxValue - minValue;
+    final range = rawRange.abs() < 0.01 ? 1.0 : rawRange;
+    final minY = minValue - (rawRange.abs() < 0.01 ? 0.5 : 0);
+    final top = size.height * 0.16;
+    final bottom = size.height * 0.90;
+    final drawableHeight = bottom - top;
+    final xStep = values.length <= 1 ? 0.0 : size.width / (values.length - 1);
+
+    return <Offset>[
+      for (var i = 0; i < values.length; i++)
+        Offset(
+          values.length <= 1 ? size.width / 2 : i * xStep,
+          bottom -
+              ((values[i] - minY) / range).clamp(0.0, 1.0) * drawableHeight,
+        ),
+    ];
+  }
+
+  Path _smoothPath(List<Offset> points) {
+    final path = Path()..moveTo(points.first.dx, points.first.dy);
+    if (points.length == 1) {
+      path.lineTo(points.first.dx + 0.01, points.first.dy);
+      return path;
+    }
+
+    for (var i = 1; i < points.length; i++) {
+      final previous = points[i - 1];
+      final current = points[i];
+      final mid = Offset(
+        (previous.dx + current.dx) / 2,
+        (previous.dy + current.dy) / 2,
+      );
+      path.quadraticBezierTo(previous.dx, previous.dy, mid.dx, mid.dy);
+    }
+    path.lineTo(points.last.dx, points.last.dy);
+    return path;
+  }
+
+  Path _smoothAreaPath(List<Offset> points, Size size) {
+    final path = Path()
+      ..moveTo(points.first.dx, size.height)
+      ..lineTo(points.first.dx, points.first.dy);
+
+    if (points.length == 1) {
+      path
+        ..lineTo(points.first.dx + 0.01, points.first.dy)
+        ..lineTo(points.first.dx + 0.01, size.height)
+        ..close();
+      return path;
+    }
+
+    for (var i = 1; i < points.length; i++) {
+      final previous = points[i - 1];
+      final current = points[i];
+      final mid = Offset(
+        (previous.dx + current.dx) / 2,
+        (previous.dy + current.dy) / 2,
+      );
+      path.quadraticBezierTo(previous.dx, previous.dy, mid.dx, mid.dy);
+    }
+
+    path
+      ..lineTo(points.last.dx, points.last.dy)
+      ..lineTo(points.last.dx, size.height)
+      ..close();
+    return path;
+  }
+
+  @override
+  bool shouldRepaint(covariant _TemperatureHistoryBackdropPainter oldDelegate) {
+    return oldDelegate.values != values ||
+        oldDelegate.color != color ||
+        oldDelegate.isDark != isDark;
+  }
+}
+
 class _TemperatureHistoryStripCardView extends StatefulWidget {
   const _TemperatureHistoryStripCardView({
     required this.sensorsBind,
@@ -70,8 +514,6 @@ class _TemperatureHistoryStripCardView extends StatefulWidget {
 
 class _TemperatureHistoryStripCardViewState
     extends State<_TemperatureHistoryStripCardView> {
-  bool _ensureScheduled = false;
-  String? _scheduledSeriesKey;
   final TemperatureSensorsResolver _sensorsResolver =
       TemperatureSensorsResolver();
 
@@ -93,43 +535,11 @@ class _TemperatureHistoryStripCardViewState
     return sensors.first;
   }
 
-  List<DeviceTemperatureSensorRef> _toHistorySensors(
-    List<TemperatureSensorData> sensors,
-  ) {
-    return sensors
-        .map(
-          (sensor) => DeviceTemperatureSensorRef(
-            id: sensor.id,
-            name: sensor.name,
-            isReference: sensor.isReference,
-          ),
-        )
-        .toList(growable: false);
-  }
-
-  void _scheduleEnsureLoaded(String seriesKey) {
-    _scheduledSeriesKey = seriesKey;
-    if (_ensureScheduled) return;
-    _ensureScheduled = true;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _ensureScheduled = false;
-      final key = _scheduledSeriesKey;
-      _scheduledSeriesKey = null;
-      if (!mounted || key == null || key.isEmpty) return;
-      context
-          .read<TemperatureHistoryPreviewCubit>()
-          .ensureLoaded(seriesKey: key);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
     final cardHeight = widget.height ?? widget.chartHeight;
     final effectiveChartHeight = math.min(widget.chartHeight, cardHeight);
-    final titleColor = statValueColor(context);
-    final subtitleColor = statTitleColor(context);
     final mutedColor = statMutedColor(context);
 
     final controlState =
@@ -140,161 +550,37 @@ class _TemperatureHistoryStripCardViewState
     final sensors = _sensorsResolver.resolve(sensorsRaw);
     final target = _preferredPreviewSensor(sensors);
 
-    if (target == null) {
-      return AppSolidCard(
-        radius: AppPalette.radiusXl,
-        backgroundColor: statSurfaceColor(context),
-        borderColor: statBorderColor(context),
-        padding: EdgeInsets.zero,
-        child: SizedBox(
-          height: cardHeight,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              s.TelemetryHistoryPreviewNoSensorData,
-              style: TextStyle(
-                color: mutedColor,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    final seriesKey = 'climate_sensors.${target.id}.temp';
-    if (context.read<TemperatureHistoryPreviewCubit>().shouldLoad(seriesKey)) {
-      _scheduleEnsureLoaded(seriesKey);
-    }
-    final preview = context.select<TemperatureHistoryPreviewCubit,
-        TemperatureHistoryPreviewEntry?>(
-      (cubit) => cubit.state.entryOf(seriesKey),
-    );
-    final values = preview?.values ?? const <double>[];
-    final timestamps = preview?.timestamps;
-    final hasData = values.isNotEmpty;
-    final loading = preview == null ||
-        preview.status == TemperatureHistoryPreviewStatus.loading;
-
     return AppSolidCard(
       radius: AppPalette.radiusXl,
       backgroundColor: statSurfaceColor(context),
       borderColor: statBorderColor(context),
       padding: EdgeInsets.zero,
-      onTap: () => widget.onOpenHistory
-          ?.call(_toHistorySensors(sensors), target.id, target.name),
-      child: SizedBox(
-        height: cardHeight,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(AppPalette.radiusXl),
-          child: Stack(
-            children: [
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: effectiveChartHeight,
-                child: loading
-                    ? const Center(
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : hasData
-                        ? HistoryLineChart(
-                            values: values,
-                            timestamps: timestamps,
-                            windowStart: preview.windowStart,
-                            windowEnd: preview.windowEnd,
-                            color: AppPalette.accentPrimary,
-                            strokeWidth: 1.8,
-                            fill: true,
-                            showGrid: false,
-                          )
-                        : Center(
-                            child: Text(
-                              '—',
-                              style: TextStyle(
-                                color: mutedColor,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-              ),
-              Positioned(
-                left: 10,
-                top: 8,
-                right: 10,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            s.TelemetryHistoryPreviewTitle24h,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: titleColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            target.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: subtitleColor,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.chevron_right_rounded,
-                              size: 16,
-                              color: subtitleColor,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: Semantics(
-                    button: true,
-                    label: s.TelemetryHistoryPreviewTitle24h,
-                    hint: s.TelemetryHistoryPreviewOpenHint,
-                    child: const SizedBox.expand(),
+      child: target == null
+          ? SizedBox(
+              height: cardHeight,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  s.TelemetryHistoryPreviewNoSensorData,
+                  style: TextStyle(
+                    color: mutedColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+            )
+          : TemperatureSensorHistoryPreview(
+              sensor: target,
+              sensors: sensors,
+              active: true,
+              height: cardHeight,
+              chartHeight: effectiveChartHeight,
+              onOpenHistory: widget.onOpenHistory,
+              showSensorName: true,
+              borderRadius: AppPalette.radiusXl,
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+            ),
     );
   }
 }
