@@ -24,7 +24,6 @@ final class OshAnalyticsScreens {
   static const manualTime = 'manual_time';
   static const sensorEditor = 'sensor_editor';
   static const sensorRename = 'sensor_rename';
-  static const sensorCalibration = 'sensor_calibration';
   static const sensorPairing = 'sensor_pairing';
   static const sensorPairingResult = 'sensor_pairing_result';
   static const accountSettings = 'account_settings';

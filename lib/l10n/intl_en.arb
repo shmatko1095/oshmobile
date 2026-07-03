@@ -127,7 +127,6 @@
   "AddSensor": "Add sensor",
   "SensorRename": "Rename sensor",
   "SensorNameHint": "Sensor name",
-  "SensorCalibration": "Calibration",
   "SensorMakeMain": "Set as reference.",
   "DeleteSensor": "Delete sensor",
   "UnpairSensor": "Unpair sensor",

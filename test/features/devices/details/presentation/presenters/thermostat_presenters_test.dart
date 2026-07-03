@@ -336,7 +336,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Active power'));
+    await tester.tap(find.text('Power'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 

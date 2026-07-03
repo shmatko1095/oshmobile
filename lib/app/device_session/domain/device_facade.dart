@@ -127,11 +127,6 @@ abstract interface class DeviceSensorsApi {
     required String id,
   });
 
-  Future<void> setTempCalibration({
-    required String id,
-    required double value,
-  });
-
   Future<void> setPairing({
     required bool enabled,
     int? timeoutSec,

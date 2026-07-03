@@ -47,38 +47,11 @@ class SensorsPatchSchemaValidator {
     );
   }
 
-  SensorCalibrationConstraints? get tempCalibrationConstraints {
-    final valueSchema = _tempCalibrationValueSchema();
-    if (valueSchema == null) return null;
-
-    final min = _asDouble(valueSchema['minimum']);
-    final max = _asDouble(valueSchema['maximum']);
-    if (min == null || max == null) return null;
-
-    final stepRaw = _asDouble(valueSchema['multipleOf']);
-    final step = (stepRaw != null && stepRaw > 0) ? stepRaw : null;
-
-    return SensorCalibrationConstraints(
-      min: min,
-      max: max,
-      step: step,
-    );
-  }
-
   bool validateRename({
     required String id,
     required String name,
   }) {
     return _validatePatch(SensorsPatchRename(id: id, name: name));
-  }
-
-  bool validateTempCalibration({
-    required String id,
-    required double value,
-  }) {
-    return _validatePatch(
-      SensorsPatchSetTempCalibration(id: id, value: value),
-    );
   }
 
   bool _validatePatch(SensorsPatch patch) {
@@ -89,19 +62,6 @@ class SensorsPatchSchemaValidator {
       value: patch.toJson(),
       schema: schema,
     );
-  }
-
-  Map<String, dynamic>? _tempCalibrationValueSchema() {
-    final patch = _patchSchema;
-    if (patch == null) return null;
-
-    final properties = _asMap(patch['properties']);
-    final calibrationPatch = _asMap(properties['set_temp_calibration']);
-    final calibrationProps = _asMap(calibrationPatch['properties']);
-    final valueSchema = _asMap(calibrationProps['value']);
-
-    if (valueSchema.isEmpty) return null;
-    return valueSchema;
   }
 
   Map<String, dynamic>? _renameNameSchema() {
@@ -123,11 +83,6 @@ class SensorsPatchSchemaValidator {
       return raw.map((key, value) => MapEntry(key.toString(), value));
     }
     return const <String, dynamic>{};
-  }
-
-  double? _asDouble(dynamic raw) {
-    if (raw is num) return raw.toDouble();
-    return null;
   }
 
   int? _asInt(dynamic raw) {
@@ -155,35 +110,4 @@ class SensorRenameConstraints {
 
   bool get isUsable =>
       minLength != null || maxLength != null || pattern != null;
-}
-
-class SensorCalibrationConstraints {
-  final double min;
-  final double max;
-  final double? step;
-
-  const SensorCalibrationConstraints({
-    required this.min,
-    required this.max,
-    required this.step,
-  });
-
-  bool get isUsable => min < max;
-
-  int? get divisions {
-    final s = step;
-    if (s == null || s <= 0) return null;
-    final raw = (max - min) / s;
-    if (raw <= 0) return null;
-    return raw.round();
-  }
-
-  double snap(double value) {
-    final clamped = value.clamp(min, max).toDouble();
-    final s = step;
-    if (s == null || s <= 0) return clamped;
-
-    final snapped = min + (((clamped - min) / s).round() * s);
-    return snapped.clamp(min, max).toDouble();
-  }
 }

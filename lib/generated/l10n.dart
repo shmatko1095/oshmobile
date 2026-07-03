@@ -889,16 +889,6 @@ class S {
     );
   }
 
-  /// `Calibration`
-  String get SensorCalibration {
-    return Intl.message(
-      'Calibration',
-      name: 'SensorCalibration',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Set as reference.`
   String get SensorMakeMain {
     return Intl.message(

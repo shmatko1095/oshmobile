@@ -49,8 +49,6 @@ class SensorMeta {
   final String transport;
   final bool removable;
   final String kind;
-  final double tempCalibration;
-  final bool tempCalibrationAllowed;
 
   const SensorMeta({
     required this.id,
@@ -59,8 +57,6 @@ class SensorMeta {
     required this.transport,
     required this.removable,
     required this.kind,
-    required this.tempCalibration,
-    required this.tempCalibrationAllowed,
   });
 
   static SensorMeta? fromJson(Map<String, dynamic> json) {
@@ -70,8 +66,6 @@ class SensorMeta {
     final transport = asString(json['transport']);
     final removable = asBool(json['removable']);
     final kind = asString(json['kind']);
-    final tempCalibration = asNum(json['temp_calibration'])?.toDouble();
-    final tempCalibrationAllowed = asBool(json['temp_calibration_allowed']);
 
     if (id == null ||
         name == null ||
@@ -81,7 +75,6 @@ class SensorMeta {
         kind == null) {
       return null;
     }
-    if (tempCalibration == null) return null;
 
     return SensorMeta(
       id: id,
@@ -90,9 +83,6 @@ class SensorMeta {
       transport: transport,
       removable: removable,
       kind: kind,
-      tempCalibration: tempCalibration,
-      tempCalibrationAllowed: tempCalibrationAllowed ??
-          (transport.trim().toLowerCase() != 'zigbee'),
     );
   }
 
@@ -103,8 +93,6 @@ class SensorMeta {
         'transport': transport,
         'removable': removable,
         'kind': kind,
-        'temp_calibration': tempCalibration,
-        'temp_calibration_allowed': tempCalibrationAllowed,
       };
 }
 
@@ -213,21 +201,6 @@ class SensorsPatchSetRef extends SensorsPatch {
       };
 }
 
-class SensorsPatchSetTempCalibration extends SensorsPatch {
-  final String id;
-  final double value;
-
-  const SensorsPatchSetTempCalibration({required this.id, required this.value});
-
-  @override
-  Map<String, dynamic> toJson() => {
-        'set_temp_calibration': {
-          'id': id,
-          'value': value,
-        },
-      };
-}
-
 class SensorsPatchRemove extends SensorsPatch {
   final String id;
   final bool? leave;
@@ -263,10 +236,9 @@ class SensorSnapshot {
   String get transport => meta.transport;
   bool get removable => meta.removable;
   String get kind => meta.kind;
-  double get tempCalibration => meta.tempCalibration;
-  bool get tempCalibrationAllowed => meta.tempCalibrationAllowed;
 
   bool get tempValid => telemetry?.tempValid ?? false;
+  bool get tempStale => telemetry?.tempStale ?? false;
   bool get humidityValid => telemetry?.humidityValid ?? false;
   double? get temp => telemetry?.temp;
   double? get humidity => telemetry?.humidity;
@@ -275,6 +247,7 @@ class SensorSnapshot {
 class ClimateSensorTelemetry {
   final String id;
   final bool tempValid;
+  final bool tempStale;
   final bool humidityValid;
   final double? temp;
   final double? humidity;
@@ -282,6 +255,7 @@ class ClimateSensorTelemetry {
   const ClimateSensorTelemetry({
     required this.id,
     required this.tempValid,
+    required this.tempStale,
     required this.humidityValid,
     required this.temp,
     required this.humidity,
@@ -290,6 +264,7 @@ class ClimateSensorTelemetry {
   static ClimateSensorTelemetry? fromJson(Map<String, dynamic> json) {
     final id = asString(json['id']);
     final tempValid = asBool(json['temp_valid']);
+    final tempStale = asBool(json['temp_stale']) ?? false;
     final humidityValid = asBool(json['humidity_valid']);
 
     if (id == null || tempValid == null || humidityValid == null) return null;
@@ -301,12 +276,15 @@ class ClimateSensorTelemetry {
     final humidity =
         humidityRaw == null ? null : asNum(humidityRaw)?.toDouble();
 
-    if (tempValid && temp == null) return null;
+    final tempDisplayable = tempValid || tempStale;
+    if (tempDisplayable && temp == null) return null;
+    if (!tempDisplayable && tempRaw != null) return null;
     if (humidityValid && humidity == null) return null;
 
     return ClimateSensorTelemetry(
       id: id,
       tempValid: tempValid,
+      tempStale: tempStale,
       humidityValid: humidityValid,
       temp: temp,
       humidity: humidity,
@@ -316,6 +294,7 @@ class ClimateSensorTelemetry {
   Map<String, dynamic> toJson() => <String, dynamic>{
         'id': id,
         'temp_valid': tempValid,
+        if (tempStale) 'temp_stale': true,
         'humidity_valid': humidityValid,
         if (temp != null) 'temp': temp,
         if (humidity != null) 'humidity': humidity,

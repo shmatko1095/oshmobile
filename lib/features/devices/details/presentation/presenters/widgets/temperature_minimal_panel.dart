@@ -361,6 +361,7 @@ class _SensorCarousel extends StatelessWidget {
                                     ref: sensors[index].isReference,
                                     kind: sensors[index].kind,
                                     tempValid: sensors[index].tempValid,
+                                    tempStale: sensors[index].tempStale,
                                     humidityValid: sensors[index].humidityValid,
                                     temp: sensors[index].temp,
                                     humidity: sensors[index].humidity,
@@ -466,7 +467,7 @@ class _SensorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasAnyData = sensor.tempValid || sensor.humidityValid;
+    final hasAnyData = sensor.hasTemperature || sensor.humidityValid;
     final kindLabel = (sensor.kind ?? '').trim();
     final isMainCard = showScheduleMeta;
     final titleColor = statTitleColor(context);
@@ -519,7 +520,7 @@ class _SensorCard extends StatelessWidget {
                   ),
                 ],
                 const Spacer(),
-                if (sensor.tempValid)
+                if (sensor.hasTemperature)
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -544,6 +545,23 @@ class _SensorCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (sensor.tempStale) ...[
+                        const SizedBox(width: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 18),
+                          child: Container(
+                            key: ValueKey(
+                              'temperature-stale-indicator-${sensor.id}',
+                            ),
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              color: AppPalette.amber,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   )
                 else

@@ -5,6 +5,7 @@ class TemperatureSensorData {
     required this.kind,
     required this.isReference,
     required this.tempValid,
+    required this.tempStale,
     required this.humidityValid,
     required this.temp,
     required this.humidity,
@@ -15,9 +16,12 @@ class TemperatureSensorData {
   final String? kind;
   final bool isReference;
   final bool tempValid;
+  final bool tempStale;
   final bool humidityValid;
   final double? temp;
   final double? humidity;
+
+  bool get hasTemperature => (tempValid || tempStale) && temp != null;
 }
 
 class TemperatureSensorsResolver {
@@ -42,8 +46,10 @@ class TemperatureSensorsResolver {
       final tempRaw = _asNum(map['temp']);
       final humidityRaw = _asNum(map['humidity']);
       final tempValid = _asBool(map['temp_valid']) && tempRaw != null;
+      final tempStale = _asBool(map['temp_stale']) && tempRaw != null;
       final humidityValid =
           _asBool(map['humidity_valid']) && humidityRaw != null;
+      final hasTemperature = tempValid || tempStale;
 
       parsed.add(
         TemperatureSensorData(
@@ -52,8 +58,9 @@ class TemperatureSensorsResolver {
           kind: map['kind']?.toString(),
           isReference: _asBool(map['ref']),
           tempValid: tempValid,
+          tempStale: tempStale,
           humidityValid: humidityValid,
-          temp: tempValid ? tempRaw.toDouble() : null,
+          temp: hasTemperature ? tempRaw.toDouble() : null,
           humidity: humidityValid ? humidityRaw.toDouble() : null,
         ),
       );

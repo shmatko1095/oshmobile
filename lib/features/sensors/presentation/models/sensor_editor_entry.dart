@@ -4,6 +4,7 @@ class SensorEditorEntry {
   final bool ref;
   final String? kind;
   final bool tempValid;
+  final bool tempStale;
   final bool humidityValid;
   final double? temp;
   final double? humidity;
@@ -14,6 +15,7 @@ class SensorEditorEntry {
     required this.ref,
     required this.kind,
     required this.tempValid,
+    required this.tempStale,
     required this.humidityValid,
     required this.temp,
     required this.humidity,

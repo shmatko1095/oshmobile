@@ -633,12 +633,6 @@ final class _FakeDeviceSensorsApi implements DeviceSensorsApi {
   Future<void> setReference({required String id}) async {}
 
   @override
-  Future<void> setTempCalibration({
-    required String id,
-    required double value,
-  }) async {}
-
-  @override
   Future<void> setPairing({
     required bool enabled,
     int? timeoutSec,

@@ -13,7 +13,6 @@ import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/sensors/presentation/models/sensor_editor_entry.dart';
-import 'package:oshmobile/features/sensors/presentation/pages/sensor_calibration_page.dart';
 import 'package:oshmobile/features/sensors/presentation/pages/sensor_rename_page.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
@@ -76,12 +75,14 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
       if (id != widget.sensor.id) continue;
 
       final tempValid = _asBool(map['temp_valid']);
+      final tempStale = _asBool(map['temp_stale']);
       final humidityValid = _asBool(map['humidity_valid']);
       final temp = _asNum(map['temp'])?.toDouble();
       final humidity = _asNum(map['humidity'])?.toDouble();
 
       return _TelemetryData(
         tempValid: tempValid && temp != null,
+        tempStale: tempStale && temp != null,
         humidityValid: humidityValid && humidity != null,
         temp: temp,
         humidity: humidity,
@@ -126,16 +127,6 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
     final v = value.toDouble();
     if (v.isNaN || v.isInfinite) return '--';
     return v.toStringAsFixed(0);
-  }
-
-  String _fmtCalibration(double value) {
-    if (value % 1 == 0) return value.toStringAsFixed(0);
-    return value.toStringAsFixed(1);
-  }
-
-  String _calibrationSubtitle(SensorMeta? sensor) {
-    if (sensor == null) return '--';
-    return '${_fmtCalibration(sensor.tempCalibration)} °C';
   }
 
   Future<void> _setReference(SensorMeta? sensor) async {
@@ -256,12 +247,14 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
 
                 final tempValid =
                     telemetry?.tempValid ?? widget.sensor.tempValid;
+                final tempStale =
+                    telemetry?.tempStale ?? widget.sensor.tempStale;
+                final hasTemperature = (tempValid || tempStale) &&
+                    (telemetry?.temp ?? widget.sensor.temp) != null;
                 final humidityValid =
                     telemetry?.humidityValid ?? widget.sensor.humidityValid;
                 final temp = telemetry?.temp ?? widget.sensor.temp;
                 final humidity = telemetry?.humidity ?? widget.sensor.humidity;
-                final calibrationAllowed =
-                    sensor?.tempCalibrationAllowed == true;
                 final sensorsWritable =
                     snapshot.details.data?.canPatchDomain('sensors') ?? false;
                 final canUnpair = sensor != null &&
@@ -295,7 +288,7 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  tempValid ? _fmtTemperature(temp) : '--',
+                                  hasTemperature ? _fmtTemperature(temp) : '--',
                                   style: TextStyle(
                                     color:
                                         _sensorEditorPrimaryTextColor(context),
@@ -317,6 +310,23 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
                                     ),
                                   ),
                                 ),
+                                if (hasTemperature && tempStale) ...[
+                                  const SizedBox(width: 8),
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 18),
+                                    child: Container(
+                                      key: ValueKey(
+                                        'sensor-editor-temp-stale-${widget.sensor.id}',
+                                      ),
+                                      width: 10,
+                                      height: 10,
+                                      decoration: const BoxDecoration(
+                                        color: AppPalette.amber,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                                 const Spacer(),
                                 Row(
                                   children: [
@@ -382,47 +392,6 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
                                       );
                                     },
                             ),
-                            if (calibrationAllowed) ...[
-                              const Divider(height: 1),
-                              ListTile(
-                                title: Text(S.of(context).SensorCalibration),
-                                subtitle: Text(_calibrationSubtitle(sensor)),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap: () async {
-                                  if (sensor == null ||
-                                      !sensor.tempCalibrationAllowed) {
-                                    return;
-                                  }
-
-                                  final facade = context.read<DeviceFacade>();
-                                  final snapshotCubit =
-                                      context.read<DeviceSnapshotCubit>();
-                                  final saved =
-                                      await Navigator.of(context).push<bool>(
-                                    MaterialPageRoute(
-                                      settings: const RouteSettings(
-                                        name: OshAnalyticsScreens
-                                            .sensorCalibration,
-                                      ),
-                                      builder: (_) => DeviceRouteScope.provide(
-                                        facade: facade,
-                                        snapshotCubit: snapshotCubit,
-                                        child: SensorCalibrationPage(
-                                          sensorId: sensor.id,
-                                          initialCalibration:
-                                              sensor.tempCalibration,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                  if (!mounted || saved != true) return;
-                                  SnackBarUtils.showSuccess(
-                                    context: this.context,
-                                    content: S.of(this.context).Done,
-                                  );
-                                },
-                              ),
-                            ],
                           ],
                         ),
                       ),
@@ -462,12 +431,14 @@ class _SensorEditorPageState extends State<SensorEditorPage> {
 
 class _TelemetryData {
   final bool tempValid;
+  final bool tempStale;
   final bool humidityValid;
   final double? temp;
   final double? humidity;
 
   const _TelemetryData({
     required this.tempValid,
+    required this.tempStale,
     required this.humidityValid,
     required this.temp,
     required this.humidity,

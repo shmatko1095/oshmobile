@@ -9,7 +9,6 @@ import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/device_state_models.dart';
-import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/features/devices/details/data/mqtt_telemetry_repository.dart';
 import 'package:oshmobile/features/devices/details/data/telemetry_topics.dart';
 import 'package:oshmobile/features/settings/data/settings_repository_mqtt.dart';
@@ -523,6 +522,7 @@ DeviceRuntimeContracts _runtimeContractsFor(Map<String, Set<String>> domains) {
               'properties': {
                 'id': {'type': 'string', 'minLength': 1, 'maxLength': 31},
                 'temp_valid': {'type': 'boolean'},
+                'temp_stale': {'type': 'boolean'},
                 'humidity_valid': {'type': 'boolean'},
                 'temp': {'type': 'number'},
                 'humidity': {'type': 'number'},
@@ -538,6 +538,33 @@ DeviceRuntimeContracts _runtimeContractsFor(Map<String, Set<String>> domains) {
                   'then': {
                     'type': 'object',
                     'required': ['temp'],
+                  },
+                },
+                {
+                  'if': {
+                    'type': 'object',
+                    'properties': {
+                      'temp_stale': {'const': true},
+                    },
+                  },
+                  'then': {
+                    'type': 'object',
+                    'required': ['temp'],
+                  },
+                },
+                {
+                  'if': {
+                    'type': 'object',
+                    'properties': {
+                      'temp_valid': {'const': false},
+                      'temp_stale': {'const': false},
+                    },
+                  },
+                  'then': {
+                    'type': 'object',
+                    'not': {
+                      'required': ['temp'],
+                    },
                   },
                 },
                 {
@@ -719,80 +746,6 @@ void main() {
     );
   });
 
-  test('SensorsRepositoryMqtt builds set_temp_calibration patch request',
-      () async {
-    final mqtt = _FakeDeviceMqttRepo();
-    final contracts = _runtimeContractsFor({
-      'sensors': {'state', 'patch', 'set'},
-    });
-    final topics = SensorsTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
-    final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
-    final repo = SensorsRepositoryMqtt(jrpc, topics, 'device-1',
-        contracts: contracts, timeout: const Duration(milliseconds: 200));
-
-    final op = repo.patch(
-      const SensorsPatchSetTempCalibration(id: 'air', value: 1.5),
-      reqId: 'req-sensors-patch',
-    );
-
-    await Future<void>.delayed(Duration.zero);
-    expect(mqtt.published, hasLength(1));
-    final pub = mqtt.published.single;
-    expect(pub.topic, topics.cmd('device-1'));
-    expect(pub.payload['jsonrpc'], '2.0');
-    expect(pub.payload['id'], 'req-sensors-patch');
-    expect(pub.payload['method'], contracts.sensors.patch.method('patch'));
-
-    final params = pub.payload['params'] as Map<String, dynamic>;
-    expect((params['meta'] as Map)['schema'], contracts.sensors.read.schema);
-    expect(
-      params['data'],
-      {
-        'set_temp_calibration': {
-          'id': 'air',
-          'value': 1.5,
-        },
-      },
-    );
-
-    mqtt.emit(
-      topics.rsp('device-1'),
-      {
-        'jsonrpc': '2.0',
-        'id': 'req-sensors-patch',
-        'result': {
-          'meta': {'schema': contracts.sensors.patch.schema},
-        },
-      },
-    );
-
-    await op;
-  });
-
-  test('SensorsRepositoryMqtt rejects patch violating schema constraints',
-      () async {
-    final mqtt = _FakeDeviceMqttRepo();
-    final contracts = _runtimeContractsFor({
-      'sensors': {'state', 'patch', 'set'},
-    });
-    final topics = SensorsTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
-    final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
-    final repo = SensorsRepositoryMqtt(
-      jrpc,
-      topics,
-      'device-1',
-      contracts: contracts,
-    );
-
-    await expectLater(
-      repo.patch(
-        const SensorsPatchSetTempCalibration(id: 'air', value: 1.3),
-      ),
-      throwsFormatException,
-    );
-    expect(mqtt.published, isEmpty);
-  });
-
   test('SensorsRepositoryMqtt parses sensors.state notification', () async {
     final mqtt = _FakeDeviceMqttRepo();
     final contracts = _runtimeContractsFor({
@@ -851,7 +804,6 @@ void main() {
     final snap = await future;
     expect(snap.items.length, 2);
     expect(snap.items.first.ref, true);
-    expect(snap.items.first.tempCalibration, 0.0);
   });
 
   test('ScheduleRepositoryMqtt builds JSON-RPC set request', () async {
@@ -1005,6 +957,70 @@ void main() {
     expect(state.climateSensors.first.id, 'air');
     expect(state.climateSensors.first.temp, 22.6);
     expect(state.climateSensors.first.humidity, 44.2);
+  });
+
+  test('TelemetryRepository preserves stale temperature as display-only',
+      () async {
+    final mqtt = _FakeDeviceMqttRepo();
+    final contracts = _runtimeContractsFor({
+      'telemetry': {'state'},
+    });
+    final topics = TelemetryTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
+    final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
+    final repo = MqttTelemetryRepositoryImpl(
+      jrpc: jrpc,
+      topics: topics,
+      contracts: contracts,
+      deviceSn: 'device-1',
+    );
+
+    await repo.subscribe();
+
+    final future = repo.watchState().firstWhere(
+          (state) =>
+              state.climateSensors.isNotEmpty &&
+              state.climateSensors.first.tempStale,
+        );
+
+    mqtt.emit(
+      topics.stateTelemetry('device-1'),
+      {
+        'jsonrpc': '2.0',
+        'method': contracts.telemetry.read.method('state'),
+        'params': {
+          'meta': {
+            'schema': contracts.telemetry.read.schema,
+            'src': 'device',
+            'ts': 2,
+          },
+          'data': {
+            'climate_sensors': [
+              {
+                'id': 'air',
+                'temp_valid': false,
+                'temp_stale': true,
+                'humidity_valid': false,
+                'temp': 21.4,
+              },
+            ],
+            'heater_enabled': false,
+            'load_factor': 0,
+          }
+        }
+      },
+    );
+
+    final state = await future;
+    final sensor = state.climateSensors.first;
+    expect(sensor.tempValid, isFalse);
+    expect(sensor.tempStale, isTrue);
+    expect(sensor.temp, 21.4);
+    expect(
+        (state.toJson()['climate_sensors'] as List).first,
+        containsPair(
+          'temp_stale',
+          true,
+        ));
   });
 
   test('TelemetryRepository tolerates power_meter extras in telemetry.state',

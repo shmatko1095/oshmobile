@@ -314,7 +314,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "Search": MessageLookupByLibrary.simpleMessage("Пошук"),
     "SecureCode": MessageLookupByLibrary.simpleMessage("Захисний код"),
     "SendEmail": MessageLookupByLibrary.simpleMessage("Надіслати лист"),
-    "SensorCalibration": MessageLookupByLibrary.simpleMessage("Калібрування"),
     "SensorConditions": MessageLookupByLibrary.simpleMessage(
       "Показники датчика",
     ),

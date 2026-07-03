@@ -127,7 +127,6 @@
   "AddSensor": "Додати датчик",
   "SensorRename": "Перейменувати датчик",
   "SensorNameHint": "Назва датчика",
-  "SensorCalibration": "Калібрування",
   "SensorMakeMain": "Зробити основним",
   "DeleteSensor": "Видалити датчик",
   "UnpairSensor": "Відв’язати датчик",

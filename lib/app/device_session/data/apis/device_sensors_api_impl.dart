@@ -77,14 +77,6 @@ class DeviceSensorsApiImpl implements DeviceSensorsApi {
   }
 
   @override
-  Future<void> setTempCalibration({
-    required String id,
-    required double value,
-  }) {
-    return patch(SensorsPatchSetTempCalibration(id: id, value: value));
-  }
-
-  @override
   Future<void> setPairing({
     required bool enabled,
     int? timeoutSec,

@@ -308,7 +308,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "Search": MessageLookupByLibrary.simpleMessage("Search"),
     "SecureCode": MessageLookupByLibrary.simpleMessage("Secure code"),
     "SendEmail": MessageLookupByLibrary.simpleMessage("Send email"),
-    "SensorCalibration": MessageLookupByLibrary.simpleMessage("Calibration"),
     "SensorConditions": MessageLookupByLibrary.simpleMessage(
       "Sensor conditions",
     ),
