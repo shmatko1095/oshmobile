@@ -42,22 +42,20 @@ class TemperatureMinimalPanel extends StatefulWidget {
 }
 
 class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
-  late final PageController _pageCtrl;
+  static const double _viewportFraction = 0.85;
+
+  PageController? _pageCtrl;
   final TemperatureSensorsResolver _sensorsResolver =
       TemperatureSensorsResolver();
   int _page = 0;
   bool _initialPageResolved = false;
+  bool _referencePageApplied = false;
+  bool _userChangedPage = false;
   int? _pendingJumpTarget;
 
   @override
-  void initState() {
-    super.initState();
-    _pageCtrl = PageController(viewportFraction: 0.85);
-  }
-
-  @override
   void dispose() {
-    _pageCtrl.dispose();
+    _pageCtrl?.dispose();
     super.dispose();
   }
 
@@ -83,43 +81,103 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
     );
   }
 
-  void _scheduleJumpToPage(int target) {
+  void _replacePageController(int initialPage) {
+    final previous = _pageCtrl;
+    _pageCtrl = PageController(
+      initialPage: initialPage,
+      keepPage: false,
+      viewportFraction: _viewportFraction,
+    );
+    if (previous == null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      previous.dispose();
+    });
+  }
+
+  void _clearPageController() {
+    final previous = _pageCtrl;
+    _pageCtrl = null;
+    if (previous == null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      previous.dispose();
+    });
+  }
+
+  void _jumpPageController(int target) {
+    if (_pageCtrl == null) {
+      _replacePageController(target);
+    }
     if (_pendingJumpTarget == target) return;
     _pendingJumpTarget = target;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
       final planned = _pendingJumpTarget;
       _pendingJumpTarget = null;
-      if (planned == null || !_pageCtrl.hasClients) return;
-      _pageCtrl.jumpToPage(planned);
+      final controller = _pageCtrl;
+      if (!mounted ||
+          planned == null ||
+          controller == null ||
+          !controller.hasClients) {
+        return;
+      }
+      controller.jumpToPage(planned);
     });
   }
 
-  void _ensureInitialPage(
+  void _ensurePageController(
     List<TemperatureSensorData> sensors, {
     required bool hasAddSensorCard,
   }) {
     final pageCount = sensors.length + (hasAddSensorCard ? 1 : 0);
-    if (pageCount == 0) {
+    if (sensors.isEmpty) {
+      final shouldResetController = _page != 0 || _pageCtrl == null;
       _initialPageResolved = false;
+      _referencePageApplied = false;
+      _userChangedPage = false;
       _page = 0;
+      if (pageCount == 0) {
+        _clearPageController();
+        return;
+      }
+      if (shouldResetController) {
+        _replacePageController(0);
+      }
       return;
     }
 
     final maxIndex = pageCount - 1;
+    final referenceIndex = sensors.indexWhere((s) => s.isReference);
     if (!_initialPageResolved) {
-      final mainIndex = sensors.indexWhere((s) => s.isReference);
-      final target = mainIndex >= 0 ? mainIndex : 0;
+      final target = referenceIndex >= 0 ? referenceIndex : 0;
       _initialPageResolved = true;
+      _referencePageApplied = referenceIndex >= 0;
       _page = target;
-      _scheduleJumpToPage(target);
+      _replacePageController(target);
+      if (target != 0) {
+        _jumpPageController(target);
+      }
       return;
+    }
+
+    if (referenceIndex >= 0 && !_referencePageApplied) {
+      _referencePageApplied = true;
+      if (!_userChangedPage && _page != referenceIndex) {
+        _page = referenceIndex;
+        _jumpPageController(referenceIndex);
+        return;
+      }
     }
 
     if (_page > maxIndex) {
       _page = maxIndex;
-      _scheduleJumpToPage(maxIndex);
+      _jumpPageController(maxIndex);
+      return;
+    }
+
+    if (_pageCtrl == null) {
+      _replacePageController(_page);
     }
   }
 
@@ -149,7 +207,7 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
       readBind(controlState, widget.sensorsBind),
     );
     final hasAddSensorCard = widget.onAddSensorTap != null;
-    _ensureInitialPage(
+    _ensurePageController(
       sensors,
       hasAddSensorCard: hasAddSensorCard,
     );
@@ -165,7 +223,7 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
             nextLine: nextLine,
           )
         : _SensorCarousel(
-            pageController: _pageCtrl,
+            pageController: _pageCtrl!,
             pageIndex: _page,
             sensors: sensors,
             unit: widget.unit,
@@ -175,7 +233,10 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
             nextLine: nextLine,
             onPageChanged: (nextPage) {
               if (_page == nextPage) return;
-              setState(() => _page = nextPage);
+              setState(() {
+                _page = nextPage;
+                _userChangedPage = true;
+              });
             },
             formatNum: _fmtNum,
             onSensorActionTap: widget.onSensorActionTap,
@@ -342,6 +403,9 @@ class _SensorCarousel extends StatelessWidget {
                         onTap: onAddSensorTap,
                       )
                     : _SensorCard(
+                        key: ValueKey(
+                          'temperature-sensor-card-${sensors[index].id}',
+                        ),
                         sensor: sensors[index],
                         unit: unit,
                         borderRadius: borderRadius,
@@ -444,6 +508,7 @@ class _AddSensorCard extends StatelessWidget {
 
 class _SensorCard extends StatelessWidget {
   const _SensorCard({
+    super.key,
     required this.sensor,
     required this.unit,
     required this.borderRadius,
@@ -468,7 +533,6 @@ class _SensorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasAnyData = sensor.hasTemperature || sensor.humidityValid;
-    final kindLabel = (sensor.kind ?? '').trim();
     final isMainCard = showScheduleMeta;
     final titleColor = statTitleColor(context);
     final valueColor = statValueColor(context);
@@ -508,17 +572,6 @@ class _SensorCard extends StatelessWidget {
                     _SensorCardAction(sensor: sensor, onTap: onActionTap),
                   ],
                 ),
-                if (kindLabel.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    kindLabel,
-                    style: TextStyle(
-                      color: mutedColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
                 const Spacer(),
                 if (sensor.hasTemperature)
                   Row(
