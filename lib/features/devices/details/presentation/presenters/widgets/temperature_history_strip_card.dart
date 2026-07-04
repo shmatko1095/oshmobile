@@ -368,20 +368,14 @@ class _TemperatureHistoryBackdropPainter extends CustomPainter {
     final points = _pointsFor(size);
     if (points.isEmpty) return;
 
-    final line = _smoothPath(points);
     final area = _smoothAreaPath(points, size);
 
     final fillColor = Color.lerp(
           color,
           isDark ? AppPalette.black : AppPalette.lightTextPrimary,
-          isDark ? 0.16 : 0.30,
+          isDark ? 0.10 : 0.24,
         ) ??
         color;
-
-    final baseFillPaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = fillColor.withValues(alpha: isDark ? 0.30 : 0.24);
-    canvas.drawPath(area, baseFillPaint);
 
     final fillPaint = Paint()
       ..style = PaintingStyle.fill
@@ -389,30 +383,14 @@ class _TemperatureHistoryBackdropPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          fillColor.withValues(alpha: isDark ? 0.74 : 0.56),
-          fillColor.withValues(alpha: isDark ? 0.44 : 0.34),
-          fillColor.withValues(alpha: isDark ? 0.14 : 0.12),
+          fillColor.withValues(alpha: isDark ? 0.70 : 0.52),
+          fillColor.withValues(alpha: isDark ? 0.38 : 0.28),
+          fillColor.withValues(alpha: isDark ? 0.13 : 0.10),
+          fillColor.withValues(alpha: 0.0),
         ],
-        stops: const [0.0, 0.52, 1.0],
+        stops: const [0.0, 0.48, 0.78, 1.0],
       ).createShader(Offset.zero & size);
     canvas.drawPath(area, fillPaint);
-
-    final glowPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 9
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..color = color.withValues(alpha: isDark ? 0.42 : 0.26)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7);
-    canvas.drawPath(line, glowPaint);
-
-    final linePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.2
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..color = color.withValues(alpha: isDark ? 0.92 : 0.76);
-    canvas.drawPath(line, linePaint);
   }
 
   List<Offset> _pointsFor(Size size) {
@@ -434,26 +412,6 @@ class _TemperatureHistoryBackdropPainter extends CustomPainter {
               ((values[i] - minY) / range).clamp(0.0, 1.0) * drawableHeight,
         ),
     ];
-  }
-
-  Path _smoothPath(List<Offset> points) {
-    final path = Path()..moveTo(points.first.dx, points.first.dy);
-    if (points.length == 1) {
-      path.lineTo(points.first.dx + 0.01, points.first.dy);
-      return path;
-    }
-
-    for (var i = 1; i < points.length; i++) {
-      final previous = points[i - 1];
-      final current = points[i];
-      final mid = Offset(
-        (previous.dx + current.dx) / 2,
-        (previous.dy + current.dy) / 2,
-      );
-      path.quadraticBezierTo(previous.dx, previous.dy, mid.dx, mid.dy);
-    }
-    path.lineTo(points.last.dx, points.last.dy);
-    return path;
   }
 
   Path _smoothAreaPath(List<Offset> points, Size size) {

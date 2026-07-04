@@ -55,7 +55,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
     final screenHeight = MediaQuery.sizeOf(context).height;
     final heroHeight = temperatureHistoryStrip == null
         ? screenHeight * 0.34
-        : (screenHeight * 0.43).clamp(340.0, 410.0).toDouble();
+        : (screenHeight * 0.48).clamp(380.0, 460.0).toDouble();
 
     return Scaffold(
       body: SafeArea(

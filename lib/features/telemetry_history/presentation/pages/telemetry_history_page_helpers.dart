@@ -13,10 +13,6 @@ bool _historyIsDark(BuildContext context) =>
 Color _historySurfaceColor(BuildContext context) =>
     _historyIsDark(context) ? AppPalette.surfaceRaised : AppPalette.white;
 
-Color _historySurfaceAltColor(BuildContext context) => _historyIsDark(context)
-    ? AppPalette.surfaceAlt
-    : AppPalette.lightSurfaceSubtle;
-
 Color _historyBorderColor(BuildContext context) =>
     _historyIsDark(context) ? AppPalette.borderSoft : AppPalette.lightBorder;
 

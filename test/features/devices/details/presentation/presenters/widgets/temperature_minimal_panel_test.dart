@@ -52,6 +52,37 @@ void main() {
     expect(find.text('No temperature data'), findsNothing);
   });
 
+  testWidgets('shows temperature placeholder when sensor temperature is absent',
+      (tester) async {
+    final snapshot = DeviceSnapshot.initial(device: _device()).copyWith(
+      controlState: const DeviceSlice<Map<String, dynamic>>.ready(
+        data: {
+          'climateSensors': [
+            {
+              'id': 'air',
+              'name': 'Air',
+              'ref': true,
+              'kind': 'air',
+              'temp_valid': false,
+              'temp_stale': false,
+              'humidity_valid': false,
+            },
+          ],
+        },
+      ),
+    );
+    final cubit = DeviceSnapshotCubit(
+      facade: _FakeDeviceFacade(snapshot),
+    );
+    addTearDown(cubit.close);
+
+    await _pumpPanel(tester, cubit);
+
+    expect(find.text('--'), findsOneWidget);
+    expect(find.text('°C'), findsOneWidget);
+    expect(find.text('No sensor data'), findsNothing);
+  });
+
   testWidgets('shows humidity as a secondary reading below temperature',
       (tester) async {
     final snapshot = DeviceSnapshot.initial(device: _device()).copyWith(

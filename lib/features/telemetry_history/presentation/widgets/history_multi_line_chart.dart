@@ -25,6 +25,8 @@ class HistoryMultiLineSeries {
     this.lineGradient,
     this.strokeWidth = 2.0,
     this.fill = false,
+    this.fillTopAlpha = 0.12,
+    this.fillBottomAlpha = 0.01,
     this.dashArray,
   });
 
@@ -39,6 +41,8 @@ class HistoryMultiLineSeries {
   final Gradient? lineGradient;
   final double strokeWidth;
   final bool fill;
+  final double fillTopAlpha;
+  final double fillBottomAlpha;
   final List<int>? dashArray;
 }
 
@@ -286,8 +290,8 @@ class HistoryMultiLineChart extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                line.line.color.withValues(alpha: 0.12),
-                line.line.color.withValues(alpha: 0.01),
+                line.line.color.withValues(alpha: line.line.fillTopAlpha),
+                line.line.color.withValues(alpha: line.line.fillBottomAlpha),
               ],
             ),
           ),

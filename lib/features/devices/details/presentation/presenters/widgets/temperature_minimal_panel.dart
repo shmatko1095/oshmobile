@@ -745,15 +745,12 @@ class _SensorTemperaturePane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasAnyData = sensor.hasTemperature || sensor.humidityValid;
     final titleColor = statTitleColor(context);
     final valueColor = statValueColor(context);
     final mutedColor = statMutedColor(context);
     final valueFontSize = compact ? 76.0 : 72.0;
-    final unitFontSize = compact ? 22.0 : 22.0;
-    final contentPadding = compact
-        ? const EdgeInsets.fromLTRB(16, 16, 58, 16)
-        : const EdgeInsets.all(AppPalette.spaceLg);
+    final unitFontSize = valueFontSize;
+    const contentPadding = EdgeInsets.all(AppPalette.spaceLg);
 
     final content = Padding(
       padding: contentPadding,
@@ -778,27 +775,17 @@ class _SensorTemperaturePane extends StatelessWidget {
             ],
           ),
           if (compact) const SizedBox(height: 62) else const Spacer(),
-          if (hasAnyData)
-            _SensorReadingsRow(
-              sensor: sensor,
-              unit: unit,
-              valueColor: valueColor,
-              unitColor: titleColor,
-              humidityColor: mutedColor,
-              valueFontSize: valueFontSize,
-              unitFontSize: unitFontSize,
-              compact: compact,
-              formatNum: formatNum,
-            )
-          else
-            Text(
-              'No sensor data',
-              style: TextStyle(
-                color: mutedColor,
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
-            ),
+          _SensorReadingsRow(
+            sensor: sensor,
+            unit: unit,
+            valueColor: valueColor,
+            unitColor: titleColor,
+            humidityColor: mutedColor,
+            valueFontSize: valueFontSize,
+            unitFontSize: unitFontSize,
+            compact: compact,
+            formatNum: formatNum,
+          ),
           SizedBox(height: compact ? 8 : 12),
           if (showScheduleMeta)
             _ScheduleMetaBlock(
@@ -847,6 +834,8 @@ class _SensorReadingsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final temperatureText =
+        sensor.hasTemperature ? formatNum(sensor.temp) : '--';
     final temperatureStyle = TextStyle(
       color: valueColor,
       fontSize: valueFontSize,
@@ -865,52 +854,48 @@ class _SensorReadingsRow extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (sensor.hasTemperature)
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  formatNum(sensor.temp),
-                  style: temperatureStyle,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                temperatureText,
+                style: temperatureStyle,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                unit,
+                style: TextStyle(
+                  color: unitColor,
+                  fontSize: unitFontSize,
+                  fontWeight: FontWeight.w300,
+                  height: 0.95,
                 ),
-                const SizedBox(width: 4),
+              ),
+              if (sensor.hasTemperature && sensor.tempStale) ...[
+                const SizedBox(width: 8),
                 Padding(
-                  padding: EdgeInsets.only(bottom: compact ? 9 : 10),
-                  child: Text(
-                    unit,
-                    style: TextStyle(
-                      color: unitColor,
-                      fontSize: unitFontSize,
-                      fontWeight: FontWeight.w500,
+                  padding: EdgeInsets.only(bottom: compact ? 17 : 18),
+                  child: Container(
+                    key: ValueKey(
+                      'temperature-stale-indicator-${sensor.id}',
+                    ),
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: AppPalette.amber,
+                      shape: BoxShape.circle,
                     ),
                   ),
                 ),
-                if (sensor.tempStale) ...[
-                  const SizedBox(width: 8),
-                  Padding(
-                    padding: EdgeInsets.only(bottom: compact ? 17 : 18),
-                    child: Container(
-                      key: ValueKey(
-                        'temperature-stale-indicator-${sensor.id}',
-                      ),
-                      width: 10,
-                      height: 10,
-                      decoration: const BoxDecoration(
-                        color: AppPalette.amber,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                ],
               ],
-            ),
+            ],
           ),
-        if (sensor.hasTemperature && sensor.humidityValid)
-          SizedBox(height: compact ? 2 : 4),
+        ),
+        if (sensor.humidityValid) SizedBox(height: compact ? 2 : 4),
         if (sensor.humidityValid)
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -923,7 +908,7 @@ class _SensorReadingsRow extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 '${formatNum(sensor.humidity, fractionDigits: 0)}%',
-                style: sensor.hasTemperature ? humidityStyle : temperatureStyle,
+                style: humidityStyle,
               ),
             ],
           ),

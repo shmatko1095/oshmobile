@@ -337,6 +337,8 @@ class TelemetryHistorySlideModelBuilder {
           ),
           strokeWidth: 2.0,
           fill: true,
+          fillTopAlpha: 0.26,
+          fillBottomAlpha: 0.04,
         ),
       );
     }

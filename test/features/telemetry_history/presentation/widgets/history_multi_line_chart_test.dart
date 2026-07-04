@@ -76,4 +76,46 @@ void main() {
     final chart = tester.widget<LineChart>(find.byType(LineChart));
     expect(chart.data.betweenBarsData, isEmpty);
   });
+
+  testWidgets('uses configured area fill opacity for filled series', (
+    tester,
+  ) async {
+    final start = DateTime.utc(2026, 3, 15, 12, 0, 0);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox.expand(
+            child: HistoryMultiLineChart(
+              series: <HistoryMultiLineSeries>[
+                HistoryMultiLineSeries(
+                  id: 'climate_sensors.air.temp',
+                  label: 'Air',
+                  values: const <double>[21, 22],
+                  timestamps: <DateTime>[
+                    start,
+                    start.add(const Duration(minutes: 5)),
+                  ],
+                  color: Colors.orange,
+                  fill: true,
+                  fillTopAlpha: 0.26,
+                  fillBottomAlpha: 0.04,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final chart = tester.widget<LineChart>(find.byType(LineChart));
+    final area = chart.data.lineBarsData.single.belowBarData;
+    final gradient = area.gradient! as LinearGradient;
+
+    expect(area.show, isTrue);
+    expect(gradient.colors, <Color>[
+      Colors.orange.withValues(alpha: 0.26),
+      Colors.orange.withValues(alpha: 0.04),
+    ]);
+  });
 }

@@ -177,6 +177,9 @@ void main() {
       TelemetryHistorySlideModelBuilder.heatingSeriesId,
       TelemetryHistorySlideModelBuilder.targetSeriesId,
     ]);
+    expect(model.overlaySeries.first.fill, isTrue);
+    expect(model.overlaySeries.first.fillTopAlpha, 0.26);
+    expect(model.overlaySeries.first.fillBottomAlpha, 0.04);
     expect(model.overlaySeries[1].displayValues, <double>[1]);
     expect(model.hasTemperatureAxisSeries, isTrue);
     expect(model.isEmpty, isFalse);

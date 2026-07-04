@@ -32,20 +32,6 @@ class _MetricSlide extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: Column(
         children: [
-          if (model.hasSensorIdentity) ...[
-            _SensorIdentityBar(
-              sensorName: model.sensorName,
-              isPrimary: metric.isPrimarySensor,
-              mainLabel: s.SensorMainLabel,
-              positionText: state.hasMultipleMetrics
-                  ? s.TelemetryHistorySensorPosition(
-                      metricIndex + 1,
-                      state.metrics.length,
-                    )
-                  : null,
-            ),
-            const SizedBox(height: 10),
-          ],
           _SummaryPanel(items: model.summaryItems),
           const SizedBox(height: 12),
           Expanded(
