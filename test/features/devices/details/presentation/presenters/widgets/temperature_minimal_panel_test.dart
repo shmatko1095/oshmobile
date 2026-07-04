@@ -236,6 +236,46 @@ void main() {
     );
   });
 
+  testWidgets('fades in history backdrop chart', (tester) async {
+    final history = _RecordingTelemetryHistoryApi();
+    final snapshot = _snapshotWithSensors(
+      const [
+        {
+          'id': 'floor',
+          'name': 'Floor',
+          'ref': true,
+          'kind': 'floor',
+          'temp_valid': true,
+          'temp_stale': false,
+          'temp': 24.8,
+          'humidity_valid': false,
+        },
+      ],
+    );
+    final facade = _FakeDeviceFacade(snapshot, history);
+    final cubit = DeviceSnapshotCubit(facade: facade);
+    addTearDown(cubit.close);
+
+    await _pumpPanel(
+      tester,
+      cubit,
+      facade: facade,
+      showHistoryPreview: true,
+    );
+    await tester.pump();
+
+    final switchers = tester.widgetList<AnimatedSwitcher>(
+      find.byType(AnimatedSwitcher),
+    );
+
+    expect(
+      switchers.any(
+        (switcher) => switcher.duration == const Duration(milliseconds: 500),
+      ),
+      isTrue,
+    );
+  });
+
   testWidgets('history preview follows swiped temperature card',
       (tester) async {
     final history = _RecordingTelemetryHistoryApi();

@@ -8,8 +8,10 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/utils
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_history_strip_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 import 'package:oshmobile/features/sensors/presentation/models/sensor_editor_entry.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/temperature_history_preview_cache.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/temperature_history_preview_cubit.dart';
 import 'package:oshmobile/generated/l10n.dart';
+import 'package:oshmobile/init_dependencies.dart';
 
 class TemperatureMinimalPanel extends StatefulWidget {
   const TemperatureMinimalPanel({
@@ -196,6 +198,13 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
         context.select<DeviceSnapshotCubit, Map<String, dynamic>>(
       (c) => c.state.controlState.data ?? const <String, dynamic>{},
     );
+    final historyCacheNamespace =
+        context.select<DeviceSnapshotCubit, String>((c) {
+      final device = c.state.device;
+      final serial = device.sn.trim();
+      if (serial.isNotEmpty) return serial;
+      return device.id;
+    });
 
     final currentTarget =
         _asNum(readBind(controlState, widget.currentTargetBind));
@@ -260,6 +269,8 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
         ? BlocProvider(
             create: (context) => TemperatureHistoryPreviewCubit(
               seriesReader: context.read<DeviceFacade>().telemetryHistory,
+              persistentCache: _historyPreviewCacheOrNull(),
+              persistentCacheNamespace: historyCacheNamespace,
             ),
             child: content,
           )
@@ -283,6 +294,11 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
     if (hour == null || minute == null) return null;
     return TimeOfDay(hour: hour, minute: minute);
   }
+}
+
+TemperatureHistoryPreviewCache? _historyPreviewCacheOrNull() {
+  if (!locator.isRegistered<TemperatureHistoryPreviewCache>()) return null;
+  return locator<TemperatureHistoryPreviewCache>();
 }
 
 class _FallbackCard extends StatelessWidget {

@@ -14,19 +14,27 @@ class TemperatureHistoryPreviewEntry {
     required this.windowStart,
     required this.windowEnd,
     this.errorMessage,
+    this.isFromPersistentCache = false,
   });
 
   factory TemperatureHistoryPreviewEntry.loading({
     DateTime? updatedAt,
+    List<double> values = const <double>[],
+    List<DateTime> timestamps = const <DateTime>[],
+    double? lastValue,
+    DateTime? windowStart,
+    DateTime? windowEnd,
+    bool isFromPersistentCache = false,
   }) {
     return TemperatureHistoryPreviewEntry(
       status: TemperatureHistoryPreviewStatus.loading,
-      values: const <double>[],
-      timestamps: const <DateTime>[],
-      lastValue: null,
+      values: values,
+      timestamps: timestamps,
+      lastValue: lastValue,
       updatedAt: updatedAt,
-      windowStart: null,
-      windowEnd: null,
+      windowStart: windowStart,
+      windowEnd: windowEnd,
+      isFromPersistentCache: isFromPersistentCache,
     );
   }
 
@@ -38,6 +46,7 @@ class TemperatureHistoryPreviewEntry {
   final DateTime? windowStart;
   final DateTime? windowEnd;
   final String? errorMessage;
+  final bool isFromPersistentCache;
 }
 
 class TemperatureHistoryPreviewState {

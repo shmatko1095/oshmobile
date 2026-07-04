@@ -9,10 +9,12 @@ import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/utils/temperature_sensors_resolver.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/temperature_history_preview_cache.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/temperature_history_preview_cubit.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/temperature_history_preview_state.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_line_chart.dart';
 import 'package:oshmobile/generated/l10n.dart';
+import 'package:oshmobile/init_dependencies.dart';
 
 typedef OnOpenTemperatureHistory = void Function(
   List<DeviceTemperatureSensorRef> sensors,
@@ -50,9 +52,18 @@ class TemperatureHistoryStripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cacheNamespace = context.select<DeviceSnapshotCubit, String>((c) {
+      final device = c.state.device;
+      final serial = device.sn.trim();
+      if (serial.isNotEmpty) return serial;
+      return device.id;
+    });
+
     return BlocProvider(
       create: (context) => TemperatureHistoryPreviewCubit(
         seriesReader: context.read<DeviceFacade>().telemetryHistory,
+        persistentCache: _historyPreviewCacheOrNull(),
+        persistentCacheNamespace: cacheNamespace,
       ),
       child: _TemperatureHistoryStripCardView(
         sensorsBind: sensorsBind,
@@ -62,6 +73,11 @@ class TemperatureHistoryStripCard extends StatelessWidget {
       ),
     );
   }
+}
+
+TemperatureHistoryPreviewCache? _historyPreviewCacheOrNull() {
+  if (!locator.isRegistered<TemperatureHistoryPreviewCache>()) return null;
+  return locator<TemperatureHistoryPreviewCache>();
 }
 
 class TemperatureSensorHistoryPreview extends StatefulWidget {
@@ -332,18 +348,35 @@ class _TemperatureSensorHistoryBackdropState
       (cubit) => cubit.state.entryOf(seriesKey),
     );
     final values = preview?.values ?? const <double>[];
-    if (values.isEmpty) return const SizedBox.expand();
+    final disableAnimations =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final animationDuration =
+        disableAnimations ? Duration.zero : const Duration(milliseconds: 500);
+    final chart = values.isEmpty
+        ? const SizedBox.expand(
+            key: ValueKey('temperature-history-backdrop-empty'),
+          )
+        : CustomPaint(
+            key: ValueKey(
+              'temperature-history-backdrop-chart-${widget.sensor.id}-'
+              '${values.length}-${preview?.updatedAt?.microsecondsSinceEpoch}',
+            ),
+            painter: _TemperatureHistoryBackdropPainter(
+              values: values,
+              color: AppPalette.accentPrimary,
+              isDark: isDarkSurface(context),
+            ),
+            child: const SizedBox.expand(),
+          );
 
     return IgnorePointer(
       child: Padding(
         padding: widget.padding,
-        child: CustomPaint(
-          painter: _TemperatureHistoryBackdropPainter(
-            values: values,
-            color: AppPalette.accentPrimary,
-            isDark: isDarkSurface(context),
-          ),
-          child: const SizedBox.expand(),
+        child: AnimatedSwitcher(
+          duration: animationDuration,
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeOutCubic,
+          child: chart,
         ),
       ),
     );

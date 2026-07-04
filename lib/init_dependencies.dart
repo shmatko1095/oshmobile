@@ -83,6 +83,8 @@ import 'package:oshmobile/features/home/domain/repositories/device_repository.da
 import 'package:oshmobile/features/telemetry_history/data/datasources/telemetry_history_remote_data_source.dart';
 import 'package:oshmobile/features/telemetry_history/data/datasources/telemetry_history_remote_data_source_impl.dart';
 import 'package:oshmobile/features/telemetry_history/data/repositories/telemetry_history_repository_impl.dart';
+import 'package:oshmobile/features/telemetry_history/data/shared_preferences_temperature_history_preview_cache.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/temperature_history_preview_cache.dart';
 import 'package:oshmobile/features/telemetry_history/domain/repositories/telemetry_history_repository.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_history.dart';
 import 'package:oshmobile/features/startup/domain/contracts/startup_auth_bootstrapper.dart';
@@ -404,6 +406,11 @@ void _initDevicesFeature() {
 
 void _initTelemetryHistoryFeature() {
   locator
+    ..registerLazySingleton<TemperatureHistoryPreviewCache>(
+      () => SharedPreferencesTemperatureHistoryPreviewCache(
+        locator<SharedPreferences>(),
+      ),
+    )
     ..registerFactory<TelemetryHistoryRemoteDataSource>(
       () => TelemetryHistoryRemoteDataSourceImpl(
         mobileService: locator<MobileV1Service>(),
