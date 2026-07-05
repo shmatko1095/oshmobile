@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:oshmobile/app/device_session/data/apis/device_slice_api_helpers.dart';
 import 'package:oshmobile/features/device_about/domain/repositories/device_about_repository.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
@@ -92,9 +93,7 @@ class DeviceAboutApiImpl implements DeviceAboutApi {
 
   @override
   Future<void> stop() async {
-    try {
-      await _sub?.cancel();
-    } catch (_) {}
+    await cancelSubscriptionAndLog(_sub, owner: 'DeviceAboutApiImpl');
     _sub = null;
     _started = false;
   }
@@ -104,9 +103,6 @@ class DeviceAboutApiImpl implements DeviceAboutApi {
     _disposed = true;
 
     await stop();
-
-    try {
-      await _stream.close();
-    } catch (_) {}
+    await closeStreamControllerAndLog(_stream, owner: 'DeviceAboutApiImpl');
   }
 }

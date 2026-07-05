@@ -332,7 +332,11 @@ Future<void> _pumpAccountSettingsPage(
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: S.delegate.supportedLocales,
-        home: const AccountSettingsPage(),
+        home: AccountSettingsPage(
+          requestMyAccountDeletion: locator<RequestMyAccountDeletion>(),
+          clientPolicyRepository: locator<StartupClientPolicyRepository>(),
+          appClientMetadataProvider: locator<AppClientMetadataProvider>(),
+        ),
       ),
     ),
   );

@@ -11,7 +11,6 @@ import 'package:oshmobile/features/sensors/presentation/models/sensor_editor_ent
 import 'package:oshmobile/features/telemetry_history/domain/contracts/temperature_history_preview_cache.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/temperature_history_preview_cubit.dart';
 import 'package:oshmobile/generated/l10n.dart';
-import 'package:oshmobile/init_dependencies.dart';
 
 class TemperatureMinimalPanel extends StatefulWidget {
   const TemperatureMinimalPanel({
@@ -30,6 +29,7 @@ class TemperatureMinimalPanel extends StatefulWidget {
     this.showHistoryPreview = false,
     this.historyChartHeight = 104,
     this.onOpenHistory,
+    this.historyPreviewCache,
   });
 
   final String currentBind;
@@ -46,6 +46,7 @@ class TemperatureMinimalPanel extends StatefulWidget {
   final bool showHistoryPreview;
   final double historyChartHeight;
   final OnOpenTemperatureHistory? onOpenHistory;
+  final TemperatureHistoryPreviewCache? historyPreviewCache;
 
   @override
   State<TemperatureMinimalPanel> createState() =>
@@ -269,7 +270,7 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
         ? BlocProvider(
             create: (context) => TemperatureHistoryPreviewCubit(
               seriesReader: context.read<DeviceFacade>().telemetryHistory,
-              persistentCache: _historyPreviewCacheOrNull(),
+              persistentCache: widget.historyPreviewCache,
               persistentCacheNamespace: historyCacheNamespace,
             ),
             child: content,
@@ -294,11 +295,6 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
     if (hour == null || minute == null) return null;
     return TimeOfDay(hour: hour, minute: minute);
   }
-}
-
-TemperatureHistoryPreviewCache? _historyPreviewCacheOrNull() {
-  if (!locator.isRegistered<TemperatureHistoryPreviewCache>()) return null;
-  return locator<TemperatureHistoryPreviewCache>();
 }
 
 class _FallbackCard extends StatelessWidget {

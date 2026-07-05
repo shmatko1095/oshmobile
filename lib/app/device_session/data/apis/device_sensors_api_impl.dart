@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:oshmobile/app/device_session/data/apis/device_slice_api_helpers.dart';
+import 'package:oshmobile/core/logging/app_log.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/features/sensors/domain/repositories/sensors_repository.dart';
@@ -21,7 +23,13 @@ class DeviceSensorsApiImpl implements DeviceSensorsApi {
       (state) {
         _last = state;
       },
-      onError: (_) {},
+      onError: (Object error, StackTrace stackTrace) {
+        AppLog.error(
+          'DeviceSensorsApiImpl: sensors stream failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      },
       cancelOnError: false,
     );
   }
@@ -98,8 +106,6 @@ class DeviceSensorsApiImpl implements DeviceSensorsApi {
     if (_disposed) return;
     _disposed = true;
 
-    try {
-      await _sub?.cancel();
-    } catch (_) {}
+    await cancelSubscriptionAndLog(_sub, owner: 'DeviceSensorsApiImpl');
   }
 }

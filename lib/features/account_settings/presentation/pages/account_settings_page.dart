@@ -23,12 +23,25 @@ import 'package:oshmobile/generated/l10n.dart';
 import 'package:oshmobile/init_dependencies.dart';
 
 class AccountSettingsPage extends StatelessWidget {
-  const AccountSettingsPage({super.key});
+  const AccountSettingsPage({
+    super.key,
+    required this.requestMyAccountDeletion,
+    required this.clientPolicyRepository,
+    required this.appClientMetadataProvider,
+  });
+
+  final RequestMyAccountDeletion requestMyAccountDeletion;
+  final StartupClientPolicyRepository clientPolicyRepository;
+  final AppClientMetadataProvider appClientMetadataProvider;
 
   static MaterialPageRoute<void> route() {
     return MaterialPageRoute<void>(
       settings: const RouteSettings(name: OshAnalyticsScreens.accountSettings),
-      builder: (_) => const AccountSettingsPage(),
+      builder: (_) => AccountSettingsPage(
+        requestMyAccountDeletion: locator<RequestMyAccountDeletion>(),
+        clientPolicyRepository: locator<StartupClientPolicyRepository>(),
+        appClientMetadataProvider: locator<AppClientMetadataProvider>(),
+      ),
     );
   }
 
@@ -37,9 +50,9 @@ class AccountSettingsPage extends StatelessWidget {
     return BlocProvider<AccountSettingsCubit>(
       create: (_) => AccountSettingsCubit(
         appThemeCubit: context.read<AppThemeCubit>(),
-        requestMyAccountDeletion: locator<RequestMyAccountDeletion>(),
-        clientPolicyRepository: locator<StartupClientPolicyRepository>(),
-        appClientMetadataProvider: locator<AppClientMetadataProvider>(),
+        requestMyAccountDeletion: requestMyAccountDeletion,
+        clientPolicyRepository: clientPolicyRepository,
+        appClientMetadataProvider: appClientMetadataProvider,
       ),
       child: const _AccountSettingsView(),
     );

@@ -27,11 +27,13 @@ Color _offlineSecondaryTextColor(BuildContext context) =>
 class DeviceOfflinePage extends StatelessWidget {
   final Device device;
   final VoidCallback? onWifiProvisioningSuccess;
+  final BleProvisioningCubitFactory createBleProvisioningCubit;
 
   const DeviceOfflinePage({
     super.key,
     required this.device,
     required this.onWifiProvisioningSuccess,
+    required this.createBleProvisioningCubit,
   });
 
   @override
@@ -127,6 +129,7 @@ class DeviceOfflinePage extends StatelessWidget {
                           secureCode: secureCodeStub,
                           lastOnlineText: device.connectionInfo.timestampText,
                           onWifiProvisioningSuccess: onWifiProvisioningSuccess,
+                          createCubit: createBleProvisioningCubit,
                         ),
                       ],
                     ),

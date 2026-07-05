@@ -37,6 +37,10 @@ class SelectedDeviceSessionCubit extends Cubit<SelectedDeviceSessionState> {
     required bool canOpenAbout,
   }) {
     if (state.deviceId != deviceId) return;
+    if (state.canOpenInternalSettings == canOpenInternalSettings &&
+        state.canOpenAbout == canOpenAbout) {
+      return;
+    }
 
     emit(
       state.copyWith(

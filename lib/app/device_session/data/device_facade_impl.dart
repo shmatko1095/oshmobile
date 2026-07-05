@@ -6,15 +6,16 @@ import 'package:oshmobile/app/device_session/data/apis/device_sensors_api_impl.d
 import 'package:oshmobile/app/device_session/data/apis/device_settings_api_impl.dart';
 import 'package:oshmobile/app/device_session/data/apis/device_telemetry_api_impl.dart';
 import 'package:oshmobile/app/device_session/data/apis/device_telemetry_history_api_impl.dart';
+import 'package:oshmobile/app/device_session/data/device_domain_api_coordinator.dart';
+import 'package:oshmobile/app/device_session/data/device_snapshot_builder.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
-import 'package:oshmobile/core/configuration/control_registry.dart';
 import 'package:oshmobile/core/configuration/control_state_resolver.dart';
-import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
 import 'package:oshmobile/core/di/device_context.dart';
+import 'package:oshmobile/core/logging/app_log.dart';
 import 'package:oshmobile/features/device_about/domain/repositories/device_about_repository.dart';
 import 'package:oshmobile/features/devices/details/domain/repositories/telemetry_repository.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
@@ -27,12 +28,10 @@ import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemet
 
 class DeviceFacadeImpl implements DeviceFacade {
   final DeviceContext _ctx;
-  final Device _bootstrapDevice;
   final DevicePageCubit _pageCubit;
   final GlobalMqttCubit _mqttCubit;
   final MqttCommCubit _commCubit;
-  final SettingsUiSchemaBuilder _settingsUiSchemaBuilder;
-  final ControlStateResolver _controlStateResolver;
+  final DeviceSnapshotBuilder _snapshotBuilder;
 
   late final DeviceScheduleApiImpl _scheduleApi;
   late final DeviceSettingsApiImpl _settingsApi;
@@ -40,6 +39,7 @@ class DeviceFacadeImpl implements DeviceFacade {
   late final DeviceTelemetryApiImpl _telemetryApi;
   late final DeviceTelemetryHistoryApiImpl _telemetryHistoryApi;
   late final DeviceAboutApiImpl _aboutApi;
+  late final DeviceDomainApiCoordinator _domainApis;
 
   final StreamController<DeviceSnapshot> _snapshots =
       StreamController<DeviceSnapshot>.broadcast();
@@ -85,12 +85,14 @@ class DeviceFacadeImpl implements DeviceFacade {
     required ControlStateResolver controlStateResolver,
     required GetTelemetryHistory getTelemetryHistory,
   })  : _ctx = ctx,
-        _bootstrapDevice = bootstrapDevice,
         _pageCubit = pageCubit,
         _mqttCubit = mqttCubit,
         _commCubit = commCubit,
-        _settingsUiSchemaBuilder = settingsUiSchemaBuilder,
-        _controlStateResolver = controlStateResolver,
+        _snapshotBuilder = DeviceSnapshotBuilder(
+          bootstrapDevice: bootstrapDevice,
+          settingsUiSchemaBuilder: settingsUiSchemaBuilder,
+          controlStateResolver: controlStateResolver,
+        ),
         _current = DeviceSnapshot.initial(device: bootstrapDevice) {
     _scheduleApi = DeviceScheduleApiImpl(
       deviceSn: _ctx.deviceSn,
@@ -117,6 +119,13 @@ class DeviceFacadeImpl implements DeviceFacade {
       repo: aboutRepo,
       onChanged: _publish,
     );
+    _domainApis = DeviceDomainApiCoordinator(
+      telemetryApi: _telemetryApi,
+      scheduleApi: _scheduleApi,
+      settingsApi: _settingsApi,
+      sensorsApi: _sensorsApi,
+      aboutApi: _aboutApi,
+    );
   }
 
   @override
@@ -132,7 +141,7 @@ class DeviceFacadeImpl implements DeviceFacade {
 
     _subs.add(_pageCubit.stream.listen((state) {
       if (state case DevicePageReady(:final bundle)) {
-        unawaited(_startSupportedApis(bundle));
+        unawaited(_domainApis.startSupportedApis(bundle));
       }
       _publish();
     }));
@@ -140,7 +149,7 @@ class DeviceFacadeImpl implements DeviceFacade {
     _subs.add(_commCubit.stream.listen((_) => _publish()));
 
     if (_pageCubit.state case DevicePageReady(:final bundle)) {
-      await _startSupportedApis(bundle);
+      await _domainApis.startSupportedApis(bundle);
       await _refreshDomainSlices(forceGet: false);
     } else {
       _publish();
@@ -183,23 +192,32 @@ class DeviceFacadeImpl implements DeviceFacade {
     _disposed = true;
 
     for (final sub in _subs) {
-      try {
-        await sub.cancel();
-      } catch (_) {}
+      await _logAndIgnore(
+        sub.cancel(),
+        operation: 'cancel facade subscription',
+      );
     }
     _subs.clear();
 
-    await Future.wait<void>([
-      _telemetryApi.dispose().catchError((_) {}),
-      _scheduleApi.dispose().catchError((_) {}),
-      _settingsApi.dispose().catchError((_) {}),
-      _aboutApi.dispose().catchError((_) {}),
-      _sensorsApi.dispose().catchError((_) {}),
-    ]);
+    await _domainApis.disposeApis();
 
-    try {
-      await _snapshots.close();
-    } catch (_) {}
+    await _logAndIgnore(
+      _snapshots.close(),
+      operation: 'close snapshot stream',
+    );
+  }
+
+  Future<void> _logAndIgnore(
+    Future<void> future, {
+    required String operation,
+  }) {
+    return future.catchError((Object error, StackTrace stackTrace) {
+      AppLog.error(
+        'DeviceFacade: $operation failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    });
   }
 
   void _publish() {
@@ -219,116 +237,27 @@ class DeviceFacadeImpl implements DeviceFacade {
     }
 
     final bundle = pageState.bundle;
-    await Future.wait<void>([
-      if (bundle.canReadDomain('telemetry'))
-        _telemetryApi.get(force: forceGet).then((_) {}).catchError((_) {}),
-      if (bundle.canReadDomain('schedule'))
-        _scheduleApi.get(force: forceGet).then((_) {}).catchError((_) {}),
-      if (bundle.canReadDomain('settings'))
-        _settingsApi.get(force: forceGet).then((_) {}).catchError((_) {}),
-      if (bundle.canReadDomain('sensors'))
-        _sensorsApi.get(force: forceGet).then((_) {}).catchError((_) {}),
-      if (bundle.canReadDomain('device'))
-        _aboutApi.get(force: forceGet).then((_) {}).catchError((_) {}),
-    ]);
+    await _domainApis.refreshSupportedSlices(bundle, forceGet: forceGet);
 
     _publish();
   }
 
-  Future<void> _startSupportedApis(DeviceConfigurationBundle bundle) async {
-    await Future.wait<void>([
-      if (bundle.canReadDomain('telemetry'))
-        _telemetryApi.start().catchError((_) {}),
-      if (bundle.canReadDomain('schedule'))
-        _scheduleApi.start().catchError((_) {}),
-      if (bundle.canReadDomain('settings'))
-        _settingsApi.start().catchError((_) {}),
-      if (bundle.canReadDomain('sensors'))
-        _sensorsApi.start().catchError((_) {}),
-      if (bundle.canReadDomain('device')) _aboutApi.start().catchError((_) {}),
-    ]);
-  }
-
   DeviceSnapshot _buildSnapshot() {
-    final pageState = _pageCubit.state;
-    final mqttState = _mqttCubit.state;
-    final commState = _commCubit.state;
-
-    var device = _bootstrapDevice;
-    if (pageState is DevicePageReady) {
-      device = pageState.device;
-    }
-
-    final details = _mapDetails(pageState);
-    final settingsUiSchema = _buildSettingsUiSchema(pageState);
-    _settingsUiSchema = settingsUiSchema;
-
-    return DeviceSnapshot(
-      device: device,
-      details: details,
-      mqttConnected: mqttState is MqttConnected,
-      mqttBusy: commState.hasPending,
-      commError: commState.lastError,
+    final result = _snapshotBuilder.build(
+      pageState: _pageCubit.state,
+      mqttState: _mqttCubit.state,
+      commState: _commCubit.state,
       telemetry: _telemetryApi.slice,
-      controlState: _buildControlState(pageState),
+      telemetryState: _telemetryApi.rawCurrent,
       schedule: _scheduleApi.slice,
+      scheduleState: _scheduleApi.current,
       settings: _settingsApi.slice,
-      settingsUiSchema: settingsUiSchema,
+      settingsState: _settingsApi.current,
+      sensorsState: _sensorsApi.current,
       about: _aboutApi.slice,
-      updatedAt: DateTime.now(),
+      aboutState: _aboutApi.current,
     );
-  }
-
-  SettingsUiSchema? _buildSettingsUiSchema(DevicePageState pageState) {
-    if (pageState case DevicePageReady(:final bundle)) {
-      try {
-        return _settingsUiSchemaBuilder.build(bundle: bundle);
-      } catch (_) {
-        return null;
-      }
-    }
-    return null;
-  }
-
-  DeviceSlice<Map<String, dynamic>> _buildControlState(
-      DevicePageState pageState) {
-    switch (pageState) {
-      case DevicePageLoading():
-        return const DeviceSlice<Map<String, dynamic>>.loading(data: {});
-      case DevicePageError(:final message):
-      case DevicePageUpdateRequired(:final message):
-      case DevicePageCompatibilityError(:final message):
-        return DeviceSlice<Map<String, dynamic>>.error(
-          data: const <String, dynamic>{},
-          error: message,
-        );
-      case DevicePageReady(:final bundle):
-        final registry = ControlRegistry(bundle);
-        final state = _controlStateResolver.resolveAll(
-          registry: registry,
-          controlIds: bundle.configuration.oshmobile.controls.keys,
-          telemetry: _telemetryApi.rawCurrent,
-          sensors: _sensorsApi.current,
-          schedule: _scheduleApi.current,
-          settings: _settingsApi.current,
-          deviceState: _aboutApi.current,
-        );
-        return DeviceSlice<Map<String, dynamic>>.ready(
-          data: Map<String, dynamic>.unmodifiable(state),
-        );
-    }
-  }
-
-  DeviceSlice<DeviceConfigurationBundle> _mapDetails(DevicePageState state) {
-    switch (state) {
-      case DevicePageLoading():
-        return const DeviceSlice<DeviceConfigurationBundle>.loading();
-      case DevicePageError(:final message):
-      case DevicePageUpdateRequired(:final message):
-      case DevicePageCompatibilityError(:final message):
-        return DeviceSlice<DeviceConfigurationBundle>.error(error: message);
-      case DevicePageReady(:final bundle):
-        return DeviceSlice<DeviceConfigurationBundle>.ready(data: bundle);
-    }
+    _settingsUiSchema = result.settingsUiSchema;
+    return result.snapshot;
   }
 }

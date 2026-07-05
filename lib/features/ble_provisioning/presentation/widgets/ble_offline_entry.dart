@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/widgets/app_button.dart';
 import 'package:oshmobile/core/logging/crashlytics_context_sync.dart';
@@ -10,19 +9,21 @@ import 'package:oshmobile/features/ble_provisioning/presentation/cubit/ble_provi
 import 'package:oshmobile/features/ble_provisioning/presentation/pages/ble_wifi_scan_page.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
-final _sl = GetIt.instance;
+typedef BleProvisioningCubitFactory = BleProvisioningCubit Function();
 
 class BleOfflineEntry extends StatelessWidget {
   final String deviceSn;
   final String secureCode;
   final String? lastOnlineText;
   final VoidCallback? onWifiProvisioningSuccess;
+  final BleProvisioningCubitFactory createCubit;
 
   const BleOfflineEntry({
     super.key,
     required this.deviceSn,
     required this.secureCode,
     required this.onWifiProvisioningSuccess,
+    required this.createCubit,
     this.lastOnlineText,
   });
 
@@ -31,7 +32,7 @@ class BleOfflineEntry extends StatelessWidget {
     return BlocProvider(
       key: ValueKey('ble_offline_$deviceSn'),
       create: (_) {
-        final cubit = _sl<BleProvisioningCubit>();
+        final cubit = createCubit();
         unawaited(CrashlyticsContextSync.syncBleState(cubit.state));
         unawaited(cubit.startNearbyCheck(serialNumber: deviceSn));
         return cubit;

@@ -10,6 +10,7 @@ import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/core/utils/serial_executor.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
+import 'package:oshmobile/app/device_session/data/apis/device_slice_api_helpers.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 import 'package:oshmobile/features/settings/domain/repositories/settings_repository.dart';
 
@@ -139,18 +140,10 @@ class DeviceSettingsApiImpl implements DeviceSettingsApi {
 
   @override
   Stream<SettingsSnapshot> watch() {
-    return Stream<SettingsSnapshot>.multi((controller) {
-      final cur = current;
-      if (cur != null) {
-        controller.add(cur);
-      }
-
-      final sub = _stream.stream.listen(
-        controller.add,
-        onError: controller.addError,
-      );
-      controller.onCancel = () => sub.cancel();
-    });
+    return watchWithCurrent(
+      current: current,
+      updates: _stream.stream,
+    );
   }
 
   @override
@@ -182,8 +175,7 @@ class DeviceSettingsApiImpl implements DeviceSettingsApi {
           _comm.fail(commReqId, 'Refresh failed');
         }
 
-        final msg =
-            e is TimeoutException ? (e.message ?? 'Timeout') : e.toString();
+        final msg = deviceApiErrorMessage(e);
 
         if (_base == null) {
           _loadError = msg;
@@ -375,13 +367,11 @@ class DeviceSettingsApiImpl implements DeviceSettingsApi {
     if (_disposed) return;
     _disposed = true;
 
-    try {
-      await _sub?.cancel();
-    } catch (_) {}
-
-    try {
-      await _stream.close();
-    } catch (_) {}
+    await cancelSubscriptionAndLog(_sub, owner: 'DeviceSettingsApiImpl');
+    await closeStreamControllerAndLog(
+      _stream,
+      owner: 'DeviceSettingsApiImpl',
+    );
   }
 }
 

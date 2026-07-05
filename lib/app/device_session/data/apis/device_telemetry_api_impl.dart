@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:oshmobile/app/device_session/data/apis/device_slice_api_helpers.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/features/devices/details/domain/repositories/telemetry_repository.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
@@ -118,17 +119,16 @@ class DeviceTelemetryApiImpl implements DeviceTelemetryApi {
     if (_disposed) return;
     _disposed = true;
 
-    try {
-      await _sub?.cancel();
-    } catch (_) {}
-
-    try {
-      await _repo.unsubscribe();
-    } catch (_) {}
-
-    try {
-      await _stream.close();
-    } catch (_) {}
+    await cancelSubscriptionAndLog(_sub, owner: 'DeviceTelemetryApiImpl');
+    await logAndIgnoreFuture(
+      _repo.unsubscribe(),
+      owner: 'DeviceTelemetryApiImpl',
+      operation: 'unsubscribe telemetry',
+    );
+    await closeStreamControllerAndLog(
+      _stream,
+      owner: 'DeviceTelemetryApiImpl',
+    );
   }
 
   Map<String, dynamic> _serialize(TelemetryState state) {

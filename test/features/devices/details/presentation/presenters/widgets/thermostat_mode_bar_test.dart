@@ -25,19 +25,17 @@ import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/generated/l10n.dart';
-import 'package:oshmobile/init_dependencies.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late _RecordingAnalyticsBackend backend;
+  late SharedPreferences prefs;
 
   setUp(() async {
-    await locator.reset();
     SharedPreferences.setMockInitialValues(<String, Object>{});
-    final prefs = await SharedPreferences.getInstance();
-    locator.registerSingleton<SharedPreferences>(prefs);
+    prefs = await SharedPreferences.getInstance();
 
     backend = _RecordingAnalyticsBackend();
     OshAnalytics.debugSetBackend(backend);
@@ -45,7 +43,6 @@ void main() {
 
   tearDown(() async {
     OshAnalytics.debugResetBackend();
-    await locator.reset();
   });
 
   testWidgets('tap inactive editable mode switches without opening editor',
@@ -53,7 +50,10 @@ void main() {
     final harness = await _pumpHarness(
       tester,
       currentMode: CalendarMode.off,
-      child: const ThermostatModeBar(modeBind: 'mode'),
+      child: ThermostatModeBar(
+        modeBind: 'mode',
+        sharedPreferences: prefs,
+      ),
     );
 
     await tester.tap(find.text('Range'));
@@ -73,7 +73,10 @@ void main() {
     final harness = await _pumpHarness(
       tester,
       currentMode: CalendarMode.on,
-      child: const ThermostatModeBar(modeBind: 'mode'),
+      child: ThermostatModeBar(
+        modeBind: 'mode',
+        sharedPreferences: prefs,
+      ),
     );
 
     expect(
@@ -98,8 +101,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      locator<SharedPreferences>()
-          .getBool(thermostatModeBarCalendarHintSeenPrefsKey),
+      prefs.getBool(thermostatModeBarCalendarHintSeenPrefsKey),
       isTrue,
     );
     expect(
@@ -115,7 +117,10 @@ void main() {
     final harness = await _pumpHarness(
       tester,
       currentMode: CalendarMode.off,
-      child: const ThermostatModeBar(modeBind: 'mode'),
+      child: ThermostatModeBar(
+        modeBind: 'mode',
+        sharedPreferences: prefs,
+      ),
     );
 
     await tester.longPress(find.text('Weekly').first);
@@ -138,7 +143,10 @@ void main() {
     final harness = await _pumpHarness(
       tester,
       currentMode: CalendarMode.off,
-      child: const ThermostatModeBar(modeBind: 'mode'),
+      child: ThermostatModeBar(
+        modeBind: 'mode',
+        sharedPreferences: prefs,
+      ),
     );
 
     await tester.tap(find.text('Off'));
@@ -178,7 +186,7 @@ void main() {
   });
 
   testWidgets('persisted hint stays hidden', (tester) async {
-    await locator<SharedPreferences>().setBool(
+    await prefs.setBool(
       thermostatModeBarCalendarHintSeenPrefsKey,
       true,
     );
@@ -186,7 +194,10 @@ void main() {
     await _pumpHarness(
       tester,
       currentMode: CalendarMode.on,
-      child: const ThermostatModeBar(modeBind: 'mode'),
+      child: ThermostatModeBar(
+        modeBind: 'mode',
+        sharedPreferences: prefs,
+      ),
     );
 
     expect(

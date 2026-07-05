@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
+import 'package:oshmobile/core/logging/app_log.dart';
 
 /// UI-facing reactive wrapper around [DeviceFacade.watch].
 class DeviceSnapshotCubit extends Cubit<DeviceSnapshot> {
@@ -20,7 +21,13 @@ class DeviceSnapshotCubit extends Cubit<DeviceSnapshot> {
       (snapshot) {
         if (!isClosed) emit(snapshot);
       },
-      onError: (_) {},
+      onError: (Object error, StackTrace stackTrace) {
+        AppLog.error(
+          'DeviceSnapshotCubit: snapshot stream failed',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      },
       cancelOnError: false,
     );
   }

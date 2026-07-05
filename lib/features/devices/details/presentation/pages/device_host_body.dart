@@ -11,6 +11,7 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/devic
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_offline_page.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/features/device_catalog/presentation/cubit/device_catalog_cubit.dart';
+import 'package:oshmobile/features/ble_provisioning/presentation/widgets/ble_offline_entry.dart';
 
 import '../cubit/device_host_cubit.dart';
 import '../cubit/device_page_cubit.dart';
@@ -20,12 +21,14 @@ class DeviceHostBody extends StatelessWidget {
   final String deviceId;
   final DevicePresenterRegistry presenters;
   final ValueChanged<String?>? onTitleChanged;
+  final BleProvisioningCubitFactory createBleProvisioningCubit;
 
   const DeviceHostBody({
     super.key,
     required this.deviceId,
     required this.presenters,
     required this.onTitleChanged,
+    required this.createBleProvisioningCubit,
   });
 
   String? _titleFrom(DevicePageState s) {
@@ -57,11 +60,14 @@ class DeviceHostBody extends StatelessWidget {
     required bool canOpenInternalSettings,
     required bool canOpenAbout,
   }) {
-    context.read<SelectedDeviceSessionCubit>().updateAvailability(
-          deviceId: deviceId,
-          canOpenInternalSettings: canOpenInternalSettings,
-          canOpenAbout: canOpenAbout,
-        );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      context.read<SelectedDeviceSessionCubit>().updateAvailability(
+            deviceId: deviceId,
+            canOpenInternalSettings: canOpenInternalSettings,
+            canOpenAbout: canOpenAbout,
+          );
+    });
   }
 
   @override
@@ -99,6 +105,7 @@ class DeviceHostBody extends StatelessWidget {
           );
           return DeviceOfflinePage(
             device: liveDevice,
+            createBleProvisioningCubit: createBleProvisioningCubit,
             onWifiProvisioningSuccess: () {
               context.read<DeviceHostCubit>().onWifiProvisioningSuccess();
             },

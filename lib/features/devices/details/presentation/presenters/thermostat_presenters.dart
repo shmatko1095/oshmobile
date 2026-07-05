@@ -18,8 +18,10 @@ import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
 import 'package:oshmobile/features/sensors/presentation/open_sensor_editor.dart';
 import 'package:oshmobile/features/sensors/presentation/open_sensor_pairing.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/temperature_history_preview_cache.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/open_telemetry_history.dart';
 import 'package:oshmobile/generated/l10n.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'device_presenter.dart';
 
@@ -27,11 +29,17 @@ class ThermostatBasicPresenter implements DevicePresenter {
   const ThermostatBasicPresenter({
     required ThermostatDashboardSchemaBuilder schemaBuilder,
     required ThermostatTelemetryHistoryOpener historyOpener,
+    TemperatureHistoryPreviewCache? Function()? historyPreviewCacheProvider,
+    SharedPreferences? Function()? sharedPreferencesProvider,
   })  : _schemaBuilder = schemaBuilder,
-        _historyOpener = historyOpener;
+        _historyOpener = historyOpener,
+        _historyPreviewCacheProvider = historyPreviewCacheProvider,
+        _sharedPreferencesProvider = sharedPreferencesProvider;
 
   final ThermostatDashboardSchemaBuilder _schemaBuilder;
   final ThermostatTelemetryHistoryOpener _historyOpener;
+  final TemperatureHistoryPreviewCache? Function()? _historyPreviewCacheProvider;
+  final SharedPreferences? Function()? _sharedPreferencesProvider;
 
   @override
   Widget build(
@@ -76,6 +84,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
                     height: heroHeight,
                     showHistoryPreview: temperatureHistoryStrip != null,
                     historyChartHeight: 104,
+                    historyPreviewCache: _historyPreviewCacheProvider?.call(),
                     onTap: scheduleWritable
                         ? () =>
                             ThermostatModeNavigator.openForCurrentMode(context)
@@ -114,6 +123,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
                     modeBind: modeBar.modeBind,
                     visibleModes: _resolveVisibleModes(modeBar.visibleModeIds),
                     writable: scheduleWritable,
+                    sharedPreferences: _sharedPreferencesProvider?.call(),
                   ),
                 ),
               ),

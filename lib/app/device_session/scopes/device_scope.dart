@@ -10,6 +10,7 @@ import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/di/device_context.dart';
 import 'package:oshmobile/core/logging/osh_crash_reporter.dart';
 import 'package:oshmobile/app/device_session/di/device_di.dart';
+import 'package:oshmobile/features/ble_provisioning/presentation/cubit/ble_provisioning_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_host_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/pages/device_host_body.dart';
@@ -192,6 +193,8 @@ class _DeviceScopeState extends State<DeviceScope> {
           deviceId: _ctx.deviceId,
           presenters: _presenters,
           onTitleChanged: widget.onTitleChanged,
+          createBleProvisioningCubit: () =>
+              GetIt.instance<BleProvisioningCubit>(),
         ),
       ),
     );

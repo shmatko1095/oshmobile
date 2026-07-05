@@ -14,7 +14,6 @@ import 'package:oshmobile/features/telemetry_history/presentation/cubit/temperat
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/temperature_history_preview_state.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_line_chart.dart';
 import 'package:oshmobile/generated/l10n.dart';
-import 'package:oshmobile/init_dependencies.dart';
 
 typedef OnOpenTemperatureHistory = void Function(
   List<DeviceTemperatureSensorRef> sensors,
@@ -43,12 +42,14 @@ class TemperatureHistoryStripCard extends StatelessWidget {
     this.height,
     this.chartHeight = 88,
     this.onOpenHistory,
+    this.historyPreviewCache,
   });
 
   final String sensorsBind;
   final double? height;
   final double chartHeight;
   final OnOpenTemperatureHistory? onOpenHistory;
+  final TemperatureHistoryPreviewCache? historyPreviewCache;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +63,7 @@ class TemperatureHistoryStripCard extends StatelessWidget {
     return BlocProvider(
       create: (context) => TemperatureHistoryPreviewCubit(
         seriesReader: context.read<DeviceFacade>().telemetryHistory,
-        persistentCache: _historyPreviewCacheOrNull(),
+        persistentCache: historyPreviewCache,
         persistentCacheNamespace: cacheNamespace,
       ),
       child: _TemperatureHistoryStripCardView(
@@ -73,11 +74,6 @@ class TemperatureHistoryStripCard extends StatelessWidget {
       ),
     );
   }
-}
-
-TemperatureHistoryPreviewCache? _historyPreviewCacheOrNull() {
-  if (!locator.isRegistered<TemperatureHistoryPreviewCache>()) return null;
-  return locator<TemperatureHistoryPreviewCache>();
 }
 
 class TemperatureSensorHistoryPreview extends StatefulWidget {

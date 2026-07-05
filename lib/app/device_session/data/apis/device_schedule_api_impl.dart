@@ -10,6 +10,7 @@ import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/core/utils/serial_executor.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
+import 'package:oshmobile/app/device_session/data/apis/device_slice_api_helpers.dart';
 import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/domain/repositories/schedule_repository.dart';
@@ -153,18 +154,10 @@ class DeviceScheduleApiImpl implements DeviceScheduleApi {
 
   @override
   Stream<CalendarSnapshot> watch() {
-    return Stream<CalendarSnapshot>.multi((controller) {
-      final cur = current;
-      if (cur != null) {
-        controller.add(cur);
-      }
-
-      final sub = _stream.stream.listen(
-        controller.add,
-        onError: controller.addError,
-      );
-      controller.onCancel = () => sub.cancel();
-    });
+    return watchWithCurrent(
+      current: current,
+      updates: _stream.stream,
+    );
   }
 
   @override
@@ -196,8 +189,7 @@ class DeviceScheduleApiImpl implements DeviceScheduleApi {
           _comm.fail(commReqId, 'Refresh failed');
         }
 
-        final msg =
-            e is TimeoutException ? (e.message ?? 'Timeout') : e.toString();
+        final msg = deviceApiErrorMessage(e);
 
         if (_base == null) {
           _loadError = msg;
@@ -586,13 +578,11 @@ class DeviceScheduleApiImpl implements DeviceScheduleApi {
     if (_disposed) return;
     _disposed = true;
 
-    try {
-      await _sub?.cancel();
-    } catch (_) {}
-
-    try {
-      await _stream.close();
-    } catch (_) {}
+    await cancelSubscriptionAndLog(_sub, owner: 'DeviceScheduleApiImpl');
+    await closeStreamControllerAndLog(
+      _stream,
+      owner: 'DeviceScheduleApiImpl',
+    );
   }
 }
 

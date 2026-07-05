@@ -15,7 +15,6 @@ import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
 import 'package:oshmobile/features/schedule/presentation/utils.dart';
 import 'package:oshmobile/generated/l10n.dart';
-import 'package:oshmobile/init_dependencies.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const thermostatModeBarCalendarHintSeenPrefsKey =
@@ -32,12 +31,14 @@ class ThermostatModeBar extends StatefulWidget {
     this.visibleModes,
     this.writable = true,
     this.optimisticTimeout = const Duration(seconds: 5),
+    this.sharedPreferences,
   });
 
   final String modeBind;
   final List<CalendarMode>? visibleModes;
   final bool writable;
   final Duration optimisticTimeout;
+  final SharedPreferences? sharedPreferences;
 
   @override
   State<ThermostatModeBar> createState() => _ThermostatModeBarState();
@@ -53,11 +54,9 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
   @override
   void initState() {
     super.initState();
-    if (locator.isRegistered<SharedPreferences>()) {
-      _prefs = locator<SharedPreferences>();
-      _hintSeen =
-          _prefs!.getBool(thermostatModeBarCalendarHintSeenPrefsKey) ?? false;
-    }
+    _prefs = widget.sharedPreferences;
+    _hintSeen =
+        _prefs?.getBool(thermostatModeBarCalendarHintSeenPrefsKey) ?? false;
   }
 
   @override
