@@ -8,36 +8,16 @@ import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_
 import 'package:oshmobile/core/analytics/osh_analytics.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
-import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
-import 'package:oshmobile/features/schedule/presentation/pages/manual_time_page.dart';
+import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/presentation/pages/manual_temperature_page.dart';
-import 'package:oshmobile/features/schedule/presentation/utils.dart';
+import 'package:oshmobile/features/schedule/presentation/pages/manual_time_page.dart';
+import 'package:oshmobile/features/schedule/presentation/utils/schedule_point_defaults.dart';
+import 'package:oshmobile/features/schedule/presentation/widgets/schedule_editor_widgets.dart';
 import 'package:oshmobile/generated/l10n.dart';
-
-import '../../domain/models/schedule_models.dart';
-
-bool _scheduleIsDark(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark;
-
-Color _schedulePrimaryTextColor(BuildContext context) =>
-    _scheduleIsDark(context)
-        ? AppPalette.textPrimary
-        : AppPalette.lightTextPrimary;
-
-Color _scheduleSecondaryTextColor(BuildContext context) =>
-    _scheduleIsDark(context)
-        ? AppPalette.textSecondary
-        : AppPalette.lightTextSecondary;
-
-Color _scheduleTileSurfaceColor(BuildContext context) =>
-    _scheduleIsDark(context) ? AppPalette.surfaceRaised : AppPalette.white;
-
-Color _scheduleTileBorderColor(BuildContext context) =>
-    _scheduleIsDark(context) ? AppPalette.borderSoft : AppPalette.lightBorder;
 
 class ScheduleEditorPage extends StatefulWidget {
   const ScheduleEditorPage({
@@ -55,11 +35,6 @@ class ScheduleEditorPage extends StatefulWidget {
 
 class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
   int _filterMask = 0;
-
-  String _fmtTime(TimeOfDay t) =>
-      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
-
-  String _fmtTemp(double v) => v.toStringAsFixed(1);
 
   bool _passesFilter(int mask) =>
       _filterMask == 0 ? true : (mask & _filterMask) != 0;
@@ -98,55 +73,86 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
     CalendarMode mode,
   ) {
     final current = List<SchedulePoint>.from(schedule.pointsFor(mode));
-    current.add(_makeDefaultPoint(current, mode));
+    current.add(makeDefaultSchedulePoint(current, mode));
     facade.schedule.patchList(mode, current);
   }
 
-  SchedulePoint _makeDefaultPoint(
-    List<SchedulePoint> current,
-    CalendarMode mode, [
-    int stepMinutes = 15,
-  ]) {
-    final now = TimeOfDay.now();
-    final time = _nextFreeTime(current, now, stepMinutes);
-    final last = current.isNotEmpty ? current.last : null;
-    final daysMask = mode == CalendarMode.weekly
-        ? (last?.daysMask ?? WeekdayMask.all)
-        : WeekdayMask.all;
-    final temp = last?.temp ?? 21.0;
-
-    return SchedulePoint(
-      time: time,
-      daysMask: daysMask & WeekdayMask.all,
-      temp: temp,
+  Future<void> _openTimeEditor({
+    required BuildContext context,
+    required DeviceFacade facade,
+    required CalendarSnapshot schedule,
+    required CalendarMode targetMode,
+    required int index,
+    required SchedulePoint point,
+  }) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(
+          name: OshAnalyticsScreens.manualTime,
+        ),
+        builder: (_) => ManualTimePage(
+          title: S.of(context).time,
+          initial: point.time,
+          onSave: (value) => _patchPoint(
+            facade,
+            schedule,
+            targetMode,
+            index,
+            point.copyWith(time: value),
+          ),
+        ),
+      ),
     );
   }
 
-  TimeOfDay _nextFreeTime(
-    List<SchedulePoint> points,
-    TimeOfDay start,
-    int stepMinutes,
-  ) {
-    final used = <int>{};
-    for (final point in points) {
-      used.add(point.time.hour * 60 + point.time.minute);
-    }
+  Future<void> _openTemperatureEditor({
+    required BuildContext context,
+    required DeviceFacade facade,
+    required CalendarSnapshot schedule,
+    required CalendarMode targetMode,
+    required int index,
+    required SchedulePoint point,
+  }) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(
+          name: OshAnalyticsScreens.manualTemperature,
+        ),
+        builder: (_) => ManualTemperaturePage(
+          title: S.of(context).SetTemperature,
+          initial: point.temp,
+          onSave: (value) {
+            final rounded = double.parse(value.toStringAsFixed(1));
+            _patchPoint(
+              facade,
+              schedule,
+              targetMode,
+              index,
+              point.copyWith(temp: rounded),
+            );
+          },
+        ),
+      ),
+    );
+  }
 
-    final startMinutes = start.hour * 60 + start.minute;
-    final candidate =
-        ((startMinutes + stepMinutes - 1) ~/ stepMinutes) * stepMinutes;
-
-    for (var i = 0; i < 1440 ~/ stepMinutes; i++) {
-      final minuteOfDay = (candidate + i * stepMinutes) % 1440;
-      if (!used.contains(minuteOfDay)) {
-        return TimeOfDay(
-          hour: minuteOfDay ~/ 60,
-          minute: minuteOfDay % 60,
-        );
-      }
-    }
-
-    return start;
+  void _stepTemperature({
+    required DeviceFacade facade,
+    required CalendarSnapshot schedule,
+    required CalendarMode targetMode,
+    required int index,
+    required SchedulePoint point,
+    required double delta,
+  }) {
+    final next = (point.temp + delta).clamp(10.0, 40.0);
+    final newTemp = double.parse(next.toStringAsFixed(1));
+    _patchPoint(
+      facade,
+      schedule,
+      targetMode,
+      index,
+      point.copyWith(temp: newTemp),
+    );
   }
 
   @override
@@ -181,7 +187,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
 
               final schedule = scheduleSlice.data;
               if (status == DeviceSliceStatus.error && schedule == null) {
-                return _ErrorRetry(
+                return ScheduleEditorErrorRetry(
                   message: scheduleSlice.error ?? 'Failed to load schedule',
                   onRetry: () => facade.schedule.get(force: true),
                 );
@@ -194,20 +200,22 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                   .pointsFor(targetMode)
                   .asMap()
                   .entries
-                  .where((e) => _passesFilter(e.value.daysMask))
+                  .where((entry) => _passesFilter(entry.value.daysMask))
                   .toList();
 
               return ListView.separated(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 80),
                 itemCount: items.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (context, i) {
-                  final idx = items[i].key;
-                  final p = items[i].value;
+                itemBuilder: (context, itemIndex) {
+                  final index = items[itemIndex].key;
+                  final point = items[itemIndex].value;
 
                   return Dismissible(
                     key: ValueKey(
-                        'sp_${idx}_${p.time.hour}_${p.time.minute}_${p.temp}_${p.daysMask}'),
+                      'sp_${index}_${point.time.hour}_${point.time.minute}'
+                      '_${point.temp}_${point.daysMask}',
+                    ),
                     direction: DismissDirection.endToStart,
                     background: const SizedBox.shrink(),
                     secondaryBackground: Container(
@@ -217,8 +225,10 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                         color: AppPalette.destructiveBg,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(Icons.delete,
-                          color: AppPalette.destructiveFg),
+                      child: const Icon(
+                        Icons.delete,
+                        color: AppPalette.destructiveFg,
+                      ),
                     ),
                     onDismissed: (_) {
                       unawaited(
@@ -227,89 +237,62 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                           parameters: {'mode': targetMode.id},
                         ),
                       );
-                      _removePoint(facade, schedule, targetMode, idx);
+                      _removePoint(facade, schedule, targetMode, index);
                     },
-                    child: _ScheduleTile(
-                      timeText: _fmtTime(p.time),
-                      valueText: '${_fmtTemp(p.temp)}°C',
-                      daysMask: p.daysMask,
+                    child: SchedulePointTile(
+                      timeText: formatScheduleEditorTime(point.time),
+                      valueText:
+                          '${formatScheduleEditorTemperature(point.temp)}°C',
+                      daysMask: point.daysMask,
                       showDays: showDays,
-                      onTapTime: () async {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            settings: const RouteSettings(
-                              name: OshAnalyticsScreens.manualTime,
-                            ),
-                            builder: (_) => ManualTimePage(
-                              title: S.of(context).time,
-                              initial: p.time,
-                              onSave: (v) => _patchPoint(
-                                facade,
-                                schedule,
-                                targetMode,
-                                idx,
-                                p.copyWith(time: v),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                      onDecTemp: () {
-                        final next = (p.temp - 0.5).clamp(10.0, 40.0);
-                        final newTemp = double.parse(next.toStringAsFixed(1));
-                        _patchPoint(
-                          facade,
-                          schedule,
-                          targetMode,
-                          idx,
-                          p.copyWith(temp: newTemp),
-                        );
-                      },
-                      onIncTemp: () {
-                        final next = (p.temp + 0.5).clamp(10.0, 40.0);
-                        final newTemp = double.parse(next.toStringAsFixed(1));
-                        _patchPoint(
-                          facade,
-                          schedule,
-                          targetMode,
-                          idx,
-                          p.copyWith(temp: newTemp),
-                        );
-                      },
-                      onToggleDay: (d) {
+                      onTapTime: () => unawaited(
+                        _openTimeEditor(
+                          context: context,
+                          facade: facade,
+                          schedule: schedule,
+                          targetMode: targetMode,
+                          index: index,
+                          point: point,
+                        ),
+                      ),
+                      onDecTemp: () => _stepTemperature(
+                        facade: facade,
+                        schedule: schedule,
+                        targetMode: targetMode,
+                        index: index,
+                        point: point,
+                        delta: -0.5,
+                      ),
+                      onIncTemp: () => _stepTemperature(
+                        facade: facade,
+                        schedule: schedule,
+                        targetMode: targetMode,
+                        index: index,
+                        point: point,
+                        delta: 0.5,
+                      ),
+                      onToggleDay: (dayBit) {
                         if (!showDays) return;
-                        final newMask = WeekdayMask.toggle(p.daysMask, d);
+                        final newMask =
+                            WeekdayMask.toggle(point.daysMask, dayBit);
                         _patchPoint(
                           facade,
                           schedule,
                           targetMode,
-                          idx,
-                          p.copyWith(daysMask: newMask),
+                          index,
+                          point.copyWith(daysMask: newMask),
                         );
                       },
-                      onTapValue: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            settings: const RouteSettings(
-                              name: OshAnalyticsScreens.manualTemperature,
-                            ),
-                            builder: (_) => ManualTemperaturePage(
-                              title: S.of(context).SetTemperature,
-                              initial: p.temp,
-                              onSave: (v) {
-                                final vv = double.parse(v.toStringAsFixed(1));
-                                _patchPoint(
-                                  facade,
-                                  schedule,
-                                  targetMode,
-                                  idx,
-                                  p.copyWith(temp: vv),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
+                      onTapValue: () => unawaited(
+                        _openTemperatureEditor(
+                          context: context,
+                          facade: facade,
+                          schedule: schedule,
+                          targetMode: targetMode,
+                          index: index,
+                          point: point,
+                        ),
+                      ),
                     ),
                   );
                 },
@@ -321,7 +304,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(right: 6, bottom: 10),
-        child: _AddPointFab(
+        child: ScheduleAddPointFab(
           onPressed: () {
             unawaited(
               OshAnalytics.logEvent(
@@ -352,334 +335,14 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
 
           return SafeArea(
             top: false,
-            child: _WeekdayFilterBar(
+            child: ScheduleWeekdayFilterBar(
               mask: _filterMask,
-              onToggle: (d) => setState(
-                  () => _filterMask = WeekdayMask.toggle(_filterMask, d)),
+              onToggle: (dayBit) => setState(
+                () => _filterMask = WeekdayMask.toggle(_filterMask, dayBit),
+              ),
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _AddPointFab extends StatelessWidget {
-  const _AddPointFab({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final bg =
-        _scheduleIsDark(context) ? AppPalette.surfaceRaised : AppPalette.white;
-    final shadow = _scheduleIsDark(context)
-        ? AppPalette.black.withValues(alpha: 0.25)
-        : AppPalette.lightTextPrimary.withValues(alpha: 0.12);
-
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: shadow,
-            blurRadius: 16,
-            spreadRadius: 0,
-            offset: const Offset(0, 6),
-          ),
-        ],
-        borderRadius: BorderRadius.circular(AppPalette.radiusLg),
-      ),
-      child: FloatingActionButton(
-        onPressed: onPressed,
-        backgroundColor: bg,
-        foregroundColor: _schedulePrimaryTextColor(context),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppPalette.radiusLg),
-        ),
-        child: const Icon(Icons.add_rounded, size: 26),
-      ),
-    );
-  }
-}
-
-class _ErrorRetry extends StatelessWidget {
-  const _ErrorRetry({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Text(
-          message,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
-          ),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton(onPressed: onRetry, child: Text(S.of(context).Retry)),
-      ]),
-    );
-  }
-}
-
-class _ScheduleTile extends StatelessWidget {
-  const _ScheduleTile({
-    required this.timeText,
-    required this.valueText,
-    required this.daysMask,
-    required this.showDays,
-    required this.onTapTime,
-    required this.onDecTemp,
-    required this.onIncTemp,
-    required this.onToggleDay,
-    required this.onTapValue,
-  });
-
-  final String timeText;
-  final String valueText;
-  final int daysMask;
-  final bool showDays;
-
-  final VoidCallback onTapTime;
-  final VoidCallback onDecTemp;
-  final VoidCallback onIncTemp;
-  final void Function(int dayBit) onToggleDay;
-  final VoidCallback onTapValue;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppGlassCard(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      backgroundColor: _scheduleTileSurfaceColor(context),
-      borderColor: _scheduleTileBorderColor(context),
-      child: Column(
-        children: [
-          LayoutBuilder(
-            builder: (ctx, constraints) {
-              final Widget time = InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: onTapTime,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
-                  child: Text(
-                    timeText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: _schedulePrimaryTextColor(context),
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-              );
-
-              final Widget stepper = FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
-                child: _TempRangeStepper(
-                  valueText: valueText,
-                  onDecTemp: onDecTemp,
-                  onIncTemp: onIncTemp,
-                  onTapValue: onTapValue,
-                ),
-              );
-
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(child: time),
-                  const SizedBox(width: 12),
-                  Flexible(fit: FlexFit.loose, child: stepper),
-                ],
-              );
-            },
-          ),
-          if (showDays) const SizedBox(height: 10),
-          if (showDays)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Wrap(
-                spacing: 4,
-                runSpacing: 6,
-                children: [
-                  for (final d in WeekdayMask.order)
-                    _DayChip(
-                      label: shortLabel(context, d),
-                      selected: WeekdayMask.has(daysMask, d),
-                      onTap: () => onToggleDay(d),
-                    ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TempRangeStepper extends StatelessWidget {
-  const _TempRangeStepper({
-    required this.valueText,
-    required this.onDecTemp,
-    required this.onIncTemp,
-    required this.onTapValue,
-  });
-
-  final String valueText;
-  final VoidCallback onDecTemp;
-  final VoidCallback onIncTemp;
-  final VoidCallback onTapValue;
-
-  static const _coolBlue = AppPalette.accentPrimary;
-  static const _warmRed = AppPalette.accentWarning;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // tap on value -> open temperature picker page
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTapValue,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Text(
-              valueText,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: _schedulePrimaryTextColor(context),
-                fontSize: 28, // same as time
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        _IconBtn(
-            icon: Icons.keyboard_arrow_down,
-            onTap: onDecTemp,
-            color: _coolBlue),
-        const SizedBox(width: 4),
-        _IconBtn(
-            icon: Icons.keyboard_arrow_up, onTap: onIncTemp, color: _warmRed),
-      ],
-    );
-  }
-}
-
-class _IconBtn extends StatelessWidget {
-  const _IconBtn({required this.icon, required this.onTap, this.color});
-
-  final IconData icon;
-  final VoidCallback onTap;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Ink(
-        padding: const EdgeInsets.all(6),
-        child: Icon(
-          icon,
-          size: 28,
-          color: color ??
-              _schedulePrimaryTextColor(context), // fallback to text color
-        ),
-      ),
-    );
-  }
-}
-
-class _WeekdayFilterBar extends StatelessWidget {
-  const _WeekdayFilterBar({required this.mask, required this.onToggle});
-
-  final int mask;
-  final void Function(int dayBit) onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          for (final d in WeekdayMask.order)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: _DayChip(
-                  label: shortLabel(context, d),
-                  selected: WeekdayMask.has(mask, d),
-                  onTap: () => onToggle(d),
-                  dense: true,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DayChip extends StatelessWidget {
-  const _DayChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.dense = false,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  final bool dense;
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = selected
-        ? AppPalette.accentPrimary.withValues(alpha: 0.24)
-        : AppPalette.transparent;
-    final bd = selected
-        ? AppPalette.accentPrimary.withValues(alpha: 0.42)
-        : AppPalette.transparent;
-    final fg = selected
-        ? _schedulePrimaryTextColor(context)
-        : _scheduleSecondaryTextColor(context);
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: onTap,
-      child: Ink(
-        padding: EdgeInsets.symmetric(
-            horizontal: dense ? 8 : 10, vertical: dense ? 6 : 8),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: bd),
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: fg,
-            fontWeight: FontWeight.w700,
-            fontSize: dense ? 12 : 13,
-            letterSpacing: 0.2,
-          ),
-        ),
       ),
     );
   }
