@@ -331,8 +331,8 @@ class HistoryLineChart extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  color.withValues(alpha: 0.14),
-                  color.withValues(alpha: 0.01),
+                  color.withValues(alpha: 0.22),
+                  color.withValues(alpha: 0.04),
                 ],
               ),
             ),

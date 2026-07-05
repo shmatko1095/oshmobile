@@ -12,6 +12,16 @@ typedef HistoryMultiChartTooltipValueFormatter = String Function(
   double value,
 );
 
+class HistoryMultiLineActivityBand {
+  const HistoryMultiLineActivityBand({
+    this.bottomFraction = 0.0,
+    this.heightFraction = 0.18,
+  });
+
+  final double bottomFraction;
+  final double heightFraction;
+}
+
 class HistoryMultiLineSeries {
   const HistoryMultiLineSeries({
     required this.id,
@@ -25,9 +35,11 @@ class HistoryMultiLineSeries {
     this.lineGradient,
     this.strokeWidth = 2.0,
     this.fill = false,
-    this.fillTopAlpha = 0.12,
-    this.fillBottomAlpha = 0.01,
+    this.fillTopAlpha = 0.22,
+    this.fillBottomAlpha = 0.04,
     this.dashArray,
+    this.includeInYAxisRange = true,
+    this.activityBand,
   });
 
   final String id;
@@ -44,6 +56,8 @@ class HistoryMultiLineSeries {
   final double fillTopAlpha;
   final double fillBottomAlpha;
   final List<int>? dashArray;
+  final bool includeInYAxisRange;
+  final HistoryMultiLineActivityBand? activityBand;
 }
 
 class HistoryMultiLineChart extends StatelessWidget {
@@ -223,8 +237,11 @@ class HistoryMultiLineChart extends StatelessWidget {
       return const SizedBox.expand();
     }
 
+    final yAxisPrepared =
+        prepared.where((line) => line.line.includeInYAxisRange).toList();
+    final yAxisSource = yAxisPrepared.isEmpty ? prepared : yAxisPrepared;
     final yValues = <double>[];
-    for (final line in prepared) {
+    for (final line in yAxisSource) {
       yValues.addAll(line.points.map((point) => point.y));
       if (line.rangeMinSpots != null) {
         yValues.addAll(
@@ -249,6 +266,10 @@ class HistoryMultiLineChart extends StatelessWidget {
     final yInterval = _niceInterval(span, preferredTickCount: 4);
     final minY = _alignLower(stableRange.min, yInterval);
     final maxY = _alignUpper(stableRange.max, yInterval);
+    final chartYRange = _YAxisRange(
+      min: minY,
+      max: maxY <= minY ? minY + 1 : maxY,
+    );
 
     final xMax = useWindowAxis ? windowSpanSeconds : maxX;
     final xInterval = xMax <= 0 ? 1.0 : xMax / 3;
@@ -271,10 +292,11 @@ class HistoryMultiLineChart extends StatelessWidget {
       final line = prepared[preparedIndex];
       final mainBarIndex = lineBarsData.length;
       chartBarToPreparedIndex[mainBarIndex] = preparedIndex;
+      final spots = _renderSpots(line, chartYRange);
 
       lineBarsData.add(
         LineChartBarData(
-          spots: line.spots,
+          spots: spots,
           isCurved: false,
           color: line.line.lineGradient == null ? line.line.color : null,
           gradient: line.line.lineGradient,
@@ -340,7 +362,7 @@ class HistoryMultiLineChart extends StatelessWidget {
         BetweenBarsData(
           fromIndex: rangeMinBarIndex,
           toIndex: rangeMaxBarIndex,
-          color: line.line.color.withValues(alpha: 0.14),
+          color: line.line.color.withValues(alpha: 0.18),
         ),
       );
     }
@@ -350,7 +372,7 @@ class HistoryMultiLineChart extends StatelessWidget {
         minX: 0,
         maxX: xMax <= 0 ? 1 : xMax,
         minY: minY,
-        maxY: maxY <= minY ? minY + 1 : maxY,
+        maxY: chartYRange.max,
         clipData: const FlClipData.all(),
         gridData: FlGridData(
           show: drawHorizontalGrid || drawVerticalGrid,
@@ -635,6 +657,47 @@ class HistoryMultiLineChart extends StatelessWidget {
     }
     return value.toStringAsFixed(1);
   }
+}
+
+List<FlSpot> _renderSpots(
+  _PreparedSeries series,
+  _YAxisRange yAxisRange,
+) {
+  final activityBand = series.line.activityBand;
+  if (activityBand == null) {
+    return series.spots;
+  }
+
+  return series.spots
+      .map(
+        (spot) => spot.isNull()
+            ? FlSpot.nullSpot
+            : FlSpot(
+                spot.x,
+                _activityBandY(
+                  spot.y,
+                  yAxisRange,
+                  activityBand,
+                ),
+              ),
+      )
+      .toList(growable: false);
+}
+
+double _activityBandY(
+  double value,
+  _YAxisRange yAxisRange,
+  HistoryMultiLineActivityBand activityBand,
+) {
+  final span = math.max((yAxisRange.max - yAxisRange.min).abs(), 1.0);
+  final bottomFraction = activityBand.bottomFraction.clamp(0.0, 1.0);
+  final heightFraction = activityBand.heightFraction.clamp(
+    0.0,
+    1.0 - bottomFraction,
+  );
+  final lower = yAxisRange.min + span * bottomFraction;
+  final upper = lower + span * heightFraction;
+  return lower + value.clamp(0.0, 1.0) * (upper - lower);
 }
 
 class _PreparedSeries {

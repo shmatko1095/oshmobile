@@ -313,7 +313,7 @@
   "TelemetryHistoryLoadFailed": "Не вдалося завантажити графік",
   "TelemetryHistoryNoData": "Даних ще немає.",
   "TelemetryHistoryMetricLoadFactor": "Коефіцієнт навантаження",
-  "TelemetryHistoryMetricHeatingActivity": "Активність нагріву",
+  "TelemetryHistoryMetricHeatingActivity": "Нагрів",
   "TelemetryHistoryMetricTemperature": "Температура",
   "TelemetryHistoryMetricTarget": "Ціль",
   "TelemetryHistoryMetricVoltage": "Напруга",

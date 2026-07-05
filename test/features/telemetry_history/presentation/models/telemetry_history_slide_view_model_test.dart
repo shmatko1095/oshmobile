@@ -178,9 +178,12 @@ void main() {
       TelemetryHistorySlideModelBuilder.targetSeriesId,
     ]);
     expect(model.overlaySeries.first.fill, isTrue);
-    expect(model.overlaySeries.first.fillTopAlpha, 0.26);
-    expect(model.overlaySeries.first.fillBottomAlpha, 0.04);
+    expect(model.overlaySeries.first.fillTopAlpha, 0.32);
+    expect(model.overlaySeries.first.fillBottomAlpha, 0.07);
+    expect(model.overlaySeries[1].values, <double>[1]);
     expect(model.overlaySeries[1].displayValues, <double>[1]);
+    expect(model.overlaySeries[1].includeInYAxisRange, isFalse);
+    expect(model.overlaySeries[1].activityBand, isNotNull);
     expect(model.hasTemperatureAxisSeries, isTrue);
     expect(model.isEmpty, isFalse);
   });

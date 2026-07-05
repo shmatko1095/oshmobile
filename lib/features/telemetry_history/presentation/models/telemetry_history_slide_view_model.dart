@@ -134,7 +134,6 @@ class TelemetryHistorySlideModelBuilder {
     final heatingEntries = heatingMetric == null
         ? const <TelemetryHistoryChartEntry>[]
         : chartEntries(state.seriesFor(heatingMetric), heatingMetric);
-    final temperatureDomain = _resolveNumericDomain(entries, targetEntries);
 
     final hasTemperatureAxisSeries = entries.isNotEmpty ||
         (selectedOverlayIds.contains(targetSeriesId) &&
@@ -147,7 +146,6 @@ class TelemetryHistorySlideModelBuilder {
       targetEntries: targetEntries,
       heatingEntries: heatingEntries,
       hasTemperatureAxisSeries: hasTemperatureAxisSeries,
-      temperatureDomain: temperatureDomain,
       windowStart: series?.from,
       windowEnd: series?.to,
     );
@@ -306,7 +304,6 @@ class TelemetryHistorySlideModelBuilder {
     required List<TelemetryHistoryChartEntry> targetEntries,
     required List<TelemetryHistoryChartEntry> heatingEntries,
     required bool hasTemperatureAxisSeries,
-    required _NumericDomain temperatureDomain,
     DateTime? windowStart,
     DateTime? windowEnd,
   }) {
@@ -337,8 +334,8 @@ class TelemetryHistorySlideModelBuilder {
           ),
           strokeWidth: 2.0,
           fill: true,
-          fillTopAlpha: 0.26,
-          fillBottomAlpha: 0.04,
+          fillTopAlpha: 0.32,
+          fillBottomAlpha: 0.07,
         ),
       );
     }
@@ -357,35 +354,38 @@ class TelemetryHistorySlideModelBuilder {
         continue;
       }
 
-      final resolvedEntries =
-          option.id == heatingSeriesId && hasTemperatureAxisSeries
-              ? _mapBooleanToTemperatureDomain(
-                  sourceEntries,
-                  domain: temperatureDomain,
-                )
-              : sourceEntries;
+      final useActivityBand =
+          option.id == heatingSeriesId && hasTemperatureAxisSeries;
 
       overlaySeries.add(
         HistoryMultiLineSeries(
           id: option.id,
           label: option.label,
-          values: resolvedEntries
-              .map((entry) => entry.value)
-              .toList(growable: false),
+          values:
+              sourceEntries.map((entry) => entry.value).toList(growable: false),
           displayValues:
               sourceEntries.map((entry) => entry.value).toList(growable: false),
-          timestamps: resolvedEntries
+          timestamps: sourceEntries
               .map((entry) => entry.timestamp)
               .toList(growable: false),
-          rangeMinValues: resolvedEntries
-              .map((entry) => entry.rangeMinValue)
-              .toList(growable: false),
-          rangeMaxValues: resolvedEntries
-              .map((entry) => entry.rangeMaxValue)
-              .toList(growable: false),
+          rangeMinValues: useActivityBand
+              ? null
+              : sourceEntries
+                  .map((entry) => entry.rangeMinValue)
+                  .toList(growable: false),
+          rangeMaxValues: useActivityBand
+              ? null
+              : sourceEntries
+                  .map((entry) => entry.rangeMaxValue)
+                  .toList(growable: false),
           color: option.color,
-          strokeWidth: 2.0,
+          strokeWidth: useActivityBand ? 1.6 : 2.0,
           fill: true,
+          fillTopAlpha: useActivityBand ? 0.34 : 0.22,
+          fillBottomAlpha: useActivityBand ? 0.08 : 0.04,
+          includeInYAxisRange: !useActivityBand,
+          activityBand:
+              useActivityBand ? const HistoryMultiLineActivityBand() : null,
         ),
       );
     }
@@ -494,55 +494,6 @@ class TelemetryHistorySlideModelBuilder {
       TelemetryHistoryRange.month => 30,
       TelemetryHistoryRange.year => 365,
     };
-  }
-
-  static _NumericDomain _resolveNumericDomain(
-    List<TelemetryHistoryChartEntry> primaryEntries,
-    List<TelemetryHistoryChartEntry> targetEntries,
-  ) {
-    final values = <double>[
-      ...primaryEntries.map((entry) => entry.value),
-      ...targetEntries.map((entry) => entry.value),
-    ];
-    if (values.isEmpty) {
-      return const _NumericDomain(min: 0, max: 1);
-    }
-
-    final minRaw = values.reduce(math.min);
-    final maxRaw = values.reduce(math.max);
-    final span = (maxRaw - minRaw).abs();
-    if (span > 0.0001) {
-      return _NumericDomain(min: minRaw, max: maxRaw);
-    }
-
-    final fallbackPadding = math.max(minRaw.abs() * 0.04, 1.0);
-    return _NumericDomain(
-      min: minRaw - fallbackPadding,
-      max: maxRaw + fallbackPadding,
-    );
-  }
-
-  static List<TelemetryHistoryChartEntry> _mapBooleanToTemperatureDomain(
-    List<TelemetryHistoryChartEntry> entries, {
-    required _NumericDomain domain,
-  }) {
-    if (entries.isEmpty) {
-      return const <TelemetryHistoryChartEntry>[];
-    }
-    final span = math.max((domain.max - domain.min).abs(), 2.0);
-    final lower = domain.min + span * 0.08;
-    final upper = domain.max - span * 0.08;
-    final cappedUpper = upper <= lower ? lower + 1.0 : upper;
-
-    return entries
-        .map(
-          (entry) => TelemetryHistoryChartEntry(
-            timestamp: entry.timestamp,
-            value: lower + entry.value.clamp(0.0, 1.0) * (cappedUpper - lower),
-            referenceSensorId: entry.referenceSensorId,
-          ),
-        )
-        .toList(growable: false);
   }
 
   static Color _temperaturePointColor(
@@ -708,14 +659,4 @@ class TelemetryHistoryChartEntry {
   final double? rangeMinValue;
   final double? rangeMaxValue;
   final String? referenceSensorId;
-}
-
-class _NumericDomain {
-  const _NumericDomain({
-    required this.min,
-    required this.max,
-  });
-
-  final double min;
-  final double max;
 }
