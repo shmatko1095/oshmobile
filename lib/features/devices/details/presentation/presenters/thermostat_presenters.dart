@@ -38,7 +38,8 @@ class ThermostatBasicPresenter implements DevicePresenter {
 
   final ThermostatDashboardSchemaBuilder _schemaBuilder;
   final ThermostatTelemetryHistoryOpener _historyOpener;
-  final TemperatureHistoryPreviewCache? Function()? _historyPreviewCacheProvider;
+  final TemperatureHistoryPreviewCache? Function()?
+      _historyPreviewCacheProvider;
   final SharedPreferences? Function()? _sharedPreferencesProvider;
 
   @override

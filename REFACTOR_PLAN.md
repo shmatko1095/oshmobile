@@ -15,15 +15,16 @@
 - Start/refresh/dispose orchestration для device domain APIs вынесен из `DeviceFacadeImpl` в `DeviceDomainApiCoordinator`.
 - Для schedule/settings API добавлены общие helpers: stream с текущим значением, timeout/error message mapper, best-effort cancel/close logging.
 - В `DeviceFacadeImpl` silent catch для start/refresh/dispose заменен на best-effort logging через `AppLog` без изменения tolerant behavior.
-- В `app/device_session` больше нет silent `catch (_) {}` / `onError: (_) {}` patterns.
+- В ключевом lifecycle/start/refresh/dispose пути `app/device_session` silent catch заменен на best-effort logging через `AppLog`; оставшиеся `onError` paths переводят ошибки в slice state или defensive cleanup behavior.
 - `AccountSettingsPage` переведен на constructor injection; locator оставлен только на route boundary.
 - `TemperatureMinimalPanel`, `TemperatureHistoryStripCard`, `ThermostatModeBar` и `BleOfflineEntry` больше не читают зависимости напрямую из service locator.
 - Availability update в `DeviceHostBody` вынесен из build phase в post-frame callback; `SelectedDeviceSessionCubit` больше не эмитит дубликаты availability state.
 
-Ограничения проверки:
+Проверено после follow-up фикса:
 
-- IDE diagnostics: чисто.
-- `flutter test` и `dart format` не запускались, потому что `flutter` и `dart` недоступны в PATH текущего окружения.
+- `dart format --output=none --set-exit-if-changed` для Dart-файлов, измененных веткой.
+- `flutter analyze`
+- `flutter test --reporter compact`
 
 ## Главные Принципы
 
