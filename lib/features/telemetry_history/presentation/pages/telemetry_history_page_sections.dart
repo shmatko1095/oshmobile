@@ -1,6 +1,6 @@
 part of 'telemetry_history_page.dart';
 
-class _MetricSelector extends StatelessWidget {
+class _MetricSelector extends StatefulWidget {
   const _MetricSelector({
     required this.metrics,
     required this.selectedIndex,
@@ -14,22 +14,81 @@ class _MetricSelector extends StatelessWidget {
   final ValueChanged<int> onSelected;
 
   @override
+  State<_MetricSelector> createState() => _MetricSelectorState();
+}
+
+class _MetricSelectorState extends State<_MetricSelector> {
+  final List<GlobalKey> _chipKeys = <GlobalKey>[];
+
+  @override
+  void initState() {
+    super.initState();
+    _syncChipKeys();
+    _scheduleSelectedChipReveal(duration: Duration.zero);
+  }
+
+  @override
+  void didUpdateWidget(covariant _MetricSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncChipKeys();
+    if (oldWidget.selectedIndex != widget.selectedIndex ||
+        oldWidget.metrics.length != widget.metrics.length) {
+      _scheduleSelectedChipReveal();
+    }
+  }
+
+  void _syncChipKeys() {
+    while (_chipKeys.length < widget.metrics.length) {
+      _chipKeys.add(GlobalKey());
+    }
+    if (_chipKeys.length > widget.metrics.length) {
+      _chipKeys.removeRange(widget.metrics.length, _chipKeys.length);
+    }
+  }
+
+  void _scheduleSelectedChipReveal({
+    Duration duration = AppPalette.motionBase,
+  }) {
+    final index = widget.selectedIndex;
+    if (index < 0 || index >= _chipKeys.length) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final chipContext = _chipKeys[index].currentContext;
+      if (chipContext == null) return;
+
+      Scrollable.ensureVisible(
+        chipContext,
+        alignment: 0.5,
+        duration: duration,
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 44,
-      child: ListView.separated(
+      child: SingleChildScrollView(
+        key: const ValueKey<String>('telemetry_history_metric_selector'),
         scrollDirection: Axis.horizontal,
-        itemCount: metrics.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 6),
-        itemBuilder: (context, index) {
-          return Center(
-            child: _MetricChip(
-              label: labelBuilder(metrics[index]),
-              selected: selectedIndex == index,
-              onTap: () => onSelected(index),
-            ),
-          );
-        },
+        child: Row(
+          children: [
+            for (var index = 0; index < widget.metrics.length; index++) ...[
+              if (index > 0) const SizedBox(width: 6),
+              Center(
+                key: _chipKeys[index],
+                child: _MetricChip(
+                  label: widget.labelBuilder(widget.metrics[index]),
+                  selected: widget.selectedIndex == index,
+                  onTap: () => widget.onSelected(index),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

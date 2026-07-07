@@ -72,6 +72,19 @@ TelemetryHistorySeries _series({
   );
 }
 
+List<TelemetryHistoryMetric> _numberedMetrics(int count) {
+  return List<TelemetryHistoryMetric>.generate(count, (index) {
+    final number = index + 1;
+    return TelemetryHistoryMetric(
+      title: 'Metric $number',
+      subtitle: 'Label $number',
+      seriesKey: 'metric.$number',
+      kind: TelemetryHistoryMetricKind.numeric,
+      unit: 'W',
+    );
+  });
+}
+
 Future<void> _pumpPage(
   WidgetTester tester,
   TelemetryHistoryCubit cubit,
@@ -184,6 +197,49 @@ void main() {
       expect(cubit.state.selectedMetricIndex, 0);
       expect(api.requests, hasLength(2));
       expect(api.requests.last.seriesKey, 'climate_sensors.air.temp');
+
+      await cubit.close();
+    });
+
+    testWidgets('keeps selected metric chip visible after page swipe',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(320, 640));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final api = _QueuedTelemetryHistoryApi();
+      final now = DateTime.utc(2026, 3, 14, 20, 18, 40);
+      final cubit = TelemetryHistoryCubit(
+        seriesReader: api,
+        metrics: _numberedMetrics(12),
+        nowUtc: () => now,
+      );
+
+      await _pumpPage(tester, cubit);
+
+      final selectorFinder = find.byKey(
+        const ValueKey<String>('telemetry_history_metric_selector'),
+      );
+      final targetLabelFinder = find.text('Label 10');
+      final initialSelectorRect = tester.getRect(selectorFinder);
+      expect(
+        tester.getRect(targetLabelFinder).left,
+        greaterThan(initialSelectorRect.right),
+      );
+
+      for (var i = 0; i < 9; i++) {
+        await tester.drag(find.byType(PageView), const Offset(-360, 0));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+
+      expect(cubit.state.selectedMetricIndex, 9);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final selectorRect = tester.getRect(selectorFinder);
+      final selectedLabelRect = tester.getRect(targetLabelFinder);
+      expect(selectedLabelRect.left, greaterThanOrEqualTo(selectorRect.left));
+      expect(selectedLabelRect.right, lessThanOrEqualTo(selectorRect.right));
 
       await cubit.close();
     });
