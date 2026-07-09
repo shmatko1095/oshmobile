@@ -65,6 +65,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "AddDevice": MessageLookupByLibrary.simpleMessage("Додати пристрій"),
     "AddSensor": MessageLookupByLibrary.simpleMessage("Додати датчик"),
+    "AddWifiNetworkAction": MessageLookupByLibrary.simpleMessage(
+      "Додати Wi‑Fi мережу",
+    ),
     "ApiConflict": MessageLookupByLibrary.simpleMessage(
       "Цю дію не можна виконати через конфлікт поточного стану. Оновіть дані й спробуйте знову.",
     ),
@@ -100,6 +103,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Налаштування застосунку",
     ),
     "Back": MessageLookupByLibrary.simpleMessage("Назад"),
+    "BleWifiProvisioningHint": MessageLookupByLibrary.simpleMessage(
+      "Увімкніть налаштування Wi‑Fi через BLE на пристрої та тримайте телефон поруч, щоб знайти доступні мережі.",
+    ),
     "Cancel": MessageLookupByLibrary.simpleMessage("Скасувати"),
     "CheckYourEmail": MessageLookupByLibrary.simpleMessage("Перевірте пошту"),
     "ChooseWiFi": MessageLookupByLibrary.simpleMessage("Вибрати Wi‑Fi"),
@@ -187,6 +193,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "DeviceScopeUnavailableInContext": MessageLookupByLibrary.simpleMessage(
       "Контекст пристрою недоступний у поточному місці.",
+    ),
+    "DeviceWifiSetupUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Налаштування Wi‑Fi недоступне, бо у пристрою немає серійного номера.",
     ),
     "Discard": MessageLookupByLibrary.simpleMessage("Скасувати зміни"),
     "Done": MessageLookupByLibrary.simpleMessage("Готово"),
@@ -349,6 +358,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "SignIn": MessageLookupByLibrary.simpleMessage("Увійти"),
     "SignOut": MessageLookupByLibrary.simpleMessage("Вийти"),
     "SignUp": MessageLookupByLibrary.simpleMessage("Зареєструватися"),
+    "StartWifiSearch": MessageLookupByLibrary.simpleMessage("Почати пошук"),
     "StepOf": m8,
     "Successful": MessageLookupByLibrary.simpleMessage("Успішно"),
     "SunShort": MessageLookupByLibrary.simpleMessage("Нд"),

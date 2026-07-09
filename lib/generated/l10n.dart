@@ -1089,6 +1089,46 @@ class S {
     );
   }
 
+  /// `Add Wi-Fi network`
+  String get AddWifiNetworkAction {
+    return Intl.message(
+      'Add Wi-Fi network',
+      name: 'AddWifiNetworkAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enable BLE Wi-Fi setup on the device, then keep your phone nearby to find available networks.`
+  String get BleWifiProvisioningHint {
+    return Intl.message(
+      'Enable BLE Wi-Fi setup on the device, then keep your phone nearby to find available networks.',
+      name: 'BleWifiProvisioningHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Start search`
+  String get StartWifiSearch {
+    return Intl.message(
+      'Start search',
+      name: 'StartWifiSearch',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Wi-Fi setup is unavailable because this device has no serial number.`
+  String get DeviceWifiSetupUnavailable {
+    return Intl.message(
+      'Wi-Fi setup is unavailable because this device has no serial number.',
+      name: 'DeviceWifiSetupUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `No users with access found.`
   String get DeviceAccessEmpty {
     return Intl.message(

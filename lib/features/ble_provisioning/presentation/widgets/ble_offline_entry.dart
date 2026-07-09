@@ -2,14 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/widgets/app_button.dart';
 import 'package:oshmobile/core/logging/crashlytics_context_sync.dart';
+import 'package:oshmobile/features/ble_provisioning/presentation/ble_provisioning_flow.dart';
 import 'package:oshmobile/features/ble_provisioning/presentation/cubit/ble_provisioning_cubit.dart';
-import 'package:oshmobile/features/ble_provisioning/presentation/pages/ble_wifi_scan_page.dart';
 import 'package:oshmobile/generated/l10n.dart';
-
-typedef BleProvisioningCubitFactory = BleProvisioningCubit Function();
 
 class BleOfflineEntry extends StatelessWidget {
   final String deviceSn;
@@ -114,23 +111,11 @@ class _BleOfflineEntryBody extends StatelessWidget {
 
   Future<void> _openBleFlow(BuildContext context) async {
     final cubit = context.read<BleProvisioningCubit>();
-    final navigator = Navigator.of(context);
-
-    await cubit.ensureBleDisconnected();
-    if (!context.mounted) return;
-    cubit.resetForNewFlow();
-
-    final connected = await navigator.push<bool>(
-      MaterialPageRoute(
-        settings: const RouteSettings(name: OshAnalyticsScreens.bleWifiScan),
-        builder: (_) => BlocProvider.value(
-          value: cubit,
-          child: BleWifiScanPage(
-            deviceSn: deviceSn,
-            secureCode: secureCode,
-          ),
-        ),
-      ),
+    final connected = await openBleWifiProvisioningFlow(
+      context: context,
+      cubit: cubit,
+      deviceSn: deviceSn,
+      secureCode: secureCode,
     );
 
     if (!context.mounted) return;

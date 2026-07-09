@@ -12,6 +12,7 @@ final class OshAnalyticsScreens {
   static const addDevice = 'add_device';
   static const renameDevice = 'rename_device';
   static const deviceAccess = 'device_access';
+  static const bleWifiProvisioningEntry = 'ble_wifi_provisioning_entry';
   static const bleWifiScan = 'ble_wifi_scan';
   static const bleWifiPassword = 'ble_wifi_password';
   static const deviceSettingsHub = 'device_settings_hub';

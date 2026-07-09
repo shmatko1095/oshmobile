@@ -11,7 +11,7 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/devic
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_offline_page.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/features/device_catalog/presentation/cubit/device_catalog_cubit.dart';
-import 'package:oshmobile/features/ble_provisioning/presentation/widgets/ble_offline_entry.dart';
+import 'package:oshmobile/features/ble_provisioning/presentation/ble_provisioning_flow.dart';
 
 import '../cubit/device_host_cubit.dart';
 import '../cubit/device_page_cubit.dart';

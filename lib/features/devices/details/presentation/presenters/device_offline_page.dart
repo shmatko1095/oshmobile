@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
+import 'package:oshmobile/features/ble_provisioning/presentation/ble_provisioning_flow.dart';
 import 'package:oshmobile/features/ble_provisioning/presentation/widgets/ble_offline_entry.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
@@ -49,8 +50,6 @@ class DeviceOfflinePage extends StatelessWidget {
         ? null
         : s.deviceOfflineSubtitleWithLastSeen(lastSeenLabel);
     final bgColor = Theme.of(context).scaffoldBackgroundColor;
-
-    const secureCodeStub = 'TODO_SECURE_CODE';
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -126,7 +125,7 @@ class DeviceOfflinePage extends StatelessWidget {
                         const SizedBox(height: AppPalette.spaceXl),
                         BleOfflineEntry(
                           deviceSn: device.sn,
-                          secureCode: secureCodeStub,
+                          secureCode: bleProvisioningSecureCodeStub,
                           lastOnlineText: device.connectionInfo.timestampText,
                           onWifiProvisioningSuccess: onWifiProvisioningSuccess,
                           createCubit: createBleProvisioningCubit,

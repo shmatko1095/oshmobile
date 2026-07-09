@@ -5,6 +5,8 @@ import 'package:oshmobile/core/analytics/osh_analytics_screen_view.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
+import 'package:oshmobile/features/ble_provisioning/presentation/ble_provisioning_flow.dart';
+import 'package:oshmobile/features/ble_provisioning/presentation/pages/ble_wifi_provisioning_entry_page.dart';
 import 'package:oshmobile/features/device_catalog/presentation/cubit/device_catalog_cubit.dart';
 import 'package:oshmobile/features/device_management/presentation/pages/device_access_page.dart';
 import 'package:oshmobile/features/device_management/presentation/pages/rename_device_page.dart';
@@ -13,20 +15,26 @@ import 'package:oshmobile/generated/l10n.dart';
 
 class DeviceSettingsHubPage extends StatelessWidget {
   final String deviceId;
+  final BleProvisioningCubitFactory? createBleProvisioningCubit;
 
   static MaterialPageRoute<void> route({
     required String deviceId,
+    BleProvisioningCubitFactory? createBleProvisioningCubit,
   }) =>
       MaterialPageRoute<void>(
         settings: const RouteSettings(
           name: OshAnalyticsScreens.deviceSettingsHub,
         ),
-        builder: (_) => DeviceSettingsHubPage(deviceId: deviceId),
+        builder: (_) => DeviceSettingsHubPage(
+          deviceId: deviceId,
+          createBleProvisioningCubit: createBleProvisioningCubit,
+        ),
       );
 
   const DeviceSettingsHubPage({
     super.key,
     required this.deviceId,
+    this.createBleProvisioningCubit,
   });
 
   String _deviceDisplayName(Device device) {
@@ -92,6 +100,8 @@ class DeviceSettingsHubPage extends StatelessWidget {
                   isCurrentSession && sessionState.canOpenInternalSettings;
               final canOpenAbout =
                   isCurrentSession && sessionState.canOpenAbout;
+              final deviceSn = device.sn.trim();
+              final canOpenWifiSetup = deviceSn.isNotEmpty;
 
               return ListView(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
@@ -141,6 +151,23 @@ class DeviceSettingsHubPage extends StatelessWidget {
                             ),
                           );
                         },
+                      ),
+                      _SettingsTile(
+                        leading: Icons.wifi_tethering_rounded,
+                        title: S.of(context).AddWifiNetworkAction,
+                        subtitle: canOpenWifiSetup
+                            ? null
+                            : S.of(context).DeviceWifiSetupUnavailable,
+                        onTap: canOpenWifiSetup
+                            ? () {
+                                Navigator.of(context).push(
+                                  BleWifiProvisioningEntryPage.route(
+                                    deviceSn: deviceSn,
+                                    createCubit: createBleProvisioningCubit,
+                                  ),
+                                );
+                              }
+                            : null,
                       ),
                       _SettingsTile(
                         leading: Icons.edit_rounded,

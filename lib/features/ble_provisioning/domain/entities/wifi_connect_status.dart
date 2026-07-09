@@ -14,15 +14,19 @@ enum WifiConnectState {
 class WifiConnectStatus {
   final WifiConnectState state;
   final String message; // raw device message, for logging/UI if needed.
+  final int? reason;
 
   const WifiConnectStatus({
     required this.state,
     required this.message,
+    this.reason,
   });
 
   factory WifiConnectStatus.fromJson(Map<String, dynamic> json) {
     final stateRaw = json['state'] as String? ?? '';
     final msg = json['message'] as String? ?? '';
+    final reasonRaw = json['reason'];
+    final reason = reasonRaw is num ? reasonRaw.toInt() : null;
 
     WifiConnectState state;
     switch (stateRaw) {
@@ -49,6 +53,7 @@ class WifiConnectStatus {
     return WifiConnectStatus(
       state: state,
       message: msg,
+      reason: reason,
     );
   }
 }

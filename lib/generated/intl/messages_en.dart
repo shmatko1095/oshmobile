@@ -63,6 +63,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "AccountSettings": MessageLookupByLibrary.simpleMessage("Account settings"),
     "AddDevice": MessageLookupByLibrary.simpleMessage("Add device"),
     "AddSensor": MessageLookupByLibrary.simpleMessage("Add sensor"),
+    "AddWifiNetworkAction": MessageLookupByLibrary.simpleMessage(
+      "Add Wi-Fi network",
+    ),
     "ApiConflict": MessageLookupByLibrary.simpleMessage(
       "This action conflicts with the current state. Refresh and try again.",
     ),
@@ -98,6 +101,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Application settings",
     ),
     "Back": MessageLookupByLibrary.simpleMessage("Back"),
+    "BleWifiProvisioningHint": MessageLookupByLibrary.simpleMessage(
+      "Enable BLE Wi-Fi setup on the device, then keep your phone nearby to find available networks.",
+    ),
     "Cancel": MessageLookupByLibrary.simpleMessage("Cancel"),
     "CheckYourEmail": MessageLookupByLibrary.simpleMessage("Check your email"),
     "ChooseWiFi": MessageLookupByLibrary.simpleMessage("Choose Wi-Fi"),
@@ -183,6 +189,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "DeviceScopeUnavailableInContext": MessageLookupByLibrary.simpleMessage(
       "Device scope is not available in the current context.",
+    ),
+    "DeviceWifiSetupUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Wi-Fi setup is unavailable because this device has no serial number.",
     ),
     "Discard": MessageLookupByLibrary.simpleMessage("Discard"),
     "Done": MessageLookupByLibrary.simpleMessage("Done"),
@@ -341,6 +350,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "SignIn": MessageLookupByLibrary.simpleMessage("Sign In"),
     "SignOut": MessageLookupByLibrary.simpleMessage("Sign Out"),
     "SignUp": MessageLookupByLibrary.simpleMessage("Sign Up"),
+    "StartWifiSearch": MessageLookupByLibrary.simpleMessage("Start search"),
     "StepOf": m8,
     "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
     "SunShort": MessageLookupByLibrary.simpleMessage("Sun"),
