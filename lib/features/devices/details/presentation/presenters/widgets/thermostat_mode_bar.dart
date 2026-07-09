@@ -296,12 +296,8 @@ class _ModeItem extends StatelessWidget {
     final Color fg = selected
         ? (isDark ? AppPalette.white : AppPalette.lightTextPrimary)
         : (isDark ? AppPalette.textSecondary : AppPalette.lightTextSecondary);
-    final Color bg = selected
-        ? AppPalette.accentPrimary.withValues(alpha: isDark ? 0.14 : 0.1)
-        : AppPalette.transparent;
-    final Color bd = selected
-        ? AppPalette.accentPrimary.withValues(alpha: isDark ? 0.2 : 0.16)
-        : AppPalette.transparent;
+    final underlineColor =
+        selected ? AppPalette.accentWarning : AppPalette.transparent;
 
     return Semantics(
       container: true,
@@ -318,9 +314,7 @@ class _ModeItem extends StatelessWidget {
           child: Ink(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
             decoration: BoxDecoration(
-              color: bg,
               borderRadius: BorderRadius.circular(AppPalette.radiusLg),
-              border: Border.all(color: bd),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -347,7 +341,7 @@ class _ModeItem extends StatelessWidget {
                   height: 2,
                   width: selected ? 22 : 0,
                   decoration: BoxDecoration(
-                    color: fg,
+                    color: underlineColor,
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
