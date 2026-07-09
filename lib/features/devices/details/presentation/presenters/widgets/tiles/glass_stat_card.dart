@@ -23,6 +23,40 @@ class GlassStatCard extends StatelessWidget {
   }
 }
 
+class StatPeriodBadge extends StatelessWidget {
+  const StatPeriodBadge({
+    super.key,
+    required this.label,
+  });
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppPalette.spaceSm,
+        vertical: 3,
+      ),
+      decoration: BoxDecoration(
+        color: statSurfaceAltColor(context),
+        border: Border.all(color: statBorderColor(context)),
+        borderRadius: BorderRadius.circular(AppPalette.radiusPill),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        style: TextStyle(
+          color: statMutedColor(context),
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          height: 1.1,
+        ),
+      ),
+    );
+  }
+}
+
 // ---------- Helpers ----------
 bool isDarkSurface(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark;

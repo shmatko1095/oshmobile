@@ -444,15 +444,11 @@ void main() {
         historyCubit.state.metrics.map((metric) => metric.seriesKey).toList();
     expect(
       historySeriesKeys,
-      contains(TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta),
-    );
-    expect(
-      historySeriesKeys,
-      contains(TelemetryHistoryMetricCatalog.powerMeterActivePowerW),
-    );
-    expect(
-      historySeriesKeys,
-      contains(TelemetryHistoryMetricCatalog.powerMeterApparentPowerVa),
+      equals(
+        const <String>[
+          TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
+        ],
+      ),
     );
     expect(history.requests, hasLength(1));
     expect(
@@ -554,11 +550,11 @@ void main() {
         historyCubit.state.metrics.map((metric) => metric.seriesKey).toList();
     expect(
       historySeriesKeys,
-      contains(TelemetryHistoryMetricCatalog.powerMeterApparentPowerVa),
-    );
-    expect(
-      historySeriesKeys,
-      isNot(contains(TelemetryHistoryMetricCatalog.powerMeterActivePowerW)),
+      equals(
+        const <String>[
+          TelemetryHistoryMetricCatalog.powerMeterApparentPowerVa,
+        ],
+      ),
     );
     expect(history.requests, hasLength(1));
     expect(
@@ -663,8 +659,7 @@ void main() {
     );
   });
 
-  testWidgets('electrical power tiles open history without energy metric',
-      (tester) async {
+  testWidgets('voltage tile opens only voltage history metric', (tester) async {
     final bundle = _bundle(
       widgets: const <Map<String, dynamic>>[
         {
@@ -748,15 +743,11 @@ void main() {
         historyCubit.state.metrics.map((metric) => metric.seriesKey).toList();
     expect(
       historySeriesKeys,
-      isNot(contains(TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta)),
-    );
-    expect(
-      historySeriesKeys,
-      contains(TelemetryHistoryMetricCatalog.powerMeterVoltageV),
-    );
-    expect(
-      historySeriesKeys,
-      contains(TelemetryHistoryMetricCatalog.powerMeterActivePowerW),
+      equals(
+        const <String>[
+          TelemetryHistoryMetricCatalog.powerMeterVoltageV,
+        ],
+      ),
     );
     expect(history.requests, hasLength(1));
     expect(

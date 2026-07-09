@@ -11,7 +11,7 @@ class LoadFactorKpiCard extends StatelessWidget {
     this.percentBind,
     this.hoursBind,
     this.secondsBind,
-    this.title = 'Heating activity (24h)',
+    this.title = 'Heating runtime',
     this.onTap,
   });
 
@@ -48,81 +48,86 @@ class LoadFactorKpiCard extends StatelessWidget {
     );
     final percentInt = p == null ? null : (p * 100).round();
     final percentTxt = percentInt == null ? '—' : '$percentInt%';
+    final periodLabel = _periodLabel(context);
 
-    return AppSolidCard(
-      onTap: onTap,
-      radius: AppPalette.radiusXl,
-      backgroundColor: statSurfaceColor(context),
-      borderColor: statBorderColor(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Semantics(
+      button: onTap != null,
+      label: '$title, $periodLabel, $percentTxt',
+      child: ExcludeSemantics(
+        child: AppSolidCard(
+          onTap: onTap,
+          radius: AppPalette.radiusXl,
+          backgroundColor: statSurfaceColor(context),
+          borderColor: statBorderColor(context),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.insights_rounded,
-                size: 16,
-                color: statTitleColor(context),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.insights_rounded,
+                    size: 16,
                     color: statTitleColor(context),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    height: 1.12,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: statTitleColor(context),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        height: 1.12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                percentTxt,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: statValueColor(context),
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
+                  height: 1.0,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppPalette.radiusPill),
+                child: LinearProgressIndicator(
+                  value: p ?? 0,
+                  minHeight: 7,
+                  backgroundColor:
+                      Theme.of(context).brightness == Brightness.dark
+                          ? AppPalette.white.withValues(alpha: 0.14)
+                          : AppPalette.lightBorderSubtle,
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppPalette.accentPrimary,
                   ),
                 ),
               ),
-              if (onTap != null)
-                Icon(
-                  Icons.show_chart_rounded,
-                  size: 16,
-                  color: statMutedColor(context),
-                ),
+              const Spacer(),
+              Align(
+                alignment: Alignment.centerRight,
+                child: StatPeriodBadge(label: periodLabel),
+              ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            percentTxt,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: statValueColor(context),
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-              height: 1.0,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppPalette.radiusPill),
-            child: LinearProgressIndicator(
-              value: p ?? 0,
-              minHeight: 7,
-              backgroundColor: Theme.of(context).brightness == Brightness.dark
-                  ? AppPalette.white.withValues(alpha: 0.14)
-                  : AppPalette.lightBorderSubtle,
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(AppPalette.accentPrimary),
-            ),
-          ),
-          const Spacer(),
-          const Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              'last 24h',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-            ),
-          ),
-        ],
+        ),
       ),
     );
+  }
+
+  String _periodLabel(BuildContext context) {
+    final languageCode = Localizations.localeOf(context).languageCode;
+    return languageCode == 'uk' ? '24 год' : '24h';
   }
 }
 
@@ -133,7 +138,7 @@ class LoadFactorCard extends StatelessWidget {
     this.percentBind,
     this.hoursBind,
     this.secondsBind,
-    this.title = 'Heating activity (24h)',
+    this.title = 'Heating runtime',
     this.onTap,
   });
 

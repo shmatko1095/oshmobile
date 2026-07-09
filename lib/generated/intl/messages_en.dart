@@ -363,7 +363,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryMetricHeatingActivity":
         MessageLookupByLibrary.simpleMessage("Heating activity"),
     "TelemetryHistoryMetricLoadFactor": MessageLookupByLibrary.simpleMessage(
-      "Load factor",
+      "Heating runtime",
     ),
     "TelemetryHistoryMetricTarget": MessageLookupByLibrary.simpleMessage(
       "Target",

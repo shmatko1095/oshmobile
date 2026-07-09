@@ -2334,10 +2334,10 @@ class S {
     );
   }
 
-  /// `Load factor`
+  /// `Heating runtime`
   String get TelemetryHistoryMetricLoadFactor {
     return Intl.message(
-      'Load factor',
+      'Heating runtime',
       name: 'TelemetryHistoryMetricLoadFactor',
       desc: '',
       args: [],

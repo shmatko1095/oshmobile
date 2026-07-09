@@ -149,7 +149,7 @@ void main() {
     );
   });
 
-  test('power now history starts with active power without energy widget', () {
+  test('power meter tiles open only their own history metric', () {
     final bundle = _bundle(
       widgets: const <Map<String, dynamic>>[
         {
@@ -196,7 +196,7 @@ void main() {
     expect(powerIntent, isNotNull);
     expect(
       powerIntent!.group,
-      TelemetryHistoryIntentGroup.powerConsumption,
+      TelemetryHistoryIntentGroup.single,
     );
     expect(
       powerIntent.initialSeriesKey,
@@ -204,13 +204,9 @@ void main() {
     );
     expect(
       powerIntent.configuredSeriesKeys,
-      containsAllInOrder(
-        const <String>[
-          TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
-          TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
-          TelemetryHistoryMetricCatalog.powerMeterVoltageV,
-        ],
-      ),
+      const <String>[
+        TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
+      ],
     );
 
     final voltageTile = schema.tiles
@@ -218,18 +214,12 @@ void main() {
         .firstWhere((tile) => tile.type == ThermostatTileType.voltageNow);
     final voltageIntent = voltageTile.telemetryHistoryIntent;
     expect(voltageIntent, isNotNull);
-    expect(voltageIntent!.group, TelemetryHistoryIntentGroup.electrical);
+    expect(voltageIntent!.group, TelemetryHistoryIntentGroup.single);
     expect(
       voltageIntent.configuredSeriesKeys,
-      contains(TelemetryHistoryMetricCatalog.powerMeterActivePowerW),
-    );
-    expect(
-      voltageIntent.configuredSeriesKeys,
-      contains(TelemetryHistoryMetricCatalog.powerMeterVoltageV),
-    );
-    expect(
-      voltageIntent.configuredSeriesKeys,
-      isNot(contains(TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta)),
+      const <String>[
+        TelemetryHistoryMetricCatalog.powerMeterVoltageV,
+      ],
     );
   });
 

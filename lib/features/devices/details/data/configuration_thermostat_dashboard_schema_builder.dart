@@ -219,6 +219,11 @@ class ConfigurationThermostatDashboardSchemaBuilder
           ...energySeriesKeys,
           ...electricalSeriesKeys,
         ],
+      TelemetryHistoryIntentGroup.single => descriptor.seriesKey == null
+          ? const <String>[]
+          : <String>[
+              descriptor.seriesKey!,
+            ],
     };
 
     if (configuredSeriesKeys.isEmpty) {
@@ -415,7 +420,7 @@ const List<_TileDescriptor> _tileDescriptors = <_TileDescriptor>[
     widgetId: 'powerNow',
     type: ThermostatTileType.powerNow,
     shape: _TileShape.valueWithOptionalValid,
-    historyGroup: TelemetryHistoryIntentGroup.powerConsumption,
+    historyGroup: TelemetryHistoryIntentGroup.single,
     initialSeriesKey: PowerMeterSeriesKeys.activePowerW,
     seriesKey: PowerMeterSeriesKeys.activePowerW,
   ),
@@ -423,7 +428,7 @@ const List<_TileDescriptor> _tileDescriptors = <_TileDescriptor>[
     widgetId: 'voltageNow',
     type: ThermostatTileType.voltageNow,
     shape: _TileShape.valueWithOptionalValid,
-    historyGroup: TelemetryHistoryIntentGroup.electrical,
+    historyGroup: TelemetryHistoryIntentGroup.single,
     initialSeriesKey: PowerMeterSeriesKeys.voltageV,
     seriesKey: PowerMeterSeriesKeys.voltageV,
   ),
@@ -431,7 +436,7 @@ const List<_TileDescriptor> _tileDescriptors = <_TileDescriptor>[
     widgetId: 'currentNow',
     type: ThermostatTileType.currentNow,
     shape: _TileShape.valueWithOptionalValid,
-    historyGroup: TelemetryHistoryIntentGroup.electrical,
+    historyGroup: TelemetryHistoryIntentGroup.single,
     initialSeriesKey: PowerMeterSeriesKeys.currentA,
     seriesKey: PowerMeterSeriesKeys.currentA,
   ),
@@ -439,7 +444,7 @@ const List<_TileDescriptor> _tileDescriptors = <_TileDescriptor>[
     widgetId: 'apparentPowerNow',
     type: ThermostatTileType.apparentPowerNow,
     shape: _TileShape.valueWithOptionalValid,
-    historyGroup: TelemetryHistoryIntentGroup.electrical,
+    historyGroup: TelemetryHistoryIntentGroup.single,
     initialSeriesKey: PowerMeterSeriesKeys.apparentPowerVa,
     seriesKey: PowerMeterSeriesKeys.apparentPowerVa,
   ),

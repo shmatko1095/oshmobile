@@ -312,7 +312,7 @@
   },
   "TelemetryHistoryLoadFailed": "Failed to load chart",
   "TelemetryHistoryNoData": "No data yet.",
-  "TelemetryHistoryMetricLoadFactor": "Load factor",
+  "TelemetryHistoryMetricLoadFactor": "Heating runtime",
   "TelemetryHistoryMetricHeatingActivity": "Heating activity",
   "TelemetryHistoryMetricTemperature": "Temperature",
   "TelemetryHistoryMetricTarget": "Target",

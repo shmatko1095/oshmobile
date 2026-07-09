@@ -312,7 +312,7 @@
   },
   "TelemetryHistoryLoadFailed": "Не вдалося завантажити графік",
   "TelemetryHistoryNoData": "Даних ще немає.",
-  "TelemetryHistoryMetricLoadFactor": "Коефіцієнт навантаження",
+  "TelemetryHistoryMetricLoadFactor": "Час нагріву",
   "TelemetryHistoryMetricHeatingActivity": "Нагрів",
   "TelemetryHistoryMetricTemperature": "Температура",
   "TelemetryHistoryMetricTarget": "Ціль",

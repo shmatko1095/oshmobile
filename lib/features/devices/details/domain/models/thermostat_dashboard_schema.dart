@@ -15,6 +15,7 @@ enum TelemetryHistoryIntentGroup {
   energy,
   electrical,
   powerConsumption,
+  single,
 }
 
 class TelemetryHistoryIntent {
