@@ -312,14 +312,14 @@ class _ModeItem extends StatelessWidget {
       hint: semanticsHint,
       child: ExcludeSemantics(
         child: InkWell(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppPalette.radiusLg),
           onTap: onTap,
           onLongPress: onLongPress,
           child: Ink(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
             decoration: BoxDecoration(
               color: bg,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppPalette.radiusLg),
               border: Border.all(color: bd),
             ),
             child: Column(
