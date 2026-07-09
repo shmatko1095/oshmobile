@@ -149,7 +149,7 @@ void main() {
     );
   });
 
-  test('power now history starts with energy delta without energy widget', () {
+  test('power now history starts with active power without energy widget', () {
     final bundle = _bundle(
       widgets: const <Map<String, dynamic>>[
         {
@@ -200,7 +200,7 @@ void main() {
     );
     expect(
       powerIntent.initialSeriesKey,
-      TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
+      TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
     );
     expect(
       powerIntent.configuredSeriesKeys,
@@ -249,9 +249,8 @@ void main() {
 
     final schema = builder.build(bundle: bundle);
 
-    final energyTile = schema.tiles
-        .whereType<ThermostatValueTileSpec>()
-        .firstWhere((tile) => tile.type == ThermostatTileType.energyUsed);
+    final energyTile =
+        schema.tiles.whereType<ThermostatDailyEnergyTileSpec>().single;
     final energyIntent = energyTile.telemetryHistoryIntent;
     expect(energyIntent, isNotNull);
     expect(energyIntent!.group, TelemetryHistoryIntentGroup.energy);
@@ -259,6 +258,49 @@ void main() {
       energyIntent.configuredSeriesKeys,
       const <String>[TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta],
     );
+  });
+
+  test(
+      'renders energy tile without live control ids when telemetry is readable',
+      () {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'energyUsed',
+          'control_ids': <String>[],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[],
+      readableDomains: const <String>{'telemetry'},
+    );
+
+    final schema = builder.build(bundle: bundle);
+
+    expect(schema.visibleWidgetIds, contains('energyUsed'));
+    final energyTile =
+        schema.tiles.whereType<ThermostatDailyEnergyTileSpec>().single;
+    expect(
+      energyTile.telemetryHistoryIntent?.configuredSeriesKeys,
+      const <String>[TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta],
+    );
+  });
+
+  test('hides empty-control energy tile when telemetry is unreadable', () {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'energyUsed',
+          'control_ids': <String>[],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[],
+      readableDomains: const <String>{},
+    );
+
+    final schema = builder.build(bundle: bundle);
+
+    expect(schema.visibleWidgetIds, isNot(contains('energyUsed')));
+    expect(schema.tiles.whereType<ThermostatDailyEnergyTileSpec>(), isEmpty);
   });
 
   test('skips malformed widgets with missing required control indexes', () {

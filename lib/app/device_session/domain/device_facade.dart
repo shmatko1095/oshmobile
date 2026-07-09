@@ -4,6 +4,8 @@ import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_query.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/telemetry_history_series_reader.dart';
 
 abstract interface class DeviceFacade {
@@ -147,7 +149,11 @@ abstract interface class DeviceTelemetryApi {
 }
 
 abstract interface class DeviceTelemetryHistoryApi
-    implements TelemetryHistorySeriesReader {}
+    implements TelemetryHistorySeriesReader {
+  Future<TelemetryAggregate> getAggregate({
+    required TelemetryAggregateQuery query,
+  });
+}
 
 abstract interface class DeviceAboutApi {
   Map<String, dynamic>? get current;

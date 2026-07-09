@@ -183,6 +183,10 @@ class ConfigurationThermostatDashboardSchemaBuilder
           ),
           telemetryHistoryIntent: historyIntent,
         );
+      case _TileShape.dailyEnergy:
+        return ThermostatDailyEnergyTileSpec(
+          telemetryHistoryIntent: historyIntent,
+        );
       case _TileShape.delta:
         final inletBind =
             _requiredWidgetBind(bundle, registry, descriptor.widgetId, 0);
@@ -254,15 +258,14 @@ class ConfigurationThermostatDashboardSchemaBuilder
     DeviceConfigurationBundle bundle,
     ControlRegistry registry,
   ) {
-    if (!_canRenderWidget(bundle, registry, _energyWidgetId) &&
-        !_canRenderWidget(bundle, registry, _powerWidgetId)) {
+    final canRenderEnergy = _canRenderWidget(bundle, registry, _energyWidgetId);
+    final canRenderPower = _canRenderWidget(bundle, registry, _powerWidgetId);
+    if (!canRenderEnergy && !canRenderPower) {
       return const <String>[];
     }
 
-    final energyBind =
-        _requiredWidgetBind(bundle, registry, _energyWidgetId, 0);
     final powerBind = _requiredWidgetBind(bundle, registry, _powerWidgetId, 0);
-    if (energyBind == null && powerBind == null) {
+    if (!canRenderEnergy && powerBind == null) {
       return const <String>[];
     }
 
@@ -307,7 +310,13 @@ class ConfigurationThermostatDashboardSchemaBuilder
     String widgetId,
   ) {
     final widget = bundle.widget(widgetId);
-    if (widget == null || widget.controlIds.isEmpty) {
+    if (widget == null) {
+      return false;
+    }
+    if (widgetId == _energyWidgetId && widget.controlIds.isEmpty) {
+      return bundle.canReadDomain('telemetry');
+    }
+    if (widget.controlIds.isEmpty) {
       return false;
     }
     return widget.controlIds.every(registry.canRead);
@@ -361,6 +370,7 @@ const String _powerWidgetId = 'powerNow';
 enum _TileShape {
   singleBind,
   valueWithOptionalValid,
+  dailyEnergy,
   delta,
 }
 
@@ -396,7 +406,7 @@ const List<_TileDescriptor> _tileDescriptors = <_TileDescriptor>[
   _TileDescriptor(
     widgetId: 'energyUsed',
     type: ThermostatTileType.energyUsed,
-    shape: _TileShape.valueWithOptionalValid,
+    shape: _TileShape.dailyEnergy,
     historyGroup: TelemetryHistoryIntentGroup.energy,
     initialSeriesKey: PowerMeterSeriesKeys.energyWhDelta,
     seriesKey: PowerMeterSeriesKeys.energyWhDelta,
@@ -406,7 +416,7 @@ const List<_TileDescriptor> _tileDescriptors = <_TileDescriptor>[
     type: ThermostatTileType.powerNow,
     shape: _TileShape.valueWithOptionalValid,
     historyGroup: TelemetryHistoryIntentGroup.powerConsumption,
-    initialSeriesKey: PowerMeterSeriesKeys.energyWhDelta,
+    initialSeriesKey: PowerMeterSeriesKeys.activePowerW,
     seriesKey: PowerMeterSeriesKeys.activePowerW,
   ),
   _TileDescriptor(

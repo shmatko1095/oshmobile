@@ -64,6 +64,15 @@ abstract class MobileV1Service extends ChopperService {
     @Query('resolution') String resolution = 'auto',
   });
 
+  @GET(path: '/devices/{serial}/telemetry/aggregate')
+  Future<Response> getMyDeviceTelemetryAggregate({
+    @Path('serial') required String serial,
+    @Query('series_keys') required String seriesKeys,
+    @Query('from') required String from,
+    @Query('to') required String to,
+    @Query('resolution') String resolution = 'auto',
+  });
+
   @GET(path: '/client-policy')
   Future<Response> getClientPolicy({
     @Query('platform') required String platform,

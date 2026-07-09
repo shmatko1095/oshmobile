@@ -8,6 +8,7 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/adapt
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_mode_bar.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/delta_temp_card.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_energy_usage_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/heating_status_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/inlet_temp_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/load_factor_card.dart';
@@ -19,6 +20,7 @@ import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
 import 'package:oshmobile/features/sensors/presentation/open_sensor_editor.dart';
 import 'package:oshmobile/features/sensors/presentation/open_sensor_pairing.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/temperature_history_preview_cache.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/daily_energy_usage_cache.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/open_telemetry_history.dart';
 import 'package:oshmobile/generated/l10n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,16 +32,19 @@ class ThermostatBasicPresenter implements DevicePresenter {
     required ThermostatDashboardSchemaBuilder schemaBuilder,
     required ThermostatTelemetryHistoryOpener historyOpener,
     TemperatureHistoryPreviewCache? Function()? historyPreviewCacheProvider,
+    DailyEnergyUsageCache? Function()? dailyEnergyCacheProvider,
     SharedPreferences? Function()? sharedPreferencesProvider,
   })  : _schemaBuilder = schemaBuilder,
         _historyOpener = historyOpener,
         _historyPreviewCacheProvider = historyPreviewCacheProvider,
+        _dailyEnergyCacheProvider = dailyEnergyCacheProvider,
         _sharedPreferencesProvider = sharedPreferencesProvider;
 
   final ThermostatDashboardSchemaBuilder _schemaBuilder;
   final ThermostatTelemetryHistoryOpener _historyOpener;
   final TemperatureHistoryPreviewCache? Function()?
       _historyPreviewCacheProvider;
+  final DailyEnergyUsageCache? Function()? _dailyEnergyCacheProvider;
   final SharedPreferences? Function()? _sharedPreferencesProvider;
 
   @override
@@ -143,7 +148,10 @@ class ThermostatBasicPresenter implements DevicePresenter {
                   childAspectRatio: gridChildAspectRatio,
                 ),
                 delegate: SliverChildListDelegate(
-                  [for (final tile in schema.tiles) _buildTile(context, tile)],
+                  [
+                    for (final tile in schema.tiles)
+                      _buildTile(context, device, tile),
+                  ],
                 ),
               ),
             ),
@@ -153,8 +161,22 @@ class ThermostatBasicPresenter implements DevicePresenter {
     );
   }
 
-  Widget _buildTile(BuildContext context, ThermostatTileSpec tile) {
+  Widget _buildTile(
+    BuildContext context,
+    Device device,
+    ThermostatTileSpec tile,
+  ) {
     switch (tile) {
+      case ThermostatDailyEnergyTileSpec(
+          telemetryHistoryIntent: final historyIntent,
+        ):
+        return DailyEnergyUsageCard(
+          title: S.of(context).TelemetryHistoryMetricEnergyUsed,
+          cache: _dailyEnergyCacheProvider?.call(),
+          cacheNamespace:
+              device.sn.trim().isEmpty ? device.id : device.sn.trim(),
+          onTap: _historyTap(context, historyIntent),
+        );
       case ThermostatSingleBindTileSpec(
           type: final type,
           bind: final bind,
@@ -237,17 +259,6 @@ class ThermostatBasicPresenter implements DevicePresenter {
     final s = S.of(context);
 
     switch (type) {
-      case ThermostatTileType.energyUsed:
-        return PowerMetricCard(
-          valueBind: valueBind,
-          validBind: validBind,
-          title: s.TelemetryHistoryMetricEnergyUsed,
-          unit: 'kWh',
-          icon: Icons.bolt_rounded,
-          accentColor: AppPalette.accentSuccess,
-          decimals: 3,
-          onTap: _historyTap(context, historyIntent),
-        );
       case ThermostatTileType.powerNow:
         return PowerCard(
           bind: valueBind,
@@ -286,6 +297,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
           accentColor: AppPalette.accentPrimary,
           onTap: _historyTap(context, historyIntent),
         );
+      case ThermostatTileType.energyUsed:
       case ThermostatTileType.heatingToggle:
       case ThermostatTileType.loadFactor24h:
       case ThermostatTileType.inletTemp:

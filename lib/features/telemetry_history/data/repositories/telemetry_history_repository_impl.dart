@@ -1,4 +1,6 @@
 import 'package:oshmobile/features/telemetry_history/data/datasources/telemetry_history_remote_data_source.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_query.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_query.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/domain/repositories/telemetry_history_repository.dart';
@@ -16,5 +18,13 @@ class TelemetryHistoryRepositoryImpl implements TelemetryHistoryRepository {
     required TelemetryHistoryQuery query,
   }) {
     return _remote.getSeries(serial: serial, query: query);
+  }
+
+  @override
+  Future<TelemetryAggregate> getAggregate({
+    required String serial,
+    required TelemetryAggregateQuery query,
+  }) {
+    return _remote.getAggregate(serial: serial, query: query);
   }
 }

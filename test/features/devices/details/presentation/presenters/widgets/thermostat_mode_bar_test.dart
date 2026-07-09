@@ -602,6 +602,9 @@ final class _FakeDeviceTelemetryHistoryApi
       points: const [],
     );
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 final class _FakeDeviceAboutApi implements DeviceAboutApi {

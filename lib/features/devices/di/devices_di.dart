@@ -17,6 +17,7 @@ import 'package:oshmobile/features/home/data/datasources/device_remote_data_sour
 import 'package:oshmobile/features/home/data/datasources/device_remote_data_source_impl.dart';
 import 'package:oshmobile/features/home/data/repositories/device_repository_impl.dart';
 import 'package:oshmobile/features/home/domain/repositories/device_repository.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/daily_energy_usage_cache.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/temperature_history_preview_cache.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -57,6 +58,10 @@ void registerDevicesFeature(GetIt locator) {
         historyPreviewCacheProvider: () =>
             locator.isRegistered<TemperatureHistoryPreviewCache>()
                 ? locator<TemperatureHistoryPreviewCache>()
+                : null,
+        dailyEnergyCacheProvider: () =>
+            locator.isRegistered<DailyEnergyUsageCache>()
+                ? locator<DailyEnergyUsageCache>()
                 : null,
         sharedPreferencesProvider: () =>
             locator.isRegistered<SharedPreferences>()

@@ -20,6 +20,9 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/therm
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_history_strip_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_mode_bar.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_query.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_series.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_cubit.dart';
@@ -80,17 +83,16 @@ void main() {
     );
   });
 
-  test('visibleWidgetIds includes energy widget when control is readable', () {
+  test('visibleWidgetIds includes energy widget when telemetry is readable',
+      () {
     final bundle = _bundle(
       widgets: const <Map<String, dynamic>>[
         {
           'id': 'energyUsed',
-          'control_ids': ['powerMeterEnergyKwh'],
+          'control_ids': <String>[],
         },
       ],
-      controls: const <Map<String, dynamic>>[
-        {'id': 'powerMeterEnergyKwh', 'path': 'power_meter.energy_kwh'},
-      ],
+      controls: const <Map<String, dynamic>>[],
       readableDomains: const <String>{'telemetry'},
     );
 
@@ -355,7 +357,7 @@ void main() {
     );
   });
 
-  testWidgets('power now tile opens history with energy metric selected',
+  testWidgets('power now tile opens history with active power selected',
       (tester) async {
     final bundle = _bundle(
       widgets: const <Map<String, dynamic>>[
@@ -455,7 +457,7 @@ void main() {
     expect(history.requests, hasLength(1));
     expect(
       history.requests.single.seriesKey,
-      TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
+      TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
     );
   });
 
@@ -570,7 +572,7 @@ void main() {
       widgets: const <Map<String, dynamic>>[
         {
           'id': 'energyUsed',
-          'control_ids': ['powerMeterEnergyKwh'],
+          'control_ids': <String>[],
         },
         {
           'id': 'voltageNow',
@@ -578,7 +580,6 @@ void main() {
         },
       ],
       controls: const <Map<String, dynamic>>[
-        {'id': 'powerMeterEnergyKwh', 'path': 'power_meter.energy_kwh'},
         {'id': 'powerMeterVoltageV', 'path': 'power_meter.voltage_v'},
         {
           'id': 'powerMeterVoltageValid',
@@ -591,7 +592,6 @@ void main() {
     final snapshot = DeviceSnapshot.initial(device: _device()).copyWith(
       controlState: DeviceSlice<Map<String, dynamic>>.ready(
         data: const <String, dynamic>{
-          'powerMeterEnergyKwh': 1.234,
           'powerMeterVoltageV': 230,
           'powerMeterVoltageValid': true,
         },
@@ -621,7 +621,23 @@ void main() {
         ),
       ),
     );
+    await tester.pump();
+
+    expect(history.aggregateRequests, hasLength(1));
+    expect(
+      history.aggregateRequests.single.query.seriesKeys,
+      const <String>[TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta],
+    );
+    history.aggregateRequests.single.completer.complete(
+      _aggregate(
+        from: history.aggregateRequests.single.query.from,
+        to: history.aggregateRequests.single.query.to,
+        energyWh: 1234,
+      ),
+    );
     await tester.pumpAndSettle();
+
+    expect(find.text('1.23 kWh'), findsOneWidget);
 
     await tester.tap(find.text('Energy used'));
     await tester.pump();
@@ -653,7 +669,7 @@ void main() {
       widgets: const <Map<String, dynamic>>[
         {
           'id': 'energyUsed',
-          'control_ids': ['powerMeterEnergyKwh'],
+          'control_ids': <String>[],
         },
         {
           'id': 'powerNow',
@@ -668,7 +684,6 @@ void main() {
         },
       ],
       controls: const <Map<String, dynamic>>[
-        {'id': 'powerMeterEnergyKwh', 'path': 'power_meter.energy_kwh'},
         {
           'id': 'powerMeterActivePowerW',
           'path': 'power_meter.active_power_w',
@@ -689,7 +704,6 @@ void main() {
     final snapshot = DeviceSnapshot.initial(device: _device()).copyWith(
       controlState: DeviceSlice<Map<String, dynamic>>.ready(
         data: const <String, dynamic>{
-          'powerMeterEnergyKwh': 1.234,
           'powerMeterActivePowerW': 942,
           'powerMeterActivePowerValid': true,
           'powerMeterVoltageV': 230,
@@ -819,8 +833,32 @@ Device _device() {
   );
 }
 
+TelemetryAggregate _aggregate({
+  required DateTime from,
+  required DateTime to,
+  required double energyWh,
+}) {
+  return TelemetryAggregate(
+    deviceId: 'device-1',
+    serial: 'SN-1',
+    resolution: '5m',
+    from: from,
+    to: to,
+    series: <TelemetryAggregateSeries>[
+      TelemetryAggregateSeries(
+        seriesKey: TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
+        valueType: 'numeric',
+        unit: 'Wh',
+        samplesCount: 24,
+        sumValue: energyWh,
+      ),
+    ],
+  );
+}
+
 final class _QueuedTelemetryHistoryApi implements DeviceTelemetryHistoryApi {
   final List<_Request> requests = <_Request>[];
+  final List<_AggregateRequest> aggregateRequests = <_AggregateRequest>[];
 
   @override
   Future<TelemetryHistorySeries> getSeries({
@@ -834,6 +872,17 @@ final class _QueuedTelemetryHistoryApi implements DeviceTelemetryHistoryApi {
     requests.add(_Request(seriesKey: seriesKey, completer: completer));
     return completer.future;
   }
+
+  @override
+  Future<TelemetryAggregate> getAggregate({
+    required TelemetryAggregateQuery query,
+  }) {
+    final completer = Completer<TelemetryAggregate>();
+    aggregateRequests.add(
+      _AggregateRequest(query: query, completer: completer),
+    );
+    return completer.future;
+  }
 }
 
 final class _Request {
@@ -844,6 +893,16 @@ final class _Request {
 
   final String seriesKey;
   final Completer<TelemetryHistorySeries> completer;
+}
+
+final class _AggregateRequest {
+  const _AggregateRequest({
+    required this.query,
+    required this.completer,
+  });
+
+  final TelemetryAggregateQuery query;
+  final Completer<TelemetryAggregate> completer;
 }
 
 final class _FakeDeviceFacade implements DeviceFacade {

@@ -155,6 +155,9 @@ final class _QueuedTelemetryHistoryApi implements DeviceTelemetryHistoryApi {
     requests.add(_Request(seriesKey: seriesKey, completer: completer));
     return completer.future;
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 final class _Request {

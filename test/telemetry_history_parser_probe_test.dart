@@ -37,6 +37,17 @@ class _FakeMobileV1Service extends MobileV1Service {
   }
 
   @override
+  Future<Response<dynamic>> getMyDeviceTelemetryAggregate({
+    required String serial,
+    required String seriesKeys,
+    required String from,
+    required String to,
+    String resolution = 'auto',
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<Response<dynamic>> getClientPolicy({
     required String platform,
     required String appVersion,

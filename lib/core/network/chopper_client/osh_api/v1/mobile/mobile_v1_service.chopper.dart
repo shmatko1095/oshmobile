@@ -160,6 +160,31 @@ final class _$MobileV1Service extends MobileV1Service {
   }
 
   @override
+  Future<Response<dynamic>> getMyDeviceTelemetryAggregate({
+    required String serial,
+    required String seriesKeys,
+    required String from,
+    required String to,
+    String resolution = 'auto',
+  }) {
+    final Uri $url = Uri.parse(
+        'https://api.oshhome.com/v1/mobile/devices/${serial}/telemetry/aggregate');
+    final Map<String, dynamic> $params = <String, dynamic>{
+      'series_keys': seriesKeys,
+      'from': from,
+      'to': to,
+      'resolution': resolution,
+    };
+    final Request $request = Request(
+      'GET',
+      $url,
+      client.baseUrl,
+      parameters: $params,
+    );
+    return client.send<dynamic, dynamic>($request);
+  }
+
+  @override
   Future<Response<dynamic>> getClientPolicy({
     required String platform,
     required String appVersion,

@@ -1,6 +1,9 @@
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_response_mapper.dart';
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_service.dart';
 import 'package:oshmobile/features/telemetry_history/data/datasources/telemetry_history_remote_data_source.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_query.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_series.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_point.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_query.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
@@ -28,6 +31,27 @@ class TelemetryHistoryRemoteDataSourceImpl
     final raw = MobileV1ResponseMapper.requireJsonMap(response);
 
     return _parse(raw, fallbackSerial: serial, fallbackQuery: query);
+  }
+
+  @override
+  Future<TelemetryAggregate> getAggregate({
+    required String serial,
+    required TelemetryAggregateQuery query,
+  }) async {
+    final response = await _mobileService.getMyDeviceTelemetryAggregate(
+      serial: serial,
+      seriesKeys: query.seriesKeys.join(','),
+      from: query.from.toUtc().toIso8601String(),
+      to: query.to.toUtc().toIso8601String(),
+      resolution: query.preferredResolution,
+    );
+    final raw = MobileV1ResponseMapper.requireJsonMap(response);
+
+    return _parseAggregate(
+      raw,
+      fallbackSerial: serial,
+      fallbackQuery: query,
+    );
   }
 
   TelemetryHistorySeries _parse(
@@ -88,6 +112,58 @@ class TelemetryHistoryRemoteDataSourceImpl
       from: from,
       to: to,
       points: points,
+    );
+  }
+
+  TelemetryAggregate _parseAggregate(
+    Map<String, dynamic> raw, {
+    required String fallbackSerial,
+    required TelemetryAggregateQuery fallbackQuery,
+  }) {
+    final payload = _unwrapPayload(raw);
+
+    final deviceId = _readString(payload, 'device_id') ??
+        _readString(payload, 'deviceId') ??
+        '';
+    final serial = _readString(payload, 'serial') ?? fallbackSerial;
+    final resolution = (_readString(payload, 'resolution') ?? 'auto').trim();
+    final from = _readDate(payload, 'from') ?? fallbackQuery.from.toUtc();
+    final to = _readDate(payload, 'to') ?? fallbackQuery.to.toUtc();
+    final series = _readList(payload, 'series')
+        .whereType<Map>()
+        .map((item) => _parseAggregateSeries(item.cast<String, dynamic>()))
+        .toList(growable: false);
+
+    return TelemetryAggregate(
+      deviceId: deviceId,
+      serial: serial,
+      resolution: resolution,
+      from: from,
+      to: to,
+      series: series,
+    );
+  }
+
+  TelemetryAggregateSeries _parseAggregateSeries(Map<String, dynamic> raw) {
+    return TelemetryAggregateSeries(
+      seriesKey:
+          _readString(raw, 'series_key') ?? _readString(raw, 'seriesKey') ?? '',
+      valueType:
+          _readString(raw, 'value_type') ?? _readString(raw, 'valueType') ?? '',
+      unit: _readString(raw, 'unit') ?? '',
+      samplesCount:
+          _readInt(raw, 'samples_count') ?? _readInt(raw, 'samplesCount') ?? 0,
+      minValue: _readDouble(raw, 'min_value') ?? _readDouble(raw, 'minValue'),
+      maxValue: _readDouble(raw, 'max_value') ?? _readDouble(raw, 'maxValue'),
+      avgValue: _readDouble(raw, 'avg_value') ?? _readDouble(raw, 'avgValue'),
+      sumValue: _readDouble(raw, 'sum_value') ?? _readDouble(raw, 'sumValue'),
+      lastNumericValue: _readDouble(raw, 'last_numeric_value') ??
+          _readDouble(raw, 'lastNumericValue'),
+      trueCount: _readInt(raw, 'true_count') ?? _readInt(raw, 'trueCount') ?? 0,
+      trueRatio:
+          _readDouble(raw, 'true_ratio') ?? _readDouble(raw, 'trueRatio'),
+      lastBoolValue:
+          _readBool(raw, 'last_bool_value') ?? _readBool(raw, 'lastBoolValue'),
     );
   }
 

@@ -541,6 +541,9 @@ final class _RecordingTelemetryHistoryApi implements DeviceTelemetryHistoryApi {
       ],
     );
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 final class _EmptyTelemetryHistoryApi implements DeviceTelemetryHistoryApi {
@@ -564,6 +567,9 @@ final class _EmptyTelemetryHistoryApi implements DeviceTelemetryHistoryApi {
       points: const <TelemetryHistoryPoint>[],
     );
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 final class _MutableDeviceFacade implements DeviceFacade {

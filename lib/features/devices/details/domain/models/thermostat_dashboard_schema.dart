@@ -103,6 +103,12 @@ class ThermostatValueTileSpec extends ThermostatTileSpec {
   final String? validBind;
 }
 
+class ThermostatDailyEnergyTileSpec extends ThermostatTileSpec {
+  const ThermostatDailyEnergyTileSpec({
+    super.telemetryHistoryIntent,
+  }) : super(type: ThermostatTileType.energyUsed);
+}
+
 class ThermostatDeltaTileSpec extends ThermostatTileSpec {
   const ThermostatDeltaTileSpec({
     required this.inletBind,

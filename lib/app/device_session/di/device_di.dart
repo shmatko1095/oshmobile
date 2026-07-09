@@ -32,6 +32,7 @@ import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema_builder
 import 'package:oshmobile/features/sensors/data/sensors_repository_mqtt.dart';
 import 'package:oshmobile/features/sensors/data/sensors_topics.dart';
 import 'package:oshmobile/features/sensors/domain/repositories/sensors_repository.dart';
+import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_aggregate.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_history.dart';
 import 'package:oshmobile/core/di/device_context.dart';
 
@@ -251,6 +252,7 @@ class DeviceDi {
         settingsUiSchemaBuilder: getIt<SettingsUiSchemaBuilder>(),
         controlStateResolver: getIt<ControlStateResolver>(),
         getTelemetryHistory: getIt<GetTelemetryHistory>(),
+        getTelemetryAggregate: getIt<GetTelemetryAggregate>(),
       ),
       dispose: (f) => unawaited(f.dispose()),
     );
