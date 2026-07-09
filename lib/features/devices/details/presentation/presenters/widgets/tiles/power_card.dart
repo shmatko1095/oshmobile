@@ -71,17 +71,27 @@ class PowerCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              valueText,
-              maxLines: 1,
-              style: TextStyle(
-                color: statValueColor(context),
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
+          const Spacer(),
+          AnimatedSwitcher(
+            duration: AppPalette.motionBase,
+            transitionBuilder: (child, animation) =>
+                FadeTransition(opacity: animation, child: child),
+            child: Align(
+              key: ValueKey(valueText),
+              alignment: Alignment.centerLeft,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  valueText,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: statValueColor(context),
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    height: 1.0,
+                  ),
+                ),
               ),
             ),
           ),

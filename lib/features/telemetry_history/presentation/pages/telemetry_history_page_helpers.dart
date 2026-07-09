@@ -73,6 +73,14 @@ String _tooltipLabel({
   return '$time\n${_fmtValue(value, metric)}';
 }
 
+String _tooltipMinValueLabel({
+  required double value,
+  required TelemetryHistoryMetric metric,
+  required S s,
+}) {
+  return '${s.TelemetryHistoryStatMin}: ${_fmtValue(value, metric)}';
+}
+
 String _tooltipTimeLabel({
   required DateTime timestamp,
   required String localeTag,

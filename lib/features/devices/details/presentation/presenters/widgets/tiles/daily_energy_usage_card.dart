@@ -126,7 +126,7 @@ class _DailyEnergyUsageCardContent extends StatelessWidget {
   }
 
   String _formatKwh(double? energyWh) {
-    if (energyWh == null) return '— kWh';
+    if (energyWh == null) return '—';
     final energyKwh = energyWh / 1000.0;
     final decimals = energyKwh.abs() < 10 ? 2 : 1;
     return '${energyKwh.toStringAsFixed(decimals)} kWh';

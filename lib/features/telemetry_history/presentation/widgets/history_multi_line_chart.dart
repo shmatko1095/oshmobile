@@ -11,6 +11,10 @@ typedef HistoryMultiChartTooltipValueFormatter = String Function(
   String seriesId,
   double value,
 );
+typedef HistoryMultiChartTooltipRangeValueFormatter = String Function(
+  String seriesId,
+  double value,
+);
 
 class HistoryMultiLineActivityBand {
   const HistoryMultiLineActivityBand({
@@ -75,6 +79,7 @@ class HistoryMultiLineChart extends StatelessWidget {
     this.tooltipTimeLabelBuilder,
     this.valueLabelBuilder,
     this.tooltipValueFormatter,
+    this.tooltipMinValueFormatter,
   });
 
   final List<HistoryMultiLineSeries> series;
@@ -89,6 +94,7 @@ class HistoryMultiLineChart extends StatelessWidget {
   final HistoryMultiChartTimeLabelBuilder? tooltipTimeLabelBuilder;
   final HistoryMultiChartValueLabelBuilder? valueLabelBuilder;
   final HistoryMultiChartTooltipValueFormatter? tooltipValueFormatter;
+  final HistoryMultiChartTooltipRangeValueFormatter? tooltipMinValueFormatter;
 
   @override
   Widget build(BuildContext context) {
@@ -145,6 +151,8 @@ class HistoryMultiLineChart extends StatelessWidget {
           continue;
         }
 
+        double? rangeMinValue;
+        double? rangeMaxValue;
         if (hasRangeBounds) {
           final minValue = line.rangeMinValues![i];
           final maxValue = line.rangeMaxValues![i];
@@ -153,8 +161,10 @@ class HistoryMultiLineChart extends StatelessWidget {
               minValue.isFinite &&
               maxValue.isFinite &&
               minValue <= maxValue) {
-            pointRangeMins!.add(minValue);
-            pointRangeMaxs!.add(maxValue);
+            rangeMinValue = minValue;
+            rangeMaxValue = maxValue;
+            pointRangeMins!.add(rangeMinValue);
+            pointRangeMaxs!.add(rangeMaxValue);
           } else {
             pointRangeMins!.add(null);
             pointRangeMaxs!.add(null);
@@ -168,6 +178,7 @@ class HistoryMultiLineChart extends StatelessWidget {
             displayY: hasCustomDisplayValues
                 ? normalizedDisplayValues[i]
                 : line.values[i],
+            rangeMinY: rangeMinValue,
             timestamp: ts,
           ),
         );
@@ -536,6 +547,7 @@ class HistoryMultiLineChart extends StatelessWidget {
                     seriesId: line.line.id,
                     seriesLabel: line.line.label,
                     value: point.displayY,
+                    minValue: point.rangeMinY,
                     color: line.line.color,
                   ),
                 );
@@ -584,6 +596,23 @@ class HistoryMultiLineChart extends StatelessWidget {
                     ),
                   ),
                 );
+                final minValue = row.minValue;
+                if (minValue != null) {
+                  final minValueText =
+                      tooltipMinValueFormatter?.call(row.seriesId, minValue);
+                  if (minValueText != null && minValueText.isNotEmpty) {
+                    children.add(
+                      TextSpan(
+                        text: '\n$minValueText',
+                        style: TextStyle(
+                          color: tooltipTextColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  }
+                }
                 if (i < rows.length - 1) {
                   children.add(const TextSpan(text: '\n'));
                 }
@@ -723,12 +752,14 @@ class _HistoryChartPoint {
     required this.x,
     required this.y,
     required this.displayY,
+    required this.rangeMinY,
     required this.timestamp,
   });
 
   final double x;
   final double y;
   final double displayY;
+  final double? rangeMinY;
   final DateTime timestamp;
 }
 
@@ -737,12 +768,14 @@ class _TooltipRow {
     required this.seriesId,
     required this.seriesLabel,
     required this.value,
+    required this.minValue,
     required this.color,
   });
 
   final String seriesId;
   final String seriesLabel;
   final double value;
+  final double? minValue;
   final Color color;
 }
 

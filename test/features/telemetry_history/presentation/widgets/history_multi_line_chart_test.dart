@@ -41,6 +41,57 @@ void main() {
     expect(chart.data.lineBarsData.length, greaterThanOrEqualTo(3));
   });
 
+  testWidgets('adds range minimum to tooltip when formatter is provided', (
+    tester,
+  ) async {
+    final start = DateTime.utc(2026, 3, 15, 12, 0, 0);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox.expand(
+            child: HistoryMultiLineChart(
+              series: <HistoryMultiLineSeries>[
+                HistoryMultiLineSeries(
+                  id: 'power_meter.active_power_w',
+                  label: 'Active power',
+                  values: const <double>[120],
+                  displayValues: const <double>[120],
+                  rangeMinValues: const <double?>[40],
+                  rangeMaxValues: const <double?>[250],
+                  timestamps: <DateTime>[start],
+                  color: Colors.blue,
+                ),
+              ],
+              tooltipValueFormatter: (_, value) =>
+                  '${value.toStringAsFixed(0)} W',
+              tooltipMinValueFormatter: (_, value) =>
+                  'Minimum: ${value.toStringAsFixed(0)} W',
+              showAxes: true,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final chart = tester.widget<LineChart>(find.byType(LineChart));
+    final mainBar = chart.data.lineBarsData.first;
+    final items = chart.data.lineTouchData.touchTooltipData.getTooltipItems(
+      <LineBarSpot>[
+        LineBarSpot(
+          mainBar,
+          0,
+          mainBar.spots.first,
+        ),
+      ],
+    );
+    final tooltipText =
+        items.single!.children!.map((span) => span.text ?? '').join();
+
+    expect(tooltipText, contains('Active power: 120 W'));
+    expect(tooltipText, contains('Minimum: 40 W'));
+  });
+
   testWidgets('does not render min-max band for invalid range points', (
     tester,
   ) async {

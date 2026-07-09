@@ -149,6 +149,13 @@ class _MetricSlide extends StatelessWidget {
                                               _fmtValue(v, metric),
                                           tooltipValueFormatter: (_, value) =>
                                               _fmtValue(value, metric),
+                                          tooltipMinValueFormatter:
+                                              (_, value) =>
+                                                  _tooltipMinValueLabel(
+                                            value: value,
+                                            metric: metric,
+                                            s: s,
+                                          ),
                                           xAxisLabelBuilder: (ts) =>
                                               _xAxisLabel(
                                             timestamp: ts,

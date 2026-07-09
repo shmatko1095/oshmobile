@@ -624,6 +624,8 @@ void main() {
       history.aggregateRequests.single.query.seriesKeys,
       const <String>[TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta],
     );
+    expect(find.text('—'), findsOneWidget);
+    expect(find.text('— kWh'), findsNothing);
     history.aggregateRequests.single.completer.complete(
       _aggregate(
         from: history.aggregateRequests.single.query.from,
