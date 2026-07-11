@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/core/configuration/app_polling_intervals.dart';
 import 'package:oshmobile/core/configuration/power_meter_series_keys.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_energy_usage_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_energy_usage_state.dart';
@@ -110,6 +111,43 @@ void main() {
     expect(cubit.state.status, DailyEnergyUsageStatus.error);
     expect(cubit.state.energyWh, 500);
     expect(cubit.state.errorMessage, contains('offline'));
+  });
+
+  testWidgets('polls backend while active and stops after close',
+      (tester) async {
+    final now = DateTime.utc(2026, 3, 14, 10);
+    var requestCount = 0;
+    final api = _FakeTelemetryHistoryApi(
+      onAggregate: (query) async {
+        requestCount += 1;
+        return _aggregate(
+          from: query.from,
+          to: query.to,
+          energyWh: requestCount * 1000,
+        );
+      },
+    );
+    final cubit = DailyEnergyUsageCubit(
+      telemetryHistory: api,
+      nowUtc: () => now,
+    );
+
+    cubit.startPolling();
+    await tester.pump();
+
+    expect(requestCount, 1);
+    expect(cubit.state.energyWh, 1000);
+
+    await tester.pump(AppPollingIntervals.deviceData);
+    await tester.pump();
+
+    expect(requestCount, 2);
+    expect(cubit.state.energyWh, 2000);
+
+    await cubit.close();
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(requestCount, 2);
   });
 }
 

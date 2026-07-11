@@ -29,7 +29,7 @@ class DailyEnergyUsageCard extends StatelessWidget {
         telemetryHistory: context.read<DeviceFacade>().telemetryHistory,
         persistentCache: cache,
         persistentCacheNamespace: cacheNamespace,
-      )..ensureLoaded(),
+      )..startPolling(),
       child: _DailyEnergyUsageCardContent(
         title: title,
         onTap: onTap,

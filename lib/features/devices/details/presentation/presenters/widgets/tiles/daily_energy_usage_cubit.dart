@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/core/configuration/app_polling_intervals.dart';
 import 'package:oshmobile/core/configuration/power_meter_series_keys.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_energy_usage_state.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/daily_energy_usage_cache.dart';
@@ -13,12 +16,14 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
     String? persistentCacheNamespace,
     Duration cacheTtl = const Duration(minutes: 2),
     Duration persistentCacheMaxAge = const Duration(hours: 24),
+    Duration pollInterval = AppPollingIntervals.deviceData,
     DateTime Function()? nowUtc,
   })  : _telemetryHistory = telemetryHistory,
         _persistentCache = persistentCache,
         _persistentCacheNamespace = persistentCacheNamespace?.trim(),
         _cacheTtl = cacheTtl,
         _persistentCacheMaxAge = persistentCacheMaxAge,
+        _pollInterval = pollInterval,
         _nowUtc = nowUtc ?? _defaultNowUtc,
         super(const DailyEnergyUsageState.initial());
 
@@ -30,14 +35,34 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
   final String? _persistentCacheNamespace;
   final Duration _cacheTtl;
   final Duration _persistentCacheMaxAge;
+  final Duration _pollInterval;
   final DateTime Function() _nowUtc;
+  Timer? _pollTimer;
   int _requestVersion = 0;
 
   static DateTime _defaultNowUtc() => DateTime.now().toUtc();
 
-  Future<void> ensureLoaded() async {
+  void startPolling() {
+    if (_pollTimer != null) return;
+
+    unawaited(ensureLoaded());
+    if (_pollInterval <= Duration.zero) return;
+
+    _pollTimer = Timer.periodic(_pollInterval, (_) {
+      unawaited(refresh());
+    });
+  }
+
+  Future<void> ensureLoaded() => _load(force: false);
+
+  Future<void> refresh() => _load(force: true);
+
+  Future<void> _load({required bool force}) async {
     final now = _nowUtc();
-    if (_isFresh(state, now)) {
+    if (state.status == DailyEnergyUsageStatus.loading) {
+      return;
+    }
+    if (!force && _isFresh(state, now)) {
       return;
     }
 
@@ -109,6 +134,13 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
   }
 
   bool shouldLoad() => !_isFresh(state, _nowUtc());
+
+  @override
+  Future<void> close() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+    return super.close();
+  }
 
   bool _isFresh(DailyEnergyUsageState state, DateTime now) {
     if (state.status == DailyEnergyUsageStatus.loading) return true;

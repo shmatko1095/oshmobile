@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:oshmobile/core/configuration/app_polling_intervals.dart';
 import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
@@ -15,7 +16,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     required TelemetryTopics topics,
     DeviceRuntimeContracts? contracts,
     required String deviceSn,
-    this.pollInterval = const Duration(seconds: 2),
+    this.pollInterval = AppPollingIntervals.deviceData,
     this.timeout = const Duration(seconds: 6),
   })  : _jrpc = jrpc,
         _topics = topics,
