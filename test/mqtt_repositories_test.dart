@@ -821,6 +821,11 @@ void main() {
       timeout: const Duration(milliseconds: 200),
     );
 
+    expect(
+      repo.supportedSetpointKinds,
+      const <ScheduleSetpointKind>{ScheduleSetpointKind.temperature},
+    );
+
     final snap = CalendarSnapshot(
       mode: CalendarMode.on,
       range: const ScheduleRange(min: 15, max: 18.5),

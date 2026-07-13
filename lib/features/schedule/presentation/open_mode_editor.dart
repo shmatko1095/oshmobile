@@ -48,13 +48,13 @@ class ThermostatModeNavigator {
     final s = S.of(context);
     final facade = context.read<DeviceFacade>();
     final snapshotCubit = context.read<DeviceSnapshotCubit>();
-    var initial = 21.0;
+    var initial = const ScheduleSetpoint.temperature(21.0);
 
     final snap = facade.schedule.current ?? await facade.schedule.get();
     final manual = snap.pointsFor(CalendarMode.on);
     final point = manual.isNotEmpty ? manual.first : resolveCurrentPoint(snap);
     if (point != null) {
-      initial = point.temp;
+      initial = point.setpoint;
     }
     if (!context.mounted) return;
 
@@ -78,11 +78,12 @@ class ThermostatModeNavigator {
               child: ManualTemperaturePage(
                 initial: initial,
                 title: s.ManualTemperature,
+                supportedSetpointKinds: facade.schedule.supportedSetpointKinds,
                 onSave: (value) {
-                  final point = SchedulePoint(
+                  final point = SchedulePoint.withSetpoint(
                     time: const TimeOfDay(hour: 0, minute: 0),
                     daysMask: WeekdayMask.all,
-                    temp: value,
+                    setpoint: value,
                   );
                   facade.schedule.commandSetMode(
                     CalendarMode.on,

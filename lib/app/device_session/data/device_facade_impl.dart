@@ -14,6 +14,7 @@ import 'package:oshmobile/core/common/cubits/mqtt/global_mqtt_cubit.dart';
 import 'package:oshmobile/core/common/cubits/mqtt/mqtt_comm_cubit.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/configuration/control_state_resolver.dart';
+import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
 import 'package:oshmobile/core/di/device_context.dart';
 import 'package:oshmobile/core/logging/app_log.dart';
 import 'package:oshmobile/features/device_about/domain/repositories/device_about_repository.dart';
@@ -84,6 +85,7 @@ class DeviceFacadeImpl implements DeviceFacade {
     required SensorsRepository sensorsRepo,
     required SettingsUiSchemaBuilder settingsUiSchemaBuilder,
     required ControlStateResolver controlStateResolver,
+    required DeviceRuntimeContracts runtimeContracts,
     required GetTelemetryHistory getTelemetryHistory,
     required GetTelemetryAggregate getTelemetryAggregate,
   })  : _ctx = ctx,
@@ -94,6 +96,7 @@ class DeviceFacadeImpl implements DeviceFacade {
           bootstrapDevice: bootstrapDevice,
           settingsUiSchemaBuilder: settingsUiSchemaBuilder,
           controlStateResolver: controlStateResolver,
+          runtimeContracts: runtimeContracts,
         ),
         _current = DeviceSnapshot.initial(device: bootstrapDevice) {
     _scheduleApi = DeviceScheduleApiImpl(

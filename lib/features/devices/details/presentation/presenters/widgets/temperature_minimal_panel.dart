@@ -207,18 +207,18 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
       return device.id;
     });
 
-    final currentTarget =
-        _asNum(readBind(controlState, widget.currentTargetBind));
+    final currentTarget = readBind(controlState, widget.currentTargetBind);
     final nextTarget = readBind(controlState, widget.nextTargetBind);
     final nextTime = _nextTargetTime(nextTarget);
 
-    final targetLine = currentTarget == null
+    final currentSetpointText = _fmtSetpoint(currentTarget);
+    final targetLine = currentSetpointText == null
         ? null
-        : S.of(context).Target('${_fmtNum(currentTarget)}${widget.unit}');
+        : S.of(context).Target(currentSetpointText);
     final nextLine = nextTarget is! Map || nextTime == null
         ? null
         : S.of(context).NextAt(
-              '${_fmtNum(_asNum(nextTarget['temp']))}${widget.unit}',
+              _fmtSetpoint(nextTarget['temp'] ?? nextTarget['setpoint']) ?? '—',
               _fmtTime(context, nextTime),
             );
 
@@ -294,6 +294,12 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
     final minute = _asNum(raw['minute'])?.toInt();
     if (hour == null || minute == null) return null;
     return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  String? _fmtSetpoint(dynamic raw) {
+    if (raw == 'ON' || raw == 'OFF') return raw as String;
+    final numeric = _asNum(raw);
+    return numeric == null ? null : '${_fmtNum(numeric)}${widget.unit}';
   }
 }
 

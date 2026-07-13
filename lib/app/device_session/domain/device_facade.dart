@@ -35,6 +35,7 @@ abstract interface class DeviceFacade {
 }
 
 abstract interface class DeviceScheduleApi {
+  Set<ScheduleSetpointKind> get supportedSetpointKinds;
   CalendarSnapshot? get current;
 
   Stream<CalendarSnapshot> watch();

@@ -217,19 +217,23 @@ class _TempRangeStepper extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: onTapValue,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Text(
-              valueText,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: _schedulePrimaryTextColor(context),
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
+        Semantics(
+          button: true,
+          label: 'Setpoint $valueText',
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onTapValue,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Text(
+                valueText,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _schedulePrimaryTextColor(context),
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
           ),
@@ -239,12 +243,14 @@ class _TempRangeStepper extends StatelessWidget {
           icon: Icons.keyboard_arrow_down,
           onTap: onDecTemp,
           color: _coolBlue,
+          semanticsLabel: 'Previous setpoint',
         ),
         const SizedBox(width: 4),
         _IconBtn(
           icon: Icons.keyboard_arrow_up,
           onTap: onIncTemp,
           color: _warmRed,
+          semanticsLabel: 'Next setpoint',
         ),
       ],
     );
@@ -252,23 +258,33 @@ class _TempRangeStepper extends StatelessWidget {
 }
 
 class _IconBtn extends StatelessWidget {
-  const _IconBtn({required this.icon, required this.onTap, this.color});
+  const _IconBtn({
+    required this.icon,
+    required this.onTap,
+    required this.semanticsLabel,
+    this.color,
+  });
 
   final IconData icon;
   final VoidCallback onTap;
   final Color? color;
+  final String semanticsLabel;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Ink(
-        padding: const EdgeInsets.all(6),
-        child: Icon(
-          icon,
-          size: 28,
-          color: color ?? _schedulePrimaryTextColor(context),
+    return Semantics(
+      button: true,
+      label: semanticsLabel,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Ink(
+          padding: const EdgeInsets.all(6),
+          child: Icon(
+            icon,
+            size: 28,
+            color: color ?? _schedulePrimaryTextColor(context),
+          ),
         ),
       ),
     );

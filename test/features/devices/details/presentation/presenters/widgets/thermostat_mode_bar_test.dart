@@ -404,6 +404,13 @@ final class _FakeDeviceFacade implements DeviceFacade {
 }
 
 final class _FakeDeviceScheduleApi implements DeviceScheduleApi {
+  @override
+  Set<ScheduleSetpointKind> get supportedSetpointKinds =>
+      const <ScheduleSetpointKind>{
+        ScheduleSetpointKind.temperature,
+        ScheduleSetpointKind.on,
+        ScheduleSetpointKind.off,
+      };
   _FakeDeviceScheduleApi({
     required CalendarSnapshot currentSnapshot,
   }) : _currentSnapshot = currentSnapshot;

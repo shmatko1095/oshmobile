@@ -83,12 +83,42 @@ void main() {
       'minute': 45,
     });
 
+    api.patchList(
+      CalendarMode.daily,
+      [
+        SchedulePoint.withSetpoint(
+          time: const TimeOfDay(hour: 3, minute: 45),
+          daysMask: WeekdayMask.all,
+          setpoint: const ScheduleSetpoint.on(),
+        ),
+      ],
+    );
+    final onState = resolver.resolveAll(
+      registry: ControlRegistry(bundle),
+      controlIds: bundle.configuration.oshmobile.controls.keys,
+      schedule: api.current,
+    );
+    expect(onState['schedule_current'], 'ON');
+    expect(onState['schedule_next'], {
+      'kind': 'on',
+      'setpoint': 'ON',
+      'hour': 3,
+      'minute': 45,
+    });
+
     await api.dispose();
     await repo.dispose();
   });
 }
 
 class _FakeScheduleRepository implements ScheduleRepository {
+  @override
+  Set<ScheduleSetpointKind> get supportedSetpointKinds =>
+      const <ScheduleSetpointKind>{
+        ScheduleSetpointKind.temperature,
+        ScheduleSetpointKind.on,
+        ScheduleSetpointKind.off,
+      };
   final StreamController<CalendarSnapshot> _controller =
       StreamController<CalendarSnapshot>.broadcast();
 

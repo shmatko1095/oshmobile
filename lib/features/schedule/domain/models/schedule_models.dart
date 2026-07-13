@@ -65,27 +65,79 @@ class WeekdayMask {
   }
 }
 
-/// Unified schedule point (range). If [min]==[max], it's a fixed setpoint.
+enum ScheduleSetpointKind { temperature, on, off }
+
+class ScheduleSetpoint {
+  const ScheduleSetpoint.temperature(double value)
+      : kind = ScheduleSetpointKind.temperature,
+        temperature = value;
+
+  const ScheduleSetpoint.on()
+      : kind = ScheduleSetpointKind.on,
+        temperature = null;
+
+  const ScheduleSetpoint.off()
+      : kind = ScheduleSetpointKind.off,
+        temperature = null;
+
+  final ScheduleSetpointKind kind;
+  final double? temperature;
+
+  bool get isTemperature => kind == ScheduleSetpointKind.temperature;
+  bool get isOn => kind == ScheduleSetpointKind.on;
+  bool get isOff => kind == ScheduleSetpointKind.off;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ScheduleSetpoint &&
+      other.kind == kind &&
+      other.temperature == temperature;
+
+  @override
+  int get hashCode => Object.hash(kind, temperature);
+}
+
+/// Timed point used by manual, daily, and weekly list schedules.
 class SchedulePoint {
   final TimeOfDay time; // start time of this setpoint/range
   final int daysMask; // which days it applies to
-  final double temp; // target temperature
+  final ScheduleSetpointKind setpointKind;
+  final double? setpointTemperature;
 
   const SchedulePoint({
     required this.time,
     required this.daysMask,
-    required this.temp,
-  });
+    required double temp,
+  })  : setpointKind = ScheduleSetpointKind.temperature,
+        setpointTemperature = temp;
+
+  SchedulePoint.withSetpoint({
+    required this.time,
+    required this.daysMask,
+    required ScheduleSetpoint setpoint,
+  })  : setpointKind = setpoint.kind,
+        setpointTemperature = setpoint.temperature;
+
+  ScheduleSetpoint get setpoint => switch (setpointKind) {
+        ScheduleSetpointKind.temperature =>
+          ScheduleSetpoint.temperature(setpointTemperature!),
+        ScheduleSetpointKind.on => const ScheduleSetpoint.on(),
+        ScheduleSetpointKind.off => const ScheduleSetpoint.off(),
+      };
+
+  double get temp => setpointTemperature ?? 0.0;
 
   SchedulePoint copyWith({
     TimeOfDay? time,
     int? daysMask,
+    ScheduleSetpoint? setpoint,
     double? temp,
   }) =>
-      SchedulePoint(
+      SchedulePoint.withSetpoint(
         time: time ?? this.time,
         daysMask: daysMask ?? this.daysMask,
-        temp: temp ?? this.temp,
+        setpoint: setpoint ??
+            (temp == null ? this.setpoint : ScheduleSetpoint.temperature(temp)),
       );
 }
 

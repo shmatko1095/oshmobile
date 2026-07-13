@@ -57,6 +57,10 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
         _contracts.schedule.set.schema,
       };
 
+  @override
+  Set<ScheduleSetpointKind> get supportedSetpointKinds =>
+      _codecOrThrow().supportedSetpointKinds;
+
   /// Best-effort cleanup when device scope is disposed.
   /// Not part of ScheduleRepository interface on purpose.
   void dispose() {
@@ -338,6 +342,6 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     return x.daysMask == y.daysMask &&
         x.time.hour == y.time.hour &&
         x.time.minute == y.time.minute &&
-        x.temp == y.temp;
+        x.setpoint == y.setpoint;
   }
 }

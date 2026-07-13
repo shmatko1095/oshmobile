@@ -2,6 +2,8 @@ import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 
 abstract class ScheduleRepository {
+  Set<ScheduleSetpointKind> get supportedSetpointKinds;
+
   /// Fetch full calendar bundle (active mode + points for each mode).
   Future<CalendarSnapshot> fetchAll({bool forceGet = false});
 

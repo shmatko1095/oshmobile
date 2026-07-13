@@ -153,6 +153,10 @@ class DeviceScheduleApiImpl implements DeviceScheduleApi {
   CalendarSnapshot? get current => _snapshotOrNull();
 
   @override
+  Set<ScheduleSetpointKind> get supportedSetpointKinds =>
+      _repo.supportedSetpointKinds;
+
+  @override
   Stream<CalendarSnapshot> watch() {
     return watchWithCurrent(
       current: current,
@@ -496,9 +500,13 @@ class DeviceScheduleApiImpl implements DeviceScheduleApi {
     final daysMask = mode == CalendarMode.weekly
         ? (last?.daysMask ?? WeekdayMask.all)
         : WeekdayMask.all;
-    final temp = last?.temp ?? 21.0;
+    final setpoint = last?.setpoint ?? const ScheduleSetpoint.temperature(21.0);
 
-    return SchedulePoint(time: time, daysMask: daysMask, temp: temp);
+    return SchedulePoint.withSetpoint(
+      time: time,
+      daysMask: daysMask,
+      setpoint: setpoint,
+    );
   }
 
   SchedulePoint _normalizePoint(SchedulePoint point) {
@@ -506,10 +514,10 @@ class DeviceScheduleApiImpl implements DeviceScheduleApi {
     final minute = point.time.minute.clamp(0, 59);
     final daysMask = point.daysMask & WeekdayMask.all;
 
-    return SchedulePoint(
+    return SchedulePoint.withSetpoint(
       time: TimeOfDay(hour: hour, minute: minute),
       daysMask: daysMask,
-      temp: point.temp,
+      setpoint: point.setpoint,
     );
   }
 
@@ -522,7 +530,10 @@ class DeviceScheduleApiImpl implements DeviceScheduleApi {
       if (at != bt) return at.compareTo(bt);
 
       if (a.daysMask != b.daysMask) return a.daysMask.compareTo(b.daysMask);
-      return a.temp.compareTo(b.temp);
+      final kindOrder = a.setpoint.kind.index.compareTo(b.setpoint.kind.index);
+      if (kindOrder != 0) return kindOrder;
+      return (a.setpoint.temperature ?? 0.0)
+          .compareTo(b.setpoint.temperature ?? 0.0);
     });
 
     final result = <SchedulePoint>[];

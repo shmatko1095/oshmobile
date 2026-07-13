@@ -16,6 +16,7 @@ class ControlStateResolver {
     TelemetryState? telemetry,
     SensorsState? sensors,
     CalendarSnapshot? schedule,
+    ScheduleJsonRpcCodec? scheduleCodec,
     SettingsSnapshot? settings,
     Map<String, dynamic>? deviceState,
     Map<String, dynamic>? diagState,
@@ -35,6 +36,7 @@ class ControlStateResolver {
         telemetry: telemetry,
         sensors: sensors,
         schedule: schedule,
+        scheduleCodec: scheduleCodec,
         settings: settings,
         deviceState: deviceState,
         diagState: diagState,
@@ -54,6 +56,7 @@ class ControlStateResolver {
     required TelemetryState? telemetry,
     required SensorsState? sensors,
     required CalendarSnapshot? schedule,
+    required ScheduleJsonRpcCodec? scheduleCodec,
     required SettingsSnapshot? settings,
     required Map<String, dynamic>? deviceState,
     required Map<String, dynamic>? diagState,
@@ -65,6 +68,7 @@ class ControlStateResolver {
           telemetry: telemetry,
           sensors: sensors,
           schedule: schedule,
+          scheduleCodec: scheduleCodec,
           settings: settings,
           deviceState: deviceState,
           diagState: diagState,
@@ -81,6 +85,7 @@ class ControlStateResolver {
           telemetry: telemetry,
           sensors: sensors,
           schedule: schedule,
+          scheduleCodec: scheduleCodec,
           settings: settings,
           deviceState: deviceState,
           diagState: diagState,
@@ -102,6 +107,7 @@ class ControlStateResolver {
           telemetry: telemetry,
           sensors: sensors,
           schedule: schedule,
+          scheduleCodec: scheduleCodec,
           settings: settings,
           deviceState: deviceState,
           diagState: diagState,
@@ -116,7 +122,9 @@ class ControlStateResolver {
 
       case 'schedule_current_target':
         if (schedule == null) return null;
-        return (schedule.currentPoint ?? resolveCurrentPoint(schedule))?.temp;
+        return _setpointValue(
+          (schedule.currentPoint ?? resolveCurrentPoint(schedule))?.setpoint,
+        );
 
       case 'schedule_next_target':
         if (schedule == null) return null;
@@ -134,6 +142,7 @@ class ControlStateResolver {
     required TelemetryState? telemetry,
     required SensorsState? sensors,
     required CalendarSnapshot? schedule,
+    required ScheduleJsonRpcCodec? scheduleCodec,
     required SettingsSnapshot? settings,
     required Map<String, dynamic>? deviceState,
     required Map<String, dynamic>? diagState,
@@ -155,6 +164,7 @@ class ControlStateResolver {
         telemetry: telemetry,
         sensors: sensors,
         schedule: schedule,
+        scheduleCodec: scheduleCodec,
         settings: settings,
         deviceState: deviceState,
         diagState: diagState,
@@ -231,6 +241,7 @@ class ControlStateResolver {
     required TelemetryState? telemetry,
     required SensorsState? sensors,
     required CalendarSnapshot? schedule,
+    required ScheduleJsonRpcCodec? scheduleCodec,
     required SettingsSnapshot? settings,
     required Map<String, dynamic>? deviceState,
     required Map<String, dynamic>? diagState,
@@ -241,9 +252,14 @@ class ControlStateResolver {
       case 'sensors':
         return sensors?.toJson();
       case 'schedule':
-        return schedule == null
-            ? null
-            : ScheduleJsonRpcCodec.encodeBodyUnchecked(schedule);
+        if (schedule == null || scheduleCodec == null) return null;
+        try {
+          return scheduleCodec.encodeStateBody(schedule);
+        } on FormatException {
+          // An incompatible schedule must not prevent telemetry and other
+          // independently decoded domains from rendering.
+          return null;
+        }
       case 'settings':
         return settings?.toJson();
       case 'device':
@@ -287,10 +303,22 @@ class ControlStateResolver {
 
   Map<String, dynamic>? _nextTargetFromPoint(SchedulePoint? point) {
     if (point == null) return null;
+    final value = _setpointValue(point.setpoint);
     return <String, dynamic>{
-      'temp': point.temp,
+      if (point.setpoint.isTemperature) 'temp': value,
+      if (!point.setpoint.isTemperature) ...{
+        'kind': point.setpoint.kind.name,
+        'setpoint': value,
+      },
       'hour': point.time.hour,
       'minute': point.time.minute,
     };
+  }
+
+  Object? _setpointValue(ScheduleSetpoint? setpoint) {
+    if (setpoint == null) return null;
+    if (setpoint.isOn) return 'ON';
+    if (setpoint.isOff) return 'OFF';
+    return setpoint.temperature;
   }
 }

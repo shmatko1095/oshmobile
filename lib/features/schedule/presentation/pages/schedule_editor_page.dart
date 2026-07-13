@@ -120,15 +120,15 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
         ),
         builder: (_) => ManualTemperaturePage(
           title: S.of(context).SetTemperature,
-          initial: point.temp,
+          initial: point.setpoint,
+          supportedSetpointKinds: facade.schedule.supportedSetpointKinds,
           onSave: (value) {
-            final rounded = double.parse(value.toStringAsFixed(1));
             _patchPoint(
               facade,
               schedule,
               targetMode,
               index,
-              point.copyWith(temp: rounded),
+              point.copyWith(setpoint: value),
             );
           },
         ),
@@ -144,14 +144,17 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
     required SchedulePoint point,
     required double delta,
   }) {
-    final next = (point.temp + delta).clamp(10.0, 40.0);
-    final newTemp = double.parse(next.toStringAsFixed(1));
+    final next = stepScheduleSetpoint(
+      point.setpoint,
+      delta,
+      supportedSetpointKinds: facade.schedule.supportedSetpointKinds,
+    );
     _patchPoint(
       facade,
       schedule,
       targetMode,
       index,
-      point.copyWith(temp: newTemp),
+      point.copyWith(setpoint: next),
     );
   }
 
@@ -214,7 +217,8 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                   return Dismissible(
                     key: ValueKey(
                       'sp_${index}_${point.time.hour}_${point.time.minute}'
-                      '_${point.temp}_${point.daysMask}',
+                      '_${point.setpoint.kind.name}'
+                      '_${point.setpoint.temperature}_${point.daysMask}',
                     ),
                     direction: DismissDirection.endToStart,
                     background: const SizedBox.shrink(),
@@ -241,8 +245,7 @@ class _ScheduleEditorPageState extends State<ScheduleEditorPage> {
                     },
                     child: SchedulePointTile(
                       timeText: formatScheduleEditorTime(point.time),
-                      valueText:
-                          '${formatScheduleEditorTemperature(point.temp)}°C',
+                      valueText: formatScheduleEditorSetpoint(point.setpoint),
                       daysMask: point.daysMask,
                       showDays: showDays,
                       onTapTime: () => unawaited(

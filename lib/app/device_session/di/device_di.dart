@@ -251,6 +251,7 @@ class DeviceDi {
         sensorsRepo: getIt<SensorsRepository>(),
         settingsUiSchemaBuilder: getIt<SettingsUiSchemaBuilder>(),
         controlStateResolver: getIt<ControlStateResolver>(),
+        runtimeContracts: getIt<DeviceRuntimeContracts>(),
         getTelemetryHistory: getIt<GetTelemetryHistory>(),
         getTelemetryAggregate: getIt<GetTelemetryAggregate>(),
       ),

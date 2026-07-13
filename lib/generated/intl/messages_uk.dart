@@ -232,9 +232,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "LatestVersionInstalled": MessageLookupByLibrary.simpleMessage(
       "Встановлено останню версію",
     ),
-    "ManualTemperature": MessageLookupByLibrary.simpleMessage(
-      "Ручна температура",
-    ),
+    "ManualTemperature": MessageLookupByLibrary.simpleMessage("Температура"),
     "ModeDaily": MessageLookupByLibrary.simpleMessage("Щоденно"),
     "ModeOff": MessageLookupByLibrary.simpleMessage("Вимкн."),
     "ModeOn": MessageLookupByLibrary.simpleMessage("Увімкн."),

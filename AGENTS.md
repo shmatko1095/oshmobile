@@ -12,5 +12,7 @@
 
 ## Checks
 
+- Keep one Dart class per source file. Put shared helpers in a dedicated
+  no-class file; split a class into its own file before adding a second class.
 - Format touched Dart files with `dart format`.
 - Prefer targeted widget/unit tests first, then `flutter test` and `flutter analyze` when practical.

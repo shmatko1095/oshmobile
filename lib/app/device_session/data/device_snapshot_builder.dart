@@ -5,8 +5,10 @@ import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/configuration/control_registry.dart';
 import 'package:oshmobile/core/configuration/control_state_resolver.dart';
 import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
+import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
+import 'package:oshmobile/features/schedule/data/schedule_jsonrpc_codec.dart';
 import 'package:oshmobile/features/schedule/domain/models/calendar_snapshot.dart';
 import 'package:oshmobile/features/settings/domain/models/settings_snapshot.dart';
 import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema.dart';
@@ -26,14 +28,17 @@ class DeviceSnapshotBuilder {
   final Device _bootstrapDevice;
   final SettingsUiSchemaBuilder _settingsUiSchemaBuilder;
   final ControlStateResolver _controlStateResolver;
+  final DeviceRuntimeContracts _runtimeContracts;
 
   const DeviceSnapshotBuilder({
     required Device bootstrapDevice,
     required SettingsUiSchemaBuilder settingsUiSchemaBuilder,
     required ControlStateResolver controlStateResolver,
+    required DeviceRuntimeContracts runtimeContracts,
   })  : _bootstrapDevice = bootstrapDevice,
         _settingsUiSchemaBuilder = settingsUiSchemaBuilder,
-        _controlStateResolver = controlStateResolver;
+        _controlStateResolver = controlStateResolver,
+        _runtimeContracts = runtimeContracts;
 
   DeviceSnapshotBuildResult build({
     required DevicePageState pageState,
@@ -116,12 +121,18 @@ class DeviceSnapshotBuilder {
         );
       case DevicePageReady(:final bundle):
         final registry = ControlRegistry(bundle);
+        final scheduleCodec = bundle.canReadDomain('schedule')
+            ? ScheduleJsonRpcCodec.fromRuntimeContract(
+                _runtimeContracts.schedule,
+              )
+            : null;
         final state = _controlStateResolver.resolveAll(
           registry: registry,
           controlIds: bundle.configuration.oshmobile.controls.keys,
           telemetry: telemetryState,
           sensors: sensorsState,
           schedule: scheduleState,
+          scheduleCodec: scheduleCodec,
           settings: settingsState,
           deviceState: aboutState,
         );

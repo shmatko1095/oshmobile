@@ -568,6 +568,13 @@ final class _FakeDeviceSettingsTimeApi implements DeviceSettingsTimeApi {
 
 final class _FakeDeviceScheduleApi implements DeviceScheduleApi {
   @override
+  Set<ScheduleSetpointKind> get supportedSetpointKinds =>
+      const <ScheduleSetpointKind>{
+        ScheduleSetpointKind.temperature,
+        ScheduleSetpointKind.on,
+        ScheduleSetpointKind.off,
+      };
+  @override
   CalendarSnapshot? get current => null;
 
   @override

@@ -3,7 +3,7 @@ import 'package:oshmobile/core/network/mqtt/device_topics_v1.dart';
 
 /// Topic builder dedicated to the Schedule feature (JSON-RPC).
 ///
-/// Firmware contract (schedule@1):
+/// Firmware contract (schedule@1 and schedule@2):
 /// - Device subscribes to `cmd(deviceId)` and handles JSON-RPC get/set/patch.
 /// - Device publishes JSON-RPC responses to `rsp(deviceId)`.
 /// - Device publishes retained state notifications to `state(deviceId)`.

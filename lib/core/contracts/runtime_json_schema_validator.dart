@@ -126,9 +126,20 @@ class RuntimeJsonSchemaValidator {
         }
       }
       if (!match) return false;
+    } else if (value is Map && _usesObjectKeywords(schema)) {
+      // JSON Schema object keywords constrain object instances even when the
+      // schema omits an explicit `type: object`. This is common in `if`,
+      // `then`, and `not` branches.
+      if (!_validateObject(value: value, schema: schema)) return false;
     }
 
     return true;
+  }
+
+  static bool _usesObjectKeywords(Map<String, dynamic> schema) {
+    return schema.containsKey('required') ||
+        schema.containsKey('properties') ||
+        schema.containsKey('additionalProperties');
   }
 
   static bool _validateByType({
