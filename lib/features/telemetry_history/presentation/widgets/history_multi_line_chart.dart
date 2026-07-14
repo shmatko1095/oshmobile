@@ -4,6 +4,18 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_chart_gap_resolver.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_activity_band.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_series.dart';
+
+export 'history_multi_line_activity_band.dart';
+export 'history_multi_line_point.dart';
+export 'history_multi_line_series.dart';
+
+part 'history_chart_point.dart';
+part 'history_chart_x_window.dart';
+part 'history_prepared_series.dart';
+part 'history_tooltip_row.dart';
+part 'history_y_axis_range.dart';
 
 typedef HistoryMultiChartTimeLabelBuilder = String Function(DateTime timestamp);
 typedef HistoryMultiChartValueLabelBuilder = String Function(double value);
@@ -15,54 +27,6 @@ typedef HistoryMultiChartTooltipRangeValueFormatter = String Function(
   String seriesId,
   double value,
 );
-
-class HistoryMultiLineActivityBand {
-  const HistoryMultiLineActivityBand({
-    this.bottomFraction = 0.0,
-    this.heightFraction = 0.18,
-  });
-
-  final double bottomFraction;
-  final double heightFraction;
-}
-
-class HistoryMultiLineSeries {
-  const HistoryMultiLineSeries({
-    required this.id,
-    required this.label,
-    required this.values,
-    this.displayValues,
-    this.rangeMinValues,
-    this.rangeMaxValues,
-    required this.timestamps,
-    required this.color,
-    this.lineGradient,
-    this.strokeWidth = 2.0,
-    this.fill = false,
-    this.fillTopAlpha = 0.22,
-    this.fillBottomAlpha = 0.04,
-    this.dashArray,
-    this.includeInYAxisRange = true,
-    this.activityBand,
-  });
-
-  final String id;
-  final String label;
-  final List<double> values;
-  final List<double>? displayValues;
-  final List<double?>? rangeMinValues;
-  final List<double?>? rangeMaxValues;
-  final List<DateTime> timestamps;
-  final Color color;
-  final Gradient? lineGradient;
-  final double strokeWidth;
-  final bool fill;
-  final double fillTopAlpha;
-  final double fillBottomAlpha;
-  final List<int>? dashArray;
-  final bool includeInYAxisRange;
-  final HistoryMultiLineActivityBand? activityBand;
-}
 
 class HistoryMultiLineChart extends StatelessWidget {
   const HistoryMultiLineChart({
@@ -80,6 +44,8 @@ class HistoryMultiLineChart extends StatelessWidget {
     this.valueLabelBuilder,
     this.tooltipValueFormatter,
     this.tooltipMinValueFormatter,
+    this.tooltipAnchorSeriesId,
+    this.semanticLabel,
   });
 
   final List<HistoryMultiLineSeries> series;
@@ -95,6 +61,8 @@ class HistoryMultiLineChart extends StatelessWidget {
   final HistoryMultiChartValueLabelBuilder? valueLabelBuilder;
   final HistoryMultiChartTooltipValueFormatter? tooltipValueFormatter;
   final HistoryMultiChartTooltipRangeValueFormatter? tooltipMinValueFormatter;
+  final String? tooltipAnchorSeriesId;
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -120,30 +88,21 @@ class HistoryMultiLineChart extends StatelessWidget {
     final xWindow = _resolveXWindow();
     final windowStartUtc = xWindow?.startUtc;
     final windowSpanSeconds = xWindow?.spanSeconds ?? 0.0;
-    final useWindowAxis = xWindow != null &&
-        series.every((s) =>
-            s.values.isNotEmpty && s.timestamps.length == s.values.length);
+    final useWindowAxis =
+        xWindow != null && series.every((s) => s.points.isNotEmpty);
 
     final prepared = <_PreparedSeries>[];
     var maxX = 0.0;
 
     for (final line in series) {
-      if (line.values.isEmpty || line.timestamps.length != line.values.length) {
+      if (line.points.isEmpty) {
         continue;
       }
-      final normalizedDisplayValues = line.displayValues;
-      final hasCustomDisplayValues = normalizedDisplayValues != null &&
-          normalizedDisplayValues.length == line.values.length;
-      final hasRangeBounds = line.rangeMinValues != null &&
-          line.rangeMaxValues != null &&
-          line.rangeMinValues!.length == line.values.length &&
-          line.rangeMaxValues!.length == line.values.length;
 
       final points = <_HistoryChartPoint>[];
-      final pointRangeMins = hasRangeBounds ? <double?>[] : null;
-      final pointRangeMaxs = hasRangeBounds ? <double?>[] : null;
-      for (var i = 0; i < line.values.length; i++) {
-        final ts = line.timestamps[i].toUtc();
+      for (var i = 0; i < line.points.length; i++) {
+        final sourcePoint = line.points[i];
+        final ts = sourcePoint.timestamp.toUtc();
         final x = useWindowAxis
             ? _toXAxisSeconds(ts, windowStartUtc ?? ts)
             : i.toDouble();
@@ -151,35 +110,28 @@ class HistoryMultiLineChart extends StatelessWidget {
           continue;
         }
 
-        double? rangeMinValue;
-        double? rangeMaxValue;
-        if (hasRangeBounds) {
-          final minValue = line.rangeMinValues![i];
-          final maxValue = line.rangeMaxValues![i];
-          if (minValue != null &&
-              maxValue != null &&
-              minValue.isFinite &&
-              maxValue.isFinite &&
-              minValue <= maxValue) {
-            rangeMinValue = minValue;
-            rangeMaxValue = maxValue;
-            pointRangeMins!.add(rangeMinValue);
-            pointRangeMaxs!.add(rangeMaxValue);
-          } else {
-            pointRangeMins!.add(null);
-            pointRangeMaxs!.add(null);
-          }
+        double? rangeMinValue = sourcePoint.rangeMinValue;
+        double? rangeMaxValue = sourcePoint.rangeMaxValue;
+        if (rangeMinValue == null ||
+            rangeMaxValue == null ||
+            !rangeMinValue.isFinite ||
+            !rangeMaxValue.isFinite ||
+            rangeMinValue > rangeMaxValue) {
+          rangeMinValue = null;
+          rangeMaxValue = null;
         }
 
         points.add(
           _HistoryChartPoint(
             x: x,
-            y: line.values[i],
-            displayY: hasCustomDisplayValues
-                ? normalizedDisplayValues[i]
-                : line.values[i],
+            y: sourcePoint.value,
+            displayY: sourcePoint.displayValue ?? sourcePoint.value,
             rangeMinY: rangeMinValue,
+            rangeMaxY: rangeMaxValue,
             timestamp: ts,
+            axisFraction: sourcePoint.axisFraction,
+            includeInYAxisRange: sourcePoint.includeInYAxisRange,
+            tooltipText: sourcePoint.tooltipText,
           ),
         );
       }
@@ -189,8 +141,8 @@ class HistoryMultiLineChart extends StatelessWidget {
       }
 
       final spots = <FlSpot>[];
-      final rangeMinSpots = hasRangeBounds ? <FlSpot>[] : null;
-      final rangeMaxSpots = hasRangeBounds ? <FlSpot>[] : null;
+      final rangeMinSpots = <FlSpot>[];
+      final rangeMaxSpots = <FlSpot>[];
       final spotToPoint = <_HistoryChartPoint?>[];
       final gapThresholdSeconds =
           HistoryChartGapResolver.resolveGapThresholdSeconds(
@@ -207,30 +159,25 @@ class HistoryMultiLineChart extends StatelessWidget {
           );
           if (gapSeconds != null && gapSeconds > gapThresholdSeconds) {
             spots.add(FlSpot.nullSpot);
-            rangeMinSpots?.add(FlSpot.nullSpot);
-            rangeMaxSpots?.add(FlSpot.nullSpot);
+            rangeMinSpots.add(FlSpot.nullSpot);
+            rangeMaxSpots.add(FlSpot.nullSpot);
             spotToPoint.add(null);
           }
         }
-        spots.add(FlSpot(point.x, point.y));
-        if (hasRangeBounds) {
-          final minValue = pointRangeMins![i];
-          final maxValue = pointRangeMaxs![i];
-          if (minValue != null && maxValue != null) {
-            rangeMinSpots!.add(FlSpot(point.x, minValue));
-            rangeMaxSpots!.add(FlSpot(point.x, maxValue));
-          } else {
-            rangeMinSpots!.add(FlSpot.nullSpot);
-            rangeMaxSpots!.add(FlSpot.nullSpot);
-          }
+        final y = point.y;
+        spots.add(y == null ? FlSpot.nullSpot : FlSpot(point.x, y));
+        if (point.rangeMinY != null && point.rangeMaxY != null) {
+          rangeMinSpots.add(FlSpot(point.x, point.rangeMinY!));
+          rangeMaxSpots.add(FlSpot(point.x, point.rangeMaxY!));
+        } else {
+          rangeMinSpots.add(FlSpot.nullSpot);
+          rangeMaxSpots.add(FlSpot.nullSpot);
         }
         spotToPoint.add(point);
       }
 
       maxX = math.max(maxX, points.last.x);
-      final hasBandSpots = rangeMinSpots != null &&
-          rangeMaxSpots != null &&
-          rangeMinSpots.any((spot) => spot.isNotNull()) &&
+      final hasBandSpots = rangeMinSpots.any((spot) => spot.isNotNull()) &&
           rangeMaxSpots.any((spot) => spot.isNotNull());
       prepared.add(
         _PreparedSeries(
@@ -248,12 +195,14 @@ class HistoryMultiLineChart extends StatelessWidget {
       return const SizedBox.expand();
     }
 
-    final yAxisPrepared =
-        prepared.where((line) => line.line.includeInYAxisRange).toList();
-    final yAxisSource = yAxisPrepared.isEmpty ? prepared : yAxisPrepared;
     final yValues = <double>[];
-    for (final line in yAxisSource) {
-      yValues.addAll(line.points.map((point) => point.y));
+    for (final line in prepared) {
+      if (!line.line.includeInYAxisRange) continue;
+      yValues.addAll(
+        line.points
+            .where((point) => point.includeInYAxisRange && point.y != null)
+            .map((point) => point.y!),
+      );
       if (line.rangeMinSpots != null) {
         yValues.addAll(
           line.rangeMinSpots!
@@ -268,6 +217,18 @@ class HistoryMultiLineChart extends StatelessWidget {
               .map((spot) => spot.y),
         );
       }
+    }
+    if (yValues.isEmpty) {
+      yValues.addAll(
+        prepared.expand(
+          (line) => line.points
+              .where((point) => point.y != null)
+              .map((point) => point.y!),
+        ),
+      );
+    }
+    if (yValues.isEmpty) {
+      return const SizedBox.expand();
     }
 
     final minRaw = yValues.reduce(math.min);
@@ -296,6 +257,9 @@ class HistoryMultiLineChart extends StatelessWidget {
     final lineBarsData = <LineChartBarData>[];
     final betweenBarsData = <BetweenBarsData>[];
     final chartBarToPreparedIndex = <int, int>{};
+    final chartTopologyKey = ValueKey<String>(
+      'history-multi-line:${prepared.map((line) => line.line.id).join('|')}',
+    );
 
     for (var preparedIndex = 0;
         preparedIndex < prepared.length;
@@ -309,6 +273,7 @@ class HistoryMultiLineChart extends StatelessWidget {
         LineChartBarData(
           spots: spots,
           isCurved: false,
+          isStepLineChart: line.line.isStepLine,
           color: line.line.lineGradient == null ? line.line.color : null,
           gradient: line.line.lineGradient,
           barWidth: line.line.strokeWidth,
@@ -378,7 +343,8 @@ class HistoryMultiLineChart extends StatelessWidget {
       );
     }
 
-    return LineChart(
+    final chart = LineChart(
+      key: chartTopologyKey,
       LineChartData(
         minX: 0,
         maxX: xMax <= 0 ? 1 : xMax,
@@ -526,7 +492,6 @@ class HistoryMultiLineChart extends StatelessWidget {
               }
 
               final rows = <_TooltipRow>[];
-              DateTime? tooltipTimestamp;
               for (final touched in touchedSpots) {
                 final preparedIndex = chartBarToPreparedIndex[touched.barIndex];
                 if (preparedIndex == null) {
@@ -541,7 +506,6 @@ class HistoryMultiLineChart extends StatelessWidget {
                 if (point == null) {
                   continue;
                 }
-                tooltipTimestamp ??= point.timestamp;
                 rows.add(
                   _TooltipRow(
                     seriesId: line.line.id,
@@ -549,6 +513,8 @@ class HistoryMultiLineChart extends StatelessWidget {
                     value: point.displayY,
                     minValue: point.rangeMinY,
                     color: line.line.color,
+                    timestamp: point.timestamp,
+                    tooltipText: point.tooltipText,
                   ),
                 );
               }
@@ -561,12 +527,32 @@ class HistoryMultiLineChart extends StatelessWidget {
                 );
               }
 
-              final timestamp = tooltipTimestamp;
-              final header = timestamp == null
-                  ? ''
-                  : (tooltipTimeLabelBuilder?.call(timestamp) ??
-                      xAxisLabelBuilder?.call(timestamp) ??
-                      _defaultTimeLabel(timestamp));
+              _TooltipRow? anchor;
+              final anchorSeriesId = tooltipAnchorSeriesId;
+              if (anchorSeriesId == null) {
+                anchor = rows.first;
+              } else {
+                for (final row in rows) {
+                  if (row.seriesId == anchorSeriesId) {
+                    anchor = row;
+                    break;
+                  }
+                }
+              }
+              if (anchor == null) {
+                return List<LineTooltipItem?>.filled(
+                  touchedSpots.length,
+                  null,
+                  growable: false,
+                );
+              }
+              final timestamp = anchor.timestamp;
+              final exactRows = rows
+                  .where((row) => row.timestamp == timestamp)
+                  .toList(growable: false);
+              final header = tooltipTimeLabelBuilder?.call(timestamp) ??
+                  xAxisLabelBuilder?.call(timestamp) ??
+                  _defaultTimeLabel(timestamp);
               final children = <TextSpan>[];
               if (header.isNotEmpty) {
                 children.add(
@@ -581,11 +567,11 @@ class HistoryMultiLineChart extends StatelessWidget {
                 );
               }
 
-              for (var i = 0; i < rows.length; i++) {
-                final row = rows[i];
-                final valueText =
-                    tooltipValueFormatter?.call(row.seriesId, row.value) ??
-                        _formatValueLabel(row.value);
+              for (var i = 0; i < exactRows.length; i++) {
+                final row = exactRows[i];
+                final valueText = row.tooltipText ??
+                    tooltipValueFormatter?.call(row.seriesId, row.value!) ??
+                    _formatValueLabel(row.value!);
                 children.add(
                   TextSpan(
                     text: '${row.seriesLabel}: $valueText',
@@ -613,7 +599,7 @@ class HistoryMultiLineChart extends StatelessWidget {
                     );
                   }
                 }
-                if (i < rows.length - 1) {
+                if (i < exactRows.length - 1) {
                   children.add(const TextSpan(text: '\n'));
                 }
               }
@@ -643,6 +629,10 @@ class HistoryMultiLineChart extends StatelessWidget {
       duration: const Duration(milliseconds: 260),
       curve: Curves.easeOutCubic,
     );
+    final label = semanticLabel?.trim();
+    return label == null || label.isEmpty
+        ? chart
+        : Semantics(label: label, child: chart);
   }
 
   _HistoryChartXWindow? _resolveXWindow() {
@@ -692,25 +682,32 @@ List<FlSpot> _renderSpots(
   _PreparedSeries series,
   _YAxisRange yAxisRange,
 ) {
-  final activityBand = series.line.activityBand;
-  if (activityBand == null) {
-    return series.spots;
-  }
-
-  return series.spots
-      .map(
-        (spot) => spot.isNull()
-            ? FlSpot.nullSpot
-            : FlSpot(
-                spot.x,
-                _activityBandY(
-                  spot.y,
-                  yAxisRange,
-                  activityBand,
-                ),
-              ),
-      )
-      .toList(growable: false);
+  return List<FlSpot>.generate(
+    series.spots.length,
+    (index) {
+      final spot = series.spots[index];
+      final point = series.spotToPoint[index];
+      if (spot.isNull() || point == null || point.y == null) {
+        return FlSpot.nullSpot;
+      }
+      final axisFraction = point.axisFraction;
+      if (axisFraction != null) {
+        final span = math.max((yAxisRange.max - yAxisRange.min).abs(), 1.0);
+        return FlSpot(
+          spot.x,
+          yAxisRange.min + span * axisFraction.clamp(0.0, 1.0),
+        );
+      }
+      final activityBand = series.line.activityBand;
+      if (activityBand != null) {
+        return FlSpot(
+          spot.x,
+          _activityBandY(point.y!, yAxisRange, activityBand),
+        );
+      }
+      return spot;
+    },
+  ).toList(growable: false);
 }
 
 double _activityBandY(
@@ -727,76 +724,6 @@ double _activityBandY(
   final lower = yAxisRange.min + span * bottomFraction;
   final upper = lower + span * heightFraction;
   return lower + value.clamp(0.0, 1.0) * (upper - lower);
-}
-
-class _PreparedSeries {
-  const _PreparedSeries({
-    required this.line,
-    required this.points,
-    required this.spots,
-    required this.rangeMinSpots,
-    required this.rangeMaxSpots,
-    required this.spotToPoint,
-  });
-
-  final HistoryMultiLineSeries line;
-  final List<_HistoryChartPoint> points;
-  final List<FlSpot> spots;
-  final List<FlSpot>? rangeMinSpots;
-  final List<FlSpot>? rangeMaxSpots;
-  final List<_HistoryChartPoint?> spotToPoint;
-}
-
-class _HistoryChartPoint {
-  const _HistoryChartPoint({
-    required this.x,
-    required this.y,
-    required this.displayY,
-    required this.rangeMinY,
-    required this.timestamp,
-  });
-
-  final double x;
-  final double y;
-  final double displayY;
-  final double? rangeMinY;
-  final DateTime timestamp;
-}
-
-class _TooltipRow {
-  const _TooltipRow({
-    required this.seriesId,
-    required this.seriesLabel,
-    required this.value,
-    required this.minValue,
-    required this.color,
-  });
-
-  final String seriesId;
-  final String seriesLabel;
-  final double value;
-  final double? minValue;
-  final Color color;
-}
-
-class _HistoryChartXWindow {
-  const _HistoryChartXWindow({
-    required this.startUtc,
-    required this.spanSeconds,
-  });
-
-  final DateTime startUtc;
-  final double spanSeconds;
-}
-
-class _YAxisRange {
-  const _YAxisRange({
-    required this.min,
-    required this.max,
-  });
-
-  final double min;
-  final double max;
 }
 
 Set<int> _tickIndexes(int count, {required int targetTickCount}) {

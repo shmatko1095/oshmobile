@@ -17,14 +17,12 @@ void main() {
                 HistoryMultiLineSeries(
                   id: 'power_meter.active_power_w',
                   label: 'Active power',
-                  values: const <double>[120, 900],
-                  displayValues: const <double>[120, 900],
-                  rangeMinValues: const <double?>[40, 80],
-                  rangeMaxValues: const <double?>[250, 920],
-                  timestamps: <DateTime>[
-                    start,
-                    start.add(const Duration(minutes: 5)),
-                  ],
+                  points: _points(
+                    values: const <double>[120, 900],
+                    rangeMinValues: const <double?>[40, 80],
+                    rangeMaxValues: const <double?>[250, 920],
+                    start: start,
+                  ),
                   color: Colors.blue,
                 ),
               ],
@@ -54,11 +52,12 @@ void main() {
                 HistoryMultiLineSeries(
                   id: 'power_meter.active_power_w',
                   label: 'Active power',
-                  values: const <double>[120],
-                  displayValues: const <double>[120],
-                  rangeMinValues: const <double?>[40],
-                  rangeMaxValues: const <double?>[250],
-                  timestamps: <DateTime>[start],
+                  points: _points(
+                    values: const <double>[120],
+                    rangeMinValues: const <double?>[40],
+                    rangeMaxValues: const <double?>[250],
+                    start: start,
+                  ),
                   color: Colors.blue,
                 ),
               ],
@@ -105,14 +104,12 @@ void main() {
                 HistoryMultiLineSeries(
                   id: 'power_meter.active_power_w',
                   label: 'Active power',
-                  values: const <double>[120, 900],
-                  displayValues: const <double>[120, 900],
-                  rangeMinValues: const <double?>[300, null],
-                  rangeMaxValues: const <double?>[250, 920],
-                  timestamps: <DateTime>[
-                    start,
-                    start.add(const Duration(minutes: 5)),
-                  ],
+                  points: _points(
+                    values: const <double>[120, 900],
+                    rangeMinValues: const <double?>[300, null],
+                    rangeMaxValues: const <double?>[250, 920],
+                    start: start,
+                  ),
                   color: Colors.blue,
                 ),
               ],
@@ -141,11 +138,10 @@ void main() {
                 HistoryMultiLineSeries(
                   id: 'climate_sensors.air.temp',
                   label: 'Air',
-                  values: const <double>[21, 22],
-                  timestamps: <DateTime>[
-                    start,
-                    start.add(const Duration(minutes: 5)),
-                  ],
+                  points: _points(
+                    values: const <double>[21, 22],
+                    start: start,
+                  ),
                   color: Colors.orange,
                   fill: true,
                   fillTopAlpha: 0.26,
@@ -181,22 +177,19 @@ void main() {
                 HistoryMultiLineSeries(
                   id: 'climate_sensors.air.temp',
                   label: 'Air',
-                  values: const <double>[20, 22],
-                  timestamps: <DateTime>[
-                    start,
-                    start.add(const Duration(minutes: 5)),
-                  ],
+                  points: _points(
+                    values: const <double>[20, 22],
+                    start: start,
+                  ),
                   color: Colors.blue,
                 ),
                 HistoryMultiLineSeries(
                   id: 'heating',
                   label: 'Heating',
-                  values: const <double>[0, 1],
-                  displayValues: const <double>[0, 1],
-                  timestamps: <DateTime>[
-                    start,
-                    start.add(const Duration(minutes: 5)),
-                  ],
+                  points: _points(
+                    values: const <double>[0, 1],
+                    start: start,
+                  ),
                   color: Colors.orange,
                   fill: true,
                   includeInYAxisRange: false,
@@ -219,4 +212,175 @@ void main() {
     expect(heatingBar.spots.first.y, 20);
     expect(heatingBar.spots.last.y, closeTo(20.36, 0.0001));
   });
+
+  testWidgets(
+    'replaces the chart when the visible series topology changes',
+    (tester) async {
+      final start = DateTime.utc(2026, 3, 15, 12, 0, 0);
+      final temperature = HistoryMultiLineSeries(
+        id: 'climate_sensors.air.temp',
+        label: 'Air',
+        points: _points(
+          values: const <double>[20, 22],
+          start: start,
+        ),
+        color: Colors.blue,
+      );
+      final heating = HistoryMultiLineSeries(
+        id: 'heating',
+        label: 'Heating',
+        points: _points(
+          values: const <double>[0, 1],
+          start: start,
+        ),
+        color: Colors.orange,
+        includeInYAxisRange: false,
+        activityBand: const HistoryMultiLineActivityBand(),
+      );
+
+      Widget buildChart(List<HistoryMultiLineSeries> series) {
+        return MaterialApp(
+          home: Scaffold(
+            body: SizedBox.expand(child: HistoryMultiLineChart(series: series)),
+          ),
+        );
+      }
+
+      await tester
+          .pumpWidget(buildChart(<HistoryMultiLineSeries>[temperature]));
+      await tester.pump();
+      final originalElement = tester.element(find.byType(LineChart));
+      final originalKey = tester.widget<LineChart>(find.byType(LineChart)).key;
+
+      await tester.pumpWidget(
+        buildChart(<HistoryMultiLineSeries>[temperature, heating]),
+      );
+      await tester.pump();
+      final changedElement = tester.element(find.byType(LineChart));
+      final changedKey = tester.widget<LineChart>(find.byType(LineChart)).key;
+
+      expect(changedElement, isNot(same(originalElement)));
+      expect(changedKey, isNot(originalKey));
+    },
+  );
+
+  testWidgets('keeps the chart for a data-only update', (tester) async {
+    final start = DateTime.utc(2026, 3, 15, 12, 0, 0);
+
+    Widget buildChart(List<double> values) {
+      return MaterialApp(
+        home: Scaffold(
+          body: SizedBox.expand(
+            child: HistoryMultiLineChart(
+              series: <HistoryMultiLineSeries>[
+                HistoryMultiLineSeries(
+                  id: 'climate_sensors.air.temp',
+                  label: 'Air',
+                  points: _points(values: values, start: start),
+                  color: Colors.blue,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildChart(const <double>[20, 22]));
+    await tester.pump();
+    final originalElement = tester.element(find.byType(LineChart));
+
+    await tester.pumpWidget(buildChart(const <double>[21, 23]));
+    await tester.pump();
+
+    expect(tester.element(find.byType(LineChart)), same(originalElement));
+  });
+
+  testWidgets('tooltip includes overlays only from the anchor bucket', (
+    tester,
+  ) async {
+    final start = DateTime.utc(2026, 3, 15, 12);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox.expand(
+            child: HistoryMultiLineChart(
+              tooltipAnchorSeriesId: 'temperature',
+              series: <HistoryMultiLineSeries>[
+                HistoryMultiLineSeries(
+                  id: 'temperature',
+                  label: 'Temperature',
+                  points: <HistoryMultiLinePoint>[
+                    HistoryMultiLinePoint(
+                      timestamp: start,
+                      value: 21,
+                      displayValue: 21,
+                    ),
+                  ],
+                  color: Colors.blue,
+                ),
+                HistoryMultiLineSeries(
+                  id: 'target',
+                  label: 'Target',
+                  points: <HistoryMultiLinePoint>[
+                    HistoryMultiLinePoint(
+                      timestamp: start.add(const Duration(minutes: 5)),
+                      value: 41,
+                      tooltipText: 'ON',
+                    ),
+                  ],
+                  color: Colors.green,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final chart = tester.widget<LineChart>(find.byType(LineChart));
+    final items = chart.data.lineTouchData.touchTooltipData.getTooltipItems(
+      <LineBarSpot>[
+        LineBarSpot(
+          chart.data.lineBarsData[0],
+          0,
+          chart.data.lineBarsData[0].spots.first,
+        ),
+        LineBarSpot(
+          chart.data.lineBarsData[1],
+          1,
+          chart.data.lineBarsData[1].spots.first,
+        ),
+      ],
+    );
+    final text = items
+        .whereType<LineTooltipItem>()
+        .expand((item) => item.children ?? const <TextSpan>[])
+        .map((span) => span.text ?? '')
+        .join();
+
+    expect(text, contains('Temperature'));
+    expect(text, isNot(contains('Target')));
+    expect(text, isNot(contains('ON')));
+  });
+}
+
+List<HistoryMultiLinePoint> _points({
+  required List<double> values,
+  required DateTime start,
+  List<double?>? rangeMinValues,
+  List<double?>? rangeMaxValues,
+}) {
+  return List<HistoryMultiLinePoint>.generate(
+    values.length,
+    (index) => HistoryMultiLinePoint(
+      timestamp: start.add(Duration(minutes: index * 5)),
+      value: values[index],
+      displayValue: values[index],
+      rangeMinValue: rangeMinValues?[index],
+      rangeMaxValue: rangeMaxValues?[index],
+    ),
+    growable: false,
+  );
 }

@@ -25,6 +25,7 @@ import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_agg
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_series.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_history.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_cubit.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric_catalog.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/pages/telemetry_history_page.dart';
@@ -875,6 +876,15 @@ final class _QueuedTelemetryHistoryApi implements DeviceTelemetryHistoryApi {
       _AggregateRequest(query: query, completer: completer),
     );
     return completer.future;
+  }
+
+  @override
+  Future<TelemetrySetpointHistory> getSetpointHistory({
+    required DateTime from,
+    required DateTime to,
+    String preferredResolution = 'auto',
+  }) {
+    throw UnsupportedError('Setpoint history is not used by these tests');
   }
 }
 

@@ -320,6 +320,7 @@
   "TelemetryHistoryMetricHeatingActivity": "Heating activity",
   "TelemetryHistoryMetricTemperature": "Temperature",
   "TelemetryHistoryMetricTarget": "Target",
+  "TelemetryHistoryTargetInactive": "inactive",
   "TelemetryHistoryMetricVoltage": "Voltage",
   "TelemetryHistoryMetricCurrent": "Current",
   "TelemetryHistoryMetricActivePower": "Power",

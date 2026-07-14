@@ -320,6 +320,7 @@
   "TelemetryHistoryMetricHeatingActivity": "Нагрів",
   "TelemetryHistoryMetricTemperature": "Температура",
   "TelemetryHistoryMetricTarget": "Ціль",
+  "TelemetryHistoryTargetInactive": "неактивна",
   "TelemetryHistoryMetricVoltage": "Напруга",
   "TelemetryHistoryMetricCurrent": "Струм",
   "TelemetryHistoryMetricActivePower": "Потужність",

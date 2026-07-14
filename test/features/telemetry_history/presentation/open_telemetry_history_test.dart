@@ -12,6 +12,7 @@ import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/entities/device/device_user_data.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_history.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric_catalog.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/open_telemetry_history.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/pages/telemetry_history_page.dart';
@@ -91,6 +92,46 @@ void main() {
       expect(history.requests, isEmpty);
     });
   });
+
+  group('TelemetryHistoryNavigator.openTemperatureFromHost', () {
+    testWidgets('loads temperature, heating and atomic setpoint history',
+        (tester) async {
+      final history = _QueuedTelemetryHistoryApi();
+      final facade = _FakeDeviceFacade(
+        DeviceSnapshot.initial(device: _device()),
+        history,
+      );
+      final snapshotCubit = DeviceSnapshotCubit(facade: facade);
+      addTearDown(snapshotCubit.close);
+
+      await _pumpHost(
+        tester,
+        facade: facade,
+        snapshotCubit: snapshotCubit,
+        onPressed: (context) {
+          TelemetryHistoryNavigator.openTemperatureFromHost(
+            context,
+            sensorId: 'floor',
+            sensorName: 'Floor',
+          );
+        },
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(TelemetryHistoryPage), findsOneWidget);
+      expect(
+        history.requests.map((request) => request.seriesKey).toSet(),
+        <String>{
+          'climate_sensors.floor.temp',
+          TelemetryHistoryMetricCatalog.heaterEnabled,
+        },
+      );
+      expect(history.setpointRequests, hasLength(1));
+    });
+  });
 }
 
 Future<void> _pumpHost(
@@ -142,6 +183,8 @@ Device _device() {
 
 final class _QueuedTelemetryHistoryApi implements DeviceTelemetryHistoryApi {
   final List<_Request> requests = <_Request>[];
+  final List<Completer<TelemetrySetpointHistory>> setpointRequests =
+      <Completer<TelemetrySetpointHistory>>[];
 
   @override
   Future<TelemetryHistorySeries> getSeries({
@@ -153,6 +196,17 @@ final class _QueuedTelemetryHistoryApi implements DeviceTelemetryHistoryApi {
   }) {
     final completer = Completer<TelemetryHistorySeries>();
     requests.add(_Request(seriesKey: seriesKey, completer: completer));
+    return completer.future;
+  }
+
+  @override
+  Future<TelemetrySetpointHistory> getSetpointHistory({
+    required DateTime from,
+    required DateTime to,
+    String preferredResolution = 'auto',
+  }) {
+    final completer = Completer<TelemetrySetpointHistory>();
+    setpointRequests.add(completer);
     return completer.future;
   }
 

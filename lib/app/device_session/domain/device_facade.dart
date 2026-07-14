@@ -7,6 +7,17 @@ import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_query.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/telemetry_history_series_reader.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/telemetry_setpoint_history_reader.dart';
+
+part 'device_about_api.dart';
+part 'device_schedule_api.dart';
+part 'device_sensors_api.dart';
+part 'device_settings_api.dart';
+part 'device_settings_display_api.dart';
+part 'device_settings_time_api.dart';
+part 'device_settings_update_api.dart';
+part 'device_telemetry_api.dart';
+part 'device_telemetry_history_api.dart';
 
 abstract interface class DeviceFacade {
   DeviceSnapshot get current;
@@ -32,136 +43,4 @@ abstract interface class DeviceFacade {
   DeviceAboutApi get about;
 
   Future<void> dispose();
-}
-
-abstract interface class DeviceScheduleApi {
-  Set<ScheduleSetpointKind> get supportedSetpointKinds;
-  CalendarSnapshot? get current;
-
-  Stream<CalendarSnapshot> watch();
-
-  Future<CalendarSnapshot> get({bool force = false});
-
-  Future<void> commandSetMode(
-    CalendarMode mode, {
-    String source = 'unknown',
-  });
-
-  void patchRange(ScheduleRange range);
-
-  void patchList(CalendarMode mode, List<SchedulePoint> points);
-
-  void patchPoint(int index, SchedulePoint point);
-
-  void removePoint(int index);
-
-  void addPoint([SchedulePoint? point, int stepMinutes = 15]);
-
-  Future<void> save();
-
-  void discardLocalChanges();
-}
-
-abstract interface class DeviceSettingsApi {
-  SettingsSnapshot? get current;
-
-  Stream<SettingsSnapshot> watch();
-
-  Future<SettingsSnapshot> get({bool force = false});
-
-  void patch(String path, Object? value);
-
-  void patchAll(Map<String, Object?> patch);
-
-  DeviceSettingsDisplayApi get display;
-
-  DeviceSettingsUpdateApi get update;
-
-  DeviceSettingsTimeApi get time;
-
-  Future<void> save();
-
-  void discardLocalChanges();
-}
-
-abstract interface class DeviceSettingsDisplayApi {
-  void setActiveBrightness(int value);
-
-  void setIdleBrightness(int value);
-
-  void setIdleTime(int value);
-
-  void setDimOnIdle(bool value);
-
-  void setLanguage(String value);
-}
-
-abstract interface class DeviceSettingsUpdateApi {
-  void setAutoUpdateEnabled(bool value);
-
-  void setUpdateAtMidnight(bool value);
-
-  void setCheckIntervalMin(int value);
-}
-
-abstract interface class DeviceSettingsTimeApi {
-  void setAuto(bool value);
-
-  void setTimeZone(int value);
-}
-
-abstract interface class DeviceSensorsApi {
-  SensorsState? get current;
-
-  Stream<SensorsState> watch();
-
-  Future<SensorsState> get({bool force = false});
-
-  Future<void> patch(SensorsPatch patch);
-
-  Future<void> save(SensorsSetPayload payload);
-
-  Future<void> rename({
-    required String id,
-    required String name,
-  });
-
-  Future<void> setReference({
-    required String id,
-  });
-
-  Future<void> setPairing({
-    required bool enabled,
-    int? timeoutSec,
-  });
-
-  Future<void> remove({
-    required String id,
-    bool? leave,
-  });
-}
-
-abstract interface class DeviceTelemetryApi {
-  Map<String, dynamic> get current;
-
-  Stream<Map<String, dynamic>> watch();
-
-  Future<Map<String, dynamic>> get({bool force = false});
-}
-
-abstract interface class DeviceTelemetryHistoryApi
-    implements TelemetryHistorySeriesReader {
-  Future<TelemetryAggregate> getAggregate({
-    required TelemetryAggregateQuery query,
-  });
-}
-
-abstract interface class DeviceAboutApi {
-  Map<String, dynamic>? get current;
-
-  Stream<Map<String, dynamic>> watch();
-
-  Future<Map<String, dynamic>?> get({bool force = false});
-
-  Future<void> stop();
 }

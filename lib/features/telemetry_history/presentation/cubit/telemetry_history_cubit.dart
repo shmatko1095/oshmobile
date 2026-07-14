@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/telemetry_history_series_reader.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/telemetry_setpoint_history_reader.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_state.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
@@ -8,6 +9,7 @@ import 'package:oshmobile/features/telemetry_history/presentation/models/telemet
 class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
   TelemetryHistoryCubit({
     required TelemetryHistorySeriesReader seriesReader,
+    TelemetrySetpointHistoryReader? setpointReader,
     required List<TelemetryHistoryMetric> metrics,
     List<TelemetryHistoryMetric> comparisonMetrics =
         const <TelemetryHistoryMetric>[],
@@ -15,6 +17,7 @@ class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
     TelemetryHistoryRange initialRange = TelemetryHistoryRange.day,
     DateTime Function()? nowUtc,
   })  : _seriesReader = seriesReader,
+        _setpointReader = setpointReader,
         _nowUtc = nowUtc ?? _defaultNowUtc,
         super(
           TelemetryHistoryState.initial(
@@ -34,9 +37,11 @@ class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
   }
 
   final TelemetryHistorySeriesReader _seriesReader;
+  final TelemetrySetpointHistoryReader? _setpointReader;
   final DateTime Function() _nowUtc;
   final Map<String, int> _requestVersionBySeriesKey = <String, int>{};
   int _scopeVersion = 0;
+  int _setpointRequestVersion = 0;
 
   static DateTime _defaultNowUtc() => DateTime.now().toUtc();
 
@@ -55,6 +60,9 @@ class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
         loadingSeriesKeys: <String>{},
         seriesBySeriesKey: <String, TelemetryHistorySeries>{},
         errorBySeriesKey: <String, String>{},
+        setpointHistory: null,
+        setpointLoading: false,
+        setpointErrorMessage: null,
       ),
     );
     await _loadVisibleMetric(state.metric, forceRefresh: true);
@@ -90,14 +98,71 @@ class TelemetryHistoryCubit extends Cubit<TelemetryHistoryState> {
   Future<void> _loadVisibleMetric(
     TelemetryHistoryMetric metric, {
     bool forceRefresh = false,
-  }) {
-    return ensureMetricsLoaded(
-      <TelemetryHistoryMetric>[
-        metric,
-        ..._comparisonMetricsFor(metric),
-      ],
-      forceRefresh: forceRefresh,
+  }) async {
+    final futures = <Future<void>>[
+      ensureMetricsLoaded(
+        <TelemetryHistoryMetric>[
+          metric,
+          ..._comparisonMetricsFor(metric),
+        ],
+        forceRefresh: forceRefresh,
+      ),
+    ];
+    if (_isTemperatureMetric(metric) && _setpointReader != null) {
+      futures.add(_loadSetpointHistory(forceRefresh: forceRefresh));
+    }
+    await Future.wait(futures);
+  }
+
+  Future<void> _loadSetpointHistory({bool forceRefresh = false}) async {
+    final reader = _setpointReader;
+    if (reader == null) return;
+    if (!forceRefresh &&
+        state.setpointHistory != null &&
+        !state.setpointLoading &&
+        state.setpointErrorMessage == null) {
+      return;
+    }
+    final requestVersion = ++_setpointRequestVersion;
+    final scopeVersion = _scopeVersion;
+    emit(
+      state.copyWith(
+        setpointLoading: true,
+        setpointErrorMessage: null,
+      ),
     );
+    final now = _nowUtc();
+    try {
+      final history = await reader.getSetpointHistory(
+        from: now.subtract(state.range.duration),
+        to: now,
+        preferredResolution: 'auto',
+      );
+      if (isClosed ||
+          scopeVersion != _scopeVersion ||
+          requestVersion != _setpointRequestVersion) {
+        return;
+      }
+      emit(
+        state.copyWith(
+          setpointHistory: history,
+          setpointLoading: false,
+          setpointErrorMessage: null,
+        ),
+      );
+    } catch (error) {
+      if (isClosed ||
+          scopeVersion != _scopeVersion ||
+          requestVersion != _setpointRequestVersion) {
+        return;
+      }
+      emit(
+        state.copyWith(
+          setpointLoading: false,
+          setpointErrorMessage: error.toString(),
+        ),
+      );
+    }
   }
 
   Future<void> _loadMetric(

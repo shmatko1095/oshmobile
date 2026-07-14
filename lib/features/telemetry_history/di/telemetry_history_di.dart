@@ -10,6 +10,7 @@ import 'package:oshmobile/features/telemetry_history/domain/contracts/temperatur
 import 'package:oshmobile/features/telemetry_history/domain/repositories/telemetry_history_repository.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_aggregate.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_history.dart';
+import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_setpoint_history.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void registerTelemetryHistoryFeature(GetIt locator) {
@@ -41,6 +42,11 @@ void registerTelemetryHistoryFeature(GetIt locator) {
     )
     ..registerFactory<GetTelemetryAggregate>(
       () => GetTelemetryAggregate(
+        repository: locator<TelemetryHistoryRepository>(),
+      ),
+    )
+    ..registerFactory<GetTelemetrySetpointHistory>(
+      () => GetTelemetrySetpointHistory(
         repository: locator<TelemetryHistoryRepository>(),
       ),
     );

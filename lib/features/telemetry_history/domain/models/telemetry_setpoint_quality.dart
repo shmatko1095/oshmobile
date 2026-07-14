@@ -1,0 +1,4 @@
+enum TelemetrySetpointQuality {
+  exact,
+  legacyDerived,
+}

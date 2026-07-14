@@ -34,6 +34,7 @@ import 'package:oshmobile/features/sensors/data/sensors_topics.dart';
 import 'package:oshmobile/features/sensors/domain/repositories/sensors_repository.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_aggregate.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_history.dart';
+import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_setpoint_history.dart';
 import 'package:oshmobile/core/di/device_context.dart';
 
 /// Device DI scope.
@@ -254,6 +255,7 @@ class DeviceDi {
         runtimeContracts: getIt<DeviceRuntimeContracts>(),
         getTelemetryHistory: getIt<GetTelemetryHistory>(),
         getTelemetryAggregate: getIt<GetTelemetryAggregate>(),
+        getTelemetrySetpointHistory: getIt<GetTelemetrySetpointHistory>(),
       ),
       dispose: (f) => unawaited(f.dispose()),
     );

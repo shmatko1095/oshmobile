@@ -431,6 +431,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Пік інтервалу",
     ),
     "TelemetryHistoryStatTotal": MessageLookupByLibrary.simpleMessage("Усього"),
+    "TelemetryHistoryTargetInactive": MessageLookupByLibrary.simpleMessage(
+      "неактивна",
+    ),
     "Theme": MessageLookupByLibrary.simpleMessage("Тема"),
     "ThemeDark": MessageLookupByLibrary.simpleMessage("Темна"),
     "ThemeLight": MessageLookupByLibrary.simpleMessage("Світла"),

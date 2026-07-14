@@ -37,6 +37,16 @@ class _FakeMobileV1Service extends MobileV1Service {
   }
 
   @override
+  Future<Response<dynamic>> getMyDeviceThermostatSetpointHistory({
+    required String serial,
+    required String from,
+    required String to,
+    String resolution = 'auto',
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<Response<dynamic>> getMyDeviceTelemetryAggregate({
     required String serial,
     required String seriesKeys,

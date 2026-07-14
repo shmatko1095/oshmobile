@@ -1,4 +1,5 @@
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_history.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_range.dart';
 
@@ -11,6 +12,9 @@ class TelemetryHistoryState {
     required this.loadingSeriesKeys,
     required this.seriesBySeriesKey,
     required this.errorBySeriesKey,
+    required this.setpointHistory,
+    required this.setpointLoading,
+    required this.setpointErrorMessage,
   });
 
   factory TelemetryHistoryState.initial({
@@ -30,6 +34,9 @@ class TelemetryHistoryState {
       loadingSeriesKeys: const <String>{},
       seriesBySeriesKey: const <String, TelemetryHistorySeries>{},
       errorBySeriesKey: const <String, String>{},
+      setpointHistory: null,
+      setpointLoading: false,
+      setpointErrorMessage: null,
     );
   }
 
@@ -40,6 +47,9 @@ class TelemetryHistoryState {
   final Set<String> loadingSeriesKeys;
   final Map<String, TelemetryHistorySeries> seriesBySeriesKey;
   final Map<String, String> errorBySeriesKey;
+  final TelemetrySetpointHistory? setpointHistory;
+  final bool setpointLoading;
+  final String? setpointErrorMessage;
 
   TelemetryHistoryMetric get metric => metrics[selectedMetricIndex];
 
@@ -74,6 +84,9 @@ class TelemetryHistoryState {
     Object? loadingSeriesKeys = _unset,
     Object? seriesBySeriesKey = _unset,
     Object? errorBySeriesKey = _unset,
+    Object? setpointHistory = _unset,
+    bool? setpointLoading,
+    Object? setpointErrorMessage = _unset,
   }) {
     final nextMetrics = metrics ?? this.metrics;
     final rawIndex = selectedMetricIndex ?? this.selectedMetricIndex;
@@ -94,6 +107,13 @@ class TelemetryHistoryState {
       errorBySeriesKey: errorBySeriesKey == _unset
           ? this.errorBySeriesKey
           : errorBySeriesKey as Map<String, String>,
+      setpointHistory: setpointHistory == _unset
+          ? this.setpointHistory
+          : setpointHistory as TelemetrySetpointHistory?,
+      setpointLoading: setpointLoading ?? this.setpointLoading,
+      setpointErrorMessage: setpointErrorMessage == _unset
+          ? this.setpointErrorMessage
+          : setpointErrorMessage as String?,
     );
   }
 }

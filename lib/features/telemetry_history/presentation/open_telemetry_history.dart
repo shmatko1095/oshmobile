@@ -116,7 +116,6 @@ class TelemetryHistoryNavigator {
       hostContext,
       metrics: metrics,
       comparisonMetrics: <TelemetryHistoryMetric>[
-        TelemetryHistoryMetricCatalog.targetTempMetric(s),
         TelemetryHistoryMetricCatalog.heatingActivityMetric(s),
       ],
       initialMetricIndex: initialIndex < 0 ? 0 : initialIndex,
@@ -168,6 +167,7 @@ class TelemetryHistoryNavigator {
           child: BlocProvider(
             create: (_) => TelemetryHistoryCubit(
               seriesReader: facade.telemetryHistory,
+              setpointReader: facade.telemetryHistory,
               metrics: metrics,
               comparisonMetrics: comparisonMetrics,
               initialMetricIndex: effectiveIndex,

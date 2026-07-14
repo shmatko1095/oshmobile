@@ -27,6 +27,7 @@ import 'package:oshmobile/features/settings/domain/ui/settings_ui_schema_builder
 import 'package:oshmobile/features/sensors/domain/repositories/sensors_repository.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_aggregate.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_history.dart';
+import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_setpoint_history.dart';
 
 class DeviceFacadeImpl implements DeviceFacade {
   final DeviceContext _ctx;
@@ -88,6 +89,7 @@ class DeviceFacadeImpl implements DeviceFacade {
     required DeviceRuntimeContracts runtimeContracts,
     required GetTelemetryHistory getTelemetryHistory,
     required GetTelemetryAggregate getTelemetryAggregate,
+    required GetTelemetrySetpointHistory getTelemetrySetpointHistory,
   })  : _ctx = ctx,
         _pageCubit = pageCubit,
         _mqttCubit = mqttCubit,
@@ -120,6 +122,7 @@ class DeviceFacadeImpl implements DeviceFacade {
       deviceSn: _ctx.deviceSn,
       getTelemetryHistory: getTelemetryHistory,
       getTelemetryAggregate: getTelemetryAggregate,
+      getTelemetrySetpointHistory: getTelemetrySetpointHistory,
     );
     _aboutApi = DeviceAboutApiImpl(
       repo: aboutRepo,

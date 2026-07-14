@@ -3,6 +3,7 @@ import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_agg
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_query.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_query.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_history.dart';
 import 'package:oshmobile/features/telemetry_history/domain/repositories/telemetry_history_repository.dart';
 
 class TelemetryHistoryRepositoryImpl implements TelemetryHistoryRepository {
@@ -26,5 +27,13 @@ class TelemetryHistoryRepositoryImpl implements TelemetryHistoryRepository {
     required TelemetryAggregateQuery query,
   }) {
     return _remote.getAggregate(serial: serial, query: query);
+  }
+
+  @override
+  Future<TelemetrySetpointHistory> getSetpointHistory({
+    required String serial,
+    required TelemetryHistoryQuery query,
+  }) {
+    return _remote.getSetpointHistory(serial: serial, query: query);
   }
 }

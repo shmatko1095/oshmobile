@@ -421,6 +421,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Peak interval",
     ),
     "TelemetryHistoryStatTotal": MessageLookupByLibrary.simpleMessage("Total"),
+    "TelemetryHistoryTargetInactive": MessageLookupByLibrary.simpleMessage(
+      "inactive",
+    ),
     "Theme": MessageLookupByLibrary.simpleMessage("Theme"),
     "ThemeDark": MessageLookupByLibrary.simpleMessage("Dark"),
     "ThemeLight": MessageLookupByLibrary.simpleMessage("Light"),

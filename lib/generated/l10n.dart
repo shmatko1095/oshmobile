@@ -2414,6 +2414,16 @@ class S {
     );
   }
 
+  /// `inactive`
+  String get TelemetryHistoryTargetInactive {
+    return Intl.message(
+      'inactive',
+      name: 'TelemetryHistoryTargetInactive',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Voltage`
   String get TelemetryHistoryMetricVoltage {
     return Intl.message(

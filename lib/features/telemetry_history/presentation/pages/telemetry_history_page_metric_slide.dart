@@ -106,6 +106,10 @@ class _MetricSlide extends StatelessWidget {
                                           timestamp: ts,
                                           localeTag: localeTag,
                                         ),
+                                        tooltipAnchorSeriesId:
+                                            TelemetryHistorySlideModelBuilder
+                                                .temperatureSeriesId,
+                                        semanticLabel: model.chartSemanticLabel,
                                       ),
                                     ),
                                   ],

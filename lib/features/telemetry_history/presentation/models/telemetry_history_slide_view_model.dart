@@ -3,64 +3,22 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_kind.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_state.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric_catalog.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_range.dart';
-import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_chart.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_activity_band.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_point.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_series.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
-enum TelemetryHistorySlideChartKind {
-  temperatureOverlay,
-  energyBar,
-  numericRangeLine,
-  booleanLine,
-}
-
-class TelemetryHistorySlideViewModel {
-  const TelemetryHistorySlideViewModel({
-    required this.series,
-    required this.isLoading,
-    required this.errorMessage,
-    required this.entries,
-    required this.summaryItems,
-    required this.sensorName,
-    required this.hasSensorIdentity,
-    required this.overlayOptions,
-    required this.selectedOverlayIds,
-    required this.overlayMetricById,
-    required this.hasTemperatureAxisSeries,
-    required this.overlaySeries,
-    required this.overlayLoading,
-    required this.chartValues,
-    required this.chartRangeMinValues,
-    required this.chartRangeMaxValues,
-    required this.chartTimestamps,
-    required this.numericSeries,
-    required this.chartKind,
-    required this.isEmpty,
-  });
-
-  final TelemetryHistorySeries? series;
-  final bool isLoading;
-  final String? errorMessage;
-  final List<TelemetryHistoryChartEntry> entries;
-  final List<TelemetryHistorySummaryItem> summaryItems;
-  final String sensorName;
-  final bool hasSensorIdentity;
-  final List<TelemetryHistoryOverlayOption> overlayOptions;
-  final Set<String> selectedOverlayIds;
-  final Map<String, TelemetryHistoryMetric> overlayMetricById;
-  final bool hasTemperatureAxisSeries;
-  final List<HistoryMultiLineSeries> overlaySeries;
-  final bool overlayLoading;
-  final List<double> chartValues;
-  final List<double?> chartRangeMinValues;
-  final List<double?> chartRangeMaxValues;
-  final List<DateTime> chartTimestamps;
-  final List<HistoryMultiLineSeries> numericSeries;
-  final TelemetryHistorySlideChartKind chartKind;
-  final bool isEmpty;
-}
+part 'telemetry_history_chart_entry.dart';
+part 'telemetry_history_metric_value_formatter.dart';
+part 'telemetry_history_overlay_option.dart';
+part 'telemetry_history_slide_chart_kind.dart';
+part 'telemetry_history_slide_view_model_data.dart';
+part 'telemetry_history_summary_item.dart';
 
 class TelemetryHistorySlideModelBuilder {
   const TelemetryHistorySlideModelBuilder._();
@@ -68,6 +26,9 @@ class TelemetryHistorySlideModelBuilder {
   static const String temperatureSeriesId = 'temp';
   static const String targetSeriesId = 'target';
   static const String heatingSeriesId = 'heating';
+  static const double _maxTemperatureSetpoint = 40.0;
+  static const double _onSetpointChartValue = _maxTemperatureSetpoint + 1.0;
+  static const double _offSetpointAxisFraction = 0.02;
   static const Color _tempInactiveColor = AppPalette.chartTempInactive;
 
   static TelemetryHistorySlideViewModel build({
@@ -78,7 +39,7 @@ class TelemetryHistorySlideModelBuilder {
   }) {
     final isTemperatureOverlayMode =
         isTemperatureMetric(metric) && state.hasComparisonMetrics;
-    final targetMetric = _findComparisonMetric(state, 'target_temp');
+    final targetMetric = TelemetryHistoryMetricCatalog.targetTempMetric(s);
     final heatingMetric = _findComparisonMetric(state, 'heater_enabled');
     final overlayOptions = isTemperatureOverlayMode
         ? <TelemetryHistoryOverlayOption>[
@@ -89,13 +50,12 @@ class TelemetryHistorySlideModelBuilder {
                 metric: heatingMetric,
                 color: AppPalette.accentWarning,
               ),
-            if (targetMetric != null)
-              TelemetryHistoryOverlayOption(
-                id: targetSeriesId,
-                label: targetMetric.title,
-                metric: targetMetric,
-                color: AppPalette.accentSuccess,
-              ),
+            TelemetryHistoryOverlayOption(
+              id: targetSeriesId,
+              label: targetMetric.title,
+              metric: targetMetric,
+              color: AppPalette.accentSuccess,
+            ),
           ]
         : const <TelemetryHistoryOverlayOption>[];
     final selectedOverlayIds = _selectedTemperatureToggleIds(
@@ -128,22 +88,22 @@ class TelemetryHistorySlideModelBuilder {
     final sensorName = (metric.subtitle ?? '').trim();
     final hasSensorIdentity = sensorName.isNotEmpty && metric.sensorId != null;
 
-    final targetEntries = targetMetric == null
-        ? const <TelemetryHistoryChartEntry>[]
-        : chartEntries(state.seriesFor(targetMetric), targetMetric);
+    final setpointPoints = _setpointPoints(state);
     final heatingEntries = heatingMetric == null
         ? const <TelemetryHistoryChartEntry>[]
         : chartEntries(state.seriesFor(heatingMetric), heatingMetric);
 
     final hasTemperatureAxisSeries = entries.isNotEmpty ||
         (selectedOverlayIds.contains(targetSeriesId) &&
-            targetEntries.isNotEmpty);
+            setpointPoints.any(
+              (point) => point.value != null && point.includeInYAxisRange,
+            ));
     final overlaySeries = _overlaySeries(
       metric: metric,
       entries: entries,
       overlayOptions: overlayOptions,
       selectedOverlayIds: selectedOverlayIds,
-      targetEntries: targetEntries,
+      setpointPoints: setpointPoints,
       heatingEntries: heatingEntries,
       hasTemperatureAxisSeries: hasTemperatureAxisSeries,
       windowStart: series?.from,
@@ -153,8 +113,11 @@ class TelemetryHistorySlideModelBuilder {
         .where((option) => selectedOverlayIds.contains(option.id))
         .map((option) => option.metric)
         .toList(growable: false);
-    final overlayLoading = selectedOverlayMetrics
-        .any((overlayMetric) => state.isLoadingFor(overlayMetric));
+    final overlayLoading = selectedOverlayMetrics.any(
+      (overlayMetric) => overlayMetric.seriesKey == targetMetric.seriesKey
+          ? state.setpointLoading
+          : state.isLoadingFor(overlayMetric),
+    );
 
     final chartKind = isTemperatureOverlayMode
         ? TelemetryHistorySlideChartKind.temperatureOverlay
@@ -170,11 +133,7 @@ class TelemetryHistorySlideModelBuilder {
                 HistoryMultiLineSeries(
                   id: metric.seriesKey,
                   label: metric.title,
-                  values: chartValues,
-                  displayValues: chartValues,
-                  timestamps: chartTimestamps,
-                  rangeMinValues: chartRangeMinValues,
-                  rangeMaxValues: chartRangeMaxValues,
+                  points: entries.map(_historyPoint).toList(growable: false),
                   color: AppPalette.accentPrimary,
                   strokeWidth: 2.0,
                   fill: true,
@@ -187,6 +146,12 @@ class TelemetryHistorySlideModelBuilder {
             : chartValues.isNotEmpty;
     final isEmpty =
         !isLoading && !overlayLoading && errorMessage == null && !hasChartData;
+    final chartSemanticLabel = _chartSemanticLabel(
+      metric: metric,
+      targetLabel: targetMetric.title,
+      targetValue: _latestTargetSemanticValue(state, s),
+      targetVisible: selectedOverlayIds.contains(targetSeriesId),
+    );
 
     return TelemetryHistorySlideViewModel(
       series: series,
@@ -209,7 +174,36 @@ class TelemetryHistorySlideModelBuilder {
       numericSeries: numericSeries,
       chartKind: chartKind,
       isEmpty: isEmpty,
+      chartSemanticLabel: chartSemanticLabel,
     );
+  }
+
+  static String _chartSemanticLabel({
+    required TelemetryHistoryMetric metric,
+    required String targetLabel,
+    required String? targetValue,
+    required bool targetVisible,
+  }) {
+    if (!targetVisible || targetValue == null || targetValue.isEmpty) {
+      return metric.title;
+    }
+    return '${metric.title}. $targetLabel: $targetValue';
+  }
+
+  static String? _latestTargetSemanticValue(
+    TelemetryHistoryState state,
+    S s,
+  ) {
+    final points = state.setpointHistory?.points;
+    if (points == null || points.isEmpty) return null;
+    final setpoint = points.last.state;
+    return switch (setpoint.kind) {
+      TelemetrySetpointKind.inactive => s.TelemetryHistoryTargetInactive,
+      TelemetrySetpointKind.temperature =>
+        '${setpoint.temperature!.toStringAsFixed(1)} °C',
+      TelemetrySetpointKind.on => 'ON',
+      TelemetrySetpointKind.off => 'OFF',
+    };
   }
 
   static bool isTemperatureMetric(TelemetryHistoryMetric metric) {
@@ -273,6 +267,39 @@ class TelemetryHistorySlideModelBuilder {
     return entries;
   }
 
+  static List<HistoryMultiLinePoint> _setpointPoints(
+    TelemetryHistoryState state,
+  ) {
+    final history = state.setpointHistory;
+    if (history == null) return const <HistoryMultiLinePoint>[];
+    return history.points.map((point) {
+      final setpoint = point.state;
+      return switch (setpoint.kind) {
+        TelemetrySetpointKind.inactive => HistoryMultiLinePoint(
+            timestamp: point.bucketStart,
+            value: null,
+          ),
+        TelemetrySetpointKind.temperature => HistoryMultiLinePoint(
+            timestamp: point.bucketStart,
+            value: setpoint.temperature!,
+            tooltipText: '${setpoint.temperature!.toStringAsFixed(1)} °C',
+          ),
+        TelemetrySetpointKind.on => HistoryMultiLinePoint(
+            timestamp: point.bucketStart,
+            value: _onSetpointChartValue,
+            tooltipText: 'ON',
+          ),
+        TelemetrySetpointKind.off => HistoryMultiLinePoint(
+            timestamp: point.bucketStart,
+            value: 0,
+            axisFraction: _offSetpointAxisFraction,
+            includeInYAxisRange: false,
+            tooltipText: 'OFF',
+          ),
+      };
+    }).toList(growable: false);
+  }
+
   static TelemetryHistoryMetric? _findComparisonMetric(
     TelemetryHistoryState state,
     String seriesKey,
@@ -301,7 +328,7 @@ class TelemetryHistorySlideModelBuilder {
     required List<TelemetryHistoryChartEntry> entries,
     required List<TelemetryHistoryOverlayOption> overlayOptions,
     required Set<String> selectedOverlayIds,
-    required List<TelemetryHistoryChartEntry> targetEntries,
+    required List<HistoryMultiLinePoint> setpointPoints,
     required List<TelemetryHistoryChartEntry> heatingEntries,
     required bool hasTemperatureAxisSeries,
     DateTime? windowStart,
@@ -314,17 +341,7 @@ class TelemetryHistorySlideModelBuilder {
         HistoryMultiLineSeries(
           id: temperatureSeriesId,
           label: metric.title,
-          values: entries.map((entry) => entry.value).toList(growable: false),
-          displayValues:
-              entries.map((entry) => entry.value).toList(growable: false),
-          timestamps:
-              entries.map((entry) => entry.timestamp).toList(growable: false),
-          rangeMinValues: entries
-              .map((entry) => entry.rangeMinValue)
-              .toList(growable: false),
-          rangeMaxValues: entries
-              .map((entry) => entry.rangeMaxValue)
-              .toList(growable: false),
+          points: entries.map(_historyPoint).toList(growable: false),
           color: tempLineColor,
           lineGradient: _temperatureLineGradient(
             entries,
@@ -345,8 +362,26 @@ class TelemetryHistorySlideModelBuilder {
         continue;
       }
 
+      if (option.id == targetSeriesId) {
+        if (setpointPoints.isNotEmpty) {
+          overlaySeries.add(
+            HistoryMultiLineSeries(
+              id: targetSeriesId,
+              label: option.label,
+              points: setpointPoints,
+              color: option.color,
+              strokeWidth: 2.0,
+              fill: true,
+              fillTopAlpha: 0.22,
+              fillBottomAlpha: 0.04,
+              isStepLine: true,
+            ),
+          );
+        }
+        continue;
+      }
+
       final sourceEntries = switch (option.id) {
-        targetSeriesId => targetEntries,
         heatingSeriesId => heatingEntries,
         _ => const <TelemetryHistoryChartEntry>[],
       };
@@ -361,23 +396,14 @@ class TelemetryHistorySlideModelBuilder {
         HistoryMultiLineSeries(
           id: option.id,
           label: option.label,
-          values:
-              sourceEntries.map((entry) => entry.value).toList(growable: false),
-          displayValues:
-              sourceEntries.map((entry) => entry.value).toList(growable: false),
-          timestamps: sourceEntries
-              .map((entry) => entry.timestamp)
+          points: sourceEntries
+              .map(
+                (entry) => _historyPoint(
+                  entry,
+                  includeRange: !useActivityBand,
+                ),
+              )
               .toList(growable: false),
-          rangeMinValues: useActivityBand
-              ? null
-              : sourceEntries
-                  .map((entry) => entry.rangeMinValue)
-                  .toList(growable: false),
-          rangeMaxValues: useActivityBand
-              ? null
-              : sourceEntries
-                  .map((entry) => entry.rangeMaxValue)
-                  .toList(growable: false),
           color: option.color,
           strokeWidth: useActivityBand ? 1.6 : 2.0,
           fill: true,
@@ -391,6 +417,19 @@ class TelemetryHistorySlideModelBuilder {
     }
 
     return overlaySeries;
+  }
+
+  static HistoryMultiLinePoint _historyPoint(
+    TelemetryHistoryChartEntry entry, {
+    bool includeRange = true,
+  }) {
+    return HistoryMultiLinePoint(
+      timestamp: entry.timestamp,
+      value: entry.value,
+      displayValue: entry.value,
+      rangeMinValue: includeRange ? entry.rangeMinValue : null,
+      rangeMaxValue: includeRange ? entry.rangeMaxValue : null,
+    );
   }
 
   static List<TelemetryHistorySummaryItem> _summaryItems(
@@ -607,56 +646,4 @@ class TelemetryHistorySlideModelBuilder {
       stops: stops,
     );
   }
-}
-
-class TelemetryHistoryMetricValueFormatter {
-  const TelemetryHistoryMetricValueFormatter._();
-
-  static String format(double value, TelemetryHistoryMetric metric) {
-    if (metric.kind == TelemetryHistoryMetricKind.boolean) {
-      return '${(value * 100).round()}%';
-    }
-    final unit = metric.unit.isEmpty ? '' : ' ${metric.unit}';
-    return '${value.toStringAsFixed(metric.fractionDigits)}$unit';
-  }
-}
-
-class TelemetryHistorySummaryItem {
-  const TelemetryHistorySummaryItem({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-}
-
-class TelemetryHistoryOverlayOption {
-  const TelemetryHistoryOverlayOption({
-    required this.id,
-    required this.label,
-    required this.metric,
-    required this.color,
-  });
-
-  final String id;
-  final String label;
-  final TelemetryHistoryMetric metric;
-  final Color color;
-}
-
-class TelemetryHistoryChartEntry {
-  const TelemetryHistoryChartEntry({
-    required this.timestamp,
-    required this.value,
-    this.rangeMinValue,
-    this.rangeMaxValue,
-    this.referenceSensorId,
-  });
-
-  final DateTime timestamp;
-  final double value;
-  final double? rangeMinValue;
-  final double? rangeMaxValue;
-  final String? referenceSensorId;
 }

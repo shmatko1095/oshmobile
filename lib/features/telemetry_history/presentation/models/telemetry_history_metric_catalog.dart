@@ -1,43 +1,7 @@
 import 'package:oshmobile/core/configuration/power_meter_series_keys.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric_definition.dart';
 import 'package:oshmobile/generated/l10n.dart';
-
-typedef TelemetryHistoryMetricTitleBuilder = String Function(S s);
-
-class TelemetryHistoryMetricDefinition {
-  const TelemetryHistoryMetricDefinition({
-    required this.seriesKey,
-    required this.kind,
-    required this.title,
-    this.unit = '',
-    this.fractionDigits = 1,
-    this.useSumValue = false,
-    this.valueMultiplier = 1.0,
-    this.displayMode = TelemetryHistoryMetricDisplayMode.line,
-  });
-
-  final String seriesKey;
-  final TelemetryHistoryMetricKind kind;
-  final TelemetryHistoryMetricTitleBuilder title;
-  final String unit;
-  final int fractionDigits;
-  final bool useSumValue;
-  final double valueMultiplier;
-  final TelemetryHistoryMetricDisplayMode displayMode;
-
-  TelemetryHistoryMetric build(S s) {
-    return TelemetryHistoryMetric(
-      title: title(s),
-      seriesKey: seriesKey,
-      kind: kind,
-      unit: unit,
-      fractionDigits: fractionDigits,
-      useSumValue: useSumValue,
-      valueMultiplier: valueMultiplier,
-      displayMode: displayMode,
-    );
-  }
-}
 
 class TelemetryHistoryMetricCatalog {
   const TelemetryHistoryMetricCatalog._();
@@ -45,6 +9,8 @@ class TelemetryHistoryMetricCatalog {
   static const String loadFactor = 'load_factor';
   static const String heaterEnabled = 'heater_enabled';
   static const String targetTemp = 'target_temp';
+  static const String setpointOn = 'setpoint_on';
+  static const String setpointOff = 'setpoint_off';
   static const String powerMeterVoltageV = PowerMeterSeriesKeys.voltageV;
   static const String powerMeterCurrentA = PowerMeterSeriesKeys.currentA;
   static const String powerMeterActivePowerW =
@@ -75,6 +41,20 @@ class TelemetryHistoryMetricCatalog {
     seriesKey: targetTemp,
     kind: TelemetryHistoryMetricKind.numeric,
     unit: '°C',
+  );
+
+  static const TelemetryHistoryMetricDefinition setpointOnDefinition =
+      TelemetryHistoryMetricDefinition(
+    title: _targetTitle,
+    seriesKey: setpointOn,
+    kind: TelemetryHistoryMetricKind.boolean,
+  );
+
+  static const TelemetryHistoryMetricDefinition setpointOffDefinition =
+      TelemetryHistoryMetricDefinition(
+    title: _targetTitle,
+    seriesKey: setpointOff,
+    kind: TelemetryHistoryMetricKind.boolean,
   );
 
   static const List<TelemetryHistoryMetricDefinition> powerMeterDefinitions =
@@ -126,6 +106,14 @@ class TelemetryHistoryMetricCatalog {
 
   static TelemetryHistoryMetric targetTempMetric(S s) {
     return targetTempDefinition.build(s);
+  }
+
+  static TelemetryHistoryMetric setpointOnMetric(S s) {
+    return setpointOnDefinition.build(s);
+  }
+
+  static TelemetryHistoryMetric setpointOffMetric(S s) {
+    return setpointOffDefinition.build(s);
   }
 
   static List<TelemetryHistoryMetric> powerMeterMetrics(

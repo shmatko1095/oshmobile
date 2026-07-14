@@ -512,9 +512,9 @@ void main() {
         find.byType(HistoryMultiLineChart),
       );
       expect(chart.series, hasLength(1));
-      expect(chart.series.single.values.single, 900.0);
-      expect(chart.series.single.rangeMinValues?.single, 40.0);
-      expect(chart.series.single.rangeMaxValues?.single, 900.0);
+      expect(chart.series.single.points.single.value, 900.0);
+      expect(chart.series.single.points.single.rangeMinValue, 40.0);
+      expect(chart.series.single.points.single.rangeMaxValue, 900.0);
 
       await cubit.close();
     });

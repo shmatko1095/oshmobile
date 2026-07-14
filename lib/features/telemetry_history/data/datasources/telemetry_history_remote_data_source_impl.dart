@@ -7,6 +7,10 @@ import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_agg
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_point.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_query.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_history.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_point.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_quality.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_state.dart';
 
 class TelemetryHistoryRemoteDataSourceImpl
     implements TelemetryHistoryRemoteDataSource {
@@ -52,6 +56,189 @@ class TelemetryHistoryRemoteDataSourceImpl
       fallbackSerial: serial,
       fallbackQuery: query,
     );
+  }
+
+  @override
+  Future<TelemetrySetpointHistory> getSetpointHistory({
+    required String serial,
+    required TelemetryHistoryQuery query,
+  }) async {
+    final typedResponse =
+        await _mobileService.getMyDeviceThermostatSetpointHistory(
+      serial: serial,
+      from: query.from.toUtc().toIso8601String(),
+      to: query.to.toUtc().toIso8601String(),
+      resolution: query.preferredResolution,
+    );
+    if (typedResponse.statusCode == 404 || typedResponse.statusCode == 501) {
+      return _getLegacySetpointHistory(serial: serial, query: query);
+    }
+    final raw = MobileV1ResponseMapper.requireJsonMap(typedResponse);
+    return _parseSetpointHistory(raw);
+  }
+
+  Future<TelemetrySetpointHistory> _getLegacySetpointHistory({
+    required String serial,
+    required TelemetryHistoryQuery query,
+  }) async {
+    final response = await _mobileService.getMyDeviceTelemetryHistory(
+      serial: serial,
+      seriesKeys: 'target_temp,setpoint_on,setpoint_off',
+      from: query.from.toUtc().toIso8601String(),
+      to: query.to.toUtc().toIso8601String(),
+      resolution: query.preferredResolution,
+    );
+    final raw = MobileV1ResponseMapper.requireJsonMap(response);
+    return _parseLegacySetpointHistory(
+      raw,
+      fallbackSerial: serial,
+      fallbackQuery: query,
+    );
+  }
+
+  TelemetrySetpointHistory _parseSetpointHistory(Map<String, dynamic> raw) {
+    final payload = _unwrapPayload(raw);
+    final deviceId =
+        _readString(payload, 'device_id') ?? _readString(payload, 'deviceId');
+    final serial = _readString(payload, 'serial');
+    final resolution = _readString(payload, 'resolution')?.trim();
+    final from = _readDate(payload, 'from');
+    final to = _readDate(payload, 'to');
+    final rawPoints = payload['points'];
+    if (deviceId == null ||
+        deviceId.trim().isEmpty ||
+        serial == null ||
+        serial.trim().isEmpty ||
+        resolution == null ||
+        !const <String>{'5m', '30m', '24h'}.contains(resolution) ||
+        from == null ||
+        to == null ||
+        !from.isBefore(to) ||
+        rawPoints is! List) {
+      throw const FormatException('Invalid typed setpoint history payload.');
+    }
+    final points = rawPoints.map((item) {
+      if (item is! Map) {
+        throw const FormatException(
+            'Setpoint history point must be an object.');
+      }
+      return _parseSetpointPoint(item.cast<String, dynamic>());
+    }).toList(growable: false)
+      ..sort((a, b) => a.bucketStart.compareTo(b.bucketStart));
+    return TelemetrySetpointHistory(
+      deviceId: deviceId,
+      serial: serial,
+      resolution: resolution,
+      from: from,
+      to: to,
+      points: points,
+    );
+  }
+
+  TelemetrySetpointPoint _parseSetpointPoint(Map<String, dynamic> raw) {
+    final bucketStart =
+        _readDate(raw, 'bucket_start') ?? _readDate(raw, 'bucketStart');
+    final observedAt =
+        _readDate(raw, 'observed_at') ?? _readDate(raw, 'observedAt');
+    if (bucketStart == null || observedAt == null) {
+      throw const FormatException(
+        'Setpoint history point requires bucket_start and observed_at.',
+      );
+    }
+    final kind = (_readString(raw, 'kind') ?? '').trim().toLowerCase();
+    final temp = _readDouble(raw, 'temp');
+    final state = switch (kind) {
+      'inactive' when temp == null => const TelemetrySetpointState.inactive(),
+      'temperature' when temp != null && temp.isFinite =>
+        TelemetrySetpointState.temperature(temp),
+      'on' when temp == null => const TelemetrySetpointState.on(),
+      'off' when temp == null => const TelemetrySetpointState.off(),
+      _ => throw FormatException('Invalid setpoint history state: $kind.'),
+    };
+    final quality =
+        switch ((_readString(raw, 'quality') ?? '').trim().toLowerCase()) {
+      'exact' => TelemetrySetpointQuality.exact,
+      'legacy_derived' => TelemetrySetpointQuality.legacyDerived,
+      _ => throw const FormatException('Invalid setpoint history quality.'),
+    };
+    return TelemetrySetpointPoint(
+      bucketStart: bucketStart,
+      observedAt: observedAt,
+      state: state,
+      quality: quality,
+    );
+  }
+
+  TelemetrySetpointHistory _parseLegacySetpointHistory(
+    Map<String, dynamic> raw, {
+    required String fallbackSerial,
+    required TelemetryHistoryQuery fallbackQuery,
+  }) {
+    final payload = _unwrapPayload(raw);
+    final series = _readList(payload, 'series')
+        .whereType<Map>()
+        .map((item) => item.cast<String, dynamic>())
+        .toList(growable: false);
+    final byKey = <String, Map<DateTime, TelemetryHistoryPoint>>{};
+    for (final item in series) {
+      final key = _readString(item, 'series_key') ??
+          _readString(item, 'seriesKey') ??
+          '';
+      byKey[key] = <DateTime, TelemetryHistoryPoint>{
+        for (final point in _parsePoints(_readList(item, 'points')))
+          point.bucketStart: point,
+      };
+    }
+
+    final timestamps = <DateTime>{
+      for (final points in byKey.values) ...points.keys,
+    }.toList(growable: false)
+      ..sort();
+    final points = <TelemetrySetpointPoint>[];
+    for (final timestamp in timestamps) {
+      final target = byKey['target_temp']?[timestamp]?.lastNumericValue;
+      final on = byKey['setpoint_on']?[timestamp]?.lastBoolValue;
+      final off = byKey['setpoint_off']?[timestamp]?.lastBoolValue;
+      final state = _deriveLegacySetpoint(target: target, on: on, off: off);
+      if (state == null) continue;
+      points.add(
+        TelemetrySetpointPoint(
+          bucketStart: timestamp,
+          observedAt: timestamp,
+          state: state,
+          quality: TelemetrySetpointQuality.legacyDerived,
+        ),
+      );
+    }
+    return TelemetrySetpointHistory(
+      deviceId: _readString(payload, 'device_id') ??
+          _readString(payload, 'deviceId') ??
+          '',
+      serial: _readString(payload, 'serial') ?? fallbackSerial,
+      resolution: (_readString(payload, 'resolution') ?? 'auto').trim(),
+      from: _readDate(payload, 'from') ?? fallbackQuery.from.toUtc(),
+      to: _readDate(payload, 'to') ?? fallbackQuery.to.toUtc(),
+      points: points,
+    );
+  }
+
+  TelemetrySetpointState? _deriveLegacySetpoint({
+    required double? target,
+    required bool? on,
+    required bool? off,
+  }) {
+    if ((on == null) != (off == null)) return null;
+    if (on == null) {
+      return target == null ? null : TelemetrySetpointState.temperature(target);
+    }
+    if (on && off!) return null;
+    if (on || off!) {
+      if (target != null) return null;
+      return on
+          ? const TelemetrySetpointState.on()
+          : const TelemetrySetpointState.off();
+    }
+    return target == null ? null : TelemetrySetpointState.temperature(target);
   }
 
   TelemetryHistorySeries _parse(
