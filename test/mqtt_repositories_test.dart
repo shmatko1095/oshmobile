@@ -460,6 +460,10 @@ DeviceRuntimeContracts _runtimeContractsFor(Map<String, Set<String>> domains) {
               'required': ['off', 'on', 'daily', 'weekly', 'range'],
               'properties': pointsProps,
             },
+            if (operation == 'state') ...{
+              'current_point': pointSchema,
+              'next_point': pointSchema,
+            },
           },
         };
       }
@@ -896,6 +900,72 @@ void main() {
       throwsFormatException,
     );
     expect(mqtt.published, isEmpty);
+  });
+
+  test('ScheduleRepositoryMqtt polls current and next schedule points',
+      () async {
+    final mqtt = _FakeDeviceMqttRepo();
+    final contracts = _runtimeContractsFor({
+      'schedule': {'state', 'patch', 'set'},
+    });
+    final topics = ScheduleTopics(DeviceMqttTopicsV1('tenant-x'), contracts);
+    final jrpc = JsonRpcClient(mqtt: mqtt, rspTopic: topics.rsp('device-1'));
+    final repo = ScheduleRepositoryMqtt(
+      jrpc,
+      topics,
+      'device-1',
+      contracts: contracts,
+      timeout: const Duration(milliseconds: 200),
+      pollInterval: const Duration(milliseconds: 50),
+    );
+    final refreshed = Completer<CalendarSnapshot>();
+    final sub = repo.watchSnapshot().listen((snapshot) {
+      if (!refreshed.isCompleted && snapshot.currentPoint != null) {
+        refreshed.complete(snapshot);
+      }
+    });
+
+    await Future<void>.delayed(Duration.zero);
+    expect(mqtt.published, hasLength(1));
+    final req = mqtt.published.single;
+    expect(req.topic, topics.cmd('device-1'));
+    expect(req.payload['method'], contracts.schedule.read.method('get'));
+
+    final reqId = req.payload['id']?.toString();
+    mqtt.emit(
+      topics.rsp('device-1'),
+      {
+        'jsonrpc': '2.0',
+        'id': reqId,
+        'result': {
+          'meta': {'schema': contracts.schedule.read.schema},
+          'data': {
+            'mode': 'daily',
+            'current_point': {'temp': 22.0, 'hh': 18, 'mm': 0, 'mask': 127},
+            'next_point': {'temp': 19.0, 'hh': 23, 'mm': 0, 'mask': 127},
+            'points': {
+              'off': <dynamic>[],
+              'on': <dynamic>[],
+              'daily': <dynamic>[],
+              'weekly': <dynamic>[],
+              'range': {'min': 15.0, 'max': 25.0},
+            },
+          },
+        },
+      },
+    );
+
+    final snapshot = await refreshed.future;
+    expect(snapshot.currentPoint?.setpointTemperature, 22.0);
+    expect(snapshot.nextPoint?.setpointTemperature, 19.0);
+
+    await Future<void>.delayed(const Duration(milliseconds: 60));
+    expect(mqtt.published.length, greaterThan(1));
+
+    await sub.cancel();
+    final publishedAfterCancel = mqtt.published.length;
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    expect(mqtt.published, hasLength(publishedAfterCancel));
   });
 
   test('TelemetryRepository emits canonical telemetry.state snapshots',

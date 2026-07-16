@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:oshmobile/core/configuration/app_polling_intervals.dart';
 import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
@@ -22,6 +23,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   final ScheduleTopics _topics;
   final DeviceRuntimeContracts _contracts;
   final String _deviceSn;
+  final Duration pollInterval;
   final Duration timeout;
   ScheduleJsonRpcCodec? _codec;
 
@@ -29,6 +31,8 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
   int _refs = 0;
 
   StreamSubscription? _stateSub;
+  Timer? _pollTimer;
+  bool _pollInFlight = false;
 
   CalendarSnapshot? _last;
 
@@ -42,6 +46,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     this._topics,
     this._deviceSn, {
     DeviceRuntimeContracts? contracts,
+    this.pollInterval = AppPollingIntervals.deviceData,
     this.timeout = const Duration(seconds: 6),
   }) : _contracts = contracts ?? DeviceRuntimeContracts();
 
@@ -77,6 +82,9 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
     _ctrl = null;
     _codec = null;
     _refs = 0;
+    _pollTimer?.cancel();
+    _pollTimer = null;
+    _pollInFlight = false;
     _last = null;
     _latest.clear();
 
@@ -210,6 +218,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
         if (_refs > 1) return;
 
         _ensureStateSubscription();
+        _startPolling();
 
         final cached = _last;
         if (cached != null) {
@@ -220,6 +229,7 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
         _refs -= 1;
         if (_refs <= 0) {
           _refs = 0;
+          _stopPolling();
           final c = _ctrl;
           _ctrl = null;
           if (c != null && !c.isClosed) await c.close();
@@ -252,6 +262,37 @@ class ScheduleRepositoryMqtt implements ScheduleRepository {
 
       _emitSnapshot(snap);
     });
+  }
+
+  void _startPolling() {
+    if (_pollTimer != null) return;
+    if (pollInterval <= Duration.zero) return;
+
+    _pollTimer = Timer.periodic(pollInterval, (_) {
+      unawaited(_pollOnce());
+    });
+    unawaited(_pollOnce());
+  }
+
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+    _pollInFlight = false;
+  }
+
+  Future<void> _pollOnce() async {
+    if (_disposed) return;
+    if (_pollInFlight) return;
+    if (!_jrpc.isConnected) return;
+
+    _pollInFlight = true;
+    try {
+      await fetchAll(forceGet: true);
+    } catch (_) {
+      // Polling is best-effort; retained state and manual refresh stay usable.
+    } finally {
+      _pollInFlight = false;
+    }
   }
 
   // -------------------- JSON-RPC helpers --------------------
