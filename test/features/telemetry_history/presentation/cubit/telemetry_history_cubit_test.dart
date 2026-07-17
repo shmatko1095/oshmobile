@@ -7,7 +7,7 @@ import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_his
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_cubit.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
-import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_range.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_range.dart';
 
 class _Request {
   _Request({
@@ -125,7 +125,7 @@ void main() {
     await cubit.close();
   });
 
-  test('loads another sensor on page switch and reuses cache', () async {
+  test('loads every displayed sensor once and reuses cache', () async {
     final api = _QueuedTelemetryHistoryApi();
     final now = DateTime.utc(2026, 3, 14, 20, 18, 40);
     final cubit = TelemetryHistoryCubit(
@@ -149,43 +149,39 @@ void main() {
 
     unawaited(cubit.load());
     await Future<void>.delayed(Duration.zero);
-    expect(api.requests, hasLength(1));
-    expect(api.requests.first.seriesKey, 'climate_sensors.floor.temp');
-
-    api.requests.first.completer.complete(
-      _series(
-        seriesKey: api.requests.first.seriesKey,
-        from: api.requests.first.from,
-        to: api.requests.first.to,
-        value: 27.0,
-      ),
-    );
-    await Future<void>.delayed(Duration.zero);
-
-    unawaited(cubit.selectMetricIndex(1));
-    await Future<void>.delayed(Duration.zero);
     expect(api.requests, hasLength(2));
-    expect(api.requests[1].seriesKey, 'climate_sensors.room.temp');
-
-    api.requests[1].completer.complete(
-      _series(
-        seriesKey: api.requests[1].seriesKey,
-        from: api.requests[1].from,
-        to: api.requests[1].to,
-        value: 23.5,
-      ),
+    expect(
+      api.requests.map((request) => request.seriesKey).toSet(),
+      <String>{
+        'climate_sensors.floor.temp',
+        'climate_sensors.room.temp',
+      },
     );
+
+    await cubit.selectMetricIndex(1);
+    expect(api.requests, hasLength(2));
+
+    for (final request in api.requests) {
+      request.completer.complete(
+        _series(
+          seriesKey: request.seriesKey,
+          from: request.from,
+          to: request.to,
+          value: request.seriesKey.endsWith('floor.temp') ? 27.0 : 23.5,
+        ),
+      );
+    }
     await Future<void>.delayed(Duration.zero);
 
+    expect(cubit.state.series?.points.first.avgValue, 23.5);
     await cubit.selectMetricIndex(0);
-    await Future<void>.delayed(Duration.zero);
     expect(api.requests, hasLength(2));
     expect(cubit.state.series?.points.first.avgValue, 27.0);
 
     await cubit.close();
   });
 
-  test('loads comparison metrics with visible temperature metric', () async {
+  test('loads series-backed comparison metrics with temperature', () async {
     final api = _QueuedTelemetryHistoryApi();
     final now = DateTime.utc(2026, 3, 14, 20, 18, 40);
     final cubit = TelemetryHistoryCubit(
@@ -217,12 +213,11 @@ void main() {
     unawaited(cubit.load());
     await Future<void>.delayed(Duration.zero);
 
-    expect(api.requests, hasLength(3));
+    expect(api.requests, hasLength(2));
     expect(
       api.requests.map((request) => request.seriesKey).toSet(),
       {
         'climate_sensors.floor.temp',
-        'target_temp',
         'heater_enabled',
       },
     );
@@ -241,7 +236,6 @@ void main() {
 
     expect(cubit.state.seriesBySeriesKey.keys.toSet(), {
       'climate_sensors.floor.temp',
-      'target_temp',
       'heater_enabled',
     });
 
@@ -306,6 +300,130 @@ void main() {
       );
     }
     await Future<void>.delayed(Duration.zero);
+
+    await cubit.close();
+  });
+
+  test('custom range reloads each series once and restores exact preset window',
+      () async {
+    final api = _QueuedTelemetryHistoryApi();
+    final now = DateTime(2026, 7, 17, 14, 30);
+    final cubit = TelemetryHistoryCubit(
+      seriesReader: api,
+      metrics: const <TelemetryHistoryMetric>[
+        TelemetryHistoryMetric(
+          title: 'Temperature',
+          seriesKey: 'climate_sensors.floor.temp',
+          kind: TelemetryHistoryMetricKind.numeric,
+          unit: '°C',
+        ),
+        TelemetryHistoryMetric(
+          title: 'Voltage',
+          seriesKey: 'power_meter.voltage',
+          kind: TelemetryHistoryMetricKind.numeric,
+          unit: 'V',
+        ),
+      ],
+      nowLocal: () => now,
+    );
+
+    final previousFuture = cubit.showPreviousPeriod();
+    await Future<void>.delayed(Duration.zero);
+    expect(api.requests, hasLength(2));
+    for (final request in api.requests) {
+      request.completer.complete(
+        _series(
+          seriesKey: request.seriesKey,
+          from: request.from,
+          to: request.to,
+          value: 1,
+        ),
+      );
+    }
+    await previousFuture;
+    final presetWindow = cubit.state.window;
+
+    final customFuture = cubit.selectCustomRange(
+      startLocal: DateTime(2026, 7, 1),
+      endInclusiveLocal: DateTime(2026, 7, 10),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(cubit.state.range, TelemetryHistoryRange.custom);
+    expect(cubit.state.window.startLocal, DateTime(2026, 7, 1));
+    expect(cubit.state.window.endLocal, DateTime(2026, 7, 11));
+    expect(api.requests, hasLength(4));
+    expect(
+      api.requests.skip(2).map((request) => request.seriesKey).toSet(),
+      {'climate_sensors.floor.temp', 'power_meter.voltage'},
+    );
+    for (final request in api.requests.skip(2)) {
+      request.completer.complete(
+        _series(
+          seriesKey: request.seriesKey,
+          from: request.from,
+          to: request.to,
+          value: 2,
+        ),
+      );
+    }
+    expect(await customFuture, isTrue);
+
+    final clearFuture = cubit.clearCustomRange();
+    await Future<void>.delayed(Duration.zero);
+    expect(cubit.state.range, TelemetryHistoryRange.day);
+    expect(cubit.state.window.startLocal, presetWindow.startLocal);
+    expect(cubit.state.window.endLocal, presetWindow.endLocal);
+    expect(api.requests, hasLength(6));
+    for (final request in api.requests.skip(4)) {
+      expect(request.from, presetWindow.queryFromUtc);
+      expect(request.to, presetWindow.queryToUtc(now));
+      request.completer.complete(
+        _series(
+          seriesKey: request.seriesKey,
+          from: request.from,
+          to: request.to,
+          value: 3,
+        ),
+      );
+    }
+    await clearFuture;
+
+    await cubit.close();
+  });
+
+  test('rejects unavailable and future custom ranges without requests',
+      () async {
+    final api = _QueuedTelemetryHistoryApi();
+    final now = DateTime(2026, 7, 17, 14, 30);
+    final cubit = TelemetryHistoryCubit(
+      seriesReader: api,
+      metrics: const <TelemetryHistoryMetric>[
+        TelemetryHistoryMetric(
+          title: 'Temperature',
+          seriesKey: 'climate_sensors.floor.temp',
+          kind: TelemetryHistoryMetricKind.numeric,
+          unit: '°C',
+        ),
+      ],
+      nowLocal: () => now,
+    );
+
+    expect(
+      await cubit.selectCustomRange(
+        startLocal: now.subtract(const Duration(days: 371)),
+        endInclusiveLocal: now,
+      ),
+      isFalse,
+    );
+    expect(
+      await cubit.selectCustomRange(
+        startLocal: now,
+        endInclusiveLocal: now.add(const Duration(days: 1)),
+      ),
+      isFalse,
+    );
+    expect(cubit.state.range, TelemetryHistoryRange.day);
+    expect(api.requests, isEmpty);
 
     await cubit.close();
   });

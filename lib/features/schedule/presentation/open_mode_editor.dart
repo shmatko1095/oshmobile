@@ -11,16 +11,82 @@ import 'package:oshmobile/features/schedule/domain/utils/schedule_point_resolver
 import 'package:oshmobile/features/schedule/presentation/pages/manual_temperature_page.dart';
 import 'package:oshmobile/features/schedule/presentation/pages/range_page.dart';
 import 'package:oshmobile/features/schedule/presentation/pages/schedule_editor_page.dart';
+import 'package:oshmobile/features/schedule/presentation/utils.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class ThermostatModeNavigator {
-  static Future<void> openForCurrentMode(BuildContext context) async {
+  static Future<void> openForCurrentMode(
+    BuildContext context, {
+    List<CalendarMode>? availableModes,
+  }) async {
     final facade = context.read<DeviceFacade>();
     final mode = facade.schedule.current?.mode ?? CalendarMode.off;
+    if (mode == CalendarMode.off) {
+      final selectedMode = await _chooseEditableMode(
+        context,
+        availableModes: availableModes,
+      );
+      if (!context.mounted || selectedMode == null) return;
+      return openForMode(
+        context,
+        selectedMode,
+        source: 'hero_panel_mode_chooser',
+      );
+    }
     return openForMode(
       context,
       mode,
       source: 'hero_panel',
+    );
+  }
+
+  static Future<CalendarMode?> _chooseEditableMode(
+    BuildContext context, {
+    List<CalendarMode>? availableModes,
+  }) {
+    final modes = (availableModes ?? CalendarMode.all)
+        .where((mode) => mode != CalendarMode.off)
+        .toList(growable: false);
+    if (modes.isEmpty) return Future<CalendarMode?>.value();
+
+    return showModalBottomSheet<CalendarMode>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final s = S.of(sheetContext);
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: Text(
+                  s.UserGuideChooseModeTitle,
+                  style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+              for (final editableMode in modes)
+                ListTile(
+                  key: ValueKey(
+                    'thermostat-mode-chooser-${editableMode.id}',
+                  ),
+                  minTileHeight: 52,
+                  leading: const Icon(Icons.tune_rounded),
+                  title: Text(
+                    labelForCalendarMode(sheetContext, editableMode),
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => Navigator.of(sheetContext).pop(editableMode),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 

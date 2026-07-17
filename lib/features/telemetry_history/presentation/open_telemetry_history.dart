@@ -9,15 +9,57 @@ import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/domain/models/device_temperature_sensor_ref.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/app/device_session/scopes/device_route_scope.dart';
+import 'package:oshmobile/core/configuration/models/configuration_history.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_cubit.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric_catalog.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_dashboard_definition_builder.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/pages/telemetry_history_page.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class TelemetryHistoryNavigator {
   const TelemetryHistoryNavigator._();
+
+  static VoidCallback? prepareDashboardFromHost(
+    BuildContext hostContext, {
+    required String title,
+    required ConfigurationHistory history,
+    required List<DeviceTemperatureSensorRef> sensors,
+    String? initialSensorId,
+  }) {
+    final definition = buildTelemetryHistoryDashboardDefinition(
+      history: history,
+      sensors: sensors,
+      strings: S.of(hostContext),
+      initialSensorId: initialSensorId,
+    );
+    if (definition.isEmpty) return null;
+
+    return () => _openMetrics(
+          hostContext,
+          metrics: definition.metrics,
+          comparisonMetrics: definition.comparisonMetrics,
+          initialMetricIndex: definition.initialMetricIndex,
+          pageTitle: title,
+        );
+  }
+
+  static void openDashboardFromHost(
+    BuildContext hostContext, {
+    required String title,
+    required ConfigurationHistory history,
+    required List<DeviceTemperatureSensorRef> sensors,
+    String? initialSensorId,
+  }) {
+    prepareDashboardFromHost(
+      hostContext,
+      title: title,
+      history: history,
+      sensors: sensors,
+      initialSensorId: initialSensorId,
+    )?.call();
+  }
 
   static void openLoadFactorFromHost(BuildContext hostContext) {
     final s = S.of(hostContext);
@@ -116,6 +158,7 @@ class TelemetryHistoryNavigator {
       hostContext,
       metrics: metrics,
       comparisonMetrics: <TelemetryHistoryMetric>[
+        TelemetryHistoryMetricCatalog.targetTempMetric(s),
         TelemetryHistoryMetricCatalog.heatingActivityMetric(s),
       ],
       initialMetricIndex: initialIndex < 0 ? 0 : initialIndex,
@@ -128,6 +171,7 @@ class TelemetryHistoryNavigator {
     List<TelemetryHistoryMetric> comparisonMetrics =
         const <TelemetryHistoryMetric>[],
     int initialMetricIndex = 0,
+    String? pageTitle,
   }) {
     if (metrics.isEmpty) return;
     if (!hostContext.mounted) return;
@@ -156,12 +200,18 @@ class TelemetryHistoryNavigator {
       return;
     }
 
+    final disableAnimations =
+        MediaQuery.maybeOf(hostContext)?.disableAnimations ?? false;
+    final transitionDuration =
+        disableAnimations ? Duration.zero : const Duration(milliseconds: 240);
     Navigator.of(hostContext).push(
-      MaterialPageRoute(
-        settings: const RouteSettings(
-          name: OshAnalyticsScreens.telemetryHistory,
-        ),
-        builder: (_) => DeviceRouteScope.provide(
+      PageRouteBuilder<void>(
+        settings:
+            const RouteSettings(name: OshAnalyticsScreens.telemetryHistory),
+        transitionDuration: transitionDuration,
+        reverseTransitionDuration: transitionDuration,
+        pageBuilder: (_, animation, secondaryAnimation) =>
+            DeviceRouteScope.provide(
           facade: facade,
           snapshotCubit: snapshotCubit,
           child: BlocProvider(
@@ -172,9 +222,30 @@ class TelemetryHistoryNavigator {
               comparisonMetrics: comparisonMetrics,
               initialMetricIndex: effectiveIndex,
             )..load(),
-            child: const TelemetryHistoryPage(),
+            child: TelemetryHistoryPage(
+              title: pageTitle ?? metrics[effectiveIndex].title,
+              initialSeriesKey: metrics[effectiveIndex].seriesKey,
+            ),
           ),
         ),
+        transitionsBuilder: (_, animation, secondaryAnimation, child) {
+          if (disableAnimations) return child;
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+          return FadeTransition(
+            opacity: curved,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.08),
+                end: Offset.zero,
+              ).animate(curved),
+              child: child,
+            ),
+          );
+        },
       ),
     );
   }

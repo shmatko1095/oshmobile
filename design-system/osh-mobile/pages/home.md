@@ -10,7 +10,7 @@ Use `MASTER.md` as the base. This file describes the current home implementation
 
 ## Drawer / Device Menu
 
-- Drawer background uses the global black canvas.
+- Drawer background uses the global near-black canvas (`#0B0C11`).
 - Header, device items, add-device, and logout rows are rendered as separate rounded cards placed directly on the canvas.
 - Normal cards are surface-based and borderless.
 - Selected device rows use:

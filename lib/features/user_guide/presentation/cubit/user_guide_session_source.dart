@@ -1,0 +1,4 @@
+enum UserGuideSessionSource {
+  automatic,
+  manual,
+}

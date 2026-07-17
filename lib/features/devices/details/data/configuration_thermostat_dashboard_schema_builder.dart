@@ -3,6 +3,8 @@ import 'package:oshmobile/core/configuration/models/device_configuration_bundle.
 import 'package:oshmobile/core/configuration/power_meter_series_keys.dart';
 import 'package:oshmobile/features/devices/details/domain/builders/thermostat_dashboard_schema_builder.dart';
 import 'package:oshmobile/features/devices/details/domain/models/thermostat_dashboard_schema.dart';
+import 'package:oshmobile/features/devices/details/domain/models/thermostat_daily_stats_24h_spec.dart';
+import 'package:oshmobile/features/devices/details/domain/models/thermostat_heating_status_spec.dart';
 
 class ConfigurationThermostatDashboardSchemaBuilder
     implements ThermostatDashboardSchemaBuilder {
@@ -35,11 +37,24 @@ class ConfigurationThermostatDashboardSchemaBuilder
       visibleWidgetIds.add(_climateSensorPairingWidgetId);
     }
 
+    final dailyStats24h = _buildDailyStats24hSpec(bundle, registry);
+    if (dailyStats24h != null) {
+      visibleWidgetIds.add(_dailyStats24hWidgetId);
+    }
+
     final energySeriesKeys = _energySeriesKeys(bundle, registry);
     final electricalSeriesKeys = _electricalSeriesKeys(bundle, registry);
 
     final tiles = <ThermostatTileSpec>[];
-    for (final descriptor in _tileDescriptors) {
+    final descriptorByWidgetId = <String, _TileDescriptor>{
+      for (final descriptor in _tileDescriptors)
+        descriptor.widgetId: descriptor,
+    };
+    for (final widgetId in bundle.configuration.oshmobile.widgets.keys) {
+      final descriptor = descriptorByWidgetId[widgetId];
+      if (descriptor == null) {
+        continue;
+      }
       if (!_canRenderWidget(bundle, registry, descriptor.widgetId)) {
         continue;
       }
@@ -57,13 +72,62 @@ class ConfigurationThermostatDashboardSchemaBuilder
       visibleWidgetIds.add(descriptor.widgetId);
     }
 
+    final heatingStatus = _heatingStatusFromTiles(tiles);
+
     return ThermostatDashboardSchema(
       hero: hero,
       modeBar: modeBar,
+      dailyStats24h: dailyStats24h,
+      heatingStatus: heatingStatus,
       temperatureHistoryStrip: temperatureHistoryStrip,
       climateSensorPairing: climateSensorPairing,
       tiles: List<ThermostatTileSpec>.unmodifiable(tiles),
       visibleWidgetIds: List<String>.unmodifiable(visibleWidgetIds),
+    );
+  }
+
+  ThermostatHeatingStatusSpec? _heatingStatusFromTiles(
+    List<ThermostatTileSpec> tiles,
+  ) {
+    for (final tile in tiles) {
+      if (tile
+          case ThermostatSingleBindTileSpec(
+            type: ThermostatTileType.heatingToggle,
+            bind: final bind,
+          )) {
+        return ThermostatHeatingStatusSpec(bind: bind);
+      }
+    }
+    return null;
+  }
+
+  ThermostatDailyStats24hSpec? _buildDailyStats24hSpec(
+    DeviceConfigurationBundle bundle,
+    ControlRegistry registry,
+  ) {
+    if (!_canRenderWidget(bundle, registry, _dailyStats24hWidgetId)) {
+      return null;
+    }
+
+    final energyControlId =
+        _requiredWidgetBind(bundle, registry, _dailyStats24hWidgetId, 0);
+    final heatingActivityBind =
+        _requiredWidgetBind(bundle, registry, _dailyStats24hWidgetId, 1);
+    if (energyControlId == null || heatingActivityBind == null) {
+      return null;
+    }
+
+    final energyBinding = registry.readBinding(energyControlId);
+    final energySeriesKey = energyBinding?.path?.trim() ?? '';
+    if (energyBinding?.kind != 'domain_path' ||
+        energyBinding?.domain != 'telemetry' ||
+        energySeriesKey.isEmpty) {
+      return null;
+    }
+
+    return ThermostatDailyStats24hSpec(
+      energySeriesKey: energySeriesKey,
+      heatingActivityBind: heatingActivityBind,
     );
   }
 
@@ -369,6 +433,7 @@ class ConfigurationThermostatDashboardSchemaBuilder
 const String _heroWidgetId = 'heroTemperature';
 const String _modeBarWidgetId = 'modeBar';
 const String _climateSensorPairingWidgetId = 'climateSensorPairing';
+const String _dailyStats24hWidgetId = 'dailyStats24h';
 const String _energyWidgetId = 'energyUsed';
 const String _powerWidgetId = 'powerNow';
 

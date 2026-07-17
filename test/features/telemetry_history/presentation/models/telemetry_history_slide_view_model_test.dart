@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_point.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_history.dart';
@@ -7,7 +8,7 @@ import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_set
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_state.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_state.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
-import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_range.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_range.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_slide_view_model.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
@@ -104,7 +105,15 @@ void main() {
     final from = DateTime.utc(2026, 3, 14, 1);
     final state = TelemetryHistoryState.initial(
       metrics: const <TelemetryHistoryMetric>[metric],
-      comparisonMetrics: const <TelemetryHistoryMetric>[heatingMetric],
+      comparisonMetrics: const <TelemetryHistoryMetric>[
+        heatingMetric,
+        TelemetryHistoryMetric(
+          title: 'Target',
+          seriesKey: 'target_temp',
+          kind: TelemetryHistoryMetricKind.numeric,
+          unit: '°C',
+        ),
+      ],
       initialMetricIndex: 0,
       initialRange: TelemetryHistoryRange.day,
     ).copyWith(
@@ -168,6 +177,7 @@ void main() {
       TelemetryHistorySlideModelBuilder.heatingSeriesId,
       TelemetryHistorySlideModelBuilder.targetSeriesId,
     ]);
+    expect(model.overlayOptions.first.color, AppPalette.accentWarning);
     expect(model.selectedOverlayIds, {
       TelemetryHistorySlideModelBuilder.targetSeriesId,
       TelemetryHistorySlideModelBuilder.heatingSeriesId,
@@ -204,7 +214,15 @@ void main() {
     final from = DateTime.utc(2026, 3, 14, 1);
     final state = TelemetryHistoryState.initial(
       metrics: const <TelemetryHistoryMetric>[metric],
-      comparisonMetrics: const <TelemetryHistoryMetric>[heatingMetric],
+      comparisonMetrics: const <TelemetryHistoryMetric>[
+        heatingMetric,
+        TelemetryHistoryMetric(
+          title: 'Target',
+          seriesKey: 'target_temp',
+          kind: TelemetryHistoryMetricKind.numeric,
+          unit: '°C',
+        ),
+      ],
       initialMetricIndex: 0,
       initialRange: TelemetryHistoryRange.day,
     ).copyWith(
@@ -286,7 +304,15 @@ void main() {
     final from = DateTime.utc(2026, 3, 14, 1);
     final state = TelemetryHistoryState.initial(
       metrics: const <TelemetryHistoryMetric>[metric],
-      comparisonMetrics: const <TelemetryHistoryMetric>[heatingMetric],
+      comparisonMetrics: const <TelemetryHistoryMetric>[
+        heatingMetric,
+        TelemetryHistoryMetric(
+          title: 'Target',
+          seriesKey: 'target_temp',
+          kind: TelemetryHistoryMetricKind.numeric,
+          unit: '°C',
+        ),
+      ],
       initialMetricIndex: 0,
       initialRange: TelemetryHistoryRange.day,
     ).copyWith(

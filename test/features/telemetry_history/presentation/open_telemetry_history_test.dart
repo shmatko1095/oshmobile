@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
+import 'package:oshmobile/app/device_session/domain/models/device_temperature_sensor_ref.dart';
 import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/app/device_session/scopes/device_route_scope.dart';
 import 'package:oshmobile/core/common/entities/device/connection_info.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/entities/device/device_user_data.dart';
+import 'package:oshmobile/core/configuration/models/configuration_history.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_history.dart';
@@ -54,10 +56,13 @@ void main() {
       expect(find.text('Current'), findsWidgets);
       expect(find.text('Voltage'), findsWidgets);
       expect(find.text('Active power'), findsNothing);
-      expect(history.requests, hasLength(1));
+      expect(history.requests, hasLength(2));
       expect(
-        history.requests.single.seriesKey,
-        TelemetryHistoryMetricCatalog.powerMeterCurrentA,
+        history.requests.map((request) => request.seriesKey).toSet(),
+        <String>{
+          TelemetryHistoryMetricCatalog.powerMeterVoltageV,
+          TelemetryHistoryMetricCatalog.powerMeterCurrentA,
+        },
       );
     });
 
@@ -132,6 +137,207 @@ void main() {
       expect(history.setpointRequests, hasLength(1));
     });
   });
+
+  group('TelemetryHistoryNavigator.openDashboardFromHost', () {
+    testWidgets('does not prepare temperature dashboard without sensors',
+        (tester) async {
+      VoidCallback? preparedAction;
+      await _pumpPreparationProbe(
+        tester,
+        prepare: (context) {
+          preparedAction = TelemetryHistoryNavigator.prepareDashboardFromHost(
+            context,
+            title: 'Living Room',
+            history: _temperatureOnlyHistory(),
+            sensors: const <DeviceTemperatureSensorRef>[],
+          );
+        },
+      );
+
+      expect(preparedAction, isNull);
+    });
+
+    testWidgets('prepares numeric dashboard without temperature sensors',
+        (tester) async {
+      VoidCallback? preparedAction;
+      await _pumpPreparationProbe(
+        tester,
+        prepare: (context) {
+          preparedAction = TelemetryHistoryNavigator.prepareDashboardFromHost(
+            context,
+            title: 'Living Room',
+            history: _numericOnlyHistory(),
+            sensors: const <DeviceTemperatureSensorRef>[],
+          );
+        },
+      );
+
+      expect(preparedAction, isNotNull);
+    });
+
+    testWidgets('opens every configured graph in view order', (tester) async {
+      final history = _QueuedTelemetryHistoryApi();
+      final facade = _FakeDeviceFacade(
+        DeviceSnapshot.initial(device: _device()),
+        history,
+      );
+      final snapshotCubit = DeviceSnapshotCubit(facade: facade);
+      addTearDown(snapshotCubit.close);
+      final configuration = ConfigurationHistory.fromJson(
+        const <String, dynamic>{
+          'series': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'temp',
+              'path': 'climate_sensors.*.temp',
+              'value_type': 'number',
+            },
+            <String, dynamic>{
+              'id': 'target',
+              'path': 'target_temp',
+              'value_type': 'number',
+            },
+            <String, dynamic>{
+              'id': 'heating',
+              'path': 'heater_enabled',
+              'value_type': 'boolean',
+            },
+            <String, dynamic>{
+              'id': 'power',
+              'path': 'power_meter.active_power_w',
+              'value_type': 'number',
+              'unit': 'W',
+            },
+            <String, dynamic>{
+              'id': 'integral',
+              'path': 'power_meter.energy_wh_delta',
+              'value_type': 'number',
+            },
+          ],
+          'views': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'temperature',
+              'series_ids': <String>['temp', 'target', 'heating'],
+            },
+            <String, dynamic>{
+              'id': 'power',
+              'series_ids': <String>['power'],
+            },
+          ],
+        },
+      );
+
+      await _pumpHost(
+        tester,
+        facade: facade,
+        snapshotCubit: snapshotCubit,
+        onPressed: (context) {
+          TelemetryHistoryNavigator.openDashboardFromHost(
+            context,
+            title: 'Living Room',
+            history: configuration,
+            sensors: const <DeviceTemperatureSensorRef>[
+              DeviceTemperatureSensorRef(
+                id: 'air',
+                name: 'Air',
+                isReference: true,
+              ),
+              DeviceTemperatureSensorRef(
+                id: 'floor',
+                name: 'Floor',
+                isReference: false,
+              ),
+            ],
+            initialSensorId: 'floor',
+          );
+        },
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(TelemetryHistoryPage), findsOneWidget);
+      expect(find.text('Living Room'), findsOneWidget);
+      expect(
+        history.requests.map((request) => request.seriesKey).toSet(),
+        <String>{
+          'climate_sensors.air.temp',
+          'climate_sensors.floor.temp',
+          TelemetryHistoryMetricCatalog.heaterEnabled,
+          TelemetryHistoryMetricCatalog.powerMeterActivePowerW,
+        },
+      );
+      expect(
+        history.requests.map((request) => request.seriesKey),
+        isNot(contains(TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta)),
+      );
+      expect(history.setpointRequests, hasLength(1));
+    });
+  });
+}
+
+Future<void> _pumpPreparationProbe(
+  WidgetTester tester, {
+  required void Function(BuildContext context) prepare,
+}) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        S.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: S.delegate.supportedLocales,
+      home: Builder(
+        builder: (context) {
+          prepare(context);
+          return const SizedBox.shrink();
+        },
+      ),
+    ),
+  );
+}
+
+ConfigurationHistory _temperatureOnlyHistory() {
+  return ConfigurationHistory.fromJson(
+    const <String, dynamic>{
+      'series': <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'temp',
+          'path': 'climate_sensors.*.temp',
+          'value_type': 'number',
+        },
+      ],
+      'views': <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'temperature',
+          'series_ids': <String>['temp'],
+        },
+      ],
+    },
+  );
+}
+
+ConfigurationHistory _numericOnlyHistory() {
+  return ConfigurationHistory.fromJson(
+    const <String, dynamic>{
+      'series': <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'power',
+          'path': 'power_meter.active_power_w',
+          'value_type': 'number',
+          'unit': 'W',
+        },
+      ],
+      'views': <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'power',
+          'series_ids': <String>['power'],
+        },
+      ],
+    },
+  );
 }
 
 Future<void> _pumpHost(

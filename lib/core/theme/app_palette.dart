@@ -35,6 +35,13 @@ class AppPalette {
 
   static const Color tooltipDarkSurface = Color(0xFF141820);
   static const Color chartTempInactive = Color(0xFF7BC5FF);
+  static const Color historySurface = Color(0xFF1D2A3B);
+  static const Color historySurfaceAlt = Color(0xFF243247);
+  static const Color historyBorder = Color(0xFF33445D);
+  static const Color historyTextSecondary = Color(0xFF9AA6B8);
+  static const Color historyTemperature = Color(0xFF4A8CFF);
+  static const Color historyTarget = Color(0xFF34C759);
+  static const Color historyHeating = Color(0xFFFFAB40);
 
   static const Color orangeAccent = Color(0xFFFFAB40);
   static const Color cyanAccent = Color(0xFF18FFFF);
@@ -45,7 +52,7 @@ class AppPalette {
   static const Color cyan = Color(0xFF00BCD4);
 
   // Semantic dark-first design tokens (Samsung One UI inspired)
-  static const Color canvas = Color(0xFF000000);
+  static const Color canvas = Color(0xFF0B0C11);
   static const Color surface = Color(0xFF181818);
   static const Color surfaceRaised = Color(0xFF1B1B1B);
   static const Color surfaceAlt = Color(0xFF242424);

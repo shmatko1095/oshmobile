@@ -1,12 +1,27 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
+import 'package:oshmobile/app/device_session/domain/models/device_temperature_sensor_ref.dart';
+import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/devices/details/domain/builders/thermostat_dashboard_schema_builder.dart';
 import 'package:oshmobile/features/devices/details/domain/models/thermostat_dashboard_schema.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/adapters/thermostat_telemetry_history_opener.dart';
+import 'package:oshmobile/features/devices/details/presentation/user_guide/thermostat_live_metrics_guide_gate.dart';
+import 'package:oshmobile/features/devices/details/presentation/user_guide/thermostat_user_guide_target_host.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/utils/thermostat_dashboard_layout.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/utils/temperature_sensors_resolver.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_history_strip_card.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_dashboard_app_bar.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_live_metrics_overlay.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_live_metrics_sheet.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_mode_bar.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_stats_24h_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/delta_temp_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_energy_usage_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/heating_status_card.dart';
@@ -15,150 +30,383 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/widge
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/outlet_temp_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/power_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/power_metric_card.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
 import 'package:oshmobile/features/sensors/presentation/open_sensor_editor.dart';
 import 'package:oshmobile/features/sensors/presentation/open_sensor_pairing.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/temperature_history_preview_cache.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/daily_energy_usage_cache.dart';
-import 'package:oshmobile/features/telemetry_history/presentation/open_telemetry_history.dart';
+import 'package:oshmobile/features/user_guide/presentation/coordination/user_guide_host_registry.dart';
+import 'package:oshmobile/features/user_guide/presentation/cubit/user_guide_cubit.dart';
 import 'package:oshmobile/generated/l10n.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'device_presenter.dart';
+import 'device_presenter_chrome.dart';
 
 class ThermostatBasicPresenter implements DevicePresenter {
   const ThermostatBasicPresenter({
     required ThermostatDashboardSchemaBuilder schemaBuilder,
     required ThermostatTelemetryHistoryOpener historyOpener,
-    TemperatureHistoryPreviewCache? Function()? historyPreviewCacheProvider,
-    DailyEnergyUsageCache? Function()? dailyEnergyCacheProvider,
-    SharedPreferences? Function()? sharedPreferencesProvider,
+    required TemperatureHistoryPreviewCache historyPreviewCache,
+    required DailyEnergyUsageCache dailyEnergyCache,
   })  : _schemaBuilder = schemaBuilder,
         _historyOpener = historyOpener,
-        _historyPreviewCacheProvider = historyPreviewCacheProvider,
-        _dailyEnergyCacheProvider = dailyEnergyCacheProvider,
-        _sharedPreferencesProvider = sharedPreferencesProvider;
+        _historyPreviewCache = historyPreviewCache,
+        _dailyEnergyCache = dailyEnergyCache;
 
   final ThermostatDashboardSchemaBuilder _schemaBuilder;
   final ThermostatTelemetryHistoryOpener _historyOpener;
-  final TemperatureHistoryPreviewCache? Function()?
-      _historyPreviewCacheProvider;
-  final DailyEnergyUsageCache? Function()? _dailyEnergyCacheProvider;
-  final SharedPreferences? Function()? _sharedPreferencesProvider;
+  final TemperatureHistoryPreviewCache _historyPreviewCache;
+  final DailyEnergyUsageCache _dailyEnergyCache;
+
+  @override
+  bool get usesEmbeddedAppBar => true;
 
   @override
   Widget build(
     BuildContext context,
     Device device,
-    DeviceConfigurationBundle bundle,
-  ) {
-    const horizontalPadding = 20.0;
-    const gridCrossAxisCount = 2;
-    const gridCrossAxisSpacing = 16.0;
-    const gridMainAxisSpacing = 16.0;
-    const gridChildAspectRatio = 1.18;
-
+    DeviceConfigurationBundle bundle, {
+    DevicePresenterChrome? chrome,
+  }) {
     final schema = _schemaBuilder.build(bundle: bundle);
     final scheduleWritable = bundle.canPatchDomain('schedule');
 
     final hero = schema.hero;
     final modeBar = schema.modeBar;
+    final dailyStats24h = schema.dailyStats24h;
+    final heatingStatus = schema.heatingStatus;
     final temperatureHistoryStrip = schema.temperatureHistoryStrip;
     final climateSensorPairing = schema.climateSensorPairing;
-    final screenHeight = MediaQuery.sizeOf(context).height;
-    final heroHeight = temperatureHistoryStrip == null
-        ? screenHeight * 0.34
-        : (screenHeight * 0.48).clamp(380.0, 460.0).toDouble();
+    final roomName = _resolveDeviceTitle(device);
+    final hasLiveMetrics = schema.tiles.isNotEmpty;
+    final userGuideCubit = context.read<UserGuideCubit>();
+    final userGuideHostRegistry = context.read<UserGuideHostRegistry>();
+    final visibleModes =
+        modeBar == null ? null : _resolveVisibleModes(modeBar.visibleModeIds);
 
-    return Scaffold(
-      body: SafeArea(
-        top: false,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            if (hero != null)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
-                  child: TemperatureMinimalPanel(
-                    currentBind: hero.currentBind,
-                    sensorsBind: hero.sensorsBind,
-                    currentTargetBind: hero.currentTargetBind,
-                    nextTargetBind: hero.nextTargetBind,
-                    unit: '°C',
-                    height: heroHeight,
-                    showHistoryPreview: temperatureHistoryStrip != null,
-                    historyChartHeight: 104,
-                    historyPreviewCache: _historyPreviewCacheProvider?.call(),
-                    onTap: scheduleWritable
-                        ? () =>
-                            ThermostatModeNavigator.openForCurrentMode(context)
-                        : null,
-                    onSensorActionTap: (sensor) {
-                      SensorEditorNavigator.openFromHost(
-                        context,
-                        sensor: sensor,
-                      );
-                    },
-                    onAddSensorTap: climateSensorPairing == null
-                        ? null
-                        : () => SensorPairingNavigator.openFromHost(
-                              context,
-                              transport: climateSensorPairing.transport,
-                              timeoutSec: climateSensorPairing.timeoutSec,
+    return BlocBuilder<DeviceSnapshotCubit, DeviceSnapshot>(
+      buildWhen: (previous, current) =>
+          _historySensorSignature(previous, hero) !=
+          _historySensorSignature(current, hero),
+      builder: (context, snapshot) {
+        final historySensors = _historySensors(snapshot, hero);
+        final configuredHistoryAction = _historyOpener.prepareDashboard(
+          context,
+          title: roomName,
+          history: bundle.configuration.history,
+          sensors: historySensors,
+          initialSensorId: _referenceSensorId(historySensors),
+        );
+        final historyAvailable = configuredHistoryAction != null;
+
+        return ThermostatUserGuideTargetHost(
+          registry: userGuideHostRegistry,
+          cubit: userGuideCubit,
+          enabled: hasLiveMetrics,
+          builder: (context, temperatureTargetKey, modeBarTargetKey) =>
+              Material(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final viewportHeight = constraints.maxHeight.isFinite
+                    ? constraints.maxHeight
+                    : MediaQuery.sizeOf(context).height;
+                final topInset = MediaQuery.paddingOf(context).top;
+                final bottomInset = MediaQuery.paddingOf(context).bottom;
+                final textScale =
+                    (MediaQuery.textScalerOf(context).scale(12) / 12)
+                        .clamp(1.0, 2.0);
+                final landscape = constraints.maxWidth > constraints.maxHeight;
+                final dashboardLayout = resolveThermostatDashboardLayout(
+                  viewportHeight: viewportHeight,
+                  topInset: topInset,
+                  bottomInset: bottomInset,
+                  textScale: textScale,
+                  hasModeBar: modeBar != null,
+                );
+                Widget buildHero(double height) {
+                  if (hero == null || height <= 0) {
+                    return const SizedBox.shrink();
+                  }
+                  final showHistoryPreview = temperatureHistoryStrip != null &&
+                      historyAvailable &&
+                      height >= 330;
+                  return KeyedSubtree(
+                    key: temperatureTargetKey,
+                    child: TemperatureMinimalPanel(
+                      currentBind: hero.currentBind,
+                      sensorsBind: hero.sensorsBind,
+                      currentTargetBind: hero.currentTargetBind,
+                      nextTargetBind: hero.nextTargetBind,
+                      heatingStatusBind: heatingStatus?.bind,
+                      unit: '°C',
+                      height: height,
+                      showHistoryPreview: showHistoryPreview,
+                      ultraCompact:
+                          height < 300 || textScale >= 1.6 || landscape,
+                      historyChartHeight: 104,
+                      historyPreviewCache: _historyPreviewCache,
+                      onTap: scheduleWritable
+                          ? () => ThermostatModeNavigator.openForCurrentMode(
+                                context,
+                                availableModes: visibleModes,
+                              )
+                          : null,
+                      onSensorActionTap: (sensor) {
+                        SensorEditorNavigator.openFromHost(
+                          context,
+                          sensor: sensor,
+                        );
+                      },
+                      onAddSensorTap: climateSensorPairing == null
+                          ? null
+                          : () => SensorPairingNavigator.openFromHost(
+                                context,
+                                transport: climateSensorPairing.transport,
+                                timeoutSec: climateSensorPairing.timeoutSec,
+                              ),
+                      onOpenHistory: !historyAvailable
+                          ? null
+                          : (sensors, sensorId, sensorName) {
+                              _historyOpener
+                                  .prepareDashboard(
+                                    context,
+                                    title: roomName,
+                                    history: bundle.configuration.history,
+                                    sensors: sensors,
+                                    initialSensorId: sensorId,
+                                  )
+                                  ?.call();
+                            },
+                    ),
+                  );
+                }
+
+                Widget buildDailyStats() {
+                  if (dailyStats24h == null) return const SizedBox.shrink();
+                  return DailyStats24hCard(
+                    energySeriesKey: dailyStats24h.energySeriesKey,
+                    heatingActivityBind: dailyStats24h.heatingActivityBind,
+                    cache: _dailyEnergyCache,
+                    cacheNamespace:
+                        device.sn.trim().isEmpty ? device.id : device.sn.trim(),
+                    compact: true,
+                  );
+                }
+
+                const topSpacing = 12.0;
+                const sectionSpacing = 14.0;
+                final bottomReservedHeight =
+                    dashboardLayout.bottomReservedHeight;
+                final dashboardBodyHeight = dashboardLayout.dashboardBodyHeight;
+                final contentHeight = dashboardLayout.contentHeight;
+                final scaledStatsHeight = dashboardLayout.scaledStatsHeight;
+
+                Widget dashboardContent;
+                if (landscape &&
+                    constraints.maxWidth >= 680 &&
+                    hero != null &&
+                    dailyStats24h != null) {
+                  dashboardContent = Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: buildHero(contentHeight),
+                      ),
+                      const SizedBox(width: sectionSpacing),
+                      Expanded(
+                        flex: 2,
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: buildDailyStats(),
+                        ),
+                      ),
+                    ],
+                  );
+                } else if (hero != null && dailyStats24h != null) {
+                  final statsHeight = math.min(
+                    scaledStatsHeight,
+                    contentHeight,
+                  );
+                  final heroHeight = math.max(
+                    0.0,
+                    contentHeight - statsHeight - sectionSpacing,
+                  );
+                  dashboardContent = Column(
+                    children: [
+                      buildHero(heroHeight),
+                      const SizedBox(height: sectionSpacing),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: SizedBox(
+                          height: statsHeight,
+                          child: buildDailyStats(),
+                        ),
+                      ),
+                    ],
+                  );
+                } else if (hero != null) {
+                  dashboardContent = buildHero(contentHeight);
+                } else if (dailyStats24h != null) {
+                  dashboardContent = Align(
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: SizedBox(
+                        height: math.min(
+                          scaledStatsHeight,
+                          contentHeight,
+                        ),
+                        child: buildDailyStats(),
+                      ),
+                    ),
+                  );
+                } else {
+                  dashboardContent = const SizedBox.shrink();
+                }
+
+                final dashboard = Stack(
+                  children: [
+                    Positioned.fill(
+                      child: CustomScrollView(
+                        key: const ValueKey('thermostat-dashboard-scroll'),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          ThermostatDashboardAppBar(
+                            roomName: roomName,
+                            chrome: chrome,
+                          ),
+                          SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: SizedBox(
+                              height: dashboardBodyHeight,
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  landscape ? 20 : 0,
+                                  topSpacing,
+                                  landscape ? 20 : 0,
+                                  bottomReservedHeight,
+                                ),
+                                child: dashboardContent,
+                              ),
                             ),
-                    onOpenHistory: temperatureHistoryStrip == null
-                        ? null
-                        : (sensors, sensorId, sensorName) {
-                            TelemetryHistoryNavigator.openTemperatureFromHost(
-                              context,
-                              sensors: sensors,
-                              sensorId: sensorId,
-                              sensorName: sensorName,
-                            );
-                          },
-                  ),
-                ),
-              ),
-            if (modeBar != null)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-                  child: ThermostatModeBar(
-                    modeBind: modeBar.modeBind,
-                    visibleModes: _resolveVisibleModes(modeBar.visibleModeIds),
-                    writable: scheduleWritable,
-                    sharedPreferences: _sharedPreferencesProvider?.call(),
-                  ),
-                ),
-              ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                horizontalPadding,
-                14,
-                horizontalPadding,
-                18,
-              ),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: gridCrossAxisCount,
-                  crossAxisSpacing: gridCrossAxisSpacing,
-                  mainAxisSpacing: gridMainAxisSpacing,
-                  childAspectRatio: gridChildAspectRatio,
-                ),
-                delegate: SliverChildListDelegate(
-                  [
-                    for (final tile in schema.tiles)
-                      _buildTile(context, device, tile),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (modeBar != null)
+                      Positioned(
+                        left: 20,
+                        right: 20,
+                        bottom: 0,
+                        child: SafeArea(
+                          top: false,
+                          minimum: const EdgeInsets.only(bottom: 12),
+                          child: KeyedSubtree(
+                            key: modeBarTargetKey,
+                            child: ThermostatModeBar(
+                              modeBind: modeBar.modeBind,
+                              visibleModes: visibleModes,
+                              writable: scheduleWritable,
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
-                ),
-              ),
+                );
+
+                if (!hasLiveMetrics) return dashboard;
+
+                final s = S.of(context);
+                return ThermostatLiveMetricsOverlay(
+                  dashboard: dashboard,
+                  foregroundBuilder: (context, interactionController) {
+                    return ThermostatLiveMetricsGuideGate(
+                      cubit: userGuideCubit,
+                      interactionController: interactionController,
+                      modeBarTargetKey: modeBar == null || !scheduleWritable
+                          ? null
+                          : modeBarTargetKey,
+                      temperatureTargetKey: hero == null || !scheduleWritable
+                          ? null
+                          : temperatureTargetKey,
+                      onOpenModeSettings: modeBar == null || !scheduleWritable
+                          ? null
+                          : () => ThermostatModeNavigator.openForCurrentMode(
+                                context,
+                                availableModes: visibleModes,
+                              ),
+                      onOpenTemperatureSettings: hero == null ||
+                              !scheduleWritable
+                          ? null
+                          : () => ThermostatModeNavigator.openForCurrentMode(
+                                context,
+                                availableModes: visibleModes,
+                              ),
+                    );
+                  },
+                  contentBuilder: (
+                    context,
+                    scrollController,
+                    close,
+                    titleFocusNode,
+                  ) {
+                    return ThermostatLiveMetricsSheet(
+                      title: s.ThermostatLiveMetricsTitle,
+                      deviceTitle: roomName,
+                      closeTooltip: s.ThermostatLiveMetricsCloseTooltip,
+                      tiles: schema.tiles,
+                      scrollController: scrollController,
+                      onClose: close,
+                      titleFocusNode: titleFocusNode,
+                      openHistoryLabel: s.ThermostatLiveMetricsShowHistory,
+                      openHistoryTooltip:
+                          s.ThermostatLiveMetricsShowHistoryTooltip,
+                      onOpenHistory: configuredHistoryAction,
+                      tileBuilder: (context, index) =>
+                          _buildTile(context, device, schema.tiles[index]),
+                    );
+                  },
+                );
+              },
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
+  }
+
+  List<DeviceTemperatureSensorRef> _historySensors(
+    DeviceSnapshot snapshot,
+    ThermostatHeroSpec? hero,
+  ) {
+    if (hero == null) return const <DeviceTemperatureSensorRef>[];
+    final controlState =
+        snapshot.controlState.data ?? const <String, dynamic>{};
+    final sensors = TemperatureSensorsResolver().resolve(
+      readBind(controlState, hero.sensorsBind),
+    );
+    return temperatureHistorySensorRefs(sensors);
+  }
+
+  String _historySensorSignature(
+    DeviceSnapshot snapshot,
+    ThermostatHeroSpec? hero,
+  ) {
+    return _historySensors(snapshot, hero)
+        .map((sensor) =>
+            '${sensor.id}\u0000${sensor.name}\u0000${sensor.isReference}')
+        .join('\u0001');
+  }
+
+  String? _referenceSensorId(List<DeviceTemperatureSensorRef> sensors) {
+    for (final sensor in sensors) {
+      if (sensor.isReference) return sensor.id;
+    }
+    return null;
   }
 
   Widget _buildTile(
@@ -172,7 +420,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
         ):
         return DailyEnergyUsageCard(
           title: S.of(context).TelemetryHistoryMetricEnergyUsed,
-          cache: _dailyEnergyCacheProvider?.call(),
+          cache: _dailyEnergyCache,
           cacheNamespace:
               device.sn.trim().isEmpty ? device.id : device.sn.trim(),
           onTap: _historyTap(context, historyIntent),
@@ -226,14 +474,13 @@ class ThermostatBasicPresenter implements DevicePresenter {
         return HeatingStatusCard(
           bind: bind,
           title: s.Heating,
-          onTap: () => TelemetryHistoryNavigator.openHeatingFromHost(context),
+          onTap: () => _historyOpener.openHeating(context),
         );
       case ThermostatTileType.loadFactor24h:
         return LoadFactorKpiCard(
           percentBind: bind,
           title: s.TelemetryHistoryMetricLoadFactor,
-          onTap: () =>
-              TelemetryHistoryNavigator.openLoadFactorFromHost(context),
+          onTap: () => _historyOpener.openLoadFactor(context),
         );
       case ThermostatTileType.inletTemp:
         return InletTempCard(bind: bind);
@@ -332,4 +579,21 @@ class ThermostatBasicPresenter implements DevicePresenter {
         .toList(growable: false);
     return visibleModes.isEmpty ? null : visibleModes;
   }
+}
+
+String _resolveDeviceTitle(Device device) {
+  final alias = device.userData.alias.trim();
+  if (alias.isNotEmpty) return alias;
+
+  final serial = device.sn.trim();
+  if (serial.isNotEmpty) return serial;
+
+  final modelName = device.modelName.trim();
+  if (modelName.isNotEmpty) return modelName;
+
+  final modelId = device.modelId.trim();
+  if (modelId.isNotEmpty) return modelId;
+
+  final id = device.id.trim();
+  return id.isEmpty ? 'Osh App' : id;
 }

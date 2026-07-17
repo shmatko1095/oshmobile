@@ -25,6 +25,8 @@ import 'package:oshmobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:oshmobile/features/startup/presentation/cubit/startup_cubit.dart';
 import 'package:oshmobile/features/startup/presentation/cubit/startup_state.dart';
 import 'package:oshmobile/features/startup/presentation/widgets/startup_gate.dart';
+import 'package:oshmobile/features/user_guide/presentation/coordination/user_guide_host_registry.dart';
+import 'package:oshmobile/features/user_guide/presentation/cubit/user_guide_cubit.dart';
 import 'package:oshmobile/firebase_options.dart';
 import 'package:oshmobile/generated/l10n.dart';
 import 'package:oshmobile/init_dependencies.dart';
@@ -117,21 +119,31 @@ Future<void> main() async {
     }
 
     runApp(
-      MultiBlocProvider(
-        providers: [
-          BlocProvider(create: (_) => locator<AppLifecycleCubit>()),
-          BlocProvider(create: (_) => locator<AppThemeCubit>()),
-          BlocProvider(create: (_) => locator<global_auth.GlobalAuthCubit>()),
-          BlocProvider(create: (_) => locator<AuthBloc>()),
-          BlocProvider(
-            create: (_) {
-              final cubit = locator<StartupCubit>();
-              unawaited(cubit.start());
-              return cubit;
-            },
-          ),
-        ],
-        child: AppLifecycleObserver(child: const MyApp()),
+      RepositoryProvider<UserGuideHostRegistry>.value(
+        value: locator<UserGuideHostRegistry>(),
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => locator<AppLifecycleCubit>()),
+            BlocProvider(create: (_) => locator<AppThemeCubit>()),
+            BlocProvider(create: (_) => locator<global_auth.GlobalAuthCubit>()),
+            BlocProvider(create: (_) => locator<AuthBloc>()),
+            BlocProvider(
+              create: (_) {
+                final cubit = locator<UserGuideCubit>();
+                unawaited(cubit.load());
+                return cubit;
+              },
+            ),
+            BlocProvider(
+              create: (_) {
+                final cubit = locator<StartupCubit>();
+                unawaited(cubit.start());
+                return cubit;
+              },
+            ),
+          ],
+          child: AppLifecycleObserver(child: const MyApp()),
+        ),
       ),
     );
   }, (Object error, StackTrace stack) {

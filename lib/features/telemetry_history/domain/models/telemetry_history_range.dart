@@ -3,6 +3,7 @@ enum TelemetryHistoryRange {
   week,
   month,
   year,
+  custom,
 }
 
 extension TelemetryHistoryRangeX on TelemetryHistoryRange {
@@ -12,6 +13,9 @@ extension TelemetryHistoryRangeX on TelemetryHistoryRange {
       TelemetryHistoryRange.week => const Duration(days: 7),
       TelemetryHistoryRange.month => const Duration(days: 30),
       TelemetryHistoryRange.year => const Duration(days: 365),
+      TelemetryHistoryRange.custom => throw UnsupportedError(
+          'A custom telemetry history range has no fixed duration.',
+        ),
     };
   }
 }

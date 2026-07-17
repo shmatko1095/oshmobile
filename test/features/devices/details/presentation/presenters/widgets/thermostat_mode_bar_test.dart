@@ -25,18 +25,13 @@ import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/generated/l10n.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late _RecordingAnalyticsBackend backend;
-  late SharedPreferences prefs;
 
-  setUp(() async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
-    prefs = await SharedPreferences.getInstance();
-
+  setUp(() {
     backend = _RecordingAnalyticsBackend();
     OshAnalytics.debugSetBackend(backend);
   });
@@ -50,10 +45,7 @@ void main() {
     final harness = await _pumpHarness(
       tester,
       currentMode: CalendarMode.off,
-      child: ThermostatModeBar(
-        modeBind: 'mode',
-        sharedPreferences: prefs,
-      ),
+      child: const ThermostatModeBar(modeBind: 'mode'),
     );
 
     await tester.tap(find.text('Range'));
@@ -68,22 +60,11 @@ void main() {
     expect(find.byType(ScheduleEditorPage), findsNothing);
   });
 
-  testWidgets('tap active editable mode opens editor and dismisses hint',
-      (tester) async {
+  testWidgets('tap active editable mode opens editor', (tester) async {
     final harness = await _pumpHarness(
       tester,
       currentMode: CalendarMode.on,
-      child: ThermostatModeBar(
-        modeBind: 'mode',
-        sharedPreferences: prefs,
-      ),
-    );
-
-    expect(
-      find.text(
-        'Tap active mode to edit. Hold any mode to configure without switching.',
-      ),
-      findsOneWidget,
+      child: const ThermostatModeBar(modeBind: 'mode'),
     );
 
     await tester.tap(find.text('On'));
@@ -99,17 +80,6 @@ void main() {
 
     Navigator.of(tester.element(find.byType(ManualTemperaturePage))).pop();
     await tester.pumpAndSettle();
-
-    expect(
-      prefs.getBool(thermostatModeBarCalendarHintSeenPrefsKey),
-      isTrue,
-    );
-    expect(
-      find.text(
-        'Tap active mode to edit. Hold any mode to configure without switching.',
-      ),
-      findsNothing,
-    );
   });
 
   testWidgets('long press inactive weekly opens editor without switching',
@@ -117,10 +87,7 @@ void main() {
     final harness = await _pumpHarness(
       tester,
       currentMode: CalendarMode.off,
-      child: ThermostatModeBar(
-        modeBind: 'mode',
-        sharedPreferences: prefs,
-      ),
+      child: const ThermostatModeBar(modeBind: 'mode'),
     );
 
     await tester.longPress(find.text('Weekly').first);
@@ -143,10 +110,7 @@ void main() {
     final harness = await _pumpHarness(
       tester,
       currentMode: CalendarMode.off,
-      child: ThermostatModeBar(
-        modeBind: 'mode',
-        sharedPreferences: prefs,
-      ),
+      child: const ThermostatModeBar(modeBind: 'mode'),
     );
 
     await tester.tap(find.text('Off'));
@@ -185,27 +149,48 @@ void main() {
     expect(params?['source'], 'hero_panel');
   });
 
-  testWidgets('persisted hint stays hidden', (tester) async {
-    await prefs.setBool(
-      thermostatModeBarCalendarHintSeenPrefsKey,
-      true,
-    );
-
+  testWidgets('hero panel in off mode asks which mode to configure',
+      (tester) async {
     await _pumpHarness(
       tester,
-      currentMode: CalendarMode.on,
-      child: ThermostatModeBar(
-        modeBind: 'mode',
-        sharedPreferences: prefs,
+      currentMode: CalendarMode.off,
+      child: Builder(
+        builder: (context) {
+          return TextButton(
+            onPressed: () => ThermostatModeNavigator.openForCurrentMode(
+              context,
+              availableModes: const <CalendarMode>[
+                CalendarMode.off,
+                CalendarMode.range,
+              ],
+            ),
+            child: const Text('Open'),
+          );
+        },
       ),
     );
 
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Choose a mode to configure'), findsOneWidget);
     expect(
-      find.text(
-        'Tap active mode to edit. Hold any mode to configure without switching.',
-      ),
+      find.byKey(const ValueKey('thermostat-mode-chooser-range')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('thermostat-mode-chooser-daily')),
       findsNothing,
     );
+
+    await tester.tap(
+      find.byKey(const ValueKey('thermostat-mode-chooser-range')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ScheduleRangePage), findsOneWidget);
+    final event = backend.lastEvent(OshAnalyticsEvents.scheduleEditorOpened);
+    expect(event?.parameters?['source'], 'hero_panel_mode_chooser');
   });
 }
 

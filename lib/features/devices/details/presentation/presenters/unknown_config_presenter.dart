@@ -7,6 +7,7 @@ import 'package:oshmobile/generated/l10n.dart';
 
 import '../cubit/device_page_cubit.dart';
 import 'device_presenter.dart';
+import 'device_presenter_chrome.dart';
 import 'factories/unknown_config_view_model_factory.dart';
 import 'models/unknown_config_view_model.dart';
 
@@ -43,11 +44,15 @@ class UnknownConfigPresenter implements DevicePresenter {
   final UnknownConfigViewModelFactory _viewModelFactory;
 
   @override
+  bool get usesEmbeddedAppBar => false;
+
+  @override
   Widget build(
     BuildContext context,
     Device device,
-    DeviceConfigurationBundle bundle,
-  ) {
+    DeviceConfigurationBundle bundle, {
+    DevicePresenterChrome? chrome,
+  }) {
     final viewModel = _viewModelFactory.build(device: device, bundle: bundle);
 
     return Scaffold(

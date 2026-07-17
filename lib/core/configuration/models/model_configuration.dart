@@ -1,3 +1,5 @@
+import 'package:oshmobile/core/configuration/models/configuration_history.dart';
+
 class ConfigurationWidget {
   final String id;
   final List<String> controlIds;
@@ -406,10 +408,12 @@ class OshmobileConfiguration {
 class ModelConfiguration {
   final int schemaVersion;
   final OshmobileConfiguration oshmobile;
+  final ConfigurationHistory history;
 
   const ModelConfiguration({
     required this.schemaVersion,
     required this.oshmobile,
+    this.history = ConfigurationHistory.empty,
   });
 
   factory ModelConfiguration.fromJson(Map<String, dynamic> json) {
@@ -418,11 +422,15 @@ class ModelConfiguration {
         ? integrationsRaw.cast<String, dynamic>()
         : const <String, dynamic>{};
     final oshmobileRaw = integrations['oshmobile'];
+    final historyRaw = integrations['history'];
 
     return ModelConfiguration(
       schemaVersion: (json['schema_version'] as num?)?.toInt() ?? 0,
       oshmobile: OshmobileConfiguration.fromJson(
         oshmobileRaw is Map ? oshmobileRaw.cast<String, dynamic>() : const {},
+      ),
+      history: ConfigurationHistory.fromJson(
+        historyRaw is Map ? historyRaw.cast<String, dynamic>() : const {},
       ),
     );
   }

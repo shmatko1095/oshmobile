@@ -45,15 +45,12 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m9(temp) => "Ціль ${temp}";
 
-  static String m10(resolution, points) =>
-      "Роздільність: ${resolution} • Точки: ${points}";
+  static String m10(index, total) => "Датчик ${index}/${total}";
 
-  static String m11(index, total) => "Датчик ${index}/${total}";
-
-  static String m12(sensorName) =>
+  static String m11(sensorName) =>
       "${sensorName} буде видалено з цього термостата і переведено з Zigbee мережі.";
 
-  static String m13(lastSeenAt) => "Востаннє був онлайн: ${lastSeenAt}";
+  static String m12(lastSeenAt) => "Востаннє був онлайн: ${lastSeenAt}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -115,6 +112,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "Connect": MessageLookupByLibrary.simpleMessage("Підключити"),
     "ContinueWithGoogle": MessageLookupByLibrary.simpleMessage(
       "Продовжити через Google",
+    ),
+    "DailyStatsPeriod24h": MessageLookupByLibrary.simpleMessage(
+      "За останні 24 години",
     ),
     "Delete": MessageLookupByLibrary.simpleMessage("Видалити"),
     "DeleteAccount": MessageLookupByLibrary.simpleMessage("Видалити акаунт"),
@@ -361,6 +361,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "Successful": MessageLookupByLibrary.simpleMessage("Успішно"),
     "SunShort": MessageLookupByLibrary.simpleMessage("Нд"),
     "Target": m9,
+    "TelemetryHistoryCalendarApply": MessageLookupByLibrary.simpleMessage(
+      "Застосувати",
+    ),
+    "TelemetryHistoryCalendarCancel": MessageLookupByLibrary.simpleMessage(
+      "Скасувати",
+    ),
+    "TelemetryHistoryCalendarClearTooltip":
+        MessageLookupByLibrary.simpleMessage("Скинути власний діапазон"),
+    "TelemetryHistoryCalendarHint": MessageLookupByLibrary.simpleMessage(
+      "Оберіть дати початку та завершення",
+    ),
+    "TelemetryHistoryCalendarOpenTooltip": MessageLookupByLibrary.simpleMessage(
+      "Обрати діапазон дат",
+    ),
+    "TelemetryHistoryCalendarRangeTooLong":
+        MessageLookupByLibrary.simpleMessage(
+          "Діапазон не може перевищувати 370 днів.",
+        ),
+    "TelemetryHistoryCalendarTitle": MessageLookupByLibrary.simpleMessage(
+      "Оберіть діапазон дат",
+    ),
     "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Не вдалося завантажити графік",
     ),
@@ -405,6 +426,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryPreviewTitle24h": MessageLookupByLibrary.simpleMessage(
       "Історія температури (24 год)",
     ),
+    "TelemetryHistoryRangeCustom": MessageLookupByLibrary.simpleMessage(
+      "Власний діапазон",
+    ),
     "TelemetryHistoryRangeDay": MessageLookupByLibrary.simpleMessage("День"),
     "TelemetryHistoryRangeMonth": MessageLookupByLibrary.simpleMessage(
       "Місяць",
@@ -413,11 +437,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "Тиждень",
     ),
     "TelemetryHistoryRangeYear": MessageLookupByLibrary.simpleMessage("Рік"),
-    "TelemetryHistoryResolutionPoints": m10,
     "TelemetryHistorySensorLabel": MessageLookupByLibrary.simpleMessage(
       "Температурний датчик",
     ),
-    "TelemetryHistorySensorPosition": m11,
+    "TelemetryHistorySensorPosition": m10,
     "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Середнє"),
     "TelemetryHistoryStatAvgPerDay": MessageLookupByLibrary.simpleMessage(
       "Сер. за добу",
@@ -438,8 +461,28 @@ class MessageLookup extends MessageLookupByLibrary {
     "ThemeDark": MessageLookupByLibrary.simpleMessage("Темна"),
     "ThemeLight": MessageLookupByLibrary.simpleMessage("Світла"),
     "ThemeSystem": MessageLookupByLibrary.simpleMessage("Системна"),
-    "ThermostatModeBarHint": MessageLookupByLibrary.simpleMessage(
-      "Торкніться активного режиму, щоб редагувати. Утримуйте будь-який режим, щоб налаштувати його без перемикання.",
+    "ThermostatHeatingStatusOff": MessageLookupByLibrary.simpleMessage(
+      "Нагрів вимкнено",
+    ),
+    "ThermostatHeatingStatusOn": MessageLookupByLibrary.simpleMessage(
+      "Нагрів увімкнено",
+    ),
+    "ThermostatHeatingStatusUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Стан нагріву недоступний",
+    ),
+    "ThermostatLiveMetricsCloseTooltip": MessageLookupByLibrary.simpleMessage(
+      "Закрити поточні значення",
+    ),
+    "ThermostatLiveMetricsOpenHint": MessageLookupByLibrary.simpleMessage(
+      "Проведіть угору або натисніть, щоб відкрити поточні значення.",
+    ),
+    "ThermostatLiveMetricsShowHistory": MessageLookupByLibrary.simpleMessage(
+      "Показати історію",
+    ),
+    "ThermostatLiveMetricsShowHistoryTooltip":
+        MessageLookupByLibrary.simpleMessage("Показати історію телеметрії"),
+    "ThermostatLiveMetricsTitle": MessageLookupByLibrary.simpleMessage(
+      "Поточні значення",
     ),
     "ThermostatModeBarSemanticsActiveEditable":
         MessageLookupByLibrary.simpleMessage(
@@ -494,7 +537,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "UnknownMetaStatus": MessageLookupByLibrary.simpleMessage("Статус"),
     "UnknownMetaWidgets": MessageLookupByLibrary.simpleMessage("Віджети"),
     "UnpairSensor": MessageLookupByLibrary.simpleMessage("Відв’язати датчик"),
-    "UnpairSensorConfirmMessage": m12,
+    "UnpairSensorConfirmMessage": m11,
     "UnpairSensorConfirmTitle": MessageLookupByLibrary.simpleMessage(
       "Відв’язати датчик?",
     ),
@@ -511,6 +554,37 @@ class MessageLookup extends MessageLookupByLibrary {
     "Update": MessageLookupByLibrary.simpleMessage("Оновити"),
     "UserAlreadyExist": MessageLookupByLibrary.simpleMessage(
       "Користувач уже існує",
+    ),
+    "UserGuideChooseModeTitle": MessageLookupByLibrary.simpleMessage(
+      "Оберіть режим для налаштування",
+    ),
+    "UserGuideCloseTooltip": MessageLookupByLibrary.simpleMessage(
+      "Закрити посібник користувача",
+    ),
+    "UserGuideLiveMetricsMessage": MessageLookupByLibrary.simpleMessage(
+      "Зробіть жест угору, щоб переглянути поточні значення",
+    ),
+    "UserGuideModesAction": MessageLookupByLibrary.simpleMessage(
+      "Відкрити налаштування режиму",
+    ),
+    "UserGuideModesMessage": MessageLookupByLibrary.simpleMessage(
+      "Торкніться режиму, щоб увімкнути його. Утримуйте режим, щоб налаштувати температуру або розклад без перемикання.",
+    ),
+    "UserGuideModesTitle": MessageLookupByLibrary.simpleMessage(
+      "Налаштуйте режим роботи",
+    ),
+    "UserGuideSkip": MessageLookupByLibrary.simpleMessage("Пропустити"),
+    "UserGuideTemperatureAction": MessageLookupByLibrary.simpleMessage(
+      "Відкрити налаштування температури",
+    ),
+    "UserGuideTemperatureMessage": MessageLookupByLibrary.simpleMessage(
+      "Торкніться температури, щоб налаштувати активний режим або відкрити розклад.",
+    ),
+    "UserGuideTemperatureTitle": MessageLookupByLibrary.simpleMessage(
+      "Швидке налаштування",
+    ),
+    "UserGuideTitle": MessageLookupByLibrary.simpleMessage(
+      "Посібник користувача",
     ),
     "VerifiedEmail": MessageLookupByLibrary.simpleMessage("Email підтверджено"),
     "VerifyYourEmail": MessageLookupByLibrary.simpleMessage(
@@ -578,7 +652,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "deviceOfflineHintBluetooth": MessageLookupByLibrary.simpleMessage(
       "Наблизьтеся до пристрою, щоб налаштувати Wi‑Fi через Bluetooth.",
     ),
-    "deviceOfflineSubtitleWithLastSeen": m13,
+    "deviceOfflineSubtitleWithLastSeen": m12,
     "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
       "Пристрій офлайн",
     ),

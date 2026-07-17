@@ -9,6 +9,7 @@ final class OshAnalyticsScreens {
   static const home = 'home';
   static const homeNoDevice = 'home_no_device';
   static const deviceDashboard = 'device_dashboard';
+  static const thermostatLiveMetrics = 'thermostat_live_metrics';
   static const addDevice = 'add_device';
   static const renameDevice = 'rename_device';
   static const deviceAccess = 'device_access';
@@ -28,6 +29,7 @@ final class OshAnalyticsScreens {
   static const sensorPairing = 'sensor_pairing';
   static const sensorPairingResult = 'sensor_pairing_result';
   static const accountSettings = 'account_settings';
+  static const userGuide = 'user_guide';
   static const accountProfile = 'account_profile';
   static const accountDeletionRequest = 'account_deletion_request';
 }

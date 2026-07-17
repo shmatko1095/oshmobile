@@ -16,11 +16,14 @@ import 'package:oshmobile/features/ble_provisioning/presentation/ble_provisionin
 import '../cubit/device_host_cubit.dart';
 import '../cubit/device_page_cubit.dart';
 import '../presenters/device_presenter.dart';
+import '../presenters/device_presenter_chrome.dart';
 
 class DeviceHostBody extends StatelessWidget {
   final String deviceId;
   final DevicePresenterRegistry presenters;
   final ValueChanged<String?>? onTitleChanged;
+  final ValueChanged<bool> onEmbeddedAppBarChanged;
+  final DevicePresenterChrome presenterChrome;
   final BleProvisioningCubitFactory createBleProvisioningCubit;
 
   const DeviceHostBody({
@@ -28,6 +31,8 @@ class DeviceHostBody extends StatelessWidget {
     required this.deviceId,
     required this.presenters,
     required this.onTitleChanged,
+    required this.onEmbeddedAppBarChanged,
+    required this.presenterChrome,
     required this.createBleProvisioningCubit,
   });
 
@@ -70,6 +75,13 @@ class DeviceHostBody extends StatelessWidget {
     });
   }
 
+  void _setEmbeddedAppBar(BuildContext context, bool value) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      onEmbeddedAppBarChanged(value);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final liveDevice = context.select<DeviceCatalogCubit, Device?>(
@@ -77,6 +89,7 @@ class DeviceHostBody extends StatelessWidget {
     );
 
     if (liveDevice == null) {
+      _setEmbeddedAppBar(context, false);
       _setAvailability(
         context,
         canOpenInternalSettings: false,
@@ -88,6 +101,7 @@ class DeviceHostBody extends StatelessWidget {
     return BlocBuilder<DeviceHostCubit, DeviceHostState>(
       builder: (context, hostState) {
         if (hostState.isWaitingOnline) {
+          _setEmbeddedAppBar(context, false);
           _setAvailability(
             context,
             canOpenInternalSettings: false,
@@ -98,6 +112,7 @@ class DeviceHostBody extends StatelessWidget {
 
         // For offline devices show offline screen immediately.
         if (!liveDevice.connectionInfo.online) {
+          _setEmbeddedAppBar(context, false);
           _setAvailability(
             context,
             canOpenInternalSettings: false,
@@ -121,6 +136,7 @@ class DeviceHostBody extends StatelessWidget {
           builder: (context, st) {
             switch (st) {
               case DevicePageLoading():
+                _setEmbeddedAppBar(context, false);
                 _setAvailability(
                   context,
                   canOpenInternalSettings: false,
@@ -129,6 +145,7 @@ class DeviceHostBody extends StatelessWidget {
                 return const Loader();
 
               case DevicePageError(:final message):
+                _setEmbeddedAppBar(context, false);
                 _setAvailability(
                   context,
                   canOpenInternalSettings: false,
@@ -137,6 +154,7 @@ class DeviceHostBody extends StatelessWidget {
                 return Center(child: Text(message));
 
               case DevicePageUpdateRequired(:final message):
+                _setEmbeddedAppBar(context, false);
                 _setAvailability(
                   context,
                   canOpenInternalSettings: false,
@@ -151,6 +169,7 @@ class DeviceHostBody extends StatelessWidget {
                 );
 
               case DevicePageCompatibilityError(:final message):
+                _setEmbeddedAppBar(context, false);
                 _setAvailability(
                   context,
                   canOpenInternalSettings: false,
@@ -173,11 +192,17 @@ class DeviceHostBody extends StatelessWidget {
                   canOpenAbout: true,
                 );
                 final presenter = presenters.resolve(bundle.layout);
+                _setEmbeddedAppBar(context, presenter.usesEmbeddedAppBar);
                 return OshAnalyticsScreenView(
                   screenName: OshAnalyticsScreens.deviceDashboard,
                   child: RefreshIndicator(
                     onRefresh: () => _refreshAll(context),
-                    child: presenter.build(context, liveDevice, bundle),
+                    child: presenter.build(
+                      context,
+                      liveDevice,
+                      bundle,
+                      chrome: presenterChrome,
+                    ),
                   ),
                 );
             }

@@ -46,6 +46,11 @@ final class OshAnalyticsEvents {
   static const accountSettingsOperationFailed =
       'account_settings_operation_failed';
 
+  static const userGuideAutoShown = 'user_guide_auto_shown';
+  static const userGuideManualOpened = 'user_guide_manual_opened';
+  static const userGuideTopicCompleted = 'user_guide_topic_completed';
+  static const userGuideTopicSkipped = 'user_guide_topic_skipped';
+
   static const mobilePolicyFetched = 'mobile_policy_fetched';
   static const mobilePolicyPromptShown = 'mobile_policy_prompt_shown';
   static const mobilePolicyUpdateTapped = 'mobile_policy_update_tapped';

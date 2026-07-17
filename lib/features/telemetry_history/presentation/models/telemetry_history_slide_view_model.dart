@@ -7,7 +7,6 @@ import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_set
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_state.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric_catalog.dart';
-import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_range.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_activity_band.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_point.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_series.dart';
@@ -39,7 +38,10 @@ class TelemetryHistorySlideModelBuilder {
   }) {
     final isTemperatureOverlayMode =
         isTemperatureMetric(metric) && state.hasComparisonMetrics;
-    final targetMetric = TelemetryHistoryMetricCatalog.targetTempMetric(s);
+    final targetMetric = _findComparisonMetric(
+      state,
+      TelemetryHistoryMetricCatalog.targetTemp,
+    );
     final heatingMetric = _findComparisonMetric(state, 'heater_enabled');
     final overlayOptions = isTemperatureOverlayMode
         ? <TelemetryHistoryOverlayOption>[
@@ -50,12 +52,13 @@ class TelemetryHistorySlideModelBuilder {
                 metric: heatingMetric,
                 color: AppPalette.accentWarning,
               ),
-            TelemetryHistoryOverlayOption(
-              id: targetSeriesId,
-              label: targetMetric.title,
-              metric: targetMetric,
-              color: AppPalette.accentSuccess,
-            ),
+            if (targetMetric != null)
+              TelemetryHistoryOverlayOption(
+                id: targetSeriesId,
+                label: targetMetric.title,
+                metric: targetMetric,
+                color: AppPalette.historyTarget,
+              ),
           ]
         : const <TelemetryHistoryOverlayOption>[];
     final selectedOverlayIds = _selectedTemperatureToggleIds(
@@ -83,7 +86,7 @@ class TelemetryHistorySlideModelBuilder {
       chartValues,
       metric,
       s,
-      range: state.range,
+      rangeDays: state.window.durationDays,
     );
     final sensorName = (metric.subtitle ?? '').trim();
     final hasSensorIdentity = sensorName.isNotEmpty && metric.sensorId != null;
@@ -114,9 +117,10 @@ class TelemetryHistorySlideModelBuilder {
         .map((option) => option.metric)
         .toList(growable: false);
     final overlayLoading = selectedOverlayMetrics.any(
-      (overlayMetric) => overlayMetric.seriesKey == targetMetric.seriesKey
-          ? state.setpointLoading
-          : state.isLoadingFor(overlayMetric),
+      (overlayMetric) =>
+          overlayMetric.seriesKey == TelemetryHistoryMetricCatalog.targetTemp
+              ? state.setpointLoading
+              : state.isLoadingFor(overlayMetric),
     );
 
     final chartKind = isTemperatureOverlayMode
@@ -134,7 +138,7 @@ class TelemetryHistorySlideModelBuilder {
                   id: metric.seriesKey,
                   label: metric.title,
                   points: entries.map(_historyPoint).toList(growable: false),
-                  color: AppPalette.accentPrimary,
+                  color: _metricColor(metric),
                   strokeWidth: 2.0,
                   fill: true,
                 ),
@@ -148,7 +152,7 @@ class TelemetryHistorySlideModelBuilder {
         !isLoading && !overlayLoading && errorMessage == null && !hasChartData;
     final chartSemanticLabel = _chartSemanticLabel(
       metric: metric,
-      targetLabel: targetMetric.title,
+      targetLabel: targetMetric?.title ?? s.TelemetryHistoryMetricTarget,
       targetValue: _latestTargetSemanticValue(state, s),
       targetVisible: selectedOverlayIds.contains(targetSeriesId),
     );
@@ -436,7 +440,7 @@ class TelemetryHistorySlideModelBuilder {
     List<double> values,
     TelemetryHistoryMetric metric,
     S s, {
-    required TelemetryHistoryRange range,
+    required double rangeDays,
   }) {
     final hasValues = values.isNotEmpty;
     if (metric.displayMode == TelemetryHistoryMetricDisplayMode.energyDelta) {
@@ -444,7 +448,7 @@ class TelemetryHistorySlideModelBuilder {
         values,
         metric,
         s,
-        range: range,
+        rangeDays: rangeDays,
       );
     }
 
@@ -490,15 +494,16 @@ class TelemetryHistorySlideModelBuilder {
     List<double> values,
     TelemetryHistoryMetric metric,
     S s, {
-    required TelemetryHistoryRange range,
+    required double rangeDays,
   }) {
     final hasValues = values.isNotEmpty;
     final total = hasValues
         ? values.fold<double>(0.0, (sum, value) => sum + value)
         : null;
+    final isSingleCalendarDay = rangeDays <= 1;
     final averageDivisor =
-        range == TelemetryHistoryRange.day ? 24.0 : _rangeDays(range);
-    final averageLabel = range == TelemetryHistoryRange.day
+        isSingleCalendarDay ? 24.0 : rangeDays.clamp(1.0, double.infinity);
+    final averageLabel = isSingleCalendarDay
         ? s.TelemetryHistoryStatAvgPerHour
         : s.TelemetryHistoryStatAvgPerDay;
     final average = total == null ? null : total / averageDivisor;
@@ -526,12 +531,16 @@ class TelemetryHistorySlideModelBuilder {
     ];
   }
 
-  static double _rangeDays(TelemetryHistoryRange range) {
-    return switch (range) {
-      TelemetryHistoryRange.day => 1,
-      TelemetryHistoryRange.week => 7,
-      TelemetryHistoryRange.month => 30,
-      TelemetryHistoryRange.year => 365,
+  static Color _metricColor(TelemetryHistoryMetric metric) {
+    return switch (metric.seriesKey) {
+      TelemetryHistoryMetricCatalog.powerMeterActivePowerW =>
+        AppPalette.historyHeating,
+      TelemetryHistoryMetricCatalog.powerMeterVoltageV =>
+        AppPalette.historyTemperature,
+      TelemetryHistoryMetricCatalog.powerMeterCurrentA => AppPalette.cyanAccent,
+      TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta =>
+        AppPalette.accentSuccess,
+      _ => AppPalette.historyTemperature,
     };
   }
 
@@ -544,7 +553,7 @@ class TelemetryHistorySlideModelBuilder {
       return _tempInactiveColor;
     }
     return referenceId == sensorId
-        ? AppPalette.accentPrimary
+        ? AppPalette.historyTemperature
         : _tempInactiveColor;
   }
 

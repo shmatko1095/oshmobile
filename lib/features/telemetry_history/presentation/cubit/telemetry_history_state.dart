@@ -1,14 +1,15 @@
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_history.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
-import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_range.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_range.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_window.dart';
 
 class TelemetryHistoryState {
   const TelemetryHistoryState({
     required this.metrics,
     required this.comparisonMetrics,
     required this.selectedMetricIndex,
-    required this.range,
+    required this.window,
     required this.loadingSeriesKeys,
     required this.seriesBySeriesKey,
     required this.errorBySeriesKey,
@@ -23,6 +24,7 @@ class TelemetryHistoryState {
         const <TelemetryHistoryMetric>[],
     required int initialMetricIndex,
     required TelemetryHistoryRange initialRange,
+    DateTime? nowLocal,
   }) {
     final clampedIndex =
         metrics.isEmpty ? 0 : initialMetricIndex.clamp(0, metrics.length - 1);
@@ -30,7 +32,10 @@ class TelemetryHistoryState {
       metrics: metrics,
       comparisonMetrics: comparisonMetrics,
       selectedMetricIndex: clampedIndex,
-      range: initialRange,
+      window: TelemetryHistoryWindow.current(
+        range: initialRange,
+        nowLocal: nowLocal ?? DateTime.now(),
+      ),
       loadingSeriesKeys: const <String>{},
       seriesBySeriesKey: const <String, TelemetryHistorySeries>{},
       errorBySeriesKey: const <String, String>{},
@@ -43,13 +48,15 @@ class TelemetryHistoryState {
   final List<TelemetryHistoryMetric> metrics;
   final List<TelemetryHistoryMetric> comparisonMetrics;
   final int selectedMetricIndex;
-  final TelemetryHistoryRange range;
+  final TelemetryHistoryWindow window;
   final Set<String> loadingSeriesKeys;
   final Map<String, TelemetryHistorySeries> seriesBySeriesKey;
   final Map<String, String> errorBySeriesKey;
   final TelemetrySetpointHistory? setpointHistory;
   final bool setpointLoading;
   final String? setpointErrorMessage;
+
+  TelemetryHistoryRange get range => window.range;
 
   TelemetryHistoryMetric get metric => metrics[selectedMetricIndex];
 
@@ -80,7 +87,7 @@ class TelemetryHistoryState {
     List<TelemetryHistoryMetric>? metrics,
     List<TelemetryHistoryMetric>? comparisonMetrics,
     int? selectedMetricIndex,
-    TelemetryHistoryRange? range,
+    TelemetryHistoryWindow? window,
     Object? loadingSeriesKeys = _unset,
     Object? seriesBySeriesKey = _unset,
     Object? errorBySeriesKey = _unset,
@@ -97,7 +104,7 @@ class TelemetryHistoryState {
       metrics: nextMetrics,
       comparisonMetrics: comparisonMetrics ?? this.comparisonMetrics,
       selectedMetricIndex: clampedIndex,
-      range: range ?? this.range,
+      window: window ?? this.window,
       loadingSeriesKeys: loadingSeriesKeys == _unset
           ? this.loadingSeriesKeys
           : loadingSeriesKeys as Set<String>,

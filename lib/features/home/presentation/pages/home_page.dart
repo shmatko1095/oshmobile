@@ -9,6 +9,7 @@ import 'package:oshmobile/core/common/widgets/loader.dart';
 import 'package:oshmobile/features/device_catalog/presentation/cubit/device_catalog_cubit.dart';
 import 'package:oshmobile/features/device_management/presentation/pages/device_settings_hub_page.dart';
 import 'package:oshmobile/features/devices/no_selected_device/presentation/pages/no_selected_device_page.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/device_presenter_chrome.dart';
 import 'package:oshmobile/features/home/presentation/pages/add_device_page.dart';
 import 'package:oshmobile/features/home/presentation/widgets/mqtt_activity_icon.dart';
 import 'package:oshmobile/features/home/presentation/widgets/side_menu/side_menu.dart';
@@ -29,6 +30,8 @@ class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? _sessionTitle;
   String? _sessionTitleDeviceId;
+  String? _embeddedAppBarDeviceId;
+  bool _usesEmbeddedAppBar = false;
 
   @override
   void initState() {
@@ -49,6 +52,27 @@ class _HomePageState extends State<HomePage> {
       _sessionTitle = normalized;
       _sessionTitleDeviceId = deviceId;
     });
+  }
+
+  void _setUsesEmbeddedAppBar(String deviceId, bool value) {
+    if (!mounted) return;
+    final selectedId =
+        context.read<DeviceCatalogCubit>().state.selectedDeviceId;
+    if (selectedId != deviceId) return;
+    if (_embeddedAppBarDeviceId == deviceId && _usesEmbeddedAppBar == value) {
+      return;
+    }
+    setState(() {
+      _embeddedAppBarDeviceId = deviceId;
+      _usesEmbeddedAppBar = value;
+    });
+  }
+
+  bool _hasEmbeddedAppBar(DeviceCatalogState state) {
+    final selectedId = state.selectedDeviceId;
+    return selectedId != null &&
+        _embeddedAppBarDeviceId == selectedId &&
+        _usesEmbeddedAppBar;
   }
 
   Device? _selectedDevice(
@@ -138,6 +162,37 @@ class _HomePageState extends State<HomePage> {
       key: ValueKey(device.id),
       device: device,
       onTitleChanged: (title) => _setSessionTitle(device.id, title),
+      onEmbeddedAppBarChanged: (value) =>
+          _setUsesEmbeddedAppBar(device.id, value),
+      presenterChrome: DevicePresenterChrome(
+        onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+        onOpenSettings: _openSettings,
+        activityIndicator: MqttActivityIcon(key: ValueKey(device.id)),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(
+    DeviceCatalogCubit deviceCatalogCubit,
+    DeviceCatalogState state,
+  ) {
+    final title = _resolveAppBarTitle(deviceCatalogCubit, state);
+    final settingsEnabled = _selectedDevice(deviceCatalogCubit, state) != null;
+
+    return AppBar(
+      centerTitle: true,
+      title: Text(title, overflow: TextOverflow.ellipsis),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: MqttActivityIcon(key: ValueKey(state.selectedDeviceId)),
+        ),
+        IconButton(
+          icon: const Icon(Icons.settings),
+          tooltip: S.of(context).Settings,
+          onPressed: settingsEnabled ? _openSettings : null,
+        ),
+      ],
     );
   }
 
@@ -145,56 +200,24 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return OshAnalyticsScreenView(
       screenName: OshAnalyticsScreens.home,
-      child: Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          centerTitle: true,
-          title: BlocBuilder<DeviceCatalogCubit, DeviceCatalogState>(
-            builder: (context, state) {
-              final title = _resolveAppBarTitle(
-                  context.read<DeviceCatalogCubit>(), state);
-              return Text(title, overflow: TextOverflow.ellipsis);
-            },
-          ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child:
-                  BlocSelector<DeviceCatalogCubit, DeviceCatalogState, String?>(
-                selector: (state) => state.selectedDeviceId,
-                builder: (context, deviceId) {
-                  return MqttActivityIcon(key: ValueKey(deviceId));
-                },
-              ),
-            ),
-            BlocBuilder<DeviceCatalogCubit, DeviceCatalogState>(
-              builder: (context, state) {
-                final enabled = _selectedDevice(
-                        context.read<DeviceCatalogCubit>(), state) !=
-                    null;
-                return IconButton(
-                  icon: const Icon(Icons.settings),
-                  tooltip: S.of(context).Settings,
-                  onPressed: enabled ? _openSettings : null,
-                );
-              },
-            ),
-          ],
-        ),
-        drawer: const SideMenu(),
-        body: BlocBuilder<DeviceCatalogCubit, DeviceCatalogState>(
-          builder: (context, state) {
-            final deviceCatalogCubit = context.read<DeviceCatalogCubit>();
+      child: BlocBuilder<DeviceCatalogCubit, DeviceCatalogState>(
+        builder: (context, state) {
+          final deviceCatalogCubit = context.read<DeviceCatalogCubit>();
+          final body = state.status == DeviceCatalogStatus.initial ||
+                  (state.status == DeviceCatalogStatus.loading &&
+                      state.devices.isEmpty)
+              ? const Loader()
+              : _buildSelectedDeviceOrFallback(deviceCatalogCubit, state);
 
-            if (state.status == DeviceCatalogStatus.initial ||
-                (state.status == DeviceCatalogStatus.loading &&
-                    state.devices.isEmpty)) {
-              return const Loader();
-            }
-
-            return _buildSelectedDeviceOrFallback(deviceCatalogCubit, state);
-          },
-        ),
+          return Scaffold(
+            key: _scaffoldKey,
+            appBar: _hasEmbeddedAppBar(state)
+                ? null
+                : _buildAppBar(deviceCatalogCubit, state),
+            drawer: const SideMenu(),
+            body: body,
+          );
+        },
       ),
     );
   }

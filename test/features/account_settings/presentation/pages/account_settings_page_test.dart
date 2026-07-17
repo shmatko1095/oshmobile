@@ -26,14 +26,20 @@ import 'package:oshmobile/features/startup/domain/models/mobile_client_policy.da
 import 'package:oshmobile/features/startup/domain/models/mobile_client_policy_decision.dart';
 import 'package:oshmobile/features/startup/domain/models/mobile_client_policy_status.dart';
 import 'package:oshmobile/features/startup/domain/repositories/startup_client_policy_repository.dart';
+import 'package:oshmobile/features/user_guide/domain/models/user_guide_topic.dart';
+import 'package:oshmobile/features/user_guide/presentation/coordination/user_guide_host_registry.dart';
+import 'package:oshmobile/features/user_guide/presentation/cubit/user_guide_cubit.dart';
 import 'package:oshmobile/generated/l10n.dart';
 import 'package:oshmobile/init_dependencies.dart';
+
+import '../../../user_guide/test_user_guide_progress_repository.dart';
 
 void main() {
   late _FakeStartupClientPolicyRepository clientPolicyRepository;
   late _FakeAppClientMetadataProvider metadataProvider;
   late _FakeRequestMyAccountDeletion requestMyAccountDeletion;
   late AppThemeCubit appThemeCubit;
+  late UserGuideCubit userGuideCubit;
 
   setUp(() async {
     await locator.reset();
@@ -47,6 +53,10 @@ void main() {
     );
     requestMyAccountDeletion = _FakeRequestMyAccountDeletion();
     appThemeCubit = AppThemeCubit(storage: _FakeThemeModeStorage());
+    userGuideCubit = UserGuideCubit(
+      repository: TestUserGuideProgressRepository(),
+    );
+    await userGuideCubit.load();
 
     locator.registerFactory<RequestMyAccountDeletion>(() {
       return requestMyAccountDeletion;
@@ -57,6 +67,7 @@ void main() {
     locator.registerLazySingleton<AppClientMetadataProvider>(
       () => metadataProvider,
     );
+    locator.registerSingleton<UserGuideCubit>(userGuideCubit);
 
     OshAnalytics.debugSetBackend(const _NoopAnalyticsBackend());
     OshCrashReporter.debugSetBackend(const _NoopCrashReporterBackend());
@@ -66,6 +77,7 @@ void main() {
     OshAnalytics.debugResetBackend();
     OshCrashReporter.debugResetBackend();
     await appThemeCubit.close();
+    await userGuideCubit.close();
     await locator.reset();
   });
 
@@ -87,8 +99,68 @@ void main() {
     expect(find.text('User Name'), findsOneWidget);
     expect(find.text('Theme'), findsOneWidget);
     expect(find.text('About app'), findsOneWidget);
+    expect(find.text('User guide'), findsOneWidget);
     expect(find.text('App version'), findsOneWidget);
     expect(find.text('1.2.3 (42)'), findsOneWidget);
+  });
+
+  testWidgets(
+      'user guide tile returns to dashboard and starts contextual guide',
+      (tester) async {
+    final authCubit = _TestGlobalAuthCubit(
+      userData: _user(isEmailVerified: true),
+      isDemoMode: false,
+    );
+    addTearDown(authCubit.close);
+
+    await _pumpAccountSettingsPage(
+      tester,
+      authCubit: authCubit,
+      appThemeCubit: appThemeCubit,
+      showDashboardBehind: true,
+    );
+
+    await tester.tap(find.text('User guide'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Thermostat dashboard'), findsOneWidget);
+    expect(find.text('Profile & settings'), findsNothing);
+    expect(find.byKey(const ValueKey('user-guide-pages')), findsNothing);
+    expect(userGuideCubit.state.isManualSessionActive, isTrue);
+    expect(
+      userGuideCubit.state.sessionTopic,
+      UserGuideTopic.thermostatLiveMetricsV1,
+    );
+    expect(userGuideCubit.state.completedTopics, isEmpty);
+  });
+
+  testWidgets('user guide falls back to modal when no contextual host exists',
+      (tester) async {
+    final authCubit = _TestGlobalAuthCubit(
+      userData: _user(isEmailVerified: true),
+      isDemoMode: false,
+    );
+    addTearDown(authCubit.close);
+
+    await _pumpAccountSettingsPage(
+      tester,
+      authCubit: authCubit,
+      appThemeCubit: appThemeCubit,
+      showDashboardBehind: true,
+      guideHostAvailable: false,
+    );
+
+    await tester.tap(find.text('User guide'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('user-guide-pages')), findsOneWidget);
+    expect(userGuideCubit.state.isManualSessionActive, isTrue);
+
+    await tester.tap(find.byKey(const ValueKey('user-guide-close')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Thermostat dashboard'), findsOneWidget);
+    expect(userGuideCubit.state.isManualSessionActive, isFalse);
   });
 
   testWidgets('tapping profile card opens profile route', (tester) async {
@@ -317,25 +389,47 @@ Future<void> _pumpAccountSettingsPage(
   WidgetTester tester, {
   required GlobalAuthCubit authCubit,
   required AppThemeCubit appThemeCubit,
+  bool showDashboardBehind = false,
+  bool guideHostAvailable = true,
 }) async {
+  final userGuideHostRegistry = UserGuideHostRegistry();
+  if (showDashboardBehind && guideHostAvailable) {
+    userGuideHostRegistry.registerHost(
+      UserGuideTopic.thermostatLiveMetricsV1,
+      const ValueKey('settings-test-dashboard'),
+    );
+  }
   await tester.pumpWidget(
-    MultiBlocProvider(
-      providers: [
-        BlocProvider<AppThemeCubit>.value(value: appThemeCubit),
-        BlocProvider<GlobalAuthCubit>.value(value: authCubit),
-      ],
-      child: MaterialApp(
-        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-          S.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
+    RepositoryProvider<UserGuideHostRegistry>.value(
+      value: userGuideHostRegistry,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<AppThemeCubit>.value(value: appThemeCubit),
+          BlocProvider<GlobalAuthCubit>.value(value: authCubit),
+          BlocProvider<UserGuideCubit>.value(
+            value: locator<UserGuideCubit>(),
+          ),
         ],
-        supportedLocales: S.delegate.supportedLocales,
-        home: AccountSettingsPage(
-          requestMyAccountDeletion: locator<RequestMyAccountDeletion>(),
-          clientPolicyRepository: locator<StartupClientPolicyRepository>(),
-          appClientMetadataProvider: locator<AppClientMetadataProvider>(),
+        child: MaterialApp(
+          localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+            S.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: S.delegate.supportedLocales,
+          home: showDashboardBehind
+              ? const Scaffold(
+                  key: ValueKey('settings-test-dashboard'),
+                  body: Center(child: Text('Thermostat dashboard')),
+                )
+              : AccountSettingsPage(
+                  requestMyAccountDeletion: locator<RequestMyAccountDeletion>(),
+                  clientPolicyRepository:
+                      locator<StartupClientPolicyRepository>(),
+                  appClientMetadataProvider:
+                      locator<AppClientMetadataProvider>(),
+                ),
         ),
       ),
     ),
@@ -343,6 +437,13 @@ Future<void> _pumpAccountSettingsPage(
 
   await tester.pump();
   await tester.pump();
+  if (showDashboardBehind) {
+    final dashboardContext = tester.element(
+      find.byKey(const ValueKey('settings-test-dashboard')),
+    );
+    Navigator.of(dashboardContext).push(AccountSettingsPage.route());
+    await tester.pumpAndSettle();
+  }
 }
 
 Future<void> _pumpProfilePage(

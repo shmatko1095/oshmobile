@@ -17,6 +17,7 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
     Duration cacheTtl = const Duration(minutes: 2),
     Duration persistentCacheMaxAge = const Duration(hours: 24),
     Duration pollInterval = AppPollingIntervals.deviceData,
+    String aggregateSeriesKey = seriesKey,
     DateTime Function()? nowUtc,
   })  : _telemetryHistory = telemetryHistory,
         _persistentCache = persistentCache,
@@ -24,6 +25,7 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
         _cacheTtl = cacheTtl,
         _persistentCacheMaxAge = persistentCacheMaxAge,
         _pollInterval = pollInterval,
+        _aggregateSeriesKey = aggregateSeriesKey,
         _nowUtc = nowUtc ?? _defaultNowUtc,
         super(const DailyEnergyUsageState.initial());
 
@@ -36,6 +38,7 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
   final Duration _cacheTtl;
   final Duration _persistentCacheMaxAge;
   final Duration _pollInterval;
+  final String _aggregateSeriesKey;
   final DateTime Function() _nowUtc;
   Timer? _pollTimer;
   int _requestVersion = 0;
@@ -97,7 +100,7 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
     try {
       final aggregate = await _telemetryHistory.getAggregate(
         query: TelemetryAggregateQuery(
-          seriesKeys: const <String>[seriesKey],
+          seriesKeys: <String>[_aggregateSeriesKey],
           from: from,
           to: to,
           preferredResolution: 'auto',
@@ -153,7 +156,7 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
 
   double? _energyWhFromAggregate(TelemetryAggregate aggregate) {
     for (final item in aggregate.series) {
-      if (item.seriesKey == seriesKey) {
+      if (item.seriesKey == _aggregateSeriesKey) {
         return item.sumValue;
       }
     }
@@ -172,7 +175,7 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
     try {
       return await cache.read(
         namespace: namespace,
-        seriesKey: seriesKey,
+        seriesKey: _aggregateSeriesKey,
         nowUtc: now,
         maxAge: _persistentCacheMaxAge,
       );
@@ -199,7 +202,7 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
     try {
       await cache.write(
         namespace: namespace,
-        seriesKey: seriesKey,
+        seriesKey: _aggregateSeriesKey,
         record: DailyEnergyUsageCacheRecord(
           energyWh: energyWh,
           savedAt: state.updatedAt ?? _nowUtc(),
@@ -218,7 +221,10 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
     if (cache == null || namespace == null || namespace.isEmpty) return;
 
     try {
-      await cache.remove(namespace: namespace, seriesKey: seriesKey);
+      await cache.remove(
+        namespace: namespace,
+        seriesKey: _aggregateSeriesKey,
+      );
     } catch (_) {
       // Cache eviction is best-effort.
     }

@@ -8,6 +8,127 @@ import 'package:oshmobile/features/telemetry_history/presentation/models/telemet
 void main() {
   const builder = ConfigurationThermostatDashboardSchemaBuilder();
 
+  test('builds configured daily 24h stats from two readable controls', () {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'dailyStats24h',
+          'control_ids': [
+            'powerMeterEnergyWhDelta',
+            'heatingActivity24h',
+          ],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[
+        {
+          'id': 'powerMeterEnergyWhDelta',
+          'path': 'power_meter.energy_wh_delta',
+        },
+        {'id': 'heatingActivity24h', 'path': 'load_factor'},
+      ],
+      readableDomains: const <String>{'telemetry'},
+    );
+
+    final schema = builder.build(bundle: bundle);
+
+    expect(schema.visibleWidgetIds, const <String>['dailyStats24h']);
+    expect(
+      schema.dailyStats24h?.energySeriesKey,
+      TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
+    );
+    expect(
+      schema.dailyStats24h?.heatingActivityBind,
+      'heatingActivity24h',
+    );
+    expect(schema.tiles, isEmpty);
+  });
+
+  test('skips daily 24h stats when one required control is unknown', () {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'dailyStats24h',
+          'control_ids': [
+            'powerMeterEnergyWhDelta',
+            'missingHeatingActivity',
+          ],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[
+        {
+          'id': 'powerMeterEnergyWhDelta',
+          'path': 'power_meter.energy_wh_delta',
+        },
+      ],
+      readableDomains: const <String>{'telemetry'},
+    );
+
+    final schema = builder.build(bundle: bundle);
+
+    expect(schema.dailyStats24h, isNull);
+    expect(schema.visibleWidgetIds, isEmpty);
+  });
+
+  test('ignores an unknown widget id without failing the dashboard', () {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'futureWidget',
+          'control_ids': ['knownControl'],
+        },
+        {
+          'id': 'currentNow',
+          'control_ids': ['powerMeterCurrentA', 'powerMeterCurrentValid'],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[
+        {'id': 'knownControl', 'path': 'known_value'},
+        {'id': 'powerMeterCurrentA', 'path': 'power_meter.current_a'},
+        {
+          'id': 'powerMeterCurrentValid',
+          'path': 'power_meter.current_valid',
+        },
+      ],
+      readableDomains: const <String>{'telemetry'},
+    );
+
+    final schema = builder.build(bundle: bundle);
+
+    expect(schema.dailyStats24h, isNull);
+    expect(schema.visibleWidgetIds, const <String>['currentNow']);
+    expect(schema.tiles.single.type, ThermostatTileType.currentNow);
+  });
+
+  test('keeps legacy energy and load factor widgets supported', () {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'loadFactor24h',
+          'control_ids': ['heatingActivity24h'],
+        },
+        {
+          'id': 'energyUsed',
+          'control_ids': <String>[],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[
+        {'id': 'heatingActivity24h', 'path': 'load_factor'},
+      ],
+      readableDomains: const <String>{'telemetry'},
+    );
+
+    final schema = builder.build(bundle: bundle);
+
+    expect(schema.dailyStats24h, isNull);
+    expect(
+      schema.tiles.map((tile) => tile.type),
+      const <ThermostatTileType>[
+        ThermostatTileType.loadFactor24h,
+        ThermostatTileType.energyUsed,
+      ],
+    );
+  });
+
   test('includes visible power meter widgets when controls are readable', () {
     final bundle = _bundle(
       widgets: const <Map<String, dynamic>>[
@@ -58,6 +179,104 @@ void main() {
         const <String>['voltageNow', 'currentNow', 'apparentPowerNow'],
       ),
     );
+  });
+
+  test('preserves configured order for live dashboard tiles', () {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'heatingToggle',
+          'control_ids': ['heaterEnabled'],
+        },
+        {
+          'id': 'voltageNow',
+          'control_ids': ['powerMeterVoltageV', 'powerMeterVoltageValid'],
+        },
+        {
+          'id': 'currentNow',
+          'control_ids': ['powerMeterCurrentA', 'powerMeterCurrentValid'],
+        },
+        {
+          'id': 'powerNow',
+          'control_ids': [
+            'powerMeterActivePowerW',
+            'powerMeterActivePowerValid',
+          ],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[
+        {'id': 'heaterEnabled', 'path': 'heater_enabled'},
+        {'id': 'powerMeterVoltageV', 'path': 'power_meter.voltage_v'},
+        {
+          'id': 'powerMeterVoltageValid',
+          'path': 'power_meter.voltage_valid',
+        },
+        {'id': 'powerMeterCurrentA', 'path': 'power_meter.current_a'},
+        {
+          'id': 'powerMeterCurrentValid',
+          'path': 'power_meter.current_valid',
+        },
+        {
+          'id': 'powerMeterActivePowerW',
+          'path': 'power_meter.active_power_w',
+        },
+        {
+          'id': 'powerMeterActivePowerValid',
+          'path': 'power_meter.active_power_valid',
+        },
+      ],
+      readableDomains: const <String>{'telemetry'},
+    );
+
+    final schema = builder.build(bundle: bundle);
+
+    expect(
+      schema.tiles.map((tile) => tile.type),
+      const <ThermostatTileType>[
+        ThermostatTileType.heatingToggle,
+        ThermostatTileType.voltageNow,
+        ThermostatTileType.currentNow,
+        ThermostatTileType.powerNow,
+      ],
+    );
+    expect(schema.heatingStatus?.bind, 'heaterEnabled');
+    expect(
+      schema.tiles.whereType<ThermostatSingleBindTileSpec>().first.bind,
+      'heaterEnabled',
+    );
+  });
+
+  test('does not promote missing or unreadable heating status', () {
+    final missingControl = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'heatingToggle',
+          'control_ids': ['missingHeaterEnabled'],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[],
+      readableDomains: const <String>{'telemetry'},
+    );
+    final unreadableControl = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'heatingToggle',
+          'control_ids': ['heaterEnabled'],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[
+        {'id': 'heaterEnabled', 'path': 'heater_enabled'},
+      ],
+      readableDomains: const <String>{},
+    );
+
+    final missingSchema = builder.build(bundle: missingControl);
+    final unreadableSchema = builder.build(bundle: unreadableControl);
+
+    expect(missingSchema.heatingStatus, isNull);
+    expect(missingSchema.tiles, isEmpty);
+    expect(unreadableSchema.heatingStatus, isNull);
+    expect(unreadableSchema.tiles, isEmpty);
   });
 
   test('hides power meter widget when telemetry is unreadable', () {

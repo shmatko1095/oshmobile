@@ -15,10 +15,6 @@ import 'package:oshmobile/features/schedule/domain/models/schedule_models.dart';
 import 'package:oshmobile/features/schedule/presentation/open_mode_editor.dart';
 import 'package:oshmobile/features/schedule/presentation/utils.dart';
 import 'package:oshmobile/generated/l10n.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-const thermostatModeBarCalendarHintSeenPrefsKey =
-    'thermostat_mode_bar_calendar_hint_seen_v1';
 
 /// Bottom-nav-like bar to show and switch thermostat modes with optimistic UI.
 /// Modes: off, range, manual, daily, weekly.
@@ -31,14 +27,12 @@ class ThermostatModeBar extends StatefulWidget {
     this.visibleModes,
     this.writable = true,
     this.optimisticTimeout = const Duration(seconds: 5),
-    this.sharedPreferences,
   });
 
   final String modeBind;
   final List<CalendarMode>? visibleModes;
   final bool writable;
   final Duration optimisticTimeout;
-  final SharedPreferences? sharedPreferences;
 
   @override
   State<ThermostatModeBar> createState() => _ThermostatModeBarState();
@@ -47,17 +41,7 @@ class ThermostatModeBar extends StatefulWidget {
 class _ThermostatModeBarState extends State<ThermostatModeBar> {
   CalendarMode? _optimistic;
   Timer? _revertTimer;
-  SharedPreferences? _prefs;
-  bool _hintSeen = true;
   bool _editorOpening = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _prefs = widget.sharedPreferences;
-    _hintSeen =
-        _prefs?.getBool(thermostatModeBarCalendarHintSeenPrefsKey) ?? false;
-  }
 
   @override
   void dispose() {
@@ -108,11 +92,6 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
     required String source,
   }) async {
     if (_editorOpening || !_isEditableMode(mode) || !widget.writable) return;
-
-    if (!_hintSeen) {
-      _hintSeen = true;
-      _prefs?.setBool(thermostatModeBarCalendarHintSeenPrefsKey, true);
-    }
 
     setState(() => _editorOpening = true);
     try {
@@ -173,86 +152,59 @@ class _ThermostatModeBarState extends State<ThermostatModeBar> {
 
     // Effective (what UI highlights): prefer optimistic if present.
     final effective = _optimistic ?? current;
-    final showHint =
-        widget.writable && !_hintSeen && modes.any(_isEditableMode);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AppGlassCard(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-          backgroundColor: statSurfaceColor(context),
-          borderColor: statBorderColor(context),
-          child: Row(
-            children: [
-              for (final mode in modes) ...[
-                Expanded(
-                  child: _ModeItem(
-                    mode: mode,
-                    selected: effective == mode,
-                    semanticsHint: _semanticsHint(
-                      context,
-                      mode,
-                      selected: effective == mode,
-                    ),
-                    onTap: !widget.writable
-                        ? null
-                        : () {
-                            if (_editorOpening) return;
-                            if (!_isEditableMode(mode)) {
-                              if (effective == mode) return;
-                              _switchMode(current, mode);
-                              return;
-                            }
-                            if (effective == mode) {
-                              unawaited(
-                                _openModeEditor(
-                                  mode,
-                                  source: 'mode_bar_active_tap',
-                                ),
-                              );
-                              return;
-                            }
-                            _switchMode(current, mode);
-                          },
-                    onLongPress: !widget.writable || !_isEditableMode(mode)
-                        ? null
-                        : () {
-                            if (_editorOpening) return;
-                            unawaited(
-                              _openModeEditor(
-                                mode,
-                                source: 'mode_bar_long_press',
-                              ),
-                            );
-                          },
-                  ),
+    return AppGlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      backgroundColor: statSurfaceColor(context),
+      borderColor: statBorderColor(context),
+      child: Row(
+        children: [
+          for (final mode in modes) ...[
+            Expanded(
+              child: _ModeItem(
+                mode: mode,
+                selected: effective == mode,
+                semanticsHint: _semanticsHint(
+                  context,
+                  mode,
+                  selected: effective == mode,
                 ),
-                if (mode != modes.last) const SizedBox(width: 6),
-              ],
-            ],
-          ),
-        ),
-        AnimatedSwitcher(
-          duration: AppPalette.motionFast,
-          child: !showHint
-              ? const SizedBox.shrink()
-              : Padding(
-                  key: const ValueKey('mode-bar-hint'),
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                  child: Text(
-                    S.of(context).ThermostatModeBarHint,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: statMutedColor(context),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      height: 1.3,
-                    ),
-                  ),
-                ),
-        ),
-      ],
+                onTap: !widget.writable
+                    ? null
+                    : () {
+                        if (_editorOpening) return;
+                        if (!_isEditableMode(mode)) {
+                          if (effective == mode) return;
+                          _switchMode(current, mode);
+                          return;
+                        }
+                        if (effective == mode) {
+                          unawaited(
+                            _openModeEditor(
+                              mode,
+                              source: 'mode_bar_active_tap',
+                            ),
+                          );
+                          return;
+                        }
+                        _switchMode(current, mode);
+                      },
+                onLongPress: !widget.writable || !_isEditableMode(mode)
+                    ? null
+                    : () {
+                        if (_editorOpening) return;
+                        unawaited(
+                          _openModeEditor(
+                            mode,
+                            source: 'mode_bar_long_press',
+                          ),
+                        );
+                      },
+              ),
+            ),
+            if (mode != modes.last) const SizedBox(width: 6),
+          ],
+        ],
+      ),
     );
   }
 }

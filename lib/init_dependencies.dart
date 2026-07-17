@@ -9,6 +9,7 @@ import 'package:oshmobile/features/device_management/di/device_management_di.dar
 import 'package:oshmobile/features/devices/di/devices_di.dart';
 import 'package:oshmobile/features/startup/di/startup_di.dart';
 import 'package:oshmobile/features/telemetry_history/di/telemetry_history_di.dart';
+import 'package:oshmobile/features/user_guide/di/user_guide_di.dart';
 
 final locator = GetIt.instance;
 
@@ -24,7 +25,8 @@ Future<void> initDependencies() async {
   registerDeviceCatalogFeature(locator);
   registerDeviceManagementFeature(locator);
   registerAccountSettingsFeature(locator);
-  registerDevicesFeature(locator);
   registerTelemetryHistoryFeature(locator);
+  registerUserGuideFeature(locator);
+  registerDevicesFeature(locator);
   registerBleProvisioningFeature(locator);
 }

@@ -171,14 +171,68 @@ void main() {
     final floorCard =
         find.byKey(const ValueKey('temperature-sensor-card-floor'));
 
-    expect(airCard, findsOneWidget);
     expect(floorCard, findsOneWidget);
-
-    final airCenter = tester.getCenter(airCard);
     final floorCenter = tester.getCenter(floorCard);
 
     expect((floorCenter.dx - pageViewCenter.dx).abs(), lessThan(2));
-    expect(airCenter.dx, lessThan(floorCenter.dx));
+
+    await tester.drag(find.byType(PageView), const Offset(500, 0));
+    await tester.pumpAndSettle();
+
+    expect(airCard, findsOneWidget);
+    final airCenter = tester.getCenter(airCard);
+    expect((airCenter.dx - pageViewCenter.dx).abs(), lessThan(2));
+  });
+
+  testWidgets('carousel fills panel while adjacent cards peek at screen edges',
+      (tester) async {
+    final snapshot = _snapshotWithSensors(
+      const <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'air',
+          'name': 'Air',
+          'ref': false,
+          'temp_valid': true,
+          'temp_stale': false,
+          'temp': 21.4,
+          'humidity_valid': false,
+        },
+        <String, dynamic>{
+          'id': 'floor',
+          'name': 'Floor',
+          'ref': true,
+          'temp_valid': true,
+          'temp_stale': false,
+          'temp': 24.8,
+          'humidity_valid': false,
+        },
+      ],
+    );
+    final cubit = DeviceSnapshotCubit(
+      facade: _FakeDeviceFacade(snapshot),
+    );
+    addTearDown(cubit.close);
+
+    await _pumpPanel(tester, cubit);
+
+    final pageViewFinder = find.byType(PageView);
+    final pageView = tester.widget<PageView>(pageViewFinder);
+    final pageRect = tester.getRect(pageViewFinder);
+    final cardRect = tester.getRect(
+      find.byKey(const ValueKey('temperature-sensor-card-floor')),
+    );
+
+    expect(pageView.controller?.viewportFraction, 0.85);
+    expect(pageView.padEnds, isTrue);
+    expect(pageRect.left, 0);
+    expect(cardRect.left, greaterThan(pageRect.left));
+    expect(cardRect.right, lessThan(pageRect.right));
+
+    final airRect = tester.getRect(
+      find.byKey(const ValueKey('temperature-sensor-card-air')),
+    );
+    expect(airRect.left, lessThan(pageRect.left));
+    expect(airRect.right, greaterThan(pageRect.left));
   });
 
   testWidgets('loads first history preview for reference sensor',
@@ -332,6 +386,8 @@ void main() {
     await tester.drag(find.byType(PageView), const Offset(-500, 0));
     await tester.pumpAndSettle();
 
+    expect(openedSensorId, isNull);
+
     expect(
       history.requests,
       containsAllInOrder(
@@ -347,6 +403,347 @@ void main() {
     );
 
     expect(openedSensorId, 'pcb');
+  });
+
+  testWidgets('upward card drag does not open history but chart action does',
+      (tester) async {
+    var openCount = 0;
+    String? openedSensorId;
+    final snapshot = _snapshotWithSensors(
+      const <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'air',
+          'name': 'Air',
+          'ref': true,
+          'temp_valid': true,
+          'temp_stale': false,
+          'temp': 21.4,
+          'humidity_valid': false,
+        },
+      ],
+    );
+    final cubit = DeviceSnapshotCubit(
+      facade: _FakeDeviceFacade(snapshot),
+    );
+    addTearDown(cubit.close);
+
+    await _pumpPanel(
+      tester,
+      cubit,
+      onOpenHistory: (sensors, sensorId, sensorName) {
+        openCount++;
+        openedSensorId = sensorId;
+      },
+    );
+
+    final card = find.byKey(
+      const ValueKey('temperature-sensor-card-air'),
+    );
+    await tester.timedDrag(
+      card,
+      const Offset(0, -30),
+      const Duration(milliseconds: 500),
+    );
+    await tester.pump();
+    expect(openCount, 0);
+
+    await tester.timedDrag(
+      card,
+      const Offset(0, -70),
+      const Duration(milliseconds: 500),
+    );
+    await tester.pump();
+
+    expect(openCount, 0);
+    expect(openedSensorId, isNull);
+
+    await tester.tap(
+      find.byKey(const ValueKey('temperature-history-preview-air')),
+    );
+
+    expect(openCount, 1);
+    expect(openedSensorId, 'air');
+  });
+
+  testWidgets('shows heating fire only on the selected sensor card',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    final snapshot = _snapshotWithSensors(
+      const <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'air',
+          'name': 'Air',
+          'ref': false,
+          'temp_valid': true,
+          'temp_stale': false,
+          'temp': 21.4,
+          'humidity_valid': false,
+        },
+        <String, dynamic>{
+          'id': 'floor',
+          'name': 'Floor',
+          'ref': true,
+          'temp_valid': true,
+          'temp_stale': false,
+          'temp': 24.8,
+          'humidity_valid': false,
+        },
+      ],
+      controls: const <String, dynamic>{'heaterEnabled': true},
+    );
+    final cubit = DeviceSnapshotCubit(
+      facade: _FakeDeviceFacade(snapshot),
+    );
+    addTearDown(cubit.close);
+
+    await _pumpPanel(
+      tester,
+      cubit,
+      heatingStatusBind: 'heaterEnabled',
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      find.byKey(const ValueKey('thermostat-heating-fire-image')),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel('Heating on'), findsOneWidget);
+
+    final airOffstage = tester.widget<Offstage>(
+      find.descendant(
+        of: find.byKey(
+          const ValueKey('thermostat-heating-indicator-air'),
+          skipOffstage: false,
+        ),
+        matching: find.byType(Offstage, skipOffstage: false),
+        skipOffstage: false,
+      ),
+    );
+    final floorOffstage = tester.widget<Offstage>(
+      find.descendant(
+        of: find.byKey(
+          const ValueKey('thermostat-heating-indicator-floor'),
+          skipOffstage: false,
+        ),
+        matching: find.byType(Offstage, skipOffstage: false),
+        skipOffstage: false,
+      ),
+    );
+    expect(airOffstage.offstage, isTrue);
+    expect(floorOffstage.offstage, isFalse);
+
+    await tester.drag(find.byType(PageView), const Offset(500, 0));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('thermostat-heating-fire-image')),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<Offstage>(
+            find.descendant(
+              of: find.byKey(
+                const ValueKey('thermostat-heating-indicator-air'),
+                skipOffstage: false,
+              ),
+              matching: find.byType(Offstage, skipOffstage: false),
+              skipOffstage: false,
+            ),
+          )
+          .offstage,
+      isFalse,
+    );
+    semantics.dispose();
+  });
+
+  testWidgets('hides fire for off and unavailable heating states',
+      (tester) async {
+    final semantics = tester.ensureSemantics();
+    final offSnapshot = _snapshotWithSensors(
+      const <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'air',
+          'name': 'Air',
+          'ref': true,
+          'temp_valid': true,
+          'temp_stale': false,
+          'temp': 21.4,
+          'humidity_valid': false,
+        },
+      ],
+      controls: const <String, dynamic>{'heaterEnabled': false},
+    );
+    final offCubit = DeviceSnapshotCubit(
+      facade: _FakeDeviceFacade(offSnapshot),
+    );
+    addTearDown(offCubit.close);
+
+    await _pumpPanel(
+      tester,
+      offCubit,
+      heatingStatusBind: 'heaterEnabled',
+    );
+
+    expect(
+      find.byKey(const ValueKey('thermostat-heating-fire-image')),
+      findsNothing,
+    );
+    expect(find.bySemanticsLabel('Heating off'), findsOneWidget);
+
+    final unknownSnapshot = _snapshotWithSensors(
+      const <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'air',
+          'name': 'Air',
+          'ref': true,
+          'temp_valid': true,
+          'temp_stale': false,
+          'temp': 21.4,
+          'humidity_valid': false,
+        },
+      ],
+      controls: const <String, dynamic>{'heaterEnabled': 'unknown'},
+    );
+    final unknownCubit = DeviceSnapshotCubit(
+      facade: _FakeDeviceFacade(unknownSnapshot),
+    );
+    addTearDown(unknownCubit.close);
+
+    await _pumpPanel(
+      tester,
+      unknownCubit,
+      heatingStatusBind: 'heaterEnabled',
+    );
+
+    expect(
+      find.byKey(const ValueKey('thermostat-heating-fire-image')),
+      findsNothing,
+    );
+    expect(
+      find.bySemanticsLabel('Heating status unavailable'),
+      findsOneWidget,
+    );
+    semantics.dispose();
+  });
+
+  testWidgets('does not show heating fire on the add sensor page',
+      (tester) async {
+    final snapshot = _snapshotWithSensors(
+      const <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'air',
+          'name': 'Air',
+          'ref': true,
+          'temp_valid': true,
+          'temp_stale': false,
+          'temp': 21.4,
+          'humidity_valid': false,
+        },
+      ],
+      controls: const <String, dynamic>{'heaterEnabled': true},
+    );
+    final cubit = DeviceSnapshotCubit(
+      facade: _FakeDeviceFacade(snapshot),
+    );
+    addTearDown(cubit.close);
+
+    await _pumpPanel(
+      tester,
+      cubit,
+      heatingStatusBind: 'heaterEnabled',
+      onAddSensorTap: () {},
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(
+      find.byKey(const ValueKey('thermostat-heating-fire-image')),
+      findsOneWidget,
+    );
+
+    await tester.drag(find.byType(PageView), const Offset(-500, 0));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add sensor'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('thermostat-heating-fire-image')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('shows heating fire on the fallback temperature card',
+      (tester) async {
+    final snapshot = _snapshotWithSensors(
+      const <Map<String, dynamic>>[],
+      controls: const <String, dynamic>{
+        'ambientTemperature': 22.4,
+        'heaterEnabled': true,
+      },
+    );
+    final cubit = DeviceSnapshotCubit(
+      facade: _FakeDeviceFacade(snapshot),
+    );
+    addTearDown(cubit.close);
+
+    await _pumpPanel(
+      tester,
+      cubit,
+      heatingStatusBind: 'heaterEnabled',
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(
+      find.byKey(
+        const ValueKey('thermostat-heating-indicator-fallback'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('thermostat-heating-fire-image')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('reserves compact vertical space for configured heating status',
+      (tester) async {
+    final snapshot = _snapshotWithSensors(
+      const <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'air',
+          'name': 'Air',
+          'ref': true,
+          'temp_valid': true,
+          'temp_stale': false,
+          'temp': 21.4,
+          'humidity_valid': true,
+          'humidity': 48,
+        },
+      ],
+      controls: const <String, dynamic>{'heaterEnabled': true},
+    );
+    final facade = _FakeDeviceFacade(snapshot);
+    final cubit = DeviceSnapshotCubit(facade: facade);
+    addTearDown(cubit.close);
+
+    await _pumpPanel(
+      tester,
+      cubit,
+      facade: facade,
+      showHistoryPreview: true,
+    );
+    await tester.pump();
+    final baselineTop = tester.getTopLeft(find.text('21.4')).dy;
+
+    await _pumpPanel(
+      tester,
+      cubit,
+      facade: facade,
+      showHistoryPreview: true,
+      heatingStatusBind: 'heaterEnabled',
+    );
+    await tester.pump();
+    final configuredTop = tester.getTopLeft(find.text('21.4')).dy;
+
+    expect(configuredTop - baselineTop, closeTo(24, 0.01));
   });
 
   testWidgets('moves to reference sensor when ref metadata arrives after boot',
@@ -419,11 +816,15 @@ void main() {
   });
 }
 
-DeviceSnapshot _snapshotWithSensors(List<Map<String, dynamic>> sensors) {
+DeviceSnapshot _snapshotWithSensors(
+  List<Map<String, dynamic>> sensors, {
+  Map<String, dynamic> controls = const <String, dynamic>{},
+}) {
   return DeviceSnapshot.initial(device: _device()).copyWith(
     controlState: DeviceSlice<Map<String, dynamic>>.ready(
       data: {
         'climateSensors': sensors,
+        ...controls,
       },
     ),
   );
@@ -435,6 +836,8 @@ Future<void> _pumpPanel(
   DeviceFacade? facade,
   bool showHistoryPreview = false,
   OnOpenTemperatureHistory? onOpenHistory,
+  String? heatingStatusBind,
+  VoidCallback? onAddSensorTap,
 }) {
   Widget app = BlocProvider<DeviceSnapshotCubit>.value(
     value: cubit,
@@ -454,8 +857,10 @@ Future<void> _pumpPanel(
             sensorsBind: 'climateSensors',
             currentTargetBind: 'scheduleCurrentTarget',
             nextTargetBind: 'scheduleNextTarget',
+            heatingStatusBind: heatingStatusBind,
             showHistoryPreview: showHistoryPreview,
             onOpenHistory: onOpenHistory,
+            onAddSensorTap: onAddSensorTap,
           ),
         ),
       ),

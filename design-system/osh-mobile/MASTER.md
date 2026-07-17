@@ -24,7 +24,7 @@
 
 ## Visual Direction
 
-- The app is **dark-first**, built around a pure black canvas.
+- The app is **dark-first**, built around a deep near-black canvas.
 - Main surfaces are dark charcoal cards with large rounded corners.
 - Shared controls rely on a bright blue primary accent for CTAs, selected states, and focused controls.
 - Subtle white borders and separators are used in several flows, especially device details, schedule, and secondary state screens.
@@ -42,7 +42,7 @@
 
 | Token | Value | Usage |
 |---|---|---|
-| `color.bg.canvas` | `#000000` | App background, drawer background, main dark canvas |
+| `color.bg.canvas` | `#0B0C11` | App background, drawer background, main dark canvas |
 | `color.bg.surface` | `#181818` | Default dark card surface |
 | `color.bg.surfaceRaised` | `#1B1B1B` | Raised cards, inputs, secondary button backgrounds |
 | `color.bg.surfaceAlt` | `#242424` | Alternate dark surface, disabled button background, secondary emphasis |
@@ -168,7 +168,7 @@ Notes:
 
 ### Lists / Groups
 
-- Drawer menus are composed of individual rounded cards on a black canvas.
+- Drawer menus are composed of individual rounded cards on the near-black canvas.
 - Settings groups use rounded card containers with internal `Divider`s between rows.
 - List tiles generally use `16` horizontal padding.
 - Destructive swipe states use the shared red destructive palette.

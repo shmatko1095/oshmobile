@@ -19,6 +19,7 @@ import 'package:oshmobile/features/account_settings/presentation/widgets/account
 import 'package:oshmobile/features/startup/domain/repositories/startup_client_policy_repository.dart';
 import 'package:oshmobile/features/startup/presentation/widgets/mobile_policy_update_flow.dart';
 import 'package:oshmobile/features/startup/presentation/widgets/startup_recommend_update_dialog.dart';
+import 'package:oshmobile/features/user_guide/presentation/open_contextual_user_guide.dart';
 import 'package:oshmobile/generated/l10n.dart';
 import 'package:oshmobile/init_dependencies.dart';
 
@@ -326,6 +327,15 @@ class _AccountSettingsView extends StatelessWidget {
     return AccountSettingsSection(
       title: s.AboutApp,
       children: [
+        AccountSettingsActionTile(
+          title: s.UserGuideTitle,
+          leading: const Icon(
+            Icons.menu_book_rounded,
+            color: AppPalette.accentPrimary,
+          ),
+          onTap: () => openContextualUserGuide(context),
+          showDivider: true,
+        ),
         AccountSettingsActionTile(
           title: s.AppVersion,
           subtitle: versionLabel,

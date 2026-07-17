@@ -43,6 +43,34 @@ void main() {
     expect(cubit.state.energyWh, 1000);
   });
 
+  test('uses the aggregate series key supplied by configuration', () async {
+    const configuredSeriesKey = 'custom.energy_delta';
+    final now = DateTime.utc(2026, 3, 14, 10);
+    late TelemetryAggregateQuery capturedQuery;
+    final api = _FakeTelemetryHistoryApi(
+      onAggregate: (query) async {
+        capturedQuery = query;
+        return _aggregate(
+          from: query.from,
+          to: query.to,
+          energyWh: 750,
+          seriesKey: configuredSeriesKey,
+        );
+      },
+    );
+    final cubit = DailyEnergyUsageCubit(
+      telemetryHistory: api,
+      aggregateSeriesKey: configuredSeriesKey,
+      nowUtc: () => now,
+    );
+    addTearDown(cubit.close);
+
+    await cubit.ensureLoaded();
+
+    expect(capturedQuery.seriesKeys, const <String>[configuredSeriesKey]);
+    expect(cubit.state.energyWh, 750);
+  });
+
   test('emits cached value before refreshing from backend', () async {
     final now = DateTime.utc(2026, 3, 14, 10);
     final completer = Completer<TelemetryAggregate>();
@@ -155,6 +183,7 @@ TelemetryAggregate _aggregate({
   required DateTime from,
   required DateTime to,
   required double energyWh,
+  String seriesKey = PowerMeterSeriesKeys.energyWhDelta,
 }) {
   return TelemetryAggregate(
     deviceId: 'device-1',
@@ -164,7 +193,7 @@ TelemetryAggregate _aggregate({
     to: to,
     series: <TelemetryAggregateSeries>[
       TelemetryAggregateSeries(
-        seriesKey: PowerMeterSeriesKeys.energyWhDelta,
+        seriesKey: seriesKey,
         valueType: 'numeric',
         unit: 'Wh',
         samplesCount: 24,

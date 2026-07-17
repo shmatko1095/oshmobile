@@ -144,6 +144,111 @@ class S {
     return Intl.message('App version', name: 'AppVersion', desc: '', args: []);
   }
 
+  /// `User guide`
+  String get UserGuideTitle {
+    return Intl.message(
+      'User guide',
+      name: 'UserGuideTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Swipe up to view live values`
+  String get UserGuideLiveMetricsMessage {
+    return Intl.message(
+      'Swipe up to view live values',
+      name: 'UserGuideLiveMetricsMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Configure an operating mode`
+  String get UserGuideModesTitle {
+    return Intl.message(
+      'Configure an operating mode',
+      name: 'UserGuideModesTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tap a mode to activate it. Hold a mode to configure its temperature or schedule without switching.`
+  String get UserGuideModesMessage {
+    return Intl.message(
+      'Tap a mode to activate it. Hold a mode to configure its temperature or schedule without switching.',
+      name: 'UserGuideModesMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open mode settings`
+  String get UserGuideModesAction {
+    return Intl.message(
+      'Open mode settings',
+      name: 'UserGuideModesAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Quick settings`
+  String get UserGuideTemperatureTitle {
+    return Intl.message(
+      'Quick settings',
+      name: 'UserGuideTemperatureTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Tap the temperature to configure the active mode or open its schedule.`
+  String get UserGuideTemperatureMessage {
+    return Intl.message(
+      'Tap the temperature to configure the active mode or open its schedule.',
+      name: 'UserGuideTemperatureMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open temperature settings`
+  String get UserGuideTemperatureAction {
+    return Intl.message(
+      'Open temperature settings',
+      name: 'UserGuideTemperatureAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Choose a mode to configure`
+  String get UserGuideChooseModeTitle {
+    return Intl.message(
+      'Choose a mode to configure',
+      name: 'UserGuideChooseModeTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Skip`
+  String get UserGuideSkip {
+    return Intl.message('Skip', name: 'UserGuideSkip', desc: '', args: []);
+  }
+
+  /// `Close user guide`
+  String get UserGuideCloseTooltip {
+    return Intl.message(
+      'Close user guide',
+      name: 'UserGuideCloseTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Email verified`
   String get VerifiedEmail {
     return Intl.message(
@@ -1754,6 +1859,36 @@ class S {
     return Intl.message('Heating', name: 'Heating', desc: '', args: []);
   }
 
+  /// `Heating on`
+  String get ThermostatHeatingStatusOn {
+    return Intl.message(
+      'Heating on',
+      name: 'ThermostatHeatingStatusOn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Heating off`
+  String get ThermostatHeatingStatusOff {
+    return Intl.message(
+      'Heating off',
+      name: 'ThermostatHeatingStatusOff',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Heating status unavailable`
+  String get ThermostatHeatingStatusUnavailable {
+    return Intl.message(
+      'Heating status unavailable',
+      name: 'ThermostatHeatingStatusUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Off`
   String get ModeOff {
     return Intl.message('Off', name: 'ModeOff', desc: '', args: []);
@@ -1777,16 +1912,6 @@ class S {
   /// `Weekly`
   String get ModeWeekly {
     return Intl.message('Weekly', name: 'ModeWeekly', desc: '', args: []);
-  }
-
-  /// `Tap active mode to edit. Hold any mode to configure without switching.`
-  String get ThermostatModeBarHint {
-    return Intl.message(
-      'Tap active mode to edit. Hold any mode to configure without switching.',
-      name: 'ThermostatModeBarHint',
-      desc: '',
-      args: [],
-    );
   }
 
   /// `Tap to edit. Long press to edit without switching.`
@@ -2264,6 +2389,86 @@ class S {
     );
   }
 
+  /// `Custom range`
+  String get TelemetryHistoryRangeCustom {
+    return Intl.message(
+      'Custom range',
+      name: 'TelemetryHistoryRangeCustom',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select date range`
+  String get TelemetryHistoryCalendarTitle {
+    return Intl.message(
+      'Select date range',
+      name: 'TelemetryHistoryCalendarTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Choose the start and end dates`
+  String get TelemetryHistoryCalendarHint {
+    return Intl.message(
+      'Choose the start and end dates',
+      name: 'TelemetryHistoryCalendarHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cancel`
+  String get TelemetryHistoryCalendarCancel {
+    return Intl.message(
+      'Cancel',
+      name: 'TelemetryHistoryCalendarCancel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Apply`
+  String get TelemetryHistoryCalendarApply {
+    return Intl.message(
+      'Apply',
+      name: 'TelemetryHistoryCalendarApply',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select date range`
+  String get TelemetryHistoryCalendarOpenTooltip {
+    return Intl.message(
+      'Select date range',
+      name: 'TelemetryHistoryCalendarOpenTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Clear custom range`
+  String get TelemetryHistoryCalendarClearTooltip {
+    return Intl.message(
+      'Clear custom range',
+      name: 'TelemetryHistoryCalendarClearTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The range cannot exceed 370 days.`
+  String get TelemetryHistoryCalendarRangeTooLong {
+    return Intl.message(
+      'The range cannot exceed 370 days.',
+      name: 'TelemetryHistoryCalendarRangeTooLong',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Minimum`
   String get TelemetryHistoryStatMin {
     return Intl.message(
@@ -2474,6 +2679,66 @@ class S {
     );
   }
 
+  /// `Last 24 hours`
+  String get DailyStatsPeriod24h {
+    return Intl.message(
+      'Last 24 hours',
+      name: 'DailyStatsPeriod24h',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Live values`
+  String get ThermostatLiveMetricsTitle {
+    return Intl.message(
+      'Live values',
+      name: 'ThermostatLiveMetricsTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Swipe up or tap to open live values.`
+  String get ThermostatLiveMetricsOpenHint {
+    return Intl.message(
+      'Swipe up or tap to open live values.',
+      name: 'ThermostatLiveMetricsOpenHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Close live values`
+  String get ThermostatLiveMetricsCloseTooltip {
+    return Intl.message(
+      'Close live values',
+      name: 'ThermostatLiveMetricsCloseTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show history`
+  String get ThermostatLiveMetricsShowHistory {
+    return Intl.message(
+      'Show history',
+      name: 'ThermostatLiveMetricsShowHistory',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Show telemetry history`
+  String get ThermostatLiveMetricsShowHistoryTooltip {
+    return Intl.message(
+      'Show telemetry history',
+      name: 'ThermostatLiveMetricsShowHistoryTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Temperature trend (24h)`
   String get TelemetryHistoryPreviewTitle24h {
     return Intl.message(
@@ -2511,16 +2776,6 @@ class S {
       name: 'TelemetryHistoryPreviewOpenHint',
       desc: '',
       args: [],
-    );
-  }
-
-  /// `Resolution: {resolution} • Points: {points}`
-  String TelemetryHistoryResolutionPoints(Object resolution, Object points) {
-    return Intl.message(
-      'Resolution: $resolution • Points: $points',
-      name: 'TelemetryHistoryResolutionPoints',
-      desc: '',
-      args: [resolution, points],
     );
   }
 

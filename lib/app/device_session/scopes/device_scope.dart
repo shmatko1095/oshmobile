@@ -15,6 +15,7 @@ import 'package:oshmobile/features/devices/details/presentation/cubit/device_hos
 import 'package:oshmobile/features/devices/details/presentation/cubit/device_page_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/pages/device_host_body.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_presenter.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/device_presenter_chrome.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 
@@ -29,11 +30,15 @@ import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_
 class DeviceScope extends StatefulWidget {
   final Device device;
   final ValueChanged<String?>? onTitleChanged;
+  final ValueChanged<bool> onEmbeddedAppBarChanged;
+  final DevicePresenterChrome presenterChrome;
 
   const DeviceScope({
     super.key,
     required this.device,
     required this.onTitleChanged,
+    required this.onEmbeddedAppBarChanged,
+    required this.presenterChrome,
   });
 
   @override
@@ -73,6 +78,7 @@ class _DeviceScopeState extends State<DeviceScope> {
   }
 
   Future<void> _retry() async {
+    widget.onEmbeddedAppBarChanged(false);
     if (_snapshotInitialized) {
       await _snapshot.close();
       _snapshotInitialized = false;
@@ -119,6 +125,14 @@ class _DeviceScopeState extends State<DeviceScope> {
         );
       }
 
+      if (!mounted) return;
+      final usesEmbeddedAppBar = switch (_page.state) {
+        DevicePageReady(:final bundle) => widget.device.connectionInfo.online &&
+            _presenters.resolve(bundle.layout).usesEmbeddedAppBar,
+        _ => false,
+      };
+      widget.onEmbeddedAppBarChanged(usesEmbeddedAppBar);
+
       // Start the reactive stream only after negotiation and configuration bootstrap complete.
       _snapshot.start();
       _selectedDeviceSession.bind(
@@ -144,6 +158,7 @@ class _DeviceScopeState extends State<DeviceScope> {
         ),
       );
       if (!mounted) return;
+      widget.onEmbeddedAppBarChanged(false);
       setState(() {
         _error = e;
         _ready = true;
@@ -193,6 +208,8 @@ class _DeviceScopeState extends State<DeviceScope> {
           deviceId: _ctx.deviceId,
           presenters: _presenters,
           onTitleChanged: widget.onTitleChanged,
+          onEmbeddedAppBarChanged: widget.onEmbeddedAppBarChanged,
+          presenterChrome: widget.presenterChrome,
           createBleProvisioningCubit: () =>
               GetIt.instance<BleProvisioningCubit>(),
         ),

@@ -4,8 +4,10 @@ import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/utils/thermostat_heating_state.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/utils/temperature_sensors_resolver.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_history_strip_card.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_heating_indicator.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 import 'package:oshmobile/features/sensors/presentation/models/sensor_editor_entry.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/temperature_history_preview_cache.dart';
@@ -19,6 +21,7 @@ class TemperatureMinimalPanel extends StatefulWidget {
     required this.sensorsBind,
     required this.currentTargetBind,
     required this.nextTargetBind,
+    this.heatingStatusBind,
     this.onTap,
     this.unit = '°C',
     this.height,
@@ -27,6 +30,7 @@ class TemperatureMinimalPanel extends StatefulWidget {
     this.onSensorActionTap,
     this.onAddSensorTap,
     this.showHistoryPreview = false,
+    this.ultraCompact = false,
     this.historyChartHeight = 104,
     this.onOpenHistory,
     this.historyPreviewCache,
@@ -36,6 +40,7 @@ class TemperatureMinimalPanel extends StatefulWidget {
   final String sensorsBind;
   final String currentTargetBind;
   final String nextTargetBind;
+  final String? heatingStatusBind;
   final String unit;
   final double? height;
   final EdgeInsets padding;
@@ -44,6 +49,7 @@ class TemperatureMinimalPanel extends StatefulWidget {
   final ValueChanged<SensorEditorEntry>? onSensorActionTap;
   final VoidCallback? onAddSensorTap;
   final bool showHistoryPreview;
+  final bool ultraCompact;
   final double historyChartHeight;
   final OnOpenTemperatureHistory? onOpenHistory;
   final TemperatureHistoryPreviewCache? historyPreviewCache;
@@ -232,6 +238,12 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
     );
     final fallbackCurrent = _asNum(readBind(controlState, widget.currentBind));
     final showHistoryPreview = widget.showHistoryPreview && sensors.isNotEmpty;
+    final heatingStatusConfigured = widget.heatingStatusBind != null;
+    final heatingActive = heatingStatusConfigured
+        ? parseThermostatHeatingState(
+            readBind(controlState, widget.heatingStatusBind!),
+          )
+        : null;
 
     final content = sensors.isEmpty && !hasAddSensorCard
         ? _FallbackCard(
@@ -241,6 +253,9 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
             onTap: widget.onTap,
             targetLine: targetLine,
             nextLine: nextLine,
+            ultraCompact: widget.ultraCompact,
+            heatingStatusConfigured: heatingStatusConfigured,
+            heatingActive: heatingActive,
           )
         : _SensorCarousel(
             pageController: _pageCtrl!,
@@ -254,6 +269,9 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
             showHistoryPreview: showHistoryPreview,
             historyChartHeight: widget.historyChartHeight,
             onOpenHistory: widget.onOpenHistory,
+            ultraCompact: widget.ultraCompact,
+            heatingStatusConfigured: heatingStatusConfigured,
+            heatingActive: heatingActive,
             onPageChanged: (nextPage) {
               if (_page == nextPage) return;
               setState(() {
@@ -311,6 +329,9 @@ class _FallbackCard extends StatelessWidget {
     required this.onTap,
     required this.targetLine,
     required this.nextLine,
+    required this.ultraCompact,
+    required this.heatingStatusConfigured,
+    required this.heatingActive,
   });
 
   final String temperatureText;
@@ -319,6 +340,9 @@ class _FallbackCard extends StatelessWidget {
   final VoidCallback? onTap;
   final String? targetLine;
   final String? nextLine;
+  final bool ultraCompact;
+  final bool heatingStatusConfigured;
+  final bool? heatingActive;
 
   @override
   Widget build(BuildContext context) {
@@ -338,7 +362,9 @@ class _FallbackCard extends StatelessWidget {
         children: [
           _MainCardAccentLayer(borderRadius: borderRadius),
           Padding(
-            padding: const EdgeInsets.all(AppPalette.spaceLg),
+            padding: EdgeInsets.all(
+              ultraCompact ? AppPalette.spaceMd : AppPalette.spaceLg,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -347,7 +373,7 @@ class _FallbackCard extends StatelessWidget {
                   style: TextStyle(
                     color: titleColor,
                     fontWeight: FontWeight.w600,
-                    fontSize: 15,
+                    fontSize: ultraCompact ? 14 : 15,
                   ),
                 ),
                 const Spacer(),
@@ -358,34 +384,51 @@ class _FallbackCard extends StatelessWidget {
                       temperatureText,
                       style: TextStyle(
                         color: valueColor,
-                        fontSize: 78,
+                        fontSize: ultraCompact ? 52 : 78,
                         fontWeight: FontWeight.w300,
                         height: 0.95,
                       ),
                     ),
                     const SizedBox(width: 6),
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: EdgeInsets.only(
+                        bottom: ultraCompact ? 7 : 12,
+                      ),
                       child: Text(
                         unit,
                         style: TextStyle(
                           color: titleColor,
-                          fontSize: 24,
+                          fontSize: ultraCompact ? 18 : 24,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
                   ],
                 ),
-                _ScheduleMetaBlock(
-                  targetLine: targetLine,
-                  nextLine: nextLine,
-                  titleColor: titleColor,
-                  mutedColor: mutedColor,
-                ),
+                if (!ultraCompact)
+                  _ScheduleMetaBlock(
+                    targetLine: targetLine,
+                    nextLine: nextLine,
+                    titleColor: titleColor,
+                    mutedColor: mutedColor,
+                  ),
               ],
             ),
           ),
+          if (heatingStatusConfigured)
+            Positioned(
+              top: ultraCompact ? 60 : 58,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: ThermostatHeatingIndicator(
+                  key: const ValueKey('thermostat-heating-indicator-fallback'),
+                  active: heatingActive,
+                  selected: true,
+                  ultraCompact: ultraCompact,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -409,6 +452,9 @@ class _SensorCarousel extends StatelessWidget {
     required this.showHistoryPreview,
     required this.historyChartHeight,
     required this.onOpenHistory,
+    required this.ultraCompact,
+    required this.heatingStatusConfigured,
+    required this.heatingActive,
   });
 
   final PageController pageController;
@@ -426,6 +472,9 @@ class _SensorCarousel extends StatelessWidget {
   final bool showHistoryPreview;
   final double historyChartHeight;
   final OnOpenTemperatureHistory? onOpenHistory;
+  final bool ultraCompact;
+  final bool heatingStatusConfigured;
+  final bool? heatingActive;
 
   @override
   Widget build(BuildContext context) {
@@ -466,6 +515,9 @@ class _SensorCarousel extends StatelessWidget {
                         historyActive: index == pageIndex,
                         historyChartHeight: historyChartHeight,
                         onOpenHistory: onOpenHistory,
+                        ultraCompact: ultraCompact,
+                        heatingStatusConfigured: heatingStatusConfigured,
+                        heatingActive: heatingActive,
                         formatNum: formatNum,
                         onActionTap: onSensorActionTap == null
                             ? null
@@ -574,6 +626,9 @@ class _SensorCard extends StatelessWidget {
     required this.onOpenHistory,
     required this.formatNum,
     required this.onActionTap,
+    required this.ultraCompact,
+    required this.heatingStatusConfigured,
+    required this.heatingActive,
   });
 
   final TemperatureSensorData sensor;
@@ -590,6 +645,9 @@ class _SensorCard extends StatelessWidget {
   final OnOpenTemperatureHistory? onOpenHistory;
   final String Function(num? value, {int fractionDigits}) formatNum;
   final VoidCallback? onActionTap;
+  final bool ultraCompact;
+  final bool heatingStatusConfigured;
+  final bool? heatingActive;
 
   @override
   Widget build(BuildContext context) {
@@ -631,11 +689,29 @@ class _SensorCard extends StatelessWidget {
                 nextLine: nextLine,
                 showScheduleMeta: showScheduleMeta,
                 compact: showHistoryPreview,
+                ultraCompact: ultraCompact,
+                reserveHeatingStatusSpace: heatingStatusConfigured,
                 formatNum: formatNum,
                 onActionTap: onActionTap,
               ),
             ),
-            if (showHistoryPreview && onOpenHistory != null)
+            if (heatingStatusConfigured)
+              Positioned(
+                top: ultraCompact ? 60 : 58,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: ThermostatHeatingIndicator(
+                    key: ValueKey(
+                      'thermostat-heating-indicator-${sensor.id}',
+                    ),
+                    active: heatingActive,
+                    selected: historyActive,
+                    ultraCompact: ultraCompact,
+                  ),
+                ),
+              ),
+            if (onOpenHistory != null)
               Positioned(
                 right: 14,
                 bottom: 12,
@@ -712,8 +788,8 @@ class _SensorHistoryAction extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(AppPalette.radiusPill),
             child: Ink(
-              width: 38,
-              height: 38,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: surface.withValues(alpha: isDark ? 0.72 : 0.82),
                 borderRadius: BorderRadius.circular(AppPalette.radiusPill),
@@ -748,6 +824,8 @@ class _SensorTemperaturePane extends StatelessWidget {
     required this.compact,
     required this.formatNum,
     required this.onActionTap,
+    required this.ultraCompact,
+    required this.reserveHeatingStatusSpace,
   });
 
   final TemperatureSensorData sensor;
@@ -760,15 +838,19 @@ class _SensorTemperaturePane extends StatelessWidget {
   final bool compact;
   final String Function(num? value, {int fractionDigits}) formatNum;
   final VoidCallback? onActionTap;
+  final bool ultraCompact;
+  final bool reserveHeatingStatusSpace;
 
   @override
   Widget build(BuildContext context) {
     final titleColor = statTitleColor(context);
     final valueColor = statValueColor(context);
     final mutedColor = statMutedColor(context);
-    final valueFontSize = compact ? 76.0 : 72.0;
+    final valueFontSize = ultraCompact ? 52.0 : (compact ? 76.0 : 72.0);
     final unitFontSize = valueFontSize;
-    const contentPadding = EdgeInsets.all(AppPalette.spaceLg);
+    final contentPadding = EdgeInsets.all(
+      ultraCompact ? AppPalette.spaceMd : AppPalette.spaceLg,
+    );
 
     final content = Padding(
       padding: contentPadding,
@@ -785,14 +867,19 @@ class _SensorTemperaturePane extends StatelessWidget {
                   style: TextStyle(
                     color: valueColor,
                     fontWeight: FontWeight.w700,
-                    fontSize: compact ? 18 : 20,
+                    fontSize: ultraCompact ? 16 : (compact ? 18 : 20),
                   ),
                 ),
               ),
               _SensorCardAction(sensor: sensor, onTap: onActionTap),
             ],
           ),
-          if (compact) const SizedBox(height: 62) else const Spacer(),
+          if (ultraCompact)
+            const Spacer()
+          else if (compact)
+            SizedBox(height: reserveHeatingStatusSpace ? 86 : 62)
+          else
+            const Spacer(),
           _SensorReadingsRow(
             sensor: sensor,
             unit: unit,
@@ -801,18 +888,18 @@ class _SensorTemperaturePane extends StatelessWidget {
             humidityColor: mutedColor,
             valueFontSize: valueFontSize,
             unitFontSize: unitFontSize,
-            compact: compact,
+            compact: compact || ultraCompact,
             formatNum: formatNum,
           ),
-          SizedBox(height: compact ? 8 : 12),
-          if (showScheduleMeta)
+          SizedBox(height: ultraCompact ? 4 : (compact ? 8 : 12)),
+          if (showScheduleMeta && !ultraCompact)
             _ScheduleMetaBlock(
               targetLine: targetLine,
               nextLine: nextLine,
               titleColor: titleColor,
               mutedColor: mutedColor,
             ),
-          if (compact) const Spacer(),
+          if (compact || ultraCompact) const Spacer(),
         ],
       ),
     );
@@ -975,10 +1062,10 @@ class _SensorCardAction extends StatelessWidget {
         IconButton(
           onPressed: onTap,
           tooltip: S.of(context).SensorMoreActions,
-          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
           padding: EdgeInsets.zero,
-          splashRadius: 18,
+          splashRadius: 22,
           icon: Icon(
             Icons.more_horiz_rounded,
             size: 20,

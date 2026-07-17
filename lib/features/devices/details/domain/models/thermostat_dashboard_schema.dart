@@ -1,3 +1,6 @@
+import 'package:oshmobile/features/devices/details/domain/models/thermostat_daily_stats_24h_spec.dart';
+import 'package:oshmobile/features/devices/details/domain/models/thermostat_heating_status_spec.dart';
+
 enum ThermostatTileType {
   heatingToggle,
   loadFactor24h,
@@ -124,6 +127,8 @@ class ThermostatDashboardSchema {
   const ThermostatDashboardSchema({
     required this.hero,
     required this.modeBar,
+    required this.dailyStats24h,
+    required this.heatingStatus,
     required this.temperatureHistoryStrip,
     required this.climateSensorPairing,
     required this.tiles,
@@ -132,6 +137,8 @@ class ThermostatDashboardSchema {
 
   final ThermostatHeroSpec? hero;
   final ThermostatModeBarSpec? modeBar;
+  final ThermostatDailyStats24hSpec? dailyStats24h;
+  final ThermostatHeatingStatusSpec? heatingStatus;
   final ThermostatTemperatureHistoryStripSpec? temperatureHistoryStrip;
   final ClimateSensorPairingSpec? climateSensorPairing;
   final List<ThermostatTileSpec> tiles;

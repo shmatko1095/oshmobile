@@ -4,51 +4,51 @@ Use `MASTER.md` as the base. This file describes the current device-details impl
 
 ## Layout
 
-- Keep the current `CustomScrollView` composition:
-  - hero temperature panel,
-  - mode bar,
-  - optional temperature history strip,
-  - two-column telemetry grid.
-- Offline, compatibility, and unknown-layout states use separate centered card-based screens.
+- Thermostat dashboards use a `Stack` with one `CustomScrollView` and a fixed
+  bottom control layer.
+- The scroll content contains:
+  - a normal pinned `SliverAppBar` with the room/device name;
+  - the temperature carousel;
+  - the full-width configuration-driven `dailyStats24h` card;
+  - any legacy tiles still listed by an older configuration.
+- `ThermostatModeBar` is positioned above the bottom safe area and never scrolls
+  with the dashboard. The scroll content reserves the complete panel and hint
+  height so the final tile cannot be obscured.
+- The temperature carousel keeps the 30% larger visual target on regular phones.
+  Its height is capped from the real viewport constraints on compact and
+  landscape layouts.
+- Offline, compatibility, and unknown-layout states continue to use their
+  separate centered card-based screens.
 
 ## Card System
 
 - Device details intentionally use more visible card framing than settings/home.
 - Shared detail tiles are built from `AppSolidCard` and `AppGlassCard`.
-- Common current pattern:
-  - `surfaceRaised` or `surfaceAlt` background,
-  - subtle white border,
-  - accent border or accent glow only for key/active cards.
-- Hero temperature panel uses a stronger blue-accent presentation than the rest of the grid.
-- Lightweight density pass:
-  - hero temperature panel is slightly shorter than the original baseline,
-  - mode bar keeps large touch targets but uses less vertical chrome,
-  - telemetry grid cards are a little shorter and allow two-line localized labels,
-  - active heating remains clearly red/warm but avoids a heavy warning-card feel.
-
-## Data Typography
-
-- Hero temperature cards use the largest metric sizes in the app (`78` on the main fallback card, `56` on picker-like screens).
-- Standard tile metrics land around `20-30` with bold weight.
-- Labels typically use secondary/muted colors with semibold weight.
-- Mode labels are compact (`12`) and centered.
+- The `dailyStats24h` widget groups energy used and heating runtime for the last
+  24 hours with an internal divider and no history tap.
+- Legacy `energyUsed`, `loadFactor24h`, `heatingToggle`, `powerNow`,
+  `voltageNow`, and `currentNow` implementations remain available when an older
+  device configuration lists them.
+- The hero temperature card remains the strongest visual element on the control
+  screen.
 
 ## Interaction
 
-- Preserve current taps, telemetry drill-ins, and mode switching.
-- Mode bar uses optimistic UI:
-  - selected mode gets blue fill, blue border, and a short underline,
-  - confirmation clears the optimistic state.
-- Heating state card uses a warm red/orange gradient and red border when active.
-- Host page supports pull-to-refresh.
+- Horizontal drags remain owned by the sensor `PageView`.
+- A deliberate upward drag on the current temperature card opens the shared
+  history dashboard. It requires about `56 dp` of travel or a clear upward fling;
+  weak and diagonal gestures do not navigate.
+- The chart action and upward gesture use the same configuration-driven
+  navigator and pass the current sensor ID.
+- The route enters with a short bottom slide plus fade. Respect
+  `MediaQuery.disableAnimations` by using a zero-duration transition.
+- The one-time mode editing hint is rendered above the fixed mode bar.
+- Host page pull-to-refresh and optimistic mode switching remain supported.
 
-## Secondary States
+## Configuration
 
-- Offline and compatibility flows keep their centered explanatory-card layout.
-- These screens currently allow more visible borders, badges, and accent surfaces than the main thermostat dashboard.
-- Unsupported/unknown layout pages keep their amber info treatment and metadata cards.
-
-## Keep As-Is
-
-- Existing thermostat logic, capability binding, and tile ordering.
-- Existing device-specific presenters and fallback states.
+- History entry points are visible only when `integrations.history.views`
+  contains at least one supported graph series.
+- Unknown or unsupported history entries do not break the thermostat dashboard.
+- Dashboard widget visibility still comes from `integrations.oshmobile.widgets`;
+  compatibility widgets are not removed from the app.

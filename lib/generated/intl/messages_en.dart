@@ -45,15 +45,12 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m9(temp) => "Target ${temp}";
 
-  static String m10(resolution, points) =>
-      "Resolution: ${resolution} • Points: ${points}";
+  static String m10(index, total) => "Sensor ${index}/${total}";
 
-  static String m11(index, total) => "Sensor ${index}/${total}";
-
-  static String m12(sensorName) =>
+  static String m11(sensorName) =>
       "${sensorName} will be removed from this thermostat and asked to leave the Zigbee network.";
 
-  static String m13(lastSeenAt) => "Last seen online: ${lastSeenAt}";
+  static String m12(lastSeenAt) => "Last seen online: ${lastSeenAt}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -113,6 +110,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "Connect": MessageLookupByLibrary.simpleMessage("Connect"),
     "ContinueWithGoogle": MessageLookupByLibrary.simpleMessage(
       "Continue with Google",
+    ),
+    "DailyStatsPeriod24h": MessageLookupByLibrary.simpleMessage(
+      "Last 24 hours",
     ),
     "Delete": MessageLookupByLibrary.simpleMessage("Delete"),
     "DeleteAccount": MessageLookupByLibrary.simpleMessage("Delete account"),
@@ -355,6 +355,27 @@ class MessageLookup extends MessageLookupByLibrary {
     "Successful": MessageLookupByLibrary.simpleMessage("Successful"),
     "SunShort": MessageLookupByLibrary.simpleMessage("Sun"),
     "Target": m9,
+    "TelemetryHistoryCalendarApply": MessageLookupByLibrary.simpleMessage(
+      "Apply",
+    ),
+    "TelemetryHistoryCalendarCancel": MessageLookupByLibrary.simpleMessage(
+      "Cancel",
+    ),
+    "TelemetryHistoryCalendarClearTooltip":
+        MessageLookupByLibrary.simpleMessage("Clear custom range"),
+    "TelemetryHistoryCalendarHint": MessageLookupByLibrary.simpleMessage(
+      "Choose the start and end dates",
+    ),
+    "TelemetryHistoryCalendarOpenTooltip": MessageLookupByLibrary.simpleMessage(
+      "Select date range",
+    ),
+    "TelemetryHistoryCalendarRangeTooLong":
+        MessageLookupByLibrary.simpleMessage(
+          "The range cannot exceed 370 days.",
+        ),
+    "TelemetryHistoryCalendarTitle": MessageLookupByLibrary.simpleMessage(
+      "Select date range",
+    ),
     "TelemetryHistoryLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Failed to load chart",
     ),
@@ -399,15 +420,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "TelemetryHistoryPreviewTitle24h": MessageLookupByLibrary.simpleMessage(
       "Temperature trend (24h)",
     ),
+    "TelemetryHistoryRangeCustom": MessageLookupByLibrary.simpleMessage(
+      "Custom range",
+    ),
     "TelemetryHistoryRangeDay": MessageLookupByLibrary.simpleMessage("Day"),
     "TelemetryHistoryRangeMonth": MessageLookupByLibrary.simpleMessage("Month"),
     "TelemetryHistoryRangeWeek": MessageLookupByLibrary.simpleMessage("Week"),
     "TelemetryHistoryRangeYear": MessageLookupByLibrary.simpleMessage("Year"),
-    "TelemetryHistoryResolutionPoints": m10,
     "TelemetryHistorySensorLabel": MessageLookupByLibrary.simpleMessage(
       "Temperature sensor",
     ),
-    "TelemetryHistorySensorPosition": m11,
+    "TelemetryHistorySensorPosition": m10,
     "TelemetryHistoryStatAvg": MessageLookupByLibrary.simpleMessage("Average"),
     "TelemetryHistoryStatAvgPerDay": MessageLookupByLibrary.simpleMessage(
       "Avg / day",
@@ -428,8 +451,28 @@ class MessageLookup extends MessageLookupByLibrary {
     "ThemeDark": MessageLookupByLibrary.simpleMessage("Dark"),
     "ThemeLight": MessageLookupByLibrary.simpleMessage("Light"),
     "ThemeSystem": MessageLookupByLibrary.simpleMessage("System"),
-    "ThermostatModeBarHint": MessageLookupByLibrary.simpleMessage(
-      "Tap active mode to edit. Hold any mode to configure without switching.",
+    "ThermostatHeatingStatusOff": MessageLookupByLibrary.simpleMessage(
+      "Heating off",
+    ),
+    "ThermostatHeatingStatusOn": MessageLookupByLibrary.simpleMessage(
+      "Heating on",
+    ),
+    "ThermostatHeatingStatusUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Heating status unavailable",
+    ),
+    "ThermostatLiveMetricsCloseTooltip": MessageLookupByLibrary.simpleMessage(
+      "Close live values",
+    ),
+    "ThermostatLiveMetricsOpenHint": MessageLookupByLibrary.simpleMessage(
+      "Swipe up or tap to open live values.",
+    ),
+    "ThermostatLiveMetricsShowHistory": MessageLookupByLibrary.simpleMessage(
+      "Show history",
+    ),
+    "ThermostatLiveMetricsShowHistoryTooltip":
+        MessageLookupByLibrary.simpleMessage("Show telemetry history"),
+    "ThermostatLiveMetricsTitle": MessageLookupByLibrary.simpleMessage(
+      "Live values",
     ),
     "ThermostatModeBarSemanticsActiveEditable":
         MessageLookupByLibrary.simpleMessage(
@@ -480,7 +523,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "UnknownMetaStatus": MessageLookupByLibrary.simpleMessage("Status"),
     "UnknownMetaWidgets": MessageLookupByLibrary.simpleMessage("Widgets"),
     "UnpairSensor": MessageLookupByLibrary.simpleMessage("Unpair sensor"),
-    "UnpairSensorConfirmMessage": m12,
+    "UnpairSensorConfirmMessage": m11,
     "UnpairSensorConfirmTitle": MessageLookupByLibrary.simpleMessage(
       "Unpair sensor?",
     ),
@@ -498,6 +541,35 @@ class MessageLookup extends MessageLookupByLibrary {
     "UserAlreadyExist": MessageLookupByLibrary.simpleMessage(
       "User already exist",
     ),
+    "UserGuideChooseModeTitle": MessageLookupByLibrary.simpleMessage(
+      "Choose a mode to configure",
+    ),
+    "UserGuideCloseTooltip": MessageLookupByLibrary.simpleMessage(
+      "Close user guide",
+    ),
+    "UserGuideLiveMetricsMessage": MessageLookupByLibrary.simpleMessage(
+      "Swipe up to view live values",
+    ),
+    "UserGuideModesAction": MessageLookupByLibrary.simpleMessage(
+      "Open mode settings",
+    ),
+    "UserGuideModesMessage": MessageLookupByLibrary.simpleMessage(
+      "Tap a mode to activate it. Hold a mode to configure its temperature or schedule without switching.",
+    ),
+    "UserGuideModesTitle": MessageLookupByLibrary.simpleMessage(
+      "Configure an operating mode",
+    ),
+    "UserGuideSkip": MessageLookupByLibrary.simpleMessage("Skip"),
+    "UserGuideTemperatureAction": MessageLookupByLibrary.simpleMessage(
+      "Open temperature settings",
+    ),
+    "UserGuideTemperatureMessage": MessageLookupByLibrary.simpleMessage(
+      "Tap the temperature to configure the active mode or open its schedule.",
+    ),
+    "UserGuideTemperatureTitle": MessageLookupByLibrary.simpleMessage(
+      "Quick settings",
+    ),
+    "UserGuideTitle": MessageLookupByLibrary.simpleMessage("User guide"),
     "VerifiedEmail": MessageLookupByLibrary.simpleMessage("Email verified"),
     "VerifyYourEmail": MessageLookupByLibrary.simpleMessage(
       "Verify your email",
@@ -564,7 +636,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "deviceOfflineHintBluetooth": MessageLookupByLibrary.simpleMessage(
       "Move closer to the device to set up Wi-Fi over Bluetooth.",
     ),
-    "deviceOfflineSubtitleWithLastSeen": m13,
+    "deviceOfflineSubtitleWithLastSeen": m12,
     "deviceOfflineTitle": MessageLookupByLibrary.simpleMessage(
       "Device is offline",
     ),

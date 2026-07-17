@@ -29,12 +29,57 @@ class _MetricSlide extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(AppPalette.spaceLg),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Row(
+            children: [
+              Icon(
+                metric.sensorId == null
+                    ? Icons.show_chart_rounded
+                    : Icons.device_thermostat_rounded,
+                size: 20,
+                color: metric.sensorId == null
+                    ? AppPalette.historyHeating
+                    : AppPalette.historyTemperature,
+              ),
+              const SizedBox(width: AppPalette.spaceSm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      metric.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: _historyPrimaryTextColor(context),
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if ((metric.subtitle ?? '').trim().isNotEmpty)
+                      Text(
+                        metric.subtitle!.trim(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: _historyMutedTextColor(context),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppPalette.spaceLg),
           _SummaryPanel(items: model.summaryItems),
           const SizedBox(height: 12),
-          Expanded(
+          SizedBox(
+            height: model.overlayOptions.isEmpty ? 270 : 326,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(2, 4, 2, 0),
               child: model.isLoading
@@ -80,7 +125,8 @@ class _MetricSlide extends StatelessWidget {
                                         series: model.overlaySeries,
                                         windowStart: model.series?.from,
                                         windowEnd: model.series?.to,
-                                        showGrid: false,
+                                        showGrid: true,
+                                        showVerticalGrid: false,
                                         showAxes: true,
                                         enableTouchTooltip: true,
                                         valueLabelBuilder: model
@@ -98,7 +144,7 @@ class _MetricSlide extends StatelessWidget {
                                         },
                                         xAxisLabelBuilder: (ts) => _xAxisLabel(
                                           timestamp: ts,
-                                          range: state.range,
+                                          window: state.window,
                                           localeTag: localeTag,
                                         ),
                                         tooltipTimeLabelBuilder: (ts) =>
@@ -122,14 +168,15 @@ class _MetricSlide extends StatelessWidget {
                                       windowStart: model.series?.from,
                                       windowEnd: model.series?.to,
                                       color: AppPalette.accentSuccess,
-                                      showGrid: false,
+                                      showGrid: true,
+                                      showVerticalGrid: false,
                                       showAxes: true,
                                       enableTouchTooltip: true,
                                       valueLabelBuilder: (v) =>
                                           _fmtValue(v, metric),
                                       xAxisLabelBuilder: (ts) => _xAxisLabel(
                                         timestamp: ts,
-                                        range: state.range,
+                                        window: state.window,
                                         localeTag: localeTag,
                                       ),
                                       tooltipTimeLabelBuilder: (ts) =>
@@ -146,7 +193,8 @@ class _MetricSlide extends StatelessWidget {
                                           series: model.numericSeries,
                                           windowStart: model.series?.from,
                                           windowEnd: model.series?.to,
-                                          showGrid: false,
+                                          showGrid: true,
+                                          showVerticalGrid: false,
                                           showAxes: true,
                                           enableTouchTooltip: true,
                                           valueLabelBuilder: (v) =>
@@ -163,7 +211,7 @@ class _MetricSlide extends StatelessWidget {
                                           xAxisLabelBuilder: (ts) =>
                                               _xAxisLabel(
                                             timestamp: ts,
-                                            range: state.range,
+                                            window: state.window,
                                             localeTag: localeTag,
                                           ),
                                           tooltipTimeLabelBuilder: (ts) =>
@@ -180,7 +228,8 @@ class _MetricSlide extends StatelessWidget {
                                           color: AppPalette.accentWarning,
                                           strokeWidth: 2.0,
                                           fill: true,
-                                          showGrid: false,
+                                          showGrid: true,
+                                          showVerticalGrid: false,
                                           showAxes: true,
                                           enableTouchTooltip: true,
                                           valueLabelBuilder: (v) =>
@@ -188,7 +237,7 @@ class _MetricSlide extends StatelessWidget {
                                           xAxisLabelBuilder: (ts) =>
                                               _xAxisLabel(
                                             timestamp: ts,
-                                            range: state.range,
+                                            window: state.window,
                                             localeTag: localeTag,
                                           ),
                                           tooltipBuilder: (ts, value) =>

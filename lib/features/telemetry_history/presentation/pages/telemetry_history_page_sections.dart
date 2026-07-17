@@ -1,159 +1,5 @@
 part of 'telemetry_history_page.dart';
 
-class _MetricSelector extends StatefulWidget {
-  const _MetricSelector({
-    required this.metrics,
-    required this.selectedIndex,
-    required this.labelBuilder,
-    required this.onSelected,
-  });
-
-  final List<TelemetryHistoryMetric> metrics;
-  final int selectedIndex;
-  final String Function(TelemetryHistoryMetric metric) labelBuilder;
-  final ValueChanged<int> onSelected;
-
-  @override
-  State<_MetricSelector> createState() => _MetricSelectorState();
-}
-
-class _MetricSelectorState extends State<_MetricSelector> {
-  final List<GlobalKey> _chipKeys = <GlobalKey>[];
-
-  @override
-  void initState() {
-    super.initState();
-    _syncChipKeys();
-    _scheduleSelectedChipReveal(duration: Duration.zero);
-  }
-
-  @override
-  void didUpdateWidget(covariant _MetricSelector oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _syncChipKeys();
-    if (oldWidget.selectedIndex != widget.selectedIndex ||
-        oldWidget.metrics.length != widget.metrics.length) {
-      _scheduleSelectedChipReveal();
-    }
-  }
-
-  void _syncChipKeys() {
-    while (_chipKeys.length < widget.metrics.length) {
-      _chipKeys.add(GlobalKey());
-    }
-    if (_chipKeys.length > widget.metrics.length) {
-      _chipKeys.removeRange(widget.metrics.length, _chipKeys.length);
-    }
-  }
-
-  void _scheduleSelectedChipReveal({
-    Duration duration = AppPalette.motionBase,
-  }) {
-    final index = widget.selectedIndex;
-    if (index < 0 || index >= _chipKeys.length) return;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-
-      final chipContext = _chipKeys[index].currentContext;
-      if (chipContext == null) return;
-
-      Scrollable.ensureVisible(
-        chipContext,
-        alignment: 0.5,
-        duration: duration,
-        curve: Curves.easeOutCubic,
-      );
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 44,
-      child: SingleChildScrollView(
-        key: const ValueKey<String>('telemetry_history_metric_selector'),
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            for (var index = 0; index < widget.metrics.length; index++) ...[
-              if (index > 0) const SizedBox(width: 6),
-              Center(
-                key: _chipKeys[index],
-                child: _MetricChip(
-                  label: widget.labelBuilder(widget.metrics[index]),
-                  selected: widget.selectedIndex == index,
-                  onTap: () => widget.onSelected(index),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MetricChip extends StatelessWidget {
-  const _MetricChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: SizedBox(
-        height: 44,
-        child: Center(
-          child: AnimatedContainer(
-            duration: AppPalette.motionBase,
-            curve: Curves.easeOutCubic,
-            constraints: const BoxConstraints(minHeight: 36),
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: selected
-                  ? AppPalette.accentPrimary.withValues(
-                      alpha: _historyIsDark(context) ? 0.22 : 0.1,
-                    )
-                  : _historySurfaceColor(context).withValues(
-                      alpha: _historyIsDark(context) ? 0.82 : 1,
-                    ),
-              borderRadius: BorderRadius.circular(AppPalette.radiusPill),
-              border: Border.all(
-                color: selected
-                    ? AppPalette.accentPrimary.withValues(alpha: 0.24)
-                    : _historyBorderColor(context),
-              ),
-            ),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: selected
-                    ? _historyPrimaryTextColor(context)
-                    : _historyMutedTextColor(context),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                height: 1.0,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _SummaryPanel extends StatelessWidget {
   const _SummaryPanel({
     required this.items,
@@ -268,137 +114,56 @@ class _OverlaySeriesChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: AppPalette.motionBase,
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: selected
-                ? option.color.withValues(alpha: 0.2)
-                : AppPalette.transparent,
-            borderRadius: BorderRadius.circular(AppPalette.radiusPill),
-            border: Border.all(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: option.label,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: AppPalette.motionBase,
+            curve: Curves.easeOutCubic,
+            constraints: const BoxConstraints(minHeight: 44),
+            decoration: BoxDecoration(
               color: selected
-                  ? option.color.withValues(alpha: 0.28)
+                  ? option.color.withValues(alpha: 0.2)
                   : AppPalette.transparent,
-            ),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 9),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: selected
-                      ? option.color
-                      : option.color.withValues(alpha: 0.42),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                option.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: selected
-                      ? _historyPrimaryTextColor(context)
-                      : _historyMutedTextColor(context),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RangeSelector extends StatelessWidget {
-  const _RangeSelector({
-    required this.options,
-    required this.selectedRange,
-    required this.onSelected,
-  });
-
-  final List<_RangeOption> options;
-  final TelemetryHistoryRange selectedRange;
-  final ValueChanged<TelemetryHistoryRange> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: _historySurfaceColor(context).withValues(
-          alpha: _historyIsDark(context) ? 0.88 : 1,
-        ),
-        borderRadius: BorderRadius.circular(AppPalette.radiusLg),
-        border: Border.all(
-          color: _historyBorderColor(context),
-        ),
-      ),
-      padding: const EdgeInsets.all(3),
-      child: Row(
-        children: [
-          for (final option in options)
-            Expanded(
-              child: _RangeChip(
-                label: option.label,
-                selected: selectedRange == option.range,
-                onTap: () => onSelected(option.range),
+              borderRadius: BorderRadius.circular(AppPalette.radiusPill),
+              border: Border.all(
+                color: selected
+                    ? option.color.withValues(alpha: 0.28)
+                    : AppPalette.transparent,
               ),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RangeChip extends StatelessWidget {
-  const _RangeChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: AppPalette.motionBase,
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: selected
-                ? AppPalette.accentPrimary.withValues(
-                    alpha: _historyIsDark(context) ? 0.28 : 0.12,
-                  )
-                : AppPalette.transparent,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 11),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              color: selected
-                  ? _historyPrimaryTextColor(context)
-                  : _historyMutedTextColor(context),
-              fontSize: 14,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 9),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: selected
+                        ? option.color
+                        : option.color.withValues(alpha: 0.42),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  option.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: selected
+                        ? _historyPrimaryTextColor(context)
+                        : _historyMutedTextColor(context),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
