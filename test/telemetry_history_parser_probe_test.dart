@@ -6,6 +6,8 @@ import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/requests
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v1_service.dart';
 import 'package:oshmobile/features/telemetry_history/data/datasources/telemetry_history_remote_data_source_impl.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_query.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_usage_bucket.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_usage_query.dart';
 
 class _FakeMobileV1Service extends MobileV1Service {
   _FakeMobileV1Service(this._payload);
@@ -55,6 +57,32 @@ class _FakeMobileV1Service extends MobileV1Service {
     String resolution = 'auto',
   }) {
     throw UnimplementedError();
+  }
+
+  @override
+  Future<Response<dynamic>> getMyDeviceEnergyUsage({
+    required String serial,
+    required String from,
+    required String to,
+    String? bucket,
+    String? timezone,
+  }) {
+    return Future<Response<dynamic>>.value(
+      Response<dynamic>(http.Response('', 200), _payload),
+    );
+  }
+
+  @override
+  Future<Response<dynamic>> getMyDeviceHeatingUsage({
+    required String serial,
+    required String from,
+    required String to,
+    String? bucket,
+    String? timezone,
+  }) {
+    return Future<Response<dynamic>>.value(
+      Response<dynamic>(http.Response('', 200), _payload),
+    );
   }
 
   @override
@@ -249,5 +277,96 @@ void main() {
 
     expect(series.seriesKey, 'climate_sensors.floor.temp');
     expect(series.points, isEmpty);
+  });
+
+  test('parses backend energy summary and preserves an unavailable bucket',
+      () async {
+    final source = TelemetryHistoryRemoteDataSourceImpl(
+      mobileService: _FakeMobileV1Service(<String, dynamic>{
+        'device_id': 'device-1',
+        'serial': 'SN-1',
+        'from': '2026-07-18T10:00:00Z',
+        'to': '2026-07-19T10:00:00Z',
+        'bucket': '1h',
+        'timezone': 'Europe/Stockholm',
+        'available_from': '2026-07-01T00:00:00Z',
+        'coverage_ratio': 0.95,
+        'total_kwh': 4.2,
+        'average_bucket_kwh': 0.2,
+        'peak_bucket_kwh': 0.8,
+        'peak_bucket_from': '2026-07-19T08:00:00Z',
+        'points': <Map<String, dynamic>>[
+          {
+            'from': '2026-07-19T08:00:00Z',
+            'to': '2026-07-19T09:00:00Z',
+            'energy_kwh': 0.8,
+            'coverage_ratio': 1.0,
+          },
+          {
+            'from': '2026-07-19T09:00:00Z',
+            'to': '2026-07-19T10:00:00Z',
+            'energy_kwh': null,
+            'coverage_ratio': 0.5,
+          },
+        ],
+      }),
+    );
+
+    final usage = await source.getEnergyUsage(
+      serial: 'SN-1',
+      query: TelemetryUsageQuery.bucketed(
+        from: DateTime.utc(2026, 7, 18, 10),
+        to: DateTime.utc(2026, 7, 19, 10),
+        bucket: TelemetryUsageBucket.hour,
+        timezone: 'Europe/Stockholm',
+      ),
+    );
+
+    expect(usage.totalKwh, 4.2);
+    expect(usage.coverageRatio, 0.95);
+    expect(usage.points, hasLength(2));
+    expect(usage.points.last.energyKwh, isNull);
+    expect(usage.points.last.coverageRatio, 0.5);
+  });
+
+  test('parses backend duration-weighted heating usage', () async {
+    final source = TelemetryHistoryRemoteDataSourceImpl(
+      mobileService: _FakeMobileV1Service(<String, dynamic>{
+        'device_id': 'device-1',
+        'serial': 'SN-1',
+        'from': '2026-07-18T10:00:00Z',
+        'to': '2026-07-19T10:00:00Z',
+        'bucket': '1h',
+        'timezone': 'UTC',
+        'available_from': '2026-07-18T00:00:00Z',
+        'coverage_ratio': 1.0,
+        'load_factor_percent': 35.0,
+        'min_bucket_percent': 10.0,
+        'max_bucket_percent': 80.0,
+        'points': <Map<String, dynamic>>[
+          {
+            'from': '2026-07-19T09:00:00Z',
+            'to': '2026-07-19T10:00:00Z',
+            'load_factor_percent': 35.0,
+            'coverage_ratio': 1.0,
+          },
+        ],
+      }),
+    );
+
+    final usage = await source.getHeatingUsage(
+      serial: 'SN-1',
+      query: TelemetryUsageQuery.bucketed(
+        from: DateTime.utc(2026, 7, 18, 10),
+        to: DateTime.utc(2026, 7, 19, 10),
+        bucket: TelemetryUsageBucket.hour,
+        timezone: 'UTC',
+      ),
+    );
+
+    expect(usage.loadFactorPercent, 35);
+    expect(usage.minBucketPercent, 10);
+    expect(usage.maxBucketPercent, 80);
+    expect(usage.points.single.loadFactorPercent, 35);
   });
 }

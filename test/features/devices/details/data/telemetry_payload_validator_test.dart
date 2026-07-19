@@ -14,6 +14,13 @@ void main() {
     );
   });
 
+  test('accepts current telemetry@1 payload without deprecated load_factor',
+      () {
+    final payload = _telemetryPayload(targetTemp: 21.5)..remove('load_factor');
+
+    expect(validator.validateStatePayload(payload), isTrue);
+  });
+
   test('accepts temperature, ON, and OFF telemetry@1 setpoints', () {
     expect(
       validator.validateStatePayload(
@@ -85,7 +92,6 @@ const _telemetryStateSchema = <String, dynamic>{
   'required': <String>[
     'climate_sensors',
     'heater_enabled',
-    'load_factor',
   ],
   'properties': <String, dynamic>{
     'climate_sensors': <String, dynamic>{

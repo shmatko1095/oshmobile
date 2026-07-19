@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:keycloak_wrapper/keycloak_wrapper.dart';
+import 'package:oshmobile/core/contracts/device_time_zone_reader.dart';
 import 'package:oshmobile/core/common/cubits/app/app_lifecycle_cubit.dart';
 import 'package:oshmobile/core/common/cubits/app/app_theme_cubit.dart';
 import 'package:oshmobile/core/common/cubits/auth/global_auth_cubit.dart';
@@ -18,6 +19,7 @@ import 'package:oshmobile/core/network/chopper_client/osh_api/v1/mobile/mobile_v
 import 'package:oshmobile/core/network/chopper_client/osh_api/v1/users/users_v1_service.dart';
 import 'package:oshmobile/core/network/mqtt/app_device_id_provider.dart';
 import 'package:oshmobile/core/network/network_utils/connection_checker.dart';
+import 'package:oshmobile/core/platform/flutter_device_time_zone_reader.dart';
 import 'package:oshmobile/core/secrets/app_secrets.dart';
 import 'package:oshmobile/core/theme/shared_prefs_theme_mode_storage.dart';
 import 'package:oshmobile/core/theme/theme_mode_storage.dart';
@@ -42,6 +44,9 @@ Future<void> registerCoreDependencies(GetIt locator) async {
   );
 
   locator.registerLazySingleton<AppLifecycleCubit>(() => AppLifecycleCubit());
+  locator.registerLazySingleton<DeviceTimeZoneReader>(
+    FlutterDeviceTimeZoneReader.new,
+  );
   locator.registerLazySingleton<ThemeModeStorage>(
     () => SharedPrefsThemeModeStorage(locator<SharedPreferences>()),
   );

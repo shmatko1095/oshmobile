@@ -4,7 +4,7 @@ typedef ThermostatDashboardLayout = ({
   double dashboardBodyHeight,
   double bottomReservedHeight,
   double contentHeight,
-  double scaledStatsHeight,
+  double scaledSummaryHeight,
 });
 
 ThermostatDashboardLayout resolveThermostatDashboardLayout({
@@ -24,14 +24,14 @@ ThermostatDashboardLayout resolveThermostatDashboardLayout({
     0.0,
     dashboardBodyHeight - bottomReservedHeight - 12.0,
   );
-  final scaledStatsHeight = (112.0 + math.max(0.0, textScale - 1.0) * 68.0)
-      .clamp(112.0, 180.0)
+  final scaledSummaryHeight = (96.0 + math.max(0.0, textScale - 1.0) * 52.0)
+      .clamp(96.0, 148.0)
       .toDouble();
 
   return (
     dashboardBodyHeight: dashboardBodyHeight,
     bottomReservedHeight: bottomReservedHeight,
     contentHeight: contentHeight,
-    scaledStatsHeight: scaledStatsHeight,
+    scaledSummaryHeight: scaledSummaryHeight,
   );
 }

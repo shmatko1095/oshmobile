@@ -347,7 +347,6 @@
   "TelemetryHistoryMetricActivePower": "Потужність",
   "TelemetryHistoryMetricApparentPower": "Повна потужність",
   "TelemetryHistoryMetricEnergyUsed": "Використана енергія",
-  "DailyStatsPeriod24h": "За останні 24 години",
   "ThermostatLiveMetricsTitle": "Поточні значення",
   "ThermostatLiveMetricsOpenHint": "Проведіть угору або натисніть, щоб відкрити поточні значення.",
   "ThermostatLiveMetricsCloseTooltip": "Закрити поточні значення",

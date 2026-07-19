@@ -2679,16 +2679,6 @@ class S {
     );
   }
 
-  /// `Last 24 hours`
-  String get DailyStatsPeriod24h {
-    return Intl.message(
-      'Last 24 hours',
-      name: 'DailyStatsPeriod24h',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Live values`
   String get ThermostatLiveMetricsTitle {
     return Intl.message(

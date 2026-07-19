@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:oshmobile/core/configuration/app_polling_intervals.dart';
 import 'package:oshmobile/core/contracts/device_runtime_contracts.dart';
+import 'package:oshmobile/core/logging/app_log.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc.dart';
 import 'package:oshmobile/core/network/mqtt/json_rpc_client.dart';
 import 'package:oshmobile/core/network/mqtt/protocol/v1/sensors_models.dart';
 import 'package:oshmobile/core/utils/req_id.dart';
 import 'package:oshmobile/features/devices/details/data/telemetry_jsonrpc_codec.dart';
+import 'package:oshmobile/features/devices/details/data/telemetry_decode_result.dart';
 import 'package:oshmobile/features/devices/details/data/telemetry_topics.dart';
 import 'package:oshmobile/features/devices/details/domain/repositories/telemetry_repository.dart';
 
@@ -30,6 +32,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
   final Duration pollInterval;
   final Duration timeout;
   TelemetryJsonRpcCodec? _codec;
+  final Set<String> _reportedDecodeIssues = <String>{};
 
   StreamController<TelemetryState>? _ctrl;
   StreamSubscription? _sub;
@@ -68,6 +71,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
     _pollInFlight = false;
     _telemetry = null;
     _codec = null;
+    _reportedDecodeIssues.clear();
 
     if (sub != null) {
       try {
@@ -99,8 +103,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
       throw StateError('Invalid telemetry schema: ${resp.meta!.schema}');
     }
 
-    final parsed = _codecOrThrow().decodeState(data);
-    if (parsed == null) throw StateError('Invalid telemetry payload');
+    final parsed = _decodeState(data);
 
     _emitState(parsed);
     return parsed;
@@ -124,8 +127,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
       final data = notif.data;
       if (data == null) return;
 
-      final parsed = _codecOrThrow().decodeState(data);
-      if (parsed == null) return;
+      final parsed = _decodeState(data);
 
       _emitState(parsed, ctrl: ctrl);
     });
@@ -235,8 +237,7 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
         return;
       }
 
-      final parsed = _codecOrThrow().decodeState(data);
-      if (parsed == null) return;
+      final parsed = _decodeState(data);
 
       _emitState(parsed);
     } catch (_) {
@@ -265,5 +266,21 @@ class MqttTelemetryRepositoryImpl implements TelemetryRepository {
         TelemetryJsonRpcCodec.fromRuntimeContract(_contracts.telemetry);
     _codec = codec;
     return codec;
+  }
+
+  TelemetryState _decodeState(Map<String, dynamic> data) {
+    final result = _codecOrThrow().decodeState(data);
+    _reportDecodeIssues(result);
+    return result.state;
+  }
+
+  void _reportDecodeIssues(TelemetryDecodeResult result) {
+    for (final issue in result.issues) {
+      if (!_reportedDecodeIssues.add(issue.signature)) continue;
+      AppLog.warn(
+        'MQTT telemetry decode issue '
+        'schema=$_telemetrySchema path=${issue.path} reason=${issue.reason}',
+      );
+    }
   }
 }

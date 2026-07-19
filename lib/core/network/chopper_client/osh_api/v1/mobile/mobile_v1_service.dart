@@ -81,6 +81,24 @@ abstract class MobileV1Service extends ChopperService {
     @Query('resolution') String resolution = 'auto',
   });
 
+  @GET(path: '/devices/{serial}/telemetry/energy-usage')
+  Future<Response> getMyDeviceEnergyUsage({
+    @Path('serial') required String serial,
+    @Query('from') required String from,
+    @Query('to') required String to,
+    @Query('bucket') String? bucket,
+    @Query('timezone') String? timezone,
+  });
+
+  @GET(path: '/devices/{serial}/telemetry/heating-usage')
+  Future<Response> getMyDeviceHeatingUsage({
+    @Path('serial') required String serial,
+    @Query('from') required String from,
+    @Query('to') required String to,
+    @Query('bucket') String? bucket,
+    @Query('timezone') String? timezone,
+  });
+
   @GET(path: '/client-policy')
   Future<Response> getClientPolicy({
     @Query('platform') required String platform,

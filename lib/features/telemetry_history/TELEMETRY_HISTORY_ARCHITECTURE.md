@@ -20,6 +20,47 @@ renderable for the supplied runtime sensors. `openDashboardFromHost` remains a
 compatibility wrapper. Host features therefore do not import the internal
 definition builder or history-page navigator implementation.
 
+## Server-computed usage series
+
+Energy consumption and heating load are not generic MQTT history series in the
+mobile client. `EnergyUsageReader` and `HeatingUsageReader` expose the dedicated
+backend projections through separate clean-architecture use cases. The mobile
+API calls:
+
+- `/v1/mobile/devices/{serial}/telemetry/energy-usage`;
+- `/v1/mobile/devices/{serial}/telemetry/heating-usage`.
+
+The backend owns all integration, coverage checks, and summary calculations.
+Mobile code must not sum `energy_wh_delta`, count `heater_enabled` samples, or
+derive averages/minimums/maximums from chart points. It only formats the
+nullable totals and statistics returned by those endpoints.
+
+`TelemetryUsageSeriesReader` adapts these responses to the shared history-page
+models. A day requests one-hour buckets, ranges through 31 days request daily
+buckets, and longer ranges request calendar-month buckets. The adapter
+reads the phone's current IANA time-zone identifier before every bucketed
+request and sends it to the backend, so daily and monthly boundaries follow
+the user's local calendar, including DST transitions. Summary-only live-tile
+requests omit both `bucket` and `timezone` because an exact rolling interval
+does not require calendar grouping. If the native time-zone lookup fails, the
+platform reader logs the failure and falls back to `UTC` without hiding usage
+data.
+
+Timestamps remain UTC instants on the wire and in domain models. Presentation
+converts them to the phone's local time only when building chart labels. The
+adapter preserves every nullable bucket. A value rejected by the backend's
+coverage policy is rendered as an empty position in the column sequence, never
+as a zero bar. Energy and heating therefore use `HistoryBarChart`; generic
+telemetry series retain their existing line/bar selection.
+Energy bars use the success-green token, while heating-usage bars reuse the
+same warning-red token as the live `Heating` series.
+
+Usage charts display the server summary carried by
+`TelemetryHistorySeries.usageSummary`. This avoids recomputing a misleading
+summary from rounded, timezone-grouped, or partially unavailable graph points.
+Chart animation is disabled when `MediaQuery.disableAnimations` is true, and
+the chart exposes its metric summary through semantics.
+
 The page loads all rendered metrics into independent keyed states and presents
 them in one `CustomScrollView`. Temperature metrics are grouped into one nested
 horizontal carousel with one sensor per page; the initial sensor series selects
@@ -96,6 +137,12 @@ temperature line is the tooltip anchor. Overlay rows are admitted only when
 their timestamp is exactly the same `bucket_start`; nearby pixels or adjacent
 buckets are never merged. This guarantees a single understandable target state
 even when several setpoint transitions happened inside a backend rollup window.
+
+All history chart kinds use the same range-aware timestamp formatter. Day and
+single-day custom tooltips show the local date and time. Week, month, and
+multi-day custom tooltips show only the local calendar date. Year and
+month-bucket custom tooltips show the localized month and year. X-axis labels
+retain their existing range-specific local formatting.
 
 ## Chart animation identity
 

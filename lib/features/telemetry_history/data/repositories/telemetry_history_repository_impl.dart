@@ -4,6 +4,9 @@ import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_agg
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_query.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_history.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/energy_usage.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/heating_usage.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_usage_query.dart';
 import 'package:oshmobile/features/telemetry_history/domain/repositories/telemetry_history_repository.dart';
 
 class TelemetryHistoryRepositoryImpl implements TelemetryHistoryRepository {
@@ -35,5 +38,21 @@ class TelemetryHistoryRepositoryImpl implements TelemetryHistoryRepository {
     required TelemetryHistoryQuery query,
   }) {
     return _remote.getSetpointHistory(serial: serial, query: query);
+  }
+
+  @override
+  Future<EnergyUsage> getEnergyUsage({
+    required String serial,
+    required TelemetryUsageQuery query,
+  }) {
+    return _remote.getEnergyUsage(serial: serial, query: query);
+  }
+
+  @override
+  Future<HeatingUsage> getHeatingUsage({
+    required String serial,
+    required TelemetryUsageQuery query,
+  }) {
+    return _remote.getHeatingUsage(serial: serial, query: query);
   }
 }

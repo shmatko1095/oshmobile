@@ -4,10 +4,8 @@ import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
-import 'package:oshmobile/features/devices/details/presentation/presenters/utils/thermostat_heating_state.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/utils/temperature_sensors_resolver.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_history_strip_card.dart';
-import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_heating_indicator.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
 import 'package:oshmobile/features/sensors/presentation/models/sensor_editor_entry.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/temperature_history_preview_cache.dart';
@@ -21,7 +19,6 @@ class TemperatureMinimalPanel extends StatefulWidget {
     required this.sensorsBind,
     required this.currentTargetBind,
     required this.nextTargetBind,
-    this.heatingStatusBind,
     this.onTap,
     this.unit = '°C',
     this.height,
@@ -40,7 +37,6 @@ class TemperatureMinimalPanel extends StatefulWidget {
   final String sensorsBind;
   final String currentTargetBind;
   final String nextTargetBind;
-  final String? heatingStatusBind;
   final String unit;
   final double? height;
   final EdgeInsets padding;
@@ -238,13 +234,6 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
     );
     final fallbackCurrent = _asNum(readBind(controlState, widget.currentBind));
     final showHistoryPreview = widget.showHistoryPreview && sensors.isNotEmpty;
-    final heatingStatusConfigured = widget.heatingStatusBind != null;
-    final heatingActive = heatingStatusConfigured
-        ? parseThermostatHeatingState(
-            readBind(controlState, widget.heatingStatusBind!),
-          )
-        : null;
-
     final content = sensors.isEmpty && !hasAddSensorCard
         ? _FallbackCard(
             temperatureText: _fmtNum(fallbackCurrent),
@@ -254,8 +243,6 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
             targetLine: targetLine,
             nextLine: nextLine,
             ultraCompact: widget.ultraCompact,
-            heatingStatusConfigured: heatingStatusConfigured,
-            heatingActive: heatingActive,
           )
         : _SensorCarousel(
             pageController: _pageCtrl!,
@@ -270,8 +257,6 @@ class _TemperatureMinimalPanelState extends State<TemperatureMinimalPanel> {
             historyChartHeight: widget.historyChartHeight,
             onOpenHistory: widget.onOpenHistory,
             ultraCompact: widget.ultraCompact,
-            heatingStatusConfigured: heatingStatusConfigured,
-            heatingActive: heatingActive,
             onPageChanged: (nextPage) {
               if (_page == nextPage) return;
               setState(() {
@@ -330,8 +315,6 @@ class _FallbackCard extends StatelessWidget {
     required this.targetLine,
     required this.nextLine,
     required this.ultraCompact,
-    required this.heatingStatusConfigured,
-    required this.heatingActive,
   });
 
   final String temperatureText;
@@ -341,8 +324,6 @@ class _FallbackCard extends StatelessWidget {
   final String? targetLine;
   final String? nextLine;
   final bool ultraCompact;
-  final bool heatingStatusConfigured;
-  final bool? heatingActive;
 
   @override
   Widget build(BuildContext context) {
@@ -415,20 +396,6 @@ class _FallbackCard extends StatelessWidget {
               ],
             ),
           ),
-          if (heatingStatusConfigured)
-            Positioned(
-              top: ultraCompact ? 60 : 58,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: ThermostatHeatingIndicator(
-                  key: const ValueKey('thermostat-heating-indicator-fallback'),
-                  active: heatingActive,
-                  selected: true,
-                  ultraCompact: ultraCompact,
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -453,8 +420,6 @@ class _SensorCarousel extends StatelessWidget {
     required this.historyChartHeight,
     required this.onOpenHistory,
     required this.ultraCompact,
-    required this.heatingStatusConfigured,
-    required this.heatingActive,
   });
 
   final PageController pageController;
@@ -473,8 +438,6 @@ class _SensorCarousel extends StatelessWidget {
   final double historyChartHeight;
   final OnOpenTemperatureHistory? onOpenHistory;
   final bool ultraCompact;
-  final bool heatingStatusConfigured;
-  final bool? heatingActive;
 
   @override
   Widget build(BuildContext context) {
@@ -516,8 +479,6 @@ class _SensorCarousel extends StatelessWidget {
                         historyChartHeight: historyChartHeight,
                         onOpenHistory: onOpenHistory,
                         ultraCompact: ultraCompact,
-                        heatingStatusConfigured: heatingStatusConfigured,
-                        heatingActive: heatingActive,
                         formatNum: formatNum,
                         onActionTap: onSensorActionTap == null
                             ? null
@@ -627,8 +588,6 @@ class _SensorCard extends StatelessWidget {
     required this.formatNum,
     required this.onActionTap,
     required this.ultraCompact,
-    required this.heatingStatusConfigured,
-    required this.heatingActive,
   });
 
   final TemperatureSensorData sensor;
@@ -646,8 +605,6 @@ class _SensorCard extends StatelessWidget {
   final String Function(num? value, {int fractionDigits}) formatNum;
   final VoidCallback? onActionTap;
   final bool ultraCompact;
-  final bool heatingStatusConfigured;
-  final bool? heatingActive;
 
   @override
   Widget build(BuildContext context) {
@@ -690,27 +647,10 @@ class _SensorCard extends StatelessWidget {
                 showScheduleMeta: showScheduleMeta,
                 compact: showHistoryPreview,
                 ultraCompact: ultraCompact,
-                reserveHeatingStatusSpace: heatingStatusConfigured,
                 formatNum: formatNum,
                 onActionTap: onActionTap,
               ),
             ),
-            if (heatingStatusConfigured)
-              Positioned(
-                top: ultraCompact ? 60 : 58,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: ThermostatHeatingIndicator(
-                    key: ValueKey(
-                      'thermostat-heating-indicator-${sensor.id}',
-                    ),
-                    active: heatingActive,
-                    selected: historyActive,
-                    ultraCompact: ultraCompact,
-                  ),
-                ),
-              ),
             if (onOpenHistory != null)
               Positioned(
                 right: 14,
@@ -825,7 +765,6 @@ class _SensorTemperaturePane extends StatelessWidget {
     required this.formatNum,
     required this.onActionTap,
     required this.ultraCompact,
-    required this.reserveHeatingStatusSpace,
   });
 
   final TemperatureSensorData sensor;
@@ -839,7 +778,6 @@ class _SensorTemperaturePane extends StatelessWidget {
   final String Function(num? value, {int fractionDigits}) formatNum;
   final VoidCallback? onActionTap;
   final bool ultraCompact;
-  final bool reserveHeatingStatusSpace;
 
   @override
   Widget build(BuildContext context) {
@@ -877,7 +815,7 @@ class _SensorTemperaturePane extends StatelessWidget {
           if (ultraCompact)
             const Spacer()
           else if (compact)
-            SizedBox(height: reserveHeatingStatusSpace ? 86 : 62)
+            const SizedBox(height: 62)
           else
             const Spacer(),
           _SensorReadingsRow(

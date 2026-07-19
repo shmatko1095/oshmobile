@@ -41,4 +41,8 @@ class ThermostatTelemetryHistoryOpener {
   void openLoadFactor(BuildContext context) {
     TelemetryHistoryNavigator.openLoadFactorFromHost(context);
   }
+
+  void openEnergyUsage(BuildContext context) {
+    TelemetryHistoryNavigator.openEnergyUsageFromHost(context);
+  }
 }

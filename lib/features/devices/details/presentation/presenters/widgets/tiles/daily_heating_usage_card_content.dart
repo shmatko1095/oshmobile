@@ -2,57 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:oshmobile/core/common/widgets/app_card.dart';
 import 'package:oshmobile/core/theme/app_palette.dart';
-import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_heating_usage_cubit.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_heating_usage_state.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/glass_stat_card.dart';
+import 'package:oshmobile/generated/l10n.dart';
 
-class LoadFactorKpiCard extends StatelessWidget {
-  const LoadFactorKpiCard({
+class DailyHeatingUsageCardContent extends StatelessWidget {
+  const DailyHeatingUsageCardContent({
     super.key,
-    this.percentBind,
-    this.hoursBind,
-    this.secondsBind,
-    this.title = 'Heating runtime',
-    this.onTap,
+    required this.title,
+    required this.onTap,
   });
 
-  final String? percentBind;
-  final String? hoursBind;
-  final String? secondsBind;
   final String title;
   final VoidCallback? onTap;
 
-  double? _computePercent(Map<String, dynamic> controlState) {
-    if (percentBind != null) {
-      final p = asNum(readBind(controlState, percentBind!));
-      if (p == null) return null;
-      final v = p > 1 ? (p / 100.0) : p.toDouble();
-      return v.clamp(0.0, 1.0);
-    }
-    if (hoursBind != null) {
-      final h = asNum(readBind(controlState, hoursBind!));
-      if (h == null) return null;
-      return (h / 24.0).clamp(0.0, 1.0).toDouble();
-    }
-    if (secondsBind != null) {
-      final s = asNum(readBind(controlState, secondsBind!));
-      if (s == null) return null;
-      return (s / (24 * 3600)).clamp(0.0, 1.0).toDouble();
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final p = context.select<DeviceSnapshotCubit, double?>(
-      (c) => _computePercent(c.state.controlState.data ?? const {}),
-    );
-    final percentInt = p == null ? null : (p * 100).round();
-    final percentTxt = percentInt == null ? '—' : '$percentInt%';
-    final periodLabel = _periodLabel(context);
+    final state = context.watch<DailyHeatingUsageCubit>().state;
+    final value = state.loadFactorPercent;
+    final valueText = value == null ? '—' : '${value.round()}%';
+    final periodLabel =
+        Localizations.localeOf(context).languageCode == 'uk' ? '24 год' : '24h';
+    final s = S.of(context);
+    final statusText = switch (state.status) {
+      DailyHeatingUsageStatus.loading => s.MqttStatusUpdating,
+      DailyHeatingUsageStatus.error => s.MqttStatusError,
+      _ when value == null => s.NoDataYet,
+      _ => '',
+    };
 
     return Semantics(
       button: onTap != null,
-      label: '$title, $periodLabel, $percentTxt',
+      label: '$title, $periodLabel, $valueText, $statusText',
       child: ExcludeSemantics(
         child: AppSolidCard(
           onTap: onTap,
@@ -88,21 +70,20 @@ class LoadFactorKpiCard extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                percentTxt,
+                valueText,
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: statValueColor(context),
                   fontSize: 30,
                   fontWeight: FontWeight.w800,
-                  height: 1.0,
+                  height: 1,
                 ),
               ),
               const SizedBox(height: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppPalette.radiusPill),
                 child: LinearProgressIndicator(
-                  value: p ?? 0,
+                  value: value == null ? 0 : (value / 100).clamp(0, 1),
                   minHeight: 7,
                   backgroundColor:
                       Theme.of(context).brightness == Brightness.dark
@@ -122,40 +103,6 @@ class LoadFactorKpiCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  String _periodLabel(BuildContext context) {
-    final languageCode = Localizations.localeOf(context).languageCode;
-    return languageCode == 'uk' ? '24 год' : '24h';
-  }
-}
-
-/// Backward-compat wrapper, defaults to the selected card variant.
-class LoadFactorCard extends StatelessWidget {
-  const LoadFactorCard({
-    super.key,
-    this.percentBind,
-    this.hoursBind,
-    this.secondsBind,
-    this.title = 'Heating runtime',
-    this.onTap,
-  });
-
-  final String? percentBind;
-  final String? hoursBind;
-  final String? secondsBind;
-  final String title;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return LoadFactorKpiCard(
-      percentBind: percentBind,
-      hoursBind: hoursBind,
-      secondsBind: secondsBind,
-      title: title,
-      onTap: onTap,
     );
   }
 }

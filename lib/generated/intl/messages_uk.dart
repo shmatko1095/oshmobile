@@ -113,9 +113,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "ContinueWithGoogle": MessageLookupByLibrary.simpleMessage(
       "Продовжити через Google",
     ),
-    "DailyStatsPeriod24h": MessageLookupByLibrary.simpleMessage(
-      "За останні 24 години",
-    ),
     "Delete": MessageLookupByLibrary.simpleMessage("Видалити"),
     "DeleteAccount": MessageLookupByLibrary.simpleMessage("Видалити акаунт"),
     "DeleteAccountConfirmMessage": MessageLookupByLibrary.simpleMessage(

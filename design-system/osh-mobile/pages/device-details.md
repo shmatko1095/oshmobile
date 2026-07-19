@@ -9,8 +9,7 @@ Use `MASTER.md` as the base. This file describes the current device-details impl
 - The scroll content contains:
   - a normal pinned `SliverAppBar` with the room/device name;
   - the temperature carousel;
-  - the full-width configuration-driven `dailyStats24h` card;
-  - any legacy tiles still listed by an older configuration.
+  - the full-width configuration-driven heating `ON` / `OFF` card.
 - `ThermostatModeBar` is positioned above the bottom safe area and never scrolls
   with the dashboard. The scroll content reserves the complete panel and hint
   height so the final tile cannot be obscured.
@@ -24,22 +23,31 @@ Use `MASTER.md` as the base. This file describes the current device-details impl
 
 - Device details intentionally use more visible card framing than settings/home.
 - Shared detail tiles are built from `AppSolidCard` and `AppGlassCard`.
-- The `dailyStats24h` widget groups energy used and heating runtime for the last
-  24 hours with an internal divider and no history tap.
-- Legacy `energyUsed`, `loadFactor24h`, `heatingToggle`, `powerNow`,
-  `voltageNow`, and `currentNow` implementations remain available when an older
-  device configuration lists them.
+- `heatingToggle` drives both the horizontal dashboard status and the square
+  live-value tile. The explicit `ON` / `OFF` text is the primary state signal;
+  color and the Material icon are secondary cues. When heating is active, both
+  cards use the same warm filled-card language. The wide dashboard card uses an
+  even tonal fill and a centered halo instead of a directional hotspot. It keeps
+  a compact 96 dp base height so the temperature carousel remains dominant.
+- `loadFactor24h` and `energyUsed` are separate live-value tiles, ordered after
+  `heatingToggle`. Their values are rolling 24-hour backend summaries rather
+  than client-side MQTT aggregations. Insufficient coverage uses the unavailable
+  state `—`; it must never be styled or announced as a real zero. The combined
+  `dailyStats24h` widget is unsupported.
 - The hero temperature card remains the strongest visual element on the control
-  screen.
+  screen and contains no heating flame indicator.
+- Energy and heating usage history uses vertical columns from zero. Bucket
+  width adapts to the selected range, while unavailable buckets keep their
+  horizontal position as visible gaps. Do not connect gaps, interpolate them,
+  or draw zero-height data bars. Tooltips are available only for populated
+  columns; reduced-motion mode removes the chart transition.
 
 ## Interaction
 
 - Horizontal drags remain owned by the sensor `PageView`.
-- A deliberate upward drag on the current temperature card opens the shared
-  history dashboard. It requires about `56 dp` of travel or a clear upward fling;
-  weak and diagonal gestures do not navigate.
-- The chart action and upward gesture use the same configuration-driven
-  navigator and pass the current sensor ID.
+- Temperature history opens only from the 44 dp chart action on the selected
+  sensor card; vertical card drags do not navigate.
+- Both heating status cards open the same heating-history route.
 - The route enters with a short bottom slide plus fade. Respect
   `MediaQuery.disableAnimations` by using a zero-duration transition.
 - The one-time mode editing hint is rendered above the fixed mode bar.
@@ -50,5 +58,5 @@ Use `MASTER.md` as the base. This file describes the current device-details impl
 - History entry points are visible only when `integrations.history.views`
   contains at least one supported graph series.
 - Unknown or unsupported history entries do not break the thermostat dashboard.
-- Dashboard widget visibility still comes from `integrations.oshmobile.widgets`;
-  compatibility widgets are not removed from the app.
+- Dashboard and live-value visibility still come from
+  `integrations.oshmobile.widgets`; unknown widget IDs are ignored.

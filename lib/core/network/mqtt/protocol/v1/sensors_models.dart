@@ -1,5 +1,10 @@
 import 'json_utils.dart';
 
+import 'climate_sensor_telemetry.dart';
+
+export 'climate_sensor_telemetry.dart';
+export 'telemetry_state.dart';
+
 class SensorPairing {
   final bool enabled;
   final String transport;
@@ -242,112 +247,4 @@ class SensorSnapshot {
   bool get humidityValid => telemetry?.humidityValid ?? false;
   double? get temp => telemetry?.temp;
   double? get humidity => telemetry?.humidity;
-}
-
-class ClimateSensorTelemetry {
-  final String id;
-  final bool tempValid;
-  final bool tempStale;
-  final bool humidityValid;
-  final double? temp;
-  final double? humidity;
-
-  const ClimateSensorTelemetry({
-    required this.id,
-    required this.tempValid,
-    required this.tempStale,
-    required this.humidityValid,
-    required this.temp,
-    required this.humidity,
-  });
-
-  static ClimateSensorTelemetry? fromJson(Map<String, dynamic> json) {
-    final id = asString(json['id']);
-    final tempValid = asBool(json['temp_valid']);
-    final tempStale = asBool(json['temp_stale']) ?? false;
-    final humidityValid = asBool(json['humidity_valid']);
-
-    if (id == null || tempValid == null || humidityValid == null) return null;
-
-    final tempRaw = json['temp'];
-    final humidityRaw = json['humidity'];
-
-    final temp = tempRaw == null ? null : asNum(tempRaw)?.toDouble();
-    final humidity =
-        humidityRaw == null ? null : asNum(humidityRaw)?.toDouble();
-
-    final tempDisplayable = tempValid || tempStale;
-    if (tempDisplayable && temp == null) return null;
-    if (!tempDisplayable && tempRaw != null) return null;
-    if (humidityValid && humidity == null) return null;
-
-    return ClimateSensorTelemetry(
-      id: id,
-      tempValid: tempValid,
-      tempStale: tempStale,
-      humidityValid: humidityValid,
-      temp: temp,
-      humidity: humidity,
-    );
-  }
-
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': id,
-        'temp_valid': tempValid,
-        if (tempStale) 'temp_stale': true,
-        'humidity_valid': humidityValid,
-        if (temp != null) 'temp': temp,
-        if (humidity != null) 'humidity': humidity,
-      };
-}
-
-class TelemetryState {
-  final List<ClimateSensorTelemetry> climateSensors;
-  final bool heaterEnabled;
-  final int loadFactor;
-  final Map<String, dynamic> raw;
-
-  const TelemetryState({
-    required this.climateSensors,
-    required this.heaterEnabled,
-    required this.loadFactor,
-    this.raw = const <String, dynamic>{},
-  });
-
-  static TelemetryState? fromJson(Map<String, dynamic> json) {
-    final sensorsRaw = json['climate_sensors'];
-    final heaterEnabled = asBool(json['heater_enabled']);
-    final loadFactor = asInt(json['load_factor']);
-
-    if (sensorsRaw is! List || heaterEnabled == null || loadFactor == null) {
-      return null;
-    }
-
-    final sensors = <ClimateSensorTelemetry>[];
-    for (final item in sensorsRaw) {
-      if (item is! Map) return null;
-      final parsed =
-          ClimateSensorTelemetry.fromJson(item.cast<String, dynamic>());
-      if (parsed == null) return null;
-      sensors.add(parsed);
-    }
-
-    return TelemetryState(
-      climateSensors: sensors,
-      heaterEnabled: heaterEnabled,
-      loadFactor: loadFactor,
-      raw: Map<String, dynamic>.unmodifiable(json),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      ...raw,
-      'climate_sensors': [
-        for (final item in climateSensors) item.toJson(),
-      ],
-      'heater_enabled': heaterEnabled,
-      'load_factor': loadFactor,
-    };
-  }
 }

@@ -17,16 +17,16 @@ import 'package:oshmobile/features/devices/details/presentation/presenters/utils
 import 'package:oshmobile/features/devices/details/presentation/presenters/utils/temperature_sensors_resolver.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_history_strip_card.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/heating_status_horizontal_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_dashboard_app_bar.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_live_metrics_overlay.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_live_metrics_sheet.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_mode_bar.dart';
-import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_stats_24h_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/delta_temp_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_energy_usage_card.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_heating_usage_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/heating_status_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/inlet_temp_card.dart';
-import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/load_factor_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/outlet_temp_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/power_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/power_metric_card.dart';
@@ -75,7 +75,6 @@ class ThermostatBasicPresenter implements DevicePresenter {
 
     final hero = schema.hero;
     final modeBar = schema.modeBar;
-    final dailyStats24h = schema.dailyStats24h;
     final heatingStatus = schema.heatingStatus;
     final temperatureHistoryStrip = schema.temperatureHistoryStrip;
     final climateSensorPairing = schema.climateSensorPairing;
@@ -140,7 +139,6 @@ class ThermostatBasicPresenter implements DevicePresenter {
                       sensorsBind: hero.sensorsBind,
                       currentTargetBind: hero.currentTargetBind,
                       nextTargetBind: hero.nextTargetBind,
-                      heatingStatusBind: heatingStatus?.bind,
                       unit: '°C',
                       height: height,
                       showHistoryPreview: showHistoryPreview,
@@ -184,15 +182,11 @@ class ThermostatBasicPresenter implements DevicePresenter {
                   );
                 }
 
-                Widget buildDailyStats() {
-                  if (dailyStats24h == null) return const SizedBox.shrink();
-                  return DailyStats24hCard(
-                    energySeriesKey: dailyStats24h.energySeriesKey,
-                    heatingActivityBind: dailyStats24h.heatingActivityBind,
-                    cache: _dailyEnergyCache,
-                    cacheNamespace:
-                        device.sn.trim().isEmpty ? device.id : device.sn.trim(),
-                    compact: true,
+                Widget buildHeatingStatus() {
+                  if (heatingStatus == null) return const SizedBox.shrink();
+                  return HeatingStatusHorizontalCard(
+                    bind: heatingStatus.bind,
+                    onTap: () => _historyOpener.openHeating(context),
                   );
                 }
 
@@ -202,13 +196,13 @@ class ThermostatBasicPresenter implements DevicePresenter {
                     dashboardLayout.bottomReservedHeight;
                 final dashboardBodyHeight = dashboardLayout.dashboardBodyHeight;
                 final contentHeight = dashboardLayout.contentHeight;
-                final scaledStatsHeight = dashboardLayout.scaledStatsHeight;
+                final scaledSummaryHeight = dashboardLayout.scaledSummaryHeight;
 
                 Widget dashboardContent;
                 if (landscape &&
                     constraints.maxWidth >= 680 &&
                     hero != null &&
-                    dailyStats24h != null) {
+                    heatingStatus != null) {
                   dashboardContent = Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -221,19 +215,19 @@ class ThermostatBasicPresenter implements DevicePresenter {
                         flex: 2,
                         child: Align(
                           alignment: Alignment.topCenter,
-                          child: buildDailyStats(),
+                          child: buildHeatingStatus(),
                         ),
                       ),
                     ],
                   );
-                } else if (hero != null && dailyStats24h != null) {
-                  final statsHeight = math.min(
-                    scaledStatsHeight,
+                } else if (hero != null && heatingStatus != null) {
+                  final summaryHeight = math.min(
+                    scaledSummaryHeight,
                     contentHeight,
                   );
                   final heroHeight = math.max(
                     0.0,
-                    contentHeight - statsHeight - sectionSpacing,
+                    contentHeight - summaryHeight - sectionSpacing,
                   );
                   dashboardContent = Column(
                     children: [
@@ -242,25 +236,25 @@ class ThermostatBasicPresenter implements DevicePresenter {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: SizedBox(
-                          height: statsHeight,
-                          child: buildDailyStats(),
+                          height: summaryHeight,
+                          child: buildHeatingStatus(),
                         ),
                       ),
                     ],
                   );
                 } else if (hero != null) {
                   dashboardContent = buildHero(contentHeight);
-                } else if (dailyStats24h != null) {
+                } else if (heatingStatus != null) {
                   dashboardContent = Align(
                     alignment: Alignment.topCenter,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: SizedBox(
                         height: math.min(
-                          scaledStatsHeight,
+                          scaledSummaryHeight,
                           contentHeight,
                         ),
-                        child: buildDailyStats(),
+                        child: buildHeatingStatus(),
                       ),
                     ),
                   );
@@ -415,15 +409,18 @@ class ThermostatBasicPresenter implements DevicePresenter {
     ThermostatTileSpec tile,
   ) {
     switch (tile) {
-      case ThermostatDailyEnergyTileSpec(
-          telemetryHistoryIntent: final historyIntent,
-        ):
+      case ThermostatDailyEnergyTileSpec():
         return DailyEnergyUsageCard(
           title: S.of(context).TelemetryHistoryMetricEnergyUsed,
           cache: _dailyEnergyCache,
           cacheNamespace:
               device.sn.trim().isEmpty ? device.id : device.sn.trim(),
-          onTap: _historyTap(context, historyIntent),
+          onTap: () => _historyOpener.openEnergyUsage(context),
+        );
+      case ThermostatDailyHeatingTileSpec():
+        return DailyHeatingUsageCard(
+          title: S.of(context).TelemetryHistoryMetricLoadFactor,
+          onTap: () => _historyOpener.openLoadFactor(context),
         );
       case ThermostatSingleBindTileSpec(
           type: final type,
@@ -477,11 +474,7 @@ class ThermostatBasicPresenter implements DevicePresenter {
           onTap: () => _historyOpener.openHeating(context),
         );
       case ThermostatTileType.loadFactor24h:
-        return LoadFactorKpiCard(
-          percentBind: bind,
-          title: s.TelemetryHistoryMetricLoadFactor,
-          onTap: () => _historyOpener.openLoadFactor(context),
-        );
+        return const SizedBox.shrink();
       case ThermostatTileType.inletTemp:
         return InletTempCard(bind: bind);
       case ThermostatTileType.outletTemp:

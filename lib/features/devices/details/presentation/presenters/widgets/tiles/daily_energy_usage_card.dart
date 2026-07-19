@@ -26,7 +26,7 @@ class DailyEnergyUsageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => DailyEnergyUsageCubit(
-        telemetryHistory: context.read<DeviceFacade>().telemetryHistory,
+        energyUsageReader: context.read<DeviceFacade>().telemetryHistory,
         persistentCache: cache,
         persistentCacheNamespace: cacheNamespace,
       )..startPolling(),

@@ -35,6 +35,8 @@ import 'package:oshmobile/features/sensors/domain/repositories/sensors_repositor
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_aggregate.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_history.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_setpoint_history.dart';
+import 'package:oshmobile/features/telemetry_history/domain/usecases/get_energy_usage.dart';
+import 'package:oshmobile/features/telemetry_history/domain/usecases/get_heating_usage.dart';
 import 'package:oshmobile/core/di/device_context.dart';
 
 /// Device DI scope.
@@ -256,6 +258,8 @@ class DeviceDi {
         getTelemetryHistory: getIt<GetTelemetryHistory>(),
         getTelemetryAggregate: getIt<GetTelemetryAggregate>(),
         getTelemetrySetpointHistory: getIt<GetTelemetrySetpointHistory>(),
+        getEnergyUsage: getIt<GetEnergyUsage>(),
+        getHeatingUsage: getIt<GetHeatingUsage>(),
       ),
       dispose: (f) => unawaited(f.dispose()),
     );

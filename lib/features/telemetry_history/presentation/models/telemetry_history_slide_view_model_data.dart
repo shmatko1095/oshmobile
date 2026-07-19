@@ -19,6 +19,8 @@ class TelemetryHistorySlideViewModel {
     required this.chartRangeMinValues,
     required this.chartRangeMaxValues,
     required this.chartTimestamps,
+    required this.barChartValues,
+    required this.barChartTimestamps,
     required this.numericSeries,
     required this.chartKind,
     required this.isEmpty,
@@ -42,6 +44,8 @@ class TelemetryHistorySlideViewModel {
   final List<double?> chartRangeMinValues;
   final List<double?> chartRangeMaxValues;
   final List<DateTime> chartTimestamps;
+  final List<double?> barChartValues;
+  final List<DateTime> barChartTimestamps;
   final List<HistoryMultiLineSeries> numericSeries;
   final TelemetryHistorySlideChartKind chartKind;
   final bool isEmpty;

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:oshmobile/core/theme/app_palette.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/telemetry_history_series_reader.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_point.dart';
@@ -882,6 +883,10 @@ void main() {
       expect(chart.series.single.points.single.value, 900.0);
       expect(chart.series.single.points.single.rangeMinValue, 40.0);
       expect(chart.series.single.points.single.rangeMaxValue, 900.0);
+      expect(
+        chart.tooltipTimeLabelBuilder!(api.requests.single.from),
+        contains(':'),
+      );
 
       await cubit.close();
     });
@@ -947,6 +952,11 @@ void main() {
         find.byType(HistoryBarChart),
       );
       expect(chart.values, <double>[0.42, 0.58]);
+      expect(chart.color, AppPalette.accentSuccess);
+      expect(
+        chart.tooltipTimeLabelBuilder!(api.requests.single.from),
+        contains(':'),
+      );
       expect(chart.showGrid, isTrue);
       expect(chart.showHorizontalGrid, isNull);
       expect(chart.showVerticalGrid, isFalse);
@@ -1013,6 +1023,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(HistoryBarChart), findsOneWidget);
+      final chart = tester.widget<HistoryBarChart>(
+        find.byType(HistoryBarChart),
+      );
+      expect(
+        chart.tooltipTimeLabelBuilder!(api.requests.single.from),
+        isNot(contains(':')),
+      );
       expect(find.text('Total'), findsOneWidget);
       expect(find.text('Avg / day'), findsOneWidget);
       expect(find.text('Peak interval'), findsOneWidget);
@@ -1020,6 +1037,52 @@ void main() {
       expect(find.text('1.000 kWh'), findsOneWidget);
       expect(find.text('0.143 kWh'), findsOneWidget);
       expect(find.text('0.580 kWh'), findsOneWidget);
+
+      await cubit.close();
+    });
+
+    testWidgets('uses heating red for heating usage bars', (tester) async {
+      final api = _QueuedTelemetryHistoryApi();
+      final now = DateTime.utc(2026, 3, 14, 20, 18, 40);
+      final cubit = TelemetryHistoryCubit(
+        seriesReader: api,
+        metrics: const <TelemetryHistoryMetric>[
+          TelemetryHistoryMetric(
+            title: 'Heating runtime',
+            seriesKey: 'usage.heating',
+            kind: TelemetryHistoryMetricKind.numeric,
+            unit: '%',
+            fractionDigits: 0,
+            displayMode: TelemetryHistoryMetricDisplayMode.heatingUsage,
+          ),
+        ],
+        nowUtc: () => now,
+      );
+
+      await _pumpPage(tester, cubit);
+
+      cubit.load();
+      await tester.pump();
+      api.requests.single.completer.complete(
+        _series(
+          seriesKey: api.requests.single.seriesKey,
+          from: api.requests.single.from,
+          to: api.requests.single.to,
+          points: <TelemetryHistoryPoint>[
+            TelemetryHistoryPoint(
+              bucketStart: api.requests.single.from,
+              samplesCount: 1,
+              lastNumericValue: 35,
+            ),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final chart = tester.widget<HistoryBarChart>(
+        find.byType(HistoryBarChart),
+      );
+      expect(chart.color, AppPalette.accentWarning);
 
       await cubit.close();
     });
@@ -1062,7 +1125,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(HistoryLineChart), findsOneWidget);
+      final chart = tester.widget<HistoryLineChart>(
+        find.byType(HistoryLineChart),
+      );
+      expect(
+        chart.tooltipBuilder!(api.requests.single.from, 1),
+        contains(':'),
+      );
       expect(find.byType(HistoryMultiLineChart), findsNothing);
 
       await cubit.close();

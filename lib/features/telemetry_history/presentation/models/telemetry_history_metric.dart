@@ -6,6 +6,8 @@ enum TelemetryHistoryMetricKind {
 enum TelemetryHistoryMetricDisplayMode {
   line,
   energyDelta,
+  energyUsage,
+  heatingUsage,
 }
 
 class TelemetryHistoryMetric {

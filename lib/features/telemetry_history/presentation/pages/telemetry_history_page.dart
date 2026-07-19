@@ -11,6 +11,7 @@ import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_his
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_slide_view_model.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_window.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/utils/telemetry_history_date_formatters.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/utils/telemetry_history_timestamp_formatter.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_bar_chart.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_line_chart.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/widgets/history_multi_line_chart.dart';

@@ -1,81 +1,72 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/core/configuration/app_polling_intervals.dart';
-import 'package:oshmobile/core/configuration/power_meter_series_keys.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_energy_usage_cubit.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_energy_usage_state.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/daily_energy_usage_cache.dart';
-import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate.dart';
-import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_query.dart';
-import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_series.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/energy_usage_reader.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/energy_usage.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_usage_query.dart';
 
 void main() {
-  test('requests rolling 24h aggregate and reads energy sum value', () async {
+  test('requests rolling 24h usage and reads backend total', () async {
     final now = DateTime.utc(2026, 3, 14, 10);
-    late TelemetryAggregateQuery capturedQuery;
-    final api = _FakeTelemetryHistoryApi(
-      onAggregate: (query) async {
+    late TelemetryUsageQuery capturedQuery;
+    final api = _FakeEnergyUsageReader(
+      onUsage: (query) async {
         capturedQuery = query;
-        return _aggregate(
+        return _usage(
           from: query.from,
           to: query.to,
-          energyWh: 1000,
+          totalKwh: 1,
         );
       },
     );
     final cubit = DailyEnergyUsageCubit(
-      telemetryHistory: api,
+      energyUsageReader: api,
       nowUtc: () => now,
     );
     addTearDown(cubit.close);
 
     await cubit.ensureLoaded();
 
-    expect(capturedQuery.seriesKeys, const <String>[
-      PowerMeterSeriesKeys.energyWhDelta,
-    ]);
     expect(capturedQuery.from, now.subtract(const Duration(hours: 24)));
     expect(capturedQuery.to, now);
-    expect(capturedQuery.preferredResolution, 'auto');
+    expect(capturedQuery.bucket, isNull);
+    expect(capturedQuery.timezone, isNull);
     expect(cubit.state.status, DailyEnergyUsageStatus.ready);
     expect(cubit.state.energyWh, 1000);
   });
 
-  test('uses the aggregate series key supplied by configuration', () async {
-    const configuredSeriesKey = 'custom.energy_delta';
+  test('keeps unavailable backend total as missing data', () async {
     final now = DateTime.utc(2026, 3, 14, 10);
-    late TelemetryAggregateQuery capturedQuery;
-    final api = _FakeTelemetryHistoryApi(
-      onAggregate: (query) async {
-        capturedQuery = query;
-        return _aggregate(
+    final api = _FakeEnergyUsageReader(
+      onUsage: (query) async {
+        return _usage(
           from: query.from,
           to: query.to,
-          energyWh: 750,
-          seriesKey: configuredSeriesKey,
+          totalKwh: null,
+          coverageRatio: 0.89,
         );
       },
     );
     final cubit = DailyEnergyUsageCubit(
-      telemetryHistory: api,
-      aggregateSeriesKey: configuredSeriesKey,
+      energyUsageReader: api,
       nowUtc: () => now,
     );
     addTearDown(cubit.close);
 
     await cubit.ensureLoaded();
 
-    expect(capturedQuery.seriesKeys, const <String>[configuredSeriesKey]);
-    expect(cubit.state.energyWh, 750);
+    expect(cubit.state.energyWh, isNull);
   });
 
   test('emits cached value before refreshing from backend', () async {
     final now = DateTime.utc(2026, 3, 14, 10);
-    final completer = Completer<TelemetryAggregate>();
-    final api = _FakeTelemetryHistoryApi(
-      onAggregate: (query) => completer.future,
+    final completer = Completer<EnergyUsage>();
+    final api = _FakeEnergyUsageReader(
+      onUsage: (query) => completer.future,
     );
     final cache = _MemoryDailyEnergyUsageCache()
       ..record = DailyEnergyUsageCacheRecord(
@@ -85,7 +76,7 @@ void main() {
         windowEnd: now.subtract(const Duration(hours: 1)),
       );
     final cubit = DailyEnergyUsageCubit(
-      telemetryHistory: api,
+      energyUsageReader: api,
       persistentCache: cache,
       persistentCacheNamespace: 'SN-1',
       nowUtc: () => now,
@@ -100,10 +91,10 @@ void main() {
     expect(cubit.state.isFromPersistentCache, isTrue);
 
     completer.complete(
-      _aggregate(
+      _usage(
         from: now.subtract(const Duration(hours: 24)),
         to: now,
-        energyWh: 1000,
+        totalKwh: 1,
       ),
     );
     await load;
@@ -116,8 +107,8 @@ void main() {
 
   test('keeps cached value when backend refresh fails', () async {
     final now = DateTime.utc(2026, 3, 14, 10);
-    final api = _FakeTelemetryHistoryApi(
-      onAggregate: (_) async => throw StateError('offline'),
+    final api = _FakeEnergyUsageReader(
+      onUsage: (_) async => throw StateError('offline'),
     );
     final cache = _MemoryDailyEnergyUsageCache()
       ..record = DailyEnergyUsageCacheRecord(
@@ -127,7 +118,7 @@ void main() {
         windowEnd: now.subtract(const Duration(hours: 1)),
       );
     final cubit = DailyEnergyUsageCubit(
-      telemetryHistory: api,
+      energyUsageReader: api,
       persistentCache: cache,
       persistentCacheNamespace: 'SN-1',
       nowUtc: () => now,
@@ -145,18 +136,18 @@ void main() {
       (tester) async {
     final now = DateTime.utc(2026, 3, 14, 10);
     var requestCount = 0;
-    final api = _FakeTelemetryHistoryApi(
-      onAggregate: (query) async {
+    final api = _FakeEnergyUsageReader(
+      onUsage: (query) async {
         requestCount += 1;
-        return _aggregate(
+        return _usage(
           from: query.from,
           to: query.to,
-          energyWh: requestCount * 1000,
+          totalKwh: requestCount.toDouble(),
         );
       },
     );
     final cubit = DailyEnergyUsageCubit(
-      telemetryHistory: api,
+      energyUsageReader: api,
       nowUtc: () => now,
     );
 
@@ -179,47 +170,42 @@ void main() {
   });
 }
 
-TelemetryAggregate _aggregate({
+EnergyUsage _usage({
   required DateTime from,
   required DateTime to,
-  required double energyWh,
-  String seriesKey = PowerMeterSeriesKeys.energyWhDelta,
+  required double? totalKwh,
+  double coverageRatio = 1,
 }) {
-  return TelemetryAggregate(
+  return EnergyUsage(
     deviceId: 'device-1',
     serial: 'SN-1',
-    resolution: '5m',
     from: from,
     to: to,
-    series: <TelemetryAggregateSeries>[
-      TelemetryAggregateSeries(
-        seriesKey: seriesKey,
-        valueType: 'numeric',
-        unit: 'Wh',
-        samplesCount: 24,
-        sumValue: energyWh,
-      ),
-    ],
+    bucket: '',
+    timezone: 'UTC',
+    availableFrom: from,
+    coverageRatio: coverageRatio,
+    totalKwh: totalKwh,
+    averageBucketKwh: null,
+    peakBucketKwh: null,
+    peakBucketFrom: null,
+    points: const [],
   );
 }
 
-class _FakeTelemetryHistoryApi implements DeviceTelemetryHistoryApi {
-  _FakeTelemetryHistoryApi({
-    required this.onAggregate,
+class _FakeEnergyUsageReader implements EnergyUsageReader {
+  _FakeEnergyUsageReader({
+    required this.onUsage,
   });
 
-  final Future<TelemetryAggregate> Function(TelemetryAggregateQuery query)
-      onAggregate;
+  final Future<EnergyUsage> Function(TelemetryUsageQuery query) onUsage;
 
   @override
-  Future<TelemetryAggregate> getAggregate({
-    required TelemetryAggregateQuery query,
+  Future<EnergyUsage> getEnergyUsage({
+    required TelemetryUsageQuery query,
   }) {
-    return onAggregate(query);
+    return onUsage(query);
   }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _MemoryDailyEnergyUsageCache implements DailyEnergyUsageCache {

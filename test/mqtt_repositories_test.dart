@@ -515,7 +515,7 @@ DeviceRuntimeContracts _runtimeContractsFor(Map<String, Set<String>> domains) {
       return {
         'type': 'object',
         'additionalProperties': false,
-        'required': ['climate_sensors', 'heater_enabled', 'load_factor'],
+        'required': ['climate_sensors', 'heater_enabled'],
         'properties': {
           'climate_sensors': {
             'type': 'array',
@@ -587,7 +587,28 @@ DeviceRuntimeContracts _runtimeContractsFor(Map<String, Set<String>> domains) {
             },
           },
           'heater_enabled': {'type': 'boolean'},
-          'load_factor': {'type': 'integer'},
+          'load_factor': {
+            'type': 'integer',
+            'minimum': 0,
+            'maximum': 100,
+            'deprecated': true,
+          },
+          'power_meter': {
+            'type': 'object',
+            'properties': {
+              'online': {'type': 'boolean'},
+              'voltage_valid': {'type': 'boolean'},
+              'voltage_v': {'type': 'number'},
+              'current_valid': {'type': 'boolean'},
+              'current_a': {'type': 'number'},
+              'active_power_valid': {'type': 'boolean'},
+              'active_power_w': {'type': 'number'},
+              'apparent_power_valid': {'type': 'boolean'},
+              'apparent_power_va': {'type': 'number'},
+              'power_factor_valid': {'type': 'boolean'},
+              'power_factor': {'type': 'number'},
+            },
+          },
         },
       };
     }
@@ -1019,7 +1040,6 @@ void main() {
               }
             ],
             'heater_enabled': false,
-            'load_factor': 18,
           }
         }
       },
@@ -1027,7 +1047,7 @@ void main() {
 
     final state = await future;
     expect(state.heaterEnabled, isFalse);
-    expect(state.loadFactor, 18);
+    expect(state.toJson(), isNot(contains('load_factor')));
     expect(state.climateSensors, hasLength(2));
     expect(state.climateSensors.first.id, 'air');
     expect(state.climateSensors.first.temp, 22.6);
@@ -1054,7 +1074,7 @@ void main() {
     final future = repo.watchState().firstWhere(
           (state) =>
               state.climateSensors.isNotEmpty &&
-              state.climateSensors.first.tempStale,
+              state.climateSensors.first.tempStale == true,
         );
 
     mqtt.emit(
@@ -1167,7 +1187,7 @@ void main() {
     final powerMeter = json['power_meter'] as Map;
 
     expect(state.heaterEnabled, isTrue);
-    expect(state.loadFactor, 24);
+    expect(json, isNot(contains('load_factor')));
     expect(powerMeter['active_power_w'], 512.4);
     expect(json['future_top_level_field'], 'kept');
     expect(state.raw['power_meter'], isA<Map>());
@@ -1175,7 +1195,7 @@ void main() {
     await repo.unsubscribe();
   });
 
-  test('TelemetryRepository rejects invalid known telemetry fields', () async {
+  test('TelemetryRepository isolates invalid known telemetry fields', () async {
     final mqtt = _FakeDeviceMqttRepo();
     final contracts = _runtimeContractsFor({
       'telemetry': {'state'},
@@ -1223,8 +1243,14 @@ void main() {
       },
     );
 
-    await expectLater(future, throwsStateError);
-    expect(repo.currentState, isNull);
+    final state = await future;
+    final json = state.toJson();
+    final powerMeter = json['power_meter'] as Map;
+
+    expect(state.heaterEnabled, isNull);
+    expect(state.climateSensors.single.temp, 22.6);
+    expect(powerMeter['active_power_w'], 512.4);
+    expect(repo.currentState, same(state));
   });
 
   test('TelemetryRepository polls telemetry.get periodically', () async {

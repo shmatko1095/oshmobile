@@ -26,7 +26,7 @@ class HistoryBarChart extends StatelessWidget {
     this.semanticLabel,
   });
 
-  final List<double> values;
+  final List<double?> values;
   final List<DateTime> timestamps;
   final DateTime? windowStart;
   final DateTime? windowEnd;
@@ -68,7 +68,13 @@ class HistoryBarChart extends StatelessWidget {
         ? AppPalette.white.withValues(alpha: 0.95)
         : AppPalette.lightBorderSubtle;
 
-    final yValues = points.map((point) => point.value).toList(growable: false);
+    final yValues = points
+        .map((point) => point.value)
+        .whereType<double>()
+        .toList(growable: false);
+    if (yValues.isEmpty) {
+      return const SizedBox.expand();
+    }
     final maxRaw = yValues.reduce(math.max);
     final yInterval = _niceInterval(
       maxRaw <= 0 ? 1 : maxRaw,
@@ -88,19 +94,26 @@ class HistoryBarChart extends StatelessWidget {
           x: i,
           barRods: <BarChartRodData>[
             BarChartRodData(
-              toY: points[i].value,
+              toY: points[i].value ?? 0,
               width: barWidth,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(4),
               ),
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: <Color>[
-                  color.withValues(alpha: 0.22),
-                  color.withValues(alpha: 0.72),
-                ],
-              ),
+              gradient: points[i].value == null
+                  ? const LinearGradient(
+                      colors: <Color>[
+                        AppPalette.transparent,
+                        AppPalette.transparent,
+                      ],
+                    )
+                  : LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: <Color>[
+                        color.withValues(alpha: 0.22),
+                        color.withValues(alpha: 0.72),
+                      ],
+                    ),
             ),
           ],
         ),
@@ -232,6 +245,7 @@ class HistoryBarChart extends StatelessWidget {
                 final index = group.x;
                 if (index < 0 || index >= points.length) return null;
                 final point = points[index];
+                if (point.value == null) return null;
                 final header = tooltipTimeLabelBuilder?.call(point.timestamp) ??
                     xAxisLabelBuilder?.call(point.timestamp) ??
                     _defaultTimeLabel(point.timestamp);
@@ -253,7 +267,7 @@ class HistoryBarChart extends StatelessWidget {
                       ),
                     ),
                     TextSpan(
-                      text: _formatValueLabel(point.value),
+                      text: _formatValueLabel(point.value!),
                       style: TextStyle(
                         color: color,
                         fontSize: 12,
@@ -266,7 +280,9 @@ class HistoryBarChart extends StatelessWidget {
             ),
           ),
         ),
-        duration: const Duration(milliseconds: 260),
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 260),
         curve: Curves.easeOutCubic,
       ),
     );
@@ -280,7 +296,7 @@ class HistoryBarChart extends StatelessWidget {
     final points = <_HistoryBarPoint>[];
     for (var i = 0; i < values.length; i++) {
       final value = values[i];
-      if (!value.isFinite) continue;
+      if (value != null && !value.isFinite) continue;
       final timestamp = timestamps[i].toUtc();
       if (hasWindow &&
           (timestamp.isBefore(startUtc) || timestamp.isAfter(endUtc))) {
@@ -288,7 +304,7 @@ class HistoryBarChart extends StatelessWidget {
       }
       points.add(
         _HistoryBarPoint(
-          value: math.max(0, value),
+          value: value == null ? null : math.max(0, value),
           timestamp: timestamp,
         ),
       );
@@ -323,7 +339,7 @@ class _HistoryBarPoint {
     required this.timestamp,
   });
 
-  final double value;
+  final double? value;
   final DateTime timestamp;
 }
 

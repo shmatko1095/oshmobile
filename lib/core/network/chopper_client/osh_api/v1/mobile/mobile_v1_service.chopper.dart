@@ -208,6 +208,56 @@ final class _$MobileV1Service extends MobileV1Service {
   }
 
   @override
+  Future<Response<dynamic>> getMyDeviceEnergyUsage({
+    required String serial,
+    required String from,
+    required String to,
+    String? bucket,
+    String? timezone,
+  }) {
+    final Uri $url = Uri.parse(
+        'https://api.oshhome.com/v1/mobile/devices/${serial}/telemetry/energy-usage');
+    final Map<String, dynamic> $params = <String, dynamic>{
+      'from': from,
+      'to': to,
+      'bucket': bucket,
+      'timezone': timezone,
+    };
+    final Request $request = Request(
+      'GET',
+      $url,
+      client.baseUrl,
+      parameters: $params,
+    );
+    return client.send<dynamic, dynamic>($request);
+  }
+
+  @override
+  Future<Response<dynamic>> getMyDeviceHeatingUsage({
+    required String serial,
+    required String from,
+    required String to,
+    String? bucket,
+    String? timezone,
+  }) {
+    final Uri $url = Uri.parse(
+        'https://api.oshhome.com/v1/mobile/devices/${serial}/telemetry/heating-usage');
+    final Map<String, dynamic> $params = <String, dynamic>{
+      'from': from,
+      'to': to,
+      'bucket': bucket,
+      'timezone': timezone,
+    };
+    final Request $request = Request(
+      'GET',
+      $url,
+      client.baseUrl,
+      parameters: $params,
+    );
+    return client.send<dynamic, dynamic>($request);
+  }
+
+  @override
   Future<Response<dynamic>> getClientPolicy({
     required String platform,
     required String appVersion,

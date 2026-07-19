@@ -3,7 +3,6 @@ import 'package:oshmobile/core/configuration/models/device_configuration_bundle.
 import 'package:oshmobile/core/configuration/power_meter_series_keys.dart';
 import 'package:oshmobile/features/devices/details/domain/builders/thermostat_dashboard_schema_builder.dart';
 import 'package:oshmobile/features/devices/details/domain/models/thermostat_dashboard_schema.dart';
-import 'package:oshmobile/features/devices/details/domain/models/thermostat_daily_stats_24h_spec.dart';
 import 'package:oshmobile/features/devices/details/domain/models/thermostat_heating_status_spec.dart';
 
 class ConfigurationThermostatDashboardSchemaBuilder
@@ -35,11 +34,6 @@ class ConfigurationThermostatDashboardSchemaBuilder
         _buildClimateSensorPairingSpec(bundle, registry);
     if (climateSensorPairing != null) {
       visibleWidgetIds.add(_climateSensorPairingWidgetId);
-    }
-
-    final dailyStats24h = _buildDailyStats24hSpec(bundle, registry);
-    if (dailyStats24h != null) {
-      visibleWidgetIds.add(_dailyStats24hWidgetId);
     }
 
     final energySeriesKeys = _energySeriesKeys(bundle, registry);
@@ -77,7 +71,6 @@ class ConfigurationThermostatDashboardSchemaBuilder
     return ThermostatDashboardSchema(
       hero: hero,
       modeBar: modeBar,
-      dailyStats24h: dailyStats24h,
       heatingStatus: heatingStatus,
       temperatureHistoryStrip: temperatureHistoryStrip,
       climateSensorPairing: climateSensorPairing,
@@ -99,36 +92,6 @@ class ConfigurationThermostatDashboardSchemaBuilder
       }
     }
     return null;
-  }
-
-  ThermostatDailyStats24hSpec? _buildDailyStats24hSpec(
-    DeviceConfigurationBundle bundle,
-    ControlRegistry registry,
-  ) {
-    if (!_canRenderWidget(bundle, registry, _dailyStats24hWidgetId)) {
-      return null;
-    }
-
-    final energyControlId =
-        _requiredWidgetBind(bundle, registry, _dailyStats24hWidgetId, 0);
-    final heatingActivityBind =
-        _requiredWidgetBind(bundle, registry, _dailyStats24hWidgetId, 1);
-    if (energyControlId == null || heatingActivityBind == null) {
-      return null;
-    }
-
-    final energyBinding = registry.readBinding(energyControlId);
-    final energySeriesKey = energyBinding?.path?.trim() ?? '';
-    if (energyBinding?.kind != 'domain_path' ||
-        energyBinding?.domain != 'telemetry' ||
-        energySeriesKey.isEmpty) {
-      return null;
-    }
-
-    return ThermostatDailyStats24hSpec(
-      energySeriesKey: energySeriesKey,
-      heatingActivityBind: heatingActivityBind,
-    );
   }
 
   ThermostatHeroSpec? _buildHeroSpec(
@@ -251,6 +214,8 @@ class ConfigurationThermostatDashboardSchemaBuilder
         return ThermostatDailyEnergyTileSpec(
           telemetryHistoryIntent: historyIntent,
         );
+      case _TileShape.dailyHeating:
+        return const ThermostatDailyHeatingTileSpec();
       case _TileShape.delta:
         final inletBind =
             _requiredWidgetBind(bundle, registry, descriptor.widgetId, 0);
@@ -382,7 +347,8 @@ class ConfigurationThermostatDashboardSchemaBuilder
     if (widget == null) {
       return false;
     }
-    if (widgetId == _energyWidgetId && widget.controlIds.isEmpty) {
+    if ((widgetId == _energyWidgetId || widgetId == _loadFactorWidgetId) &&
+        widget.controlIds.isEmpty) {
       return bundle.canReadDomain('telemetry');
     }
     if (widget.controlIds.isEmpty) {
@@ -433,14 +399,15 @@ class ConfigurationThermostatDashboardSchemaBuilder
 const String _heroWidgetId = 'heroTemperature';
 const String _modeBarWidgetId = 'modeBar';
 const String _climateSensorPairingWidgetId = 'climateSensorPairing';
-const String _dailyStats24hWidgetId = 'dailyStats24h';
 const String _energyWidgetId = 'energyUsed';
+const String _loadFactorWidgetId = 'loadFactor24h';
 const String _powerWidgetId = 'powerNow';
 
 enum _TileShape {
   singleBind,
   valueWithOptionalValid,
   dailyEnergy,
+  dailyHeating,
   delta,
 }
 
@@ -471,7 +438,7 @@ const List<_TileDescriptor> _tileDescriptors = <_TileDescriptor>[
   _TileDescriptor(
     widgetId: 'loadFactor24h',
     type: ThermostatTileType.loadFactor24h,
-    shape: _TileShape.singleBind,
+    shape: _TileShape.dailyHeating,
   ),
   _TileDescriptor(
     widgetId: 'energyUsed',

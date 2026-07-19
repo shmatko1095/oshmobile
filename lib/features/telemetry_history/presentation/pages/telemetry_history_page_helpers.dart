@@ -142,10 +142,14 @@ String _tooltipLabel({
   required DateTime timestamp,
   required double value,
   required TelemetryHistoryMetric metric,
+  required TelemetryHistoryWindow window,
   required String localeTag,
 }) {
-  final local = timestamp.toLocal();
-  final time = DateFormat.yMd(localeTag).add_Hm().format(local);
+  final time = telemetryHistoryTooltipTimestampLabel(
+    timestamp: timestamp,
+    window: window,
+    localeTag: localeTag,
+  );
   return '$time\n${_fmtValue(value, metric)}';
 }
 
@@ -159,7 +163,12 @@ String _tooltipMinValueLabel({
 
 String _tooltipTimeLabel({
   required DateTime timestamp,
+  required TelemetryHistoryWindow window,
   required String localeTag,
 }) {
-  return DateFormat.yMd(localeTag).add_Hm().format(timestamp.toLocal());
+  return telemetryHistoryTooltipTimestampLabel(
+    timestamp: timestamp,
+    window: window,
+    localeTag: localeTag,
+  );
 }

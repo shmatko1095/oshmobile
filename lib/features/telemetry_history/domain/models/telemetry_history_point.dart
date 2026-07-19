@@ -10,6 +10,7 @@ class TelemetryHistoryPoint {
     this.lastBoolValue,
     this.trueRatio,
     this.referenceSensorId,
+    this.coverageRatio,
   });
 
   final DateTime bucketStart;
@@ -22,4 +23,5 @@ class TelemetryHistoryPoint {
   final bool? lastBoolValue;
   final double? trueRatio;
   final String? referenceSensorId;
+  final double? coverageRatio;
 }

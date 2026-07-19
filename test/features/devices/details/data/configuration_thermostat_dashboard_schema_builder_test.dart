@@ -8,7 +8,7 @@ import 'package:oshmobile/features/telemetry_history/presentation/models/telemet
 void main() {
   const builder = ConfigurationThermostatDashboardSchemaBuilder();
 
-  test('builds configured daily 24h stats from two readable controls', () {
+  test('ignores removed daily 24h stats widget', () {
     final bundle = _bundle(
       widgets: const <Map<String, dynamic>>[
         {
@@ -31,42 +31,9 @@ void main() {
 
     final schema = builder.build(bundle: bundle);
 
-    expect(schema.visibleWidgetIds, const <String>['dailyStats24h']);
-    expect(
-      schema.dailyStats24h?.energySeriesKey,
-      TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
-    );
-    expect(
-      schema.dailyStats24h?.heatingActivityBind,
-      'heatingActivity24h',
-    );
-    expect(schema.tiles, isEmpty);
-  });
-
-  test('skips daily 24h stats when one required control is unknown', () {
-    final bundle = _bundle(
-      widgets: const <Map<String, dynamic>>[
-        {
-          'id': 'dailyStats24h',
-          'control_ids': [
-            'powerMeterEnergyWhDelta',
-            'missingHeatingActivity',
-          ],
-        },
-      ],
-      controls: const <Map<String, dynamic>>[
-        {
-          'id': 'powerMeterEnergyWhDelta',
-          'path': 'power_meter.energy_wh_delta',
-        },
-      ],
-      readableDomains: const <String>{'telemetry'},
-    );
-
-    final schema = builder.build(bundle: bundle);
-
-    expect(schema.dailyStats24h, isNull);
     expect(schema.visibleWidgetIds, isEmpty);
+    expect(schema.tiles, isEmpty);
+    expect(schema.heatingStatus, isNull);
   });
 
   test('ignores an unknown widget id without failing the dashboard', () {
@@ -94,32 +61,28 @@ void main() {
 
     final schema = builder.build(bundle: bundle);
 
-    expect(schema.dailyStats24h, isNull);
     expect(schema.visibleWidgetIds, const <String>['currentNow']);
     expect(schema.tiles.single.type, ThermostatTileType.currentNow);
   });
 
-  test('keeps legacy energy and load factor widgets supported', () {
+  test('builds separate energy and load factor widgets', () {
     final bundle = _bundle(
       widgets: const <Map<String, dynamic>>[
         {
           'id': 'loadFactor24h',
-          'control_ids': ['heatingActivity24h'],
+          'control_ids': <String>[],
         },
         {
           'id': 'energyUsed',
           'control_ids': <String>[],
         },
       ],
-      controls: const <Map<String, dynamic>>[
-        {'id': 'heatingActivity24h', 'path': 'load_factor'},
-      ],
+      controls: const <Map<String, dynamic>>[],
       readableDomains: const <String>{'telemetry'},
     );
 
     final schema = builder.build(bundle: bundle);
 
-    expect(schema.dailyStats24h, isNull);
     expect(
       schema.tiles.map((tile) => tile.type),
       const <ThermostatTileType>[
@@ -189,6 +152,14 @@ void main() {
           'control_ids': ['heaterEnabled'],
         },
         {
+          'id': 'loadFactor24h',
+          'control_ids': <String>[],
+        },
+        {
+          'id': 'energyUsed',
+          'control_ids': <String>[],
+        },
+        {
           'id': 'voltageNow',
           'control_ids': ['powerMeterVoltageV', 'powerMeterVoltageValid'],
         },
@@ -234,6 +205,8 @@ void main() {
       schema.tiles.map((tile) => tile.type),
       const <ThermostatTileType>[
         ThermostatTileType.heatingToggle,
+        ThermostatTileType.loadFactor24h,
+        ThermostatTileType.energyUsed,
         ThermostatTileType.voltageNow,
         ThermostatTileType.currentNow,
         ThermostatTileType.powerNow,

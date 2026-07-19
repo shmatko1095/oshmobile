@@ -150,6 +150,7 @@ class _MetricSlide extends StatelessWidget {
                                         tooltipTimeLabelBuilder: (ts) =>
                                             _tooltipTimeLabel(
                                           timestamp: ts,
+                                          window: state.window,
                                           localeTag: localeTag,
                                         ),
                                         tooltipAnchorSeriesId:
@@ -163,11 +164,15 @@ class _MetricSlide extends StatelessWidget {
                               : model.chartKind ==
                                       TelemetryHistorySlideChartKind.energyBar
                                   ? HistoryBarChart(
-                                      values: model.chartValues,
-                                      timestamps: model.chartTimestamps,
+                                      values: model.barChartValues,
+                                      timestamps: model.barChartTimestamps,
                                       windowStart: model.series?.from,
                                       windowEnd: model.series?.to,
-                                      color: AppPalette.accentSuccess,
+                                      color: metric.displayMode ==
+                                              TelemetryHistoryMetricDisplayMode
+                                                  .heatingUsage
+                                          ? AppPalette.accentWarning
+                                          : AppPalette.accentSuccess,
                                       showGrid: true,
                                       showVerticalGrid: false,
                                       showAxes: true,
@@ -182,6 +187,7 @@ class _MetricSlide extends StatelessWidget {
                                       tooltipTimeLabelBuilder: (ts) =>
                                           _tooltipTimeLabel(
                                         timestamp: ts,
+                                        window: state.window,
                                         localeTag: localeTag,
                                       ),
                                       semanticLabel: metric.title,
@@ -217,6 +223,7 @@ class _MetricSlide extends StatelessWidget {
                                           tooltipTimeLabelBuilder: (ts) =>
                                               _tooltipTimeLabel(
                                             timestamp: ts,
+                                            window: state.window,
                                             localeTag: localeTag,
                                           ),
                                         )
@@ -245,6 +252,7 @@ class _MetricSlide extends StatelessWidget {
                                             timestamp: ts,
                                             value: value,
                                             metric: metric,
+                                            window: state.window,
                                             localeTag: localeTag,
                                           ),
                                         ),

@@ -347,7 +347,6 @@
   "TelemetryHistoryMetricActivePower": "Power",
   "TelemetryHistoryMetricApparentPower": "Apparent power",
   "TelemetryHistoryMetricEnergyUsed": "Energy used",
-  "DailyStatsPeriod24h": "Last 24 hours",
   "ThermostatLiveMetricsTitle": "Live values",
   "ThermostatLiveMetricsOpenHint": "Swipe up or tap to open live values.",
   "ThermostatLiveMetricsCloseTooltip": "Close live values",

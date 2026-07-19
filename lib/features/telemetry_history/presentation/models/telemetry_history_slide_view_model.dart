@@ -82,10 +82,29 @@ class TelemetryHistorySlideModelBuilder {
         entries.map((entry) => entry.rangeMaxValue).toList(growable: false);
     final chartTimestamps =
         entries.map((entry) => entry.timestamp).toList(growable: false);
+    final isUsageBar = metric.displayMode ==
+            TelemetryHistoryMetricDisplayMode.energyUsage ||
+        metric.displayMode == TelemetryHistoryMetricDisplayMode.heatingUsage;
+    final usageBarValues = !isUsageBar
+        ? const <double?>[]
+        : series?.points
+                .map((point) => metric.displayMode ==
+                        TelemetryHistoryMetricDisplayMode.energyUsage
+                    ? point.sumValue
+                    : point.lastNumericValue)
+                .toList(growable: false) ??
+            const <double?>[];
+    final usageBarTimestamps = !isUsageBar
+        ? const <DateTime>[]
+        : series?.points
+                .map((point) => point.bucketStart)
+                .toList(growable: false) ??
+            const <DateTime>[];
     final summaryItems = _summaryItems(
       chartValues,
       metric,
       s,
+      series: series,
       rangeDays: state.window.durationDays,
     );
     final sensorName = (metric.subtitle ?? '').trim();
@@ -125,7 +144,11 @@ class TelemetryHistorySlideModelBuilder {
 
     final chartKind = isTemperatureOverlayMode
         ? TelemetryHistorySlideChartKind.temperatureOverlay
-        : metric.displayMode == TelemetryHistoryMetricDisplayMode.energyDelta
+        : metric.displayMode == TelemetryHistoryMetricDisplayMode.energyDelta ||
+                metric.displayMode ==
+                    TelemetryHistoryMetricDisplayMode.energyUsage ||
+                metric.displayMode ==
+                    TelemetryHistoryMetricDisplayMode.heatingUsage
             ? TelemetryHistorySlideChartKind.energyBar
             : metric.kind == TelemetryHistoryMetricKind.numeric
                 ? TelemetryHistorySlideChartKind.numericRangeLine
@@ -175,6 +198,10 @@ class TelemetryHistorySlideModelBuilder {
       chartRangeMinValues: chartRangeMinValues,
       chartRangeMaxValues: chartRangeMaxValues,
       chartTimestamps: chartTimestamps,
+      barChartValues:
+          usageBarValues.isEmpty ? chartValues.cast<double?>() : usageBarValues,
+      barChartTimestamps:
+          usageBarTimestamps.isEmpty ? chartTimestamps : usageBarTimestamps,
       numericSeries: numericSeries,
       chartKind: chartKind,
       isEmpty: isEmpty,
@@ -227,18 +254,23 @@ class TelemetryHistorySlideModelBuilder {
       double? rangeMaxValue;
       final rawValue = switch (metric.kind) {
         TelemetryHistoryMetricKind.numeric =>
-          metric.displayMode == TelemetryHistoryMetricDisplayMode.energyDelta
+          metric.displayMode == TelemetryHistoryMetricDisplayMode.energyDelta ||
+                  metric.displayMode ==
+                      TelemetryHistoryMetricDisplayMode.energyUsage
               ? point.sumValue
-              : metric.useSumValue
-                  ? point.sumValue ??
-                      point.avgValue ??
-                      point.lastNumericValue ??
-                      point.maxValue ??
-                      point.minValue
-                  : point.maxValue ??
-                      point.avgValue ??
-                      point.lastNumericValue ??
-                      point.minValue,
+              : metric.displayMode ==
+                      TelemetryHistoryMetricDisplayMode.heatingUsage
+                  ? point.lastNumericValue
+                  : metric.useSumValue
+                      ? point.sumValue ??
+                          point.avgValue ??
+                          point.lastNumericValue ??
+                          point.maxValue ??
+                          point.minValue
+                      : point.maxValue ??
+                          point.avgValue ??
+                          point.lastNumericValue ??
+                          point.minValue,
         TelemetryHistoryMetricKind.boolean => point.trueRatio ??
             (point.lastBoolValue == null
                 ? null
@@ -440,8 +472,44 @@ class TelemetryHistorySlideModelBuilder {
     List<double> values,
     TelemetryHistoryMetric metric,
     S s, {
+    required TelemetryHistorySeries? series,
     required double rangeDays,
   }) {
+    final usageSummary = series?.usageSummary;
+    if (usageSummary != null &&
+        metric.displayMode == TelemetryHistoryMetricDisplayMode.energyUsage) {
+      return <TelemetryHistorySummaryItem>[
+        TelemetryHistorySummaryItem(
+          label: s.TelemetryHistoryStatTotal,
+          value: _formatServerValue(usageSummary.total, metric),
+        ),
+        TelemetryHistorySummaryItem(
+          label: s.TelemetryHistoryStatAvg,
+          value: _formatServerValue(usageSummary.average, metric),
+        ),
+        TelemetryHistorySummaryItem(
+          label: s.TelemetryHistoryStatPeakInterval,
+          value: _formatServerValue(usageSummary.peak, metric),
+        ),
+      ];
+    }
+    if (usageSummary != null &&
+        metric.displayMode == TelemetryHistoryMetricDisplayMode.heatingUsage) {
+      return <TelemetryHistorySummaryItem>[
+        TelemetryHistorySummaryItem(
+          label: s.TelemetryHistoryStatMin,
+          value: _formatServerValue(usageSummary.minimum, metric),
+        ),
+        TelemetryHistorySummaryItem(
+          label: s.TelemetryHistoryStatMax,
+          value: _formatServerValue(usageSummary.maximum, metric),
+        ),
+        TelemetryHistorySummaryItem(
+          label: s.TelemetryHistoryStatAvg,
+          value: _formatServerValue(usageSummary.average, metric),
+        ),
+      ];
+    }
     final hasValues = values.isNotEmpty;
     if (metric.displayMode == TelemetryHistoryMetricDisplayMode.energyDelta) {
       return _energySummaryItems(
@@ -488,6 +556,15 @@ class TelemetryHistorySlideModelBuilder {
         value: avgText,
       ),
     ];
+  }
+
+  static String _formatServerValue(
+    double? value,
+    TelemetryHistoryMetric metric,
+  ) {
+    return value == null
+        ? '—'
+        : TelemetryHistoryMetricValueFormatter.format(value, metric);
   }
 
   static List<TelemetryHistorySummaryItem> _energySummaryItems(

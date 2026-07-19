@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:oshmobile/core/analytics/osh_analytics.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_events.dart';
 import 'package:oshmobile/core/analytics/osh_analytics_screens.dart';
@@ -10,12 +11,14 @@ import 'package:oshmobile/app/device_session/domain/models/device_temperature_se
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
 import 'package:oshmobile/app/device_session/scopes/device_route_scope.dart';
 import 'package:oshmobile/core/configuration/models/configuration_history.dart';
+import 'package:oshmobile/core/contracts/device_time_zone_reader.dart';
 import 'package:oshmobile/core/utils/show_shackbar.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_cubit.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_metric_catalog.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/models/telemetry_history_dashboard_definition_builder.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/pages/telemetry_history_page.dart';
+import 'package:oshmobile/features/telemetry_history/presentation/adapters/telemetry_usage_series_reader.dart';
 import 'package:oshmobile/generated/l10n.dart';
 
 class TelemetryHistoryNavigator {
@@ -66,8 +69,20 @@ class TelemetryHistoryNavigator {
     _openMetrics(
       hostContext,
       metrics: <TelemetryHistoryMetric>[
-        TelemetryHistoryMetricCatalog.loadFactorMetric(s),
+        TelemetryHistoryMetricCatalog.heatingUsageMetric(s),
       ],
+      useUsageReader: true,
+    );
+  }
+
+  static void openEnergyUsageFromHost(BuildContext hostContext) {
+    final s = S.of(hostContext);
+    _openMetrics(
+      hostContext,
+      metrics: <TelemetryHistoryMetric>[
+        TelemetryHistoryMetricCatalog.energyUsageMetric(s),
+      ],
+      useUsageReader: true,
     );
   }
 
@@ -172,6 +187,7 @@ class TelemetryHistoryNavigator {
         const <TelemetryHistoryMetric>[],
     int initialMetricIndex = 0,
     String? pageTitle,
+    bool useUsageReader = false,
   }) {
     if (metrics.isEmpty) return;
     if (!hostContext.mounted) return;
@@ -216,7 +232,13 @@ class TelemetryHistoryNavigator {
           snapshotCubit: snapshotCubit,
           child: BlocProvider(
             create: (_) => TelemetryHistoryCubit(
-              seriesReader: facade.telemetryHistory,
+              seriesReader: useUsageReader
+                  ? TelemetryUsageSeriesReader(
+                      energyReader: facade.telemetryHistory,
+                      heatingReader: facade.telemetryHistory,
+                      timeZoneReader: GetIt.instance<DeviceTimeZoneReader>(),
+                    )
+                  : facade.telemetryHistory,
               setpointReader: facade.telemetryHistory,
               metrics: metrics,
               comparisonMetrics: comparisonMetrics,

@@ -28,6 +28,8 @@ import 'package:oshmobile/features/sensors/domain/repositories/sensors_repositor
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_aggregate.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_history.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_setpoint_history.dart';
+import 'package:oshmobile/features/telemetry_history/domain/usecases/get_energy_usage.dart';
+import 'package:oshmobile/features/telemetry_history/domain/usecases/get_heating_usage.dart';
 
 class DeviceFacadeImpl implements DeviceFacade {
   final DeviceContext _ctx;
@@ -90,6 +92,8 @@ class DeviceFacadeImpl implements DeviceFacade {
     required GetTelemetryHistory getTelemetryHistory,
     required GetTelemetryAggregate getTelemetryAggregate,
     required GetTelemetrySetpointHistory getTelemetrySetpointHistory,
+    required GetEnergyUsage getEnergyUsage,
+    required GetHeatingUsage getHeatingUsage,
   })  : _ctx = ctx,
         _pageCubit = pageCubit,
         _mqttCubit = mqttCubit,
@@ -123,6 +127,8 @@ class DeviceFacadeImpl implements DeviceFacade {
       getTelemetryHistory: getTelemetryHistory,
       getTelemetryAggregate: getTelemetryAggregate,
       getTelemetrySetpointHistory: getTelemetrySetpointHistory,
+      getEnergyUsage: getEnergyUsage,
+      getHeatingUsage: getHeatingUsage,
     );
     _aboutApi = DeviceAboutApiImpl(
       repo: aboutRepo,

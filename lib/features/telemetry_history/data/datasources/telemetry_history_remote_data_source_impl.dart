@@ -11,6 +11,11 @@ import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_set
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_point.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_quality.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_state.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/energy_usage.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/energy_usage_point.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/heating_usage.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/heating_usage_point.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_usage_query.dart';
 
 class TelemetryHistoryRemoteDataSourceImpl
     implements TelemetryHistoryRemoteDataSource {
@@ -55,6 +60,109 @@ class TelemetryHistoryRemoteDataSourceImpl
       raw,
       fallbackSerial: serial,
       fallbackQuery: query,
+    );
+  }
+
+  @override
+  Future<EnergyUsage> getEnergyUsage({
+    required String serial,
+    required TelemetryUsageQuery query,
+  }) async {
+    final response = await _mobileService.getMyDeviceEnergyUsage(
+      serial: serial,
+      from: query.from.toUtc().toIso8601String(),
+      to: query.to.toUtc().toIso8601String(),
+      bucket: query.bucket?.wireValue,
+      timezone: query.timezone,
+    );
+    final payload =
+        _unwrapPayload(MobileV1ResponseMapper.requireJsonMap(response));
+    final coverage = _requiredCoverage(payload);
+    final points = _readList(payload, 'points').map((rawPoint) {
+      if (rawPoint is! Map) {
+        throw const FormatException('Energy usage point must be an object.');
+      }
+      final point = rawPoint.cast<String, dynamic>();
+      final from = _readDate(point, 'from');
+      final to = _readDate(point, 'to');
+      final pointCoverage = _requiredCoverage(point);
+      if (from == null || to == null || !from.isBefore(to)) {
+        throw const FormatException(
+            'Energy usage point has an invalid interval.');
+      }
+      return EnergyUsagePoint(
+        from: from,
+        to: to,
+        energyKwh: _finiteNullableDouble(point, 'energy_kwh'),
+        coverageRatio: pointCoverage,
+      );
+    }).toList(growable: false)
+      ..sort((a, b) => a.from.compareTo(b.from));
+    return EnergyUsage(
+      deviceId: _readString(payload, 'device_id') ?? '',
+      serial: _readString(payload, 'serial') ?? serial,
+      from: _requiredDate(payload, 'from'),
+      to: _requiredDate(payload, 'to'),
+      bucket: _readString(payload, 'bucket') ?? '',
+      timezone: _readString(payload, 'timezone') ?? query.timezone ?? 'UTC',
+      availableFrom: _readDate(payload, 'available_from'),
+      coverageRatio: coverage,
+      totalKwh: _finiteNullableDouble(payload, 'total_kwh'),
+      averageBucketKwh: _finiteNullableDouble(payload, 'average_bucket_kwh'),
+      peakBucketKwh: _finiteNullableDouble(payload, 'peak_bucket_kwh'),
+      peakBucketFrom: _readDate(payload, 'peak_bucket_from'),
+      points: points,
+    );
+  }
+
+  @override
+  Future<HeatingUsage> getHeatingUsage({
+    required String serial,
+    required TelemetryUsageQuery query,
+  }) async {
+    final response = await _mobileService.getMyDeviceHeatingUsage(
+      serial: serial,
+      from: query.from.toUtc().toIso8601String(),
+      to: query.to.toUtc().toIso8601String(),
+      bucket: query.bucket?.wireValue,
+      timezone: query.timezone,
+    );
+    final payload =
+        _unwrapPayload(MobileV1ResponseMapper.requireJsonMap(response));
+    final coverage = _requiredCoverage(payload);
+    final points = _readList(payload, 'points').map((rawPoint) {
+      if (rawPoint is! Map) {
+        throw const FormatException('Heating usage point must be an object.');
+      }
+      final point = rawPoint.cast<String, dynamic>();
+      final from = _readDate(point, 'from');
+      final to = _readDate(point, 'to');
+      final pointCoverage = _requiredCoverage(point);
+      if (from == null || to == null || !from.isBefore(to)) {
+        throw const FormatException(
+            'Heating usage point has an invalid interval.');
+      }
+      return HeatingUsagePoint(
+        from: from,
+        to: to,
+        loadFactorPercent: _finiteNullableDouble(point, 'load_factor_percent'),
+        coverageRatio: pointCoverage,
+      );
+    }).toList(growable: false)
+      ..sort((a, b) => a.from.compareTo(b.from));
+    return HeatingUsage(
+      deviceId: _readString(payload, 'device_id') ?? '',
+      serial: _readString(payload, 'serial') ?? serial,
+      from: _requiredDate(payload, 'from'),
+      to: _requiredDate(payload, 'to'),
+      bucket: _readString(payload, 'bucket') ?? '',
+      timezone: _readString(payload, 'timezone') ?? query.timezone ?? 'UTC',
+      availableFrom: _readDate(payload, 'available_from'),
+      coverageRatio: coverage,
+      loadFactorPercent: _finiteNullableDouble(payload, 'load_factor_percent'),
+      minBucketPercent: _finiteNullableDouble(payload, 'min_bucket_percent'),
+      maxBucketPercent: _finiteNullableDouble(payload, 'max_bucket_percent'),
+      points: points,
     );
   }
 
@@ -502,6 +610,32 @@ class TelemetryHistoryRemoteDataSourceImpl
       return _epochToUtc(parsedNum);
     }
     return null;
+  }
+
+  DateTime _requiredDate(Map<String, dynamic> map, String key) {
+    final value = _readDate(map, key);
+    if (value == null) {
+      throw FormatException('Usage payload requires $key.');
+    }
+    return value;
+  }
+
+  double _requiredCoverage(Map<String, dynamic> map) {
+    final value = _finiteNullableDouble(map, 'coverage_ratio');
+    if (value == null || value < 0 || value > 1) {
+      throw const FormatException(
+          'Usage coverage_ratio must be between 0 and 1.');
+    }
+    return value;
+  }
+
+  double? _finiteNullableDouble(Map<String, dynamic> map, String key) {
+    final value = _readDouble(map, key);
+    if (value == null) return null;
+    if (!value.isFinite) {
+      throw FormatException('Usage value $key must be finite or null.');
+    }
+    return value;
   }
 
   DateTime _epochToUtc(num value) {

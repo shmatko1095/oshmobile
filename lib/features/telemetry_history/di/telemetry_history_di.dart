@@ -11,6 +11,8 @@ import 'package:oshmobile/features/telemetry_history/domain/repositories/telemet
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_aggregate.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_history.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_setpoint_history.dart';
+import 'package:oshmobile/features/telemetry_history/domain/usecases/get_energy_usage.dart';
+import 'package:oshmobile/features/telemetry_history/domain/usecases/get_heating_usage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void registerTelemetryHistoryFeature(GetIt locator) {
@@ -47,6 +49,16 @@ void registerTelemetryHistoryFeature(GetIt locator) {
     )
     ..registerFactory<GetTelemetrySetpointHistory>(
       () => GetTelemetrySetpointHistory(
+        repository: locator<TelemetryHistoryRepository>(),
+      ),
+    )
+    ..registerFactory<GetEnergyUsage>(
+      () => GetEnergyUsage(
+        repository: locator<TelemetryHistoryRepository>(),
+      ),
+    )
+    ..registerFactory<GetHeatingUsage>(
+      () => GetHeatingUsage(
         repository: locator<TelemetryHistoryRepository>(),
       ),
     );

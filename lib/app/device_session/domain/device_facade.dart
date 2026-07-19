@@ -8,6 +8,8 @@ import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_agg
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_query.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/telemetry_history_series_reader.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/telemetry_setpoint_history_reader.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/energy_usage_reader.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/heating_usage_reader.dart';
 
 part 'device_about_api.dart';
 part 'device_schedule_api.dart';

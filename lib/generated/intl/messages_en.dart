@@ -111,9 +111,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "ContinueWithGoogle": MessageLookupByLibrary.simpleMessage(
       "Continue with Google",
     ),
-    "DailyStatsPeriod24h": MessageLookupByLibrary.simpleMessage(
-      "Last 24 hours",
-    ),
     "Delete": MessageLookupByLibrary.simpleMessage("Delete"),
     "DeleteAccount": MessageLookupByLibrary.simpleMessage("Delete account"),
     "DeleteAccountConfirmMessage": MessageLookupByLibrary.simpleMessage(

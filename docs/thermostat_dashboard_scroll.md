@@ -18,7 +18,7 @@ range:
 
 1. Pinned `ThermostatDashboardAppBar` / `SliverAppBar`.
 2. `SliverFillRemaining` for the adaptive temperature carousel and
-   `dailyStats24h` layout.
+   horizontal heating-status layout.
 
 The mode bar is fixed above the bottom safe area. The remaining
 `CustomScrollView` exists to preserve pull-to-refresh and to expose positive
@@ -41,7 +41,7 @@ overscroll to the live-values surface.
 ## Responsive layout
 
 - Portrait divides the available `SliverFillRemaining` height between the
-  carousel and compact 24-hour stats.
+  carousel and compact horizontal `ON` / `OFF` status.
 - Wide landscape puts those sections side by side.
 - The history preview is enabled only when the carousel has at least 330 logical
   pixels. Below 220 pixels, or with very large text, the temperature card hides
@@ -61,3 +61,5 @@ the reference sensor. A vertical card drag no longer opens history; only the
 - `temperature_minimal_panel_test.dart` remains the source for carousel order,
   late reference metadata, horizontal paging, history action, and
   stale-temperature behavior.
+- `heating_status_horizontal_card_test.dart` covers explicit status text,
+  semantics, tap behavior, and reduced motion.

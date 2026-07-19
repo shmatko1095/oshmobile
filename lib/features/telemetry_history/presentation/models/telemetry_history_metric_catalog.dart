@@ -19,6 +19,8 @@ class TelemetryHistoryMetricCatalog {
       PowerMeterSeriesKeys.apparentPowerVa;
   static const String powerMeterEnergyWhDelta =
       PowerMeterSeriesKeys.energyWhDelta;
+  static const String energyUsage = 'usage.energy';
+  static const String heatingUsage = 'usage.heating';
 
   static const TelemetryHistoryMetricDefinition loadFactorDefinition =
       TelemetryHistoryMetricDefinition(
@@ -98,6 +100,29 @@ class TelemetryHistoryMetricCatalog {
 
   static TelemetryHistoryMetric loadFactorMetric(S s) {
     return loadFactorDefinition.build(s);
+  }
+
+  static TelemetryHistoryMetric energyUsageMetric(S s) {
+    return TelemetryHistoryMetric(
+      title: s.TelemetryHistoryMetricEnergyUsed,
+      seriesKey: energyUsage,
+      kind: TelemetryHistoryMetricKind.numeric,
+      unit: 'kWh',
+      fractionDigits: 3,
+      useSumValue: true,
+      displayMode: TelemetryHistoryMetricDisplayMode.energyUsage,
+    );
+  }
+
+  static TelemetryHistoryMetric heatingUsageMetric(S s) {
+    return TelemetryHistoryMetric(
+      title: s.TelemetryHistoryMetricLoadFactor,
+      seriesKey: heatingUsage,
+      kind: TelemetryHistoryMetricKind.numeric,
+      unit: '%',
+      fractionDigits: 0,
+      displayMode: TelemetryHistoryMetricDisplayMode.heatingUsage,
+    );
   }
 
   static TelemetryHistoryMetric heatingActivityMetric(S s) {

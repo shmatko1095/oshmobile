@@ -8,6 +8,11 @@ import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_set
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_aggregate.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_history.dart';
 import 'package:oshmobile/features/telemetry_history/domain/usecases/get_telemetry_setpoint_history.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/energy_usage.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/heating_usage.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_usage_query.dart';
+import 'package:oshmobile/features/telemetry_history/domain/usecases/get_energy_usage.dart';
+import 'package:oshmobile/features/telemetry_history/domain/usecases/get_heating_usage.dart';
 
 class DeviceTelemetryHistoryApiImpl implements DeviceTelemetryHistoryApi {
   const DeviceTelemetryHistoryApiImpl({
@@ -15,15 +20,21 @@ class DeviceTelemetryHistoryApiImpl implements DeviceTelemetryHistoryApi {
     required GetTelemetryHistory getTelemetryHistory,
     required GetTelemetryAggregate getTelemetryAggregate,
     required GetTelemetrySetpointHistory getTelemetrySetpointHistory,
+    required GetEnergyUsage getEnergyUsage,
+    required GetHeatingUsage getHeatingUsage,
   })  : _deviceSn = deviceSn,
         _getTelemetryHistory = getTelemetryHistory,
         _getTelemetryAggregate = getTelemetryAggregate,
-        _getTelemetrySetpointHistory = getTelemetrySetpointHistory;
+        _getTelemetrySetpointHistory = getTelemetrySetpointHistory,
+        _getEnergyUsage = getEnergyUsage,
+        _getHeatingUsage = getHeatingUsage;
 
   final String _deviceSn;
   final GetTelemetryHistory _getTelemetryHistory;
   final GetTelemetryAggregate _getTelemetryAggregate;
   final GetTelemetrySetpointHistory _getTelemetrySetpointHistory;
+  final GetEnergyUsage _getEnergyUsage;
+  final GetHeatingUsage _getHeatingUsage;
 
   @override
   Future<TelemetryHistorySeries> getSeries({
@@ -67,5 +78,15 @@ class DeviceTelemetryHistoryApiImpl implements DeviceTelemetryHistoryApi {
         preferredResolution: preferredResolution,
       ),
     );
+  }
+
+  @override
+  Future<EnergyUsage> getEnergyUsage({required TelemetryUsageQuery query}) {
+    return _getEnergyUsage(serial: _deviceSn, query: query);
+  }
+
+  @override
+  Future<HeatingUsage> getHeatingUsage({required TelemetryUsageQuery query}) {
+    return _getHeatingUsage(serial: _deviceSn, query: query);
   }
 }

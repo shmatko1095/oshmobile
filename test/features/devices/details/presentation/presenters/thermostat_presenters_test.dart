@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get_it/get_it.dart';
 import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/app/device_session/domain/device_snapshot.dart';
 import 'package:oshmobile/app/device_session/presentation/cubit/device_snapshot_cubit.dart';
@@ -13,22 +14,26 @@ import 'package:oshmobile/core/common/entities/device/device.dart';
 import 'package:oshmobile/core/common/entities/device/device_user_data.dart';
 import 'package:oshmobile/core/configuration/models/device_configuration_bundle.dart';
 import 'package:oshmobile/core/configuration/models/model_configuration.dart';
+import 'package:oshmobile/core/contracts/device_time_zone_reader.dart';
+import 'package:oshmobile/core/platform/flutter_device_time_zone_reader.dart';
 import 'package:oshmobile/features/devices/details/data/configuration_thermostat_dashboard_schema_builder.dart';
 import 'package:oshmobile/features/devices/details/domain/models/thermostat_dashboard_schema.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/adapters/thermostat_telemetry_history_opener.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/device_presenter_chrome.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/thermostat_presenters.dart';
+import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/heating_status_horizontal_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_history_strip_card.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/temperature_minimal_panel.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_dashboard_app_bar.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/thermostat_mode_bar.dart';
-import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_stats_24h_card.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_query.dart';
-import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_series.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_api_version.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_history_series.dart';
 import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_setpoint_history.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/energy_usage.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/heating_usage.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_usage_query.dart';
 import 'package:oshmobile/features/telemetry_history/data/shared_preferences_daily_energy_usage_cache.dart';
 import 'package:oshmobile/features/telemetry_history/data/shared_preferences_temperature_history_preview_cache.dart';
 import 'package:oshmobile/features/telemetry_history/presentation/cubit/telemetry_history_cubit.dart';
@@ -47,6 +52,21 @@ late UserGuideCubit _defaultUserGuideCubit;
 
 void main() {
   setUp(() async {
+    final locator = GetIt.instance;
+    if (locator.isRegistered<DeviceTimeZoneReader>()) {
+      await locator.unregister<DeviceTimeZoneReader>();
+    }
+    locator.registerSingleton<DeviceTimeZoneReader>(
+      FlutterDeviceTimeZoneReader(
+        identifierLoader: () async => 'Europe/Stockholm',
+      ),
+    );
+    addTearDown(() async {
+      if (locator.isRegistered<DeviceTimeZoneReader>()) {
+        await locator.unregister<DeviceTimeZoneReader>();
+      }
+    });
+
     SharedPreferences.setMockInitialValues(const <String, Object>{});
     _sharedPreferences = await SharedPreferences.getInstance();
     _defaultUserGuideCubit = UserGuideCubit(
@@ -189,101 +209,6 @@ void main() {
     expect(
       _schema(bundle).visibleWidgetIds,
       contains('energyUsed'),
-    );
-  });
-
-  testWidgets('configured daily stats render as one non-interactive card',
-      (tester) async {
-    final userGuideCubit = UserGuideCubit(
-      repository: TestUserGuideProgressRepository(),
-    );
-    await userGuideCubit.load();
-    addTearDown(userGuideCubit.close);
-    final bundle = _bundle(
-      widgets: const <Map<String, dynamic>>[
-        {
-          'id': 'dailyStats24h',
-          'control_ids': [
-            'powerMeterEnergyWhDelta',
-            'heatingActivity24h',
-          ],
-        },
-      ],
-      controls: const <Map<String, dynamic>>[
-        {
-          'id': 'powerMeterEnergyWhDelta',
-          'path': 'power_meter.energy_wh_delta',
-        },
-        {'id': 'heatingActivity24h', 'path': 'load_factor'},
-      ],
-      readableDomains: const <String>{'telemetry'},
-    );
-    final history = _QueuedTelemetryHistoryApi();
-    final snapshot = DeviceSnapshot.initial(device: _device()).copyWith(
-      controlState: DeviceSlice<Map<String, dynamic>>.ready(
-        data: const <String, dynamic>{
-          'heatingActivity24h': 55,
-        },
-      ),
-    );
-    final facade = _FakeDeviceFacade(snapshot, history);
-    final snapshotCubit = DeviceSnapshotCubit(facade: facade);
-    addTearDown(snapshotCubit.close);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
-          S.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: S.delegate.supportedLocales,
-        home: DeviceRouteScope.provide(
-          facade: facade,
-          snapshotCubit: snapshotCubit,
-          child: _buildPresenter(
-            _device(),
-            bundle,
-            userGuideCubit: userGuideCubit,
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-
-    expect(find.byType(DailyStats24hCard), findsOneWidget);
-    expect(find.text('Last 24 hours'), findsOneWidget);
-    expect(find.text('Energy used'), findsOneWidget);
-    expect(find.text('Heating runtime'), findsOneWidget);
-    expect(find.text('55%'), findsOneWidget);
-    expect(history.aggregateRequests, hasLength(1));
-    expect(
-      history.aggregateRequests.single.query.seriesKeys,
-      const <String>[TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta],
-    );
-
-    history.aggregateRequests.single.completer.complete(
-      _aggregate(
-        from: history.aggregateRequests.single.query.from,
-        to: history.aggregateRequests.single.query.to,
-        energyWh: 1234,
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('1.23 kWh'), findsOneWidget);
-    await tester.tap(find.text('Energy used'));
-    await tester.pump();
-    expect(find.byType(TelemetryHistoryPage), findsNothing);
-    expect(history.requests, isEmpty);
-    expect(
-      find.byKey(const ValueKey('thermostat-live-metrics-handle')),
-      findsNothing,
-    );
-    expect(
-      find.byKey(const ValueKey('user-guide-live-metrics-coach')),
-      findsNothing,
     );
   });
 
@@ -636,19 +561,20 @@ void main() {
           ],
         },
         {
-          'id': 'dailyStats24h',
-          'control_ids': [
-            'powerMeterEnergyWhDelta',
-            'heatingActivity24h',
-          ],
-        },
-        {
           'id': 'modeBar',
           'control_ids': ['scheduleMode'],
         },
         {
           'id': 'heatingToggle',
           'control_ids': ['heaterEnabled'],
+        },
+        {
+          'id': 'loadFactor24h',
+          'control_ids': <String>[],
+        },
+        {
+          'id': 'energyUsed',
+          'control_ids': <String>[],
         },
         {
           'id': 'voltageNow',
@@ -671,8 +597,6 @@ void main() {
         {'id': 'scheduleCurrentTarget', 'path': 'schedule.current_target'},
         {'id': 'scheduleNextTarget', 'path': 'schedule.next_target'},
         {'id': 'climateSensors', 'path': 'climateSensors'},
-        {'id': 'powerMeterEnergyWhDelta', 'path': 'energy_wh_delta'},
-        {'id': 'heatingActivity24h', 'path': 'load_factor'},
         {'id': 'scheduleMode', 'path': 'schedule.mode'},
         {'id': 'heaterEnabled', 'path': 'heater.enabled'},
         {'id': 'powerMeterVoltageV', 'path': 'power_meter.voltage_v'},
@@ -709,7 +633,6 @@ void main() {
               'humidity': 43,
             },
           ],
-          'heatingActivity24h': 0.55,
           'scheduleMode': 'off',
           'heaterEnabled': false,
           'powerMeterVoltageV': 230,
@@ -753,13 +676,12 @@ void main() {
     await tester.pump();
 
     expect(find.byType(TemperatureMinimalPanel), findsOneWidget);
+    expect(find.byType(HeatingStatusHorizontalCard), findsOneWidget);
+    expect(find.text('OFF'), findsOneWidget);
     expect(
-      tester
-          .widget<TemperatureMinimalPanel>(find.byType(TemperatureMinimalPanel))
-          .heatingStatusBind,
-      'heaterEnabled',
+      find.byKey(const ValueKey('thermostat-heating-fire-image')),
+      findsNothing,
     );
-    expect(find.byType(DailyStats24hCard), findsOneWidget);
     expect(find.byType(ThermostatModeBar), findsOneWidget);
     expect(
       find.byKey(const ValueKey('thermostat-live-metrics-handle')),
@@ -790,13 +712,24 @@ void main() {
       isFalse,
     );
 
-    final heatingOffset = tester.getTopLeft(find.text('Heating'));
-    final voltageOffset = tester.getTopLeft(find.text('Voltage'));
-    final currentOffset = tester.getTopLeft(find.text('Current'));
-    final powerOffset = tester.getTopLeft(find.text('Power'));
-    expect(heatingOffset.dy, closeTo(voltageOffset.dy, 1));
-    expect(heatingOffset.dx, lessThan(voltageOffset.dx));
-    expect(currentOffset.dy, greaterThan(heatingOffset.dy));
+    final liveSheet = find.byKey(
+      const ValueKey('thermostat-live-metrics-sheet'),
+    );
+    Offset liveTileOffset(String label) => tester.getTopLeft(
+          find.descendant(of: liveSheet, matching: find.text(label)),
+        );
+    final heatingOffset = liveTileOffset('Heating');
+    final loadFactorOffset = liveTileOffset('Heating runtime');
+    final energyOffset = liveTileOffset('Energy used');
+    final voltageOffset = liveTileOffset('Voltage');
+    final currentOffset = liveTileOffset('Current');
+    final powerOffset = liveTileOffset('Power');
+    expect(heatingOffset.dy, closeTo(loadFactorOffset.dy, 1));
+    expect(heatingOffset.dx, lessThan(loadFactorOffset.dx));
+    expect(energyOffset.dy, greaterThan(heatingOffset.dy));
+    expect(energyOffset.dy, closeTo(voltageOffset.dy, 1));
+    expect(energyOffset.dx, lessThan(voltageOffset.dx));
+    expect(currentOffset.dy, greaterThan(energyOffset.dy));
     expect(currentOffset.dy, closeTo(powerOffset.dy, 1));
     expect(currentOffset.dx, lessThan(powerOffset.dx));
 
@@ -852,7 +785,7 @@ void main() {
         reason: 'size=${testCase.size}, textScale=${testCase.textScale}',
       );
       expect(find.byType(TemperatureMinimalPanel), findsOneWidget);
-      expect(find.byType(DailyStats24hCard), findsOneWidget);
+      expect(find.byType(HeatingStatusHorizontalCard), findsOneWidget);
       expect(find.byType(ThermostatModeBar), findsOneWidget);
       if (testCase.size.width > testCase.size.height) {
         expect(
@@ -867,11 +800,13 @@ void main() {
         final heroRect = tester.getRect(
           find.byType(TemperatureMinimalPanel),
         );
-        final statsRect = tester.getRect(find.byType(DailyStats24hCard));
+        final statusRect = tester.getRect(
+          find.byType(HeatingStatusHorizontalCard),
+        );
         expect(heroRect.left, closeTo(0, 0.1));
         expect(heroRect.right, closeTo(testCase.size.width, 0.1));
-        expect(statsRect.left, greaterThanOrEqualTo(20));
-        expect(statsRect.right, lessThanOrEqualTo(testCase.size.width - 20));
+        expect(statusRect.left, greaterThanOrEqualTo(20));
+        expect(statusRect.right, lessThanOrEqualTo(testCase.size.width - 20));
       }
 
       await tester.pumpWidget(const SizedBox.shrink());
@@ -1305,18 +1240,15 @@ void main() {
     await tester.pump();
     await _openLiveMetrics(tester);
 
-    expect(history.aggregateRequests, hasLength(1));
-    expect(
-      history.aggregateRequests.single.query.seriesKeys,
-      const <String>[TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta],
-    );
+    expect(history.energyUsageRequests, hasLength(1));
+    expect(history.energyUsageRequests.single.query.bucket, isNull);
     expect(find.text('—'), findsOneWidget);
     expect(find.text('— kWh'), findsNothing);
-    history.aggregateRequests.single.completer.complete(
-      _aggregate(
-        from: history.aggregateRequests.single.query.from,
-        to: history.aggregateRequests.single.query.to,
-        energyWh: 1234,
+    history.energyUsageRequests.single.completer.complete(
+      _energyUsage(
+        from: history.energyUsageRequests.single.query.from,
+        to: history.energyUsageRequests.single.query.to,
+        totalKwh: 1.234,
       ),
     );
     await tester.pumpAndSettle();
@@ -1336,15 +1268,82 @@ void main() {
       historySeriesKeys,
       equals(
         const <String>[
-          TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
+          TelemetryHistoryMetricCatalog.energyUsage,
         ],
       ),
     );
-    expect(history.requests, hasLength(1));
-    expect(
-      history.requests.single.seriesKey,
-      TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
+    expect(history.requests, isEmpty);
+    expect(history.energyUsageRequests, hasLength(2));
+    expect(history.energyUsageRequests.last.query.bucket?.wireValue, '1h');
+  });
+
+  testWidgets('load factor tile opens backend heating usage history',
+      (tester) async {
+    final bundle = _bundle(
+      widgets: const <Map<String, dynamic>>[
+        {
+          'id': 'loadFactor24h',
+          'control_ids': <String>[],
+        },
+      ],
+      controls: const <Map<String, dynamic>>[],
+      readableDomains: const <String>{'telemetry'},
     );
+    final history = _QueuedTelemetryHistoryApi();
+    final snapshot = DeviceSnapshot.initial(device: _device()).copyWith(
+      controlState: DeviceSlice<Map<String, dynamic>>.ready(
+        data: const <String, dynamic>{},
+      ),
+    );
+    final facade = _FakeDeviceFacade(snapshot, history);
+    final snapshotCubit = DeviceSnapshotCubit(facade: facade);
+    addTearDown(snapshotCubit.close);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+          S.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: S.delegate.supportedLocales,
+        home: DeviceRouteScope.provide(
+          facade: facade,
+          snapshotCubit: snapshotCubit,
+          child: _buildPresenter(_device(), bundle),
+        ),
+      ),
+    );
+    await tester.pump();
+    await _openLiveMetrics(tester);
+
+    expect(history.heatingUsageRequests, hasLength(1));
+    expect(history.heatingUsageRequests.single.query.bucket, isNull);
+    history.heatingUsageRequests.single.completer.complete(
+      _heatingUsage(
+        from: history.heatingUsageRequests.single.query.from,
+        to: history.heatingUsageRequests.single.query.to,
+        loadFactorPercent: 35,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('35%'), findsOneWidget);
+
+    await tester.tap(find.text('Heating runtime'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(TelemetryHistoryPage), findsOneWidget);
+    final pageContext = tester.element(find.byType(TelemetryHistoryPage));
+    final historyCubit = pageContext.read<TelemetryHistoryCubit>();
+    expect(
+      historyCubit.state.metrics.map((metric) => metric.seriesKey),
+      const <String>[TelemetryHistoryMetricCatalog.heatingUsage],
+    );
+    expect(history.requests, isEmpty);
+    expect(history.heatingUsageRequests, hasLength(2));
+    expect(history.heatingUsageRequests.last.query.bucket?.wireValue, '1h');
   });
 
   testWidgets('voltage tile opens only voltage history metric', (tester) async {
@@ -1563,15 +1562,12 @@ DeviceConfigurationBundle _adaptiveDashboardBundle() {
         ],
       },
       {
-        'id': 'dailyStats24h',
-        'control_ids': [
-          'powerMeterEnergyWhDelta',
-          'heatingActivity24h',
-        ],
-      },
-      {
         'id': 'modeBar',
         'control_ids': ['scheduleMode'],
+      },
+      {
+        'id': 'heatingToggle',
+        'control_ids': ['heaterEnabled'],
       },
       {
         'id': 'voltageNow',
@@ -1583,9 +1579,8 @@ DeviceConfigurationBundle _adaptiveDashboardBundle() {
       {'id': 'scheduleCurrentTarget', 'path': 'schedule.current_target'},
       {'id': 'scheduleNextTarget', 'path': 'schedule.next_target'},
       {'id': 'climateSensors', 'path': 'climateSensors'},
-      {'id': 'powerMeterEnergyWhDelta', 'path': 'energy_wh_delta'},
-      {'id': 'heatingActivity24h', 'path': 'load_factor'},
       {'id': 'scheduleMode', 'path': 'schedule.mode'},
+      {'id': 'heaterEnabled', 'path': 'heater.enabled'},
       {'id': 'powerMeterVoltageV', 'path': 'power_meter.voltage_v'},
       {'id': 'powerMeterVoltageValid', 'path': 'power_meter.voltage_valid'},
     ],
@@ -1616,8 +1611,8 @@ DeviceSnapshot _adaptiveDashboardSnapshot() {
             'humidity': 43,
           },
         ],
-        'heatingActivity24h': 0.55,
         'scheduleMode': 'off',
+        'heaterEnabled': true,
         'powerMeterVoltageV': 230,
         'powerMeterVoltageValid': true,
       },
@@ -1625,32 +1620,62 @@ DeviceSnapshot _adaptiveDashboardSnapshot() {
   );
 }
 
-TelemetryAggregate _aggregate({
+EnergyUsage _energyUsage({
   required DateTime from,
   required DateTime to,
-  required double energyWh,
+  required double? totalKwh,
 }) {
-  return TelemetryAggregate(
+  return EnergyUsage(
     deviceId: 'device-1',
     serial: 'SN-1',
-    resolution: '5m',
     from: from,
     to: to,
-    series: <TelemetryAggregateSeries>[
-      TelemetryAggregateSeries(
-        seriesKey: TelemetryHistoryMetricCatalog.powerMeterEnergyWhDelta,
-        valueType: 'numeric',
-        unit: 'Wh',
-        samplesCount: 24,
-        sumValue: energyWh,
-      ),
-    ],
+    bucket: '',
+    timezone: 'UTC',
+    availableFrom: from,
+    coverageRatio: totalKwh == null ? 0 : 1,
+    totalKwh: totalKwh,
+    averageBucketKwh: null,
+    peakBucketKwh: null,
+    peakBucketFrom: null,
+    points: const [],
+  );
+}
+
+HeatingUsage _heatingUsage({
+  required DateTime from,
+  required DateTime to,
+  required double? loadFactorPercent,
+}) {
+  return HeatingUsage(
+    deviceId: 'device-1',
+    serial: 'SN-1',
+    from: from,
+    to: to,
+    bucket: '',
+    timezone: 'UTC',
+    availableFrom: from,
+    coverageRatio: loadFactorPercent == null ? 0 : 1,
+    loadFactorPercent: loadFactorPercent,
+    minBucketPercent: null,
+    maxBucketPercent: null,
+    points: const [],
   );
 }
 
 final class _QueuedTelemetryHistoryApi implements DeviceTelemetryHistoryApi {
   final List<_Request> requests = <_Request>[];
   final List<_AggregateRequest> aggregateRequests = <_AggregateRequest>[];
+  final List<
+      ({
+        TelemetryUsageQuery query,
+        Completer<EnergyUsage> completer,
+      })> energyUsageRequests = [];
+  final List<
+      ({
+        TelemetryUsageQuery query,
+        Completer<HeatingUsage> completer,
+      })> heatingUsageRequests = [];
 
   @override
   Future<TelemetryHistorySeries> getSeries({
@@ -1684,6 +1709,23 @@ final class _QueuedTelemetryHistoryApi implements DeviceTelemetryHistoryApi {
   }) {
     throw UnsupportedError('Setpoint history is not used by these tests');
   }
+
+  @override
+  Future<EnergyUsage> getEnergyUsage({required TelemetryUsageQuery query}) {
+    final completer = Completer<EnergyUsage>();
+    energyUsageRequests.add((query: query, completer: completer));
+    return completer.future;
+  }
+
+  @override
+  Future<HeatingUsage> getHeatingUsage({required TelemetryUsageQuery query}) {
+    final completer = Completer<HeatingUsage>();
+    heatingUsageRequests.add((query: query, completer: completer));
+    return completer.future;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 final class _Request {

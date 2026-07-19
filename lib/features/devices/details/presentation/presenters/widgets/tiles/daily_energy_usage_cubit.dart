@@ -1,44 +1,39 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:oshmobile/app/device_session/domain/device_facade.dart';
 import 'package:oshmobile/core/configuration/app_polling_intervals.dart';
-import 'package:oshmobile/core/configuration/power_meter_series_keys.dart';
 import 'package:oshmobile/features/devices/details/presentation/presenters/widgets/tiles/daily_energy_usage_state.dart';
 import 'package:oshmobile/features/telemetry_history/domain/contracts/daily_energy_usage_cache.dart';
-import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate.dart';
-import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_aggregate_query.dart';
+import 'package:oshmobile/features/telemetry_history/domain/contracts/energy_usage_reader.dart';
+import 'package:oshmobile/features/telemetry_history/domain/models/telemetry_usage_query.dart';
 
 class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
   DailyEnergyUsageCubit({
-    required DeviceTelemetryHistoryApi telemetryHistory,
+    required EnergyUsageReader energyUsageReader,
     DailyEnergyUsageCache? persistentCache,
     String? persistentCacheNamespace,
     Duration cacheTtl = const Duration(minutes: 2),
     Duration persistentCacheMaxAge = const Duration(hours: 24),
     Duration pollInterval = AppPollingIntervals.deviceData,
-    String aggregateSeriesKey = seriesKey,
     DateTime Function()? nowUtc,
-  })  : _telemetryHistory = telemetryHistory,
+  })  : _energyUsageReader = energyUsageReader,
         _persistentCache = persistentCache,
         _persistentCacheNamespace = persistentCacheNamespace?.trim(),
         _cacheTtl = cacheTtl,
         _persistentCacheMaxAge = persistentCacheMaxAge,
         _pollInterval = pollInterval,
-        _aggregateSeriesKey = aggregateSeriesKey,
         _nowUtc = nowUtc ?? _defaultNowUtc,
         super(const DailyEnergyUsageState.initial());
 
   static const Duration _historyWindow = Duration(hours: 24);
-  static const String seriesKey = PowerMeterSeriesKeys.energyWhDelta;
+  static const String cacheKey = 'usage.energy';
 
-  final DeviceTelemetryHistoryApi _telemetryHistory;
+  final EnergyUsageReader _energyUsageReader;
   final DailyEnergyUsageCache? _persistentCache;
   final String? _persistentCacheNamespace;
   final Duration _cacheTtl;
   final Duration _persistentCacheMaxAge;
   final Duration _pollInterval;
-  final String _aggregateSeriesKey;
   final DateTime Function() _nowUtc;
   Timer? _pollTimer;
   int _requestVersion = 0;
@@ -98,24 +93,19 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
     final from = to.subtract(_historyWindow);
 
     try {
-      final aggregate = await _telemetryHistory.getAggregate(
-        query: TelemetryAggregateQuery(
-          seriesKeys: <String>[_aggregateSeriesKey],
-          from: from,
-          to: to,
-          preferredResolution: 'auto',
-        ),
+      final usage = await _energyUsageReader.getEnergyUsage(
+        query: TelemetryUsageQuery.summary(from: from, to: to),
       );
       if (_isStaleResponse(requestVersion)) return;
 
-      final energyWh = _energyWhFromAggregate(aggregate);
+      final energyWh = usage.totalKwh == null ? null : usage.totalKwh! * 1000;
       final updatedAt = _nowUtc();
       final nextState = DailyEnergyUsageState(
         status: DailyEnergyUsageStatus.ready,
         energyWh: energyWh,
         updatedAt: updatedAt,
-        windowStart: aggregate.from,
-        windowEnd: aggregate.to,
+        windowStart: usage.from,
+        windowEnd: usage.to,
       );
       if (energyWh == null) {
         await _removePersistentCache();
@@ -154,15 +144,6 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
     return now.difference(updatedAt) <= _cacheTtl;
   }
 
-  double? _energyWhFromAggregate(TelemetryAggregate aggregate) {
-    for (final item in aggregate.series) {
-      if (item.seriesKey == _aggregateSeriesKey) {
-        return item.sumValue;
-      }
-    }
-    return null;
-  }
-
   Future<DailyEnergyUsageCacheRecord?> _readPersistentCache(
     DateTime now,
   ) async {
@@ -175,7 +156,7 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
     try {
       return await cache.read(
         namespace: namespace,
-        seriesKey: _aggregateSeriesKey,
+        seriesKey: cacheKey,
         nowUtc: now,
         maxAge: _persistentCacheMaxAge,
       );
@@ -202,7 +183,7 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
     try {
       await cache.write(
         namespace: namespace,
-        seriesKey: _aggregateSeriesKey,
+        seriesKey: cacheKey,
         record: DailyEnergyUsageCacheRecord(
           energyWh: energyWh,
           savedAt: state.updatedAt ?? _nowUtc(),
@@ -221,10 +202,7 @@ class DailyEnergyUsageCubit extends Cubit<DailyEnergyUsageState> {
     if (cache == null || namespace == null || namespace.isEmpty) return;
 
     try {
-      await cache.remove(
-        namespace: namespace,
-        seriesKey: _aggregateSeriesKey,
-      );
+      await cache.remove(namespace: namespace, seriesKey: cacheKey);
     } catch (_) {
       // Cache eviction is best-effort.
     }

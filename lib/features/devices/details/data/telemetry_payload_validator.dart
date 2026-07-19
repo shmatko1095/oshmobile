@@ -1,4 +1,5 @@
 import 'package:oshmobile/core/contracts/runtime_json_schema_validator.dart';
+import 'package:oshmobile/core/contracts/runtime_json_schema_sanitizer.dart';
 
 class TelemetryPayloadValidator {
   final Map<String, dynamic>? _stateSchema;
@@ -14,6 +15,30 @@ class TelemetryPayloadValidator {
       value: data,
       schema: _allowUnknownFields(schema),
     );
+  }
+
+  Map<String, dynamic> sanitizeStatePayload(
+    Map<String, dynamic> data, {
+    required RuntimeJsonSchemaIssueSink onIssue,
+  }) {
+    final schema = _stateSchema;
+    if (schema == null) {
+      onIssue(r'$', 'runtime_schema_unavailable');
+      return Map<String, dynamic>.from(data);
+    }
+
+    final sanitized = RuntimeJsonSchemaSanitizer.sanitize(
+      value: data,
+      schema: schema,
+      onIssue: onIssue,
+    );
+    if (sanitized is Map<String, dynamic>) return sanitized;
+    if (sanitized is Map) {
+      return sanitized.map(
+        (key, value) => MapEntry(key.toString(), value),
+      );
+    }
+    return const <String, dynamic>{};
   }
 
   Map<String, dynamic> _allowUnknownFields(Map<String, dynamic> schema) {
